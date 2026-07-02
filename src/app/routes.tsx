@@ -23,6 +23,7 @@ import { AdminPortfolioPage } from "./pages/portal/AdminPortfolioPage";
 import { AdminRemindersPage } from "./pages/portal/AdminRemindersPage";
 import { AdminSettingsPage } from "./pages/portal/AdminSettingsPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { AutomotivePage } from "./pages/AutomotivePage";
 
 export const router = createBrowserRouter([
   {
@@ -33,6 +34,7 @@ export const router = createBrowserRouter([
       { path: "portfolio", Component: PortfolioPage },
       { path: "portfolio/:id", Component: PortfolioDetailPage },
       { path: "about", Component: AboutPage },
+      { path: "services/automotive", Component: AutomotivePage },
     ],
   },
   {

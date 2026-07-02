@@ -1,5 +1,5 @@
 import image_PDClogo2_0_12_1 from '@/imports/PDClogo2.0-12-1.png'
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { useLanguage } from "../context/LanguageContext";
 import type { Language } from "../i18n/translations";
@@ -7,6 +7,9 @@ import type { Language } from "../i18n/translations";
 export function Navigation() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [servicesOpen, setServicesOpen] = useState(false);
+  const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
+  const servicesRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { language, setLanguage, t } = useLanguage();
@@ -17,13 +20,27 @@ export function Navigation() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (servicesRef.current && !servicesRef.current.contains(e.target as Node)) {
+        setServicesOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const isPortfolioPage = location.pathname === "/portfolio";
   const isAboutPage = location.pathname === "/about";
-  const isSubPage = isPortfolioPage || isAboutPage;
+  const isAutomotivePage = location.pathname === "/services/automotive";
+  const isSubPage = isPortfolioPage || isAboutPage || isAutomotivePage;
+
+  const SERVICES = [
+    { label: "Automotive", path: "/services/automotive" },
+  ];
 
   const scrollLinkKeys = [
     { key: "work", id: "work", label: t.nav.work },
-    { key: "services", id: "services", label: t.nav.services },
   ];
 
   const handleScrollLink = (id: string) => {
@@ -132,6 +149,109 @@ export function Navigation() {
               {link.label}
             </button>
           ))}
+
+          {/* Services dropdown */}
+          <div ref={servicesRef} style={{ position: "relative" }}>
+            <button
+              onClick={() => setServicesOpen((o) => !o)}
+              style={{
+                background: "none",
+                border: "none",
+                color: isAutomotivePage ? "#fffbe0" : "rgba(255,251,224,0.55)",
+                fontSize: "10px",
+                fontWeight: isAutomotivePage ? 600 : 500,
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                transition: "color 0.2s ease",
+                padding: 0,
+                fontFamily: "'Inter', sans-serif",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+              onMouseEnter={(e) =>
+                ((e.currentTarget as HTMLElement).style.color = "#fffbe0")
+              }
+              onMouseLeave={(e) =>
+                ((e.currentTarget as HTMLElement).style.color = isAutomotivePage
+                  ? "#fffbe0"
+                  : "rgba(255,251,224,0.55)")
+              }
+            >
+              {t.nav.services}
+              <svg
+                width="8"
+                height="5"
+                viewBox="0 0 8 5"
+                fill="none"
+                style={{
+                  transition: "transform 0.2s ease",
+                  transform: servicesOpen ? "rotate(180deg)" : "rotate(0deg)",
+                }}
+              >
+                <path
+                  d="M1 1L4 4L7 1"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+
+            {servicesOpen && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "calc(100% + 16px)",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  backgroundColor: "rgba(10, 5, 1, 0.97)",
+                  border: "1px solid rgba(255,251,224,0.1)",
+                  backdropFilter: "blur(12px)",
+                  minWidth: "180px",
+                  padding: "8px 0",
+                }}
+              >
+                {SERVICES.map((s) => (
+                  <button
+                    key={s.path}
+                    onClick={() => {
+                      setServicesOpen(false);
+                      navigate(s.path);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    style={{
+                      display: "block",
+                      width: "100%",
+                      background: "none",
+                      border: "none",
+                      color: location.pathname === s.path ? "#fffbe0" : "rgba(255,251,224,0.6)",
+                      fontSize: "10px",
+                      fontWeight: location.pathname === s.path ? 600 : 500,
+                      letterSpacing: "0.2em",
+                      textTransform: "uppercase",
+                      cursor: "pointer",
+                      padding: "12px 24px",
+                      textAlign: "left",
+                      fontFamily: "'Inter', sans-serif",
+                      transition: "color 0.2s ease, background 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "#fffbe0";
+                      e.currentTarget.style.backgroundColor = "rgba(255,251,224,0.05)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = location.pathname === s.path ? "#fffbe0" : "rgba(255,251,224,0.6)";
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <button
             onClick={handlePortfolioLink}
             style={{
@@ -315,6 +435,79 @@ export function Navigation() {
               {link.label}
             </button>
           ))}
+
+          {/* Mobile Services accordion */}
+          <div>
+            <button
+              onClick={() => setMobileServicesOpen((o) => !o)}
+              style={{
+                background: "none",
+                border: "none",
+                color: "rgba(255,251,224,0.7)",
+                fontSize: "13px",
+                fontWeight: 500,
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                textAlign: "left",
+                fontFamily: "'Inter', sans-serif",
+                padding: 0,
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                width: "100%",
+              }}
+            >
+              {t.nav.services}
+              <svg
+                width="8"
+                height="5"
+                viewBox="0 0 8 5"
+                fill="none"
+                style={{
+                  transition: "transform 0.2s ease",
+                  transform: mobileServicesOpen ? "rotate(180deg)" : "rotate(0deg)",
+                }}
+              >
+                <path
+                  d="M1 1L4 4L7 1"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+            {mobileServicesOpen && (
+              <div style={{ paddingLeft: "16px", marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
+                {SERVICES.map((s) => (
+                  <button
+                    key={s.path}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setMobileServicesOpen(false);
+                      navigate(s.path);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: location.pathname === s.path ? "#fffbe0" : "rgba(255,251,224,0.5)",
+                      fontSize: "12px",
+                      fontWeight: 500,
+                      letterSpacing: "0.2em",
+                      textTransform: "uppercase",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      fontFamily: "'Inter', sans-serif",
+                      padding: 0,
+                    }}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <button
             onClick={handlePortfolioLink}
             style={{
