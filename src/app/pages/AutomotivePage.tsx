@@ -1,78 +1,138 @@
 import { useNavigate } from "react-router";
-import { useLanguage } from "../context/LanguageContext";
 
 export function AutomotivePage() {
   const navigate = useNavigate();
-  const { t } = useLanguage();
 
   return (
     <div
       style={{
         minHeight: "100vh",
-        backgroundColor: "#0e0802",
+        backgroundColor: "#080401",
         color: "#fffbe0",
         fontFamily: "'Inter', sans-serif",
+        paddingTop: "72px",
       }}
     >
-      {/* Hero */}
+      {/* Header */}
+      <div
+        style={{
+          backgroundColor: "#0d0703",
+          borderBottom: "1px solid rgba(255,251,224,0.06)",
+          padding: "80px 40px 64px",
+        }}
+      >
+        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
+          <button
+            onClick={() => navigate("/")}
+            style={{
+              background: "none",
+              border: "none",
+              color: "rgba(255,251,224,0.35)",
+              fontSize: "10px",
+              fontWeight: 500,
+              letterSpacing: "0.22em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              padding: 0,
+              marginBottom: "40px",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              fontFamily: "'Inter', sans-serif",
+            }}
+          >
+            ← Services
+          </button>
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-end",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "32px",
+            }}
+          >
+            <div>
+              <span
+                style={{
+                  color: "rgba(255,251,224,0.3)",
+                  fontSize: "10px",
+                  fontWeight: 500,
+                  letterSpacing: "0.3em",
+                  textTransform: "uppercase",
+                  display: "block",
+                  marginBottom: "16px",
+                }}
+              >
+                Services
+              </span>
+              <h1
+                style={{
+                  color: "#fffbe0",
+                  fontSize: "clamp(48px, 7vw, 88px)",
+                  fontWeight: 900,
+                  letterSpacing: "-0.03em",
+                  lineHeight: 0.92,
+                  margin: 0,
+                  textTransform: "uppercase",
+                }}
+              >
+                Auto
+                <br />
+                <span style={{ color: "rgba(255,251,224,0.3)" }}>motive</span>
+                <br />
+                <em
+                  style={{
+                    fontStyle: "italic",
+                    fontWeight: 300,
+                    color: "#c8905a",
+                    fontSize: "0.78em",
+                  }}
+                >
+                  Photography & Film
+                </em>
+              </h1>
+            </div>
+            <p
+              style={{
+                color: "rgba(255,251,224,0.35)",
+                fontSize: "14px",
+                fontWeight: 300,
+                lineHeight: 1.7,
+                margin: 0,
+                maxWidth: "340px",
+                textAlign: "right",
+              }}
+            >
+              Cinematic imagery that captures the power, precision and personality of every machine.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Hero image */}
       <div
         style={{
           position: "relative",
-          height: "70vh",
-          minHeight: "500px",
+          height: "55vh",
+          minHeight: "360px",
           overflow: "hidden",
-          display: "flex",
-          alignItems: "flex-end",
         }}
       >
         <img
           src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1920&q=80"
           alt="Automotive photography"
           style={{
-            position: "absolute",
-            inset: 0,
             width: "100%",
             height: "100%",
             objectFit: "cover",
-            filter: "brightness(0.45)",
+            filter: "brightness(0.5) contrast(1.05) saturate(0.7)",
           }}
         />
-        <div
-          style={{
-            position: "relative",
-            zIndex: 1,
-            maxWidth: "1400px",
-            margin: "0 auto",
-            padding: "0 40px 64px",
-            width: "100%",
-          }}
-        >
-          <p
-            style={{
-              fontSize: "10px",
-              letterSpacing: "0.25em",
-              textTransform: "uppercase",
-              color: "rgba(255,251,224,0.5)",
-              marginBottom: "16px",
-            }}
-          >
-            Services
-          </p>
-          <h1
-            style={{
-              fontSize: "clamp(40px, 6vw, 80px)",
-              fontWeight: 300,
-              letterSpacing: "-0.02em",
-              lineHeight: 1.05,
-              margin: 0,
-            }}
-          >
-            Automotive
-          </h1>
-        </div>
       </div>
 
-      {/* Intro */}
+      {/* Body */}
       <div
         style={{
           maxWidth: "1400px",
@@ -89,22 +149,28 @@ export function AutomotivePage() {
           }}
           className="grid-cols-1 md:grid-cols-2"
         >
+          {/* Left — intro text */}
           <div>
             <h2
               style={{
-                fontSize: "clamp(24px, 3vw, 36px)",
-                fontWeight: 300,
-                letterSpacing: "-0.01em",
-                marginBottom: "24px",
-                lineHeight: 1.2,
+                color: "#fffbe0",
+                fontSize: "clamp(28px, 3.5vw, 48px)",
+                fontWeight: 900,
+                letterSpacing: "-0.02em",
+                lineHeight: 1.0,
+                textTransform: "uppercase",
+                marginBottom: "28px",
+                margin: "0 0 28px 0",
               }}
             >
-              Capturing machines in motion
+              Machines in{" "}
+              <span style={{ color: "rgba(255,251,224,0.3)" }}>motion</span>
             </h2>
             <p
               style={{
-                fontSize: "15px",
-                color: "rgba(255,251,224,0.6)",
+                fontSize: "14px",
+                fontWeight: 300,
+                color: "rgba(255,251,224,0.55)",
                 lineHeight: 1.8,
                 marginBottom: "20px",
               }}
@@ -116,8 +182,9 @@ export function AutomotivePage() {
             </p>
             <p
               style={{
-                fontSize: "15px",
-                color: "rgba(255,251,224,0.6)",
+                fontSize: "14px",
+                fontWeight: 300,
+                color: "rgba(255,251,224,0.55)",
                 lineHeight: 1.8,
               }}
             >
@@ -127,19 +194,21 @@ export function AutomotivePage() {
             </p>
           </div>
 
-          {/* What we offer */}
+          {/* Right — what we offer */}
           <div>
-            <p
+            <span
               style={{
+                color: "rgba(255,251,224,0.3)",
                 fontSize: "10px",
-                letterSpacing: "0.25em",
+                fontWeight: 500,
+                letterSpacing: "0.3em",
                 textTransform: "uppercase",
-                color: "rgba(255,251,224,0.35)",
+                display: "block",
                 marginBottom: "32px",
               }}
             >
               What we offer
-            </p>
+            </span>
             {[
               "Static & detail photography",
               "Dynamic / rolling shots",
@@ -154,24 +223,28 @@ export function AutomotivePage() {
                   display: "flex",
                   alignItems: "center",
                   gap: "16px",
-                  padding: "18px 0",
-                  borderBottom: "1px solid rgba(255,251,224,0.07)",
+                  padding: "16px 0",
+                  borderBottom: "1px solid rgba(255,251,224,0.06)",
                 }}
               >
                 <span
                   style={{
-                    width: "4px",
-                    height: "4px",
-                    borderRadius: "50%",
-                    backgroundColor: "rgba(255,251,224,0.4)",
-                    flexShrink: 0,
+                    color: "#c8905a",
+                    fontSize: "10px",
+                    fontWeight: 600,
+                    letterSpacing: "0.25em",
+                    fontFamily: "'Courier New', monospace",
                   }}
-                />
+                >
+                  —
+                </span>
                 <span
                   style={{
-                    fontSize: "14px",
-                    color: "rgba(255,251,224,0.75)",
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    color: "rgba(255,251,224,0.65)",
                     letterSpacing: "0.05em",
+                    textTransform: "uppercase",
                   }}
                 >
                   {item}
@@ -190,7 +263,7 @@ export function AutomotivePage() {
           padding: "0 40px 80px",
           display: "grid",
           gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "2px",
+          gap: "3px",
         }}
         className="grid-cols-1 md:grid-cols-3"
       >
@@ -210,16 +283,14 @@ export function AutomotivePage() {
                 width: "100%",
                 height: "100%",
                 objectFit: "cover",
-                filter: "brightness(0.85)",
+                filter: "contrast(1.05) saturate(0.6) brightness(0.8)",
                 transition: "transform 0.6s ease",
               }}
               onMouseEnter={(e) =>
-                ((e.currentTarget as HTMLImageElement).style.transform =
-                  "scale(1.03)")
+                ((e.currentTarget as HTMLImageElement).style.transform = "scale(1.04)")
               }
               onMouseLeave={(e) =>
-                ((e.currentTarget as HTMLImageElement).style.transform =
-                  "scale(1)")
+                ((e.currentTarget as HTMLImageElement).style.transform = "scale(1)")
               }
             />
           </div>
@@ -229,31 +300,37 @@ export function AutomotivePage() {
       {/* CTA */}
       <div
         style={{
-          borderTop: "1px solid rgba(255,251,224,0.08)",
+          borderTop: "1px solid rgba(255,251,224,0.06)",
           padding: "80px 40px",
           textAlign: "center",
         }}
       >
-        <p
+        <span
           style={{
+            color: "rgba(255,251,224,0.3)",
             fontSize: "10px",
-            letterSpacing: "0.25em",
+            fontWeight: 500,
+            letterSpacing: "0.3em",
             textTransform: "uppercase",
-            color: "rgba(255,251,224,0.35)",
+            display: "block",
             marginBottom: "20px",
           }}
         >
           Ready to shoot?
-        </p>
+        </span>
         <h2
           style={{
-            fontSize: "clamp(28px, 4vw, 48px)",
-            fontWeight: 300,
-            letterSpacing: "-0.01em",
-            marginBottom: "40px",
+            color: "#fffbe0",
+            fontSize: "clamp(28px, 4vw, 56px)",
+            fontWeight: 900,
+            letterSpacing: "-0.03em",
+            lineHeight: 0.92,
+            textTransform: "uppercase",
+            margin: "0 0 40px",
           }}
         >
-          Let's capture your machine
+          Let's capture your{" "}
+          <span style={{ color: "rgba(255,251,224,0.3)" }}>machine</span>
         </h2>
         <button
           onClick={() => {
@@ -272,7 +349,7 @@ export function AutomotivePage() {
             letterSpacing: "0.2em",
             textTransform: "uppercase",
             cursor: "pointer",
-            padding: "14px 32px",
+            padding: "13px 32px",
             fontFamily: "'Inter', sans-serif",
             transition: "all 0.25s ease",
           }}
