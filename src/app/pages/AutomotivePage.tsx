@@ -132,7 +132,7 @@ export function AutomotivePage() {
               <h1
                 style={{
                   color: "#fffbe0",
-                  fontSize: isMobile ? "clamp(48px, 15vw, 72px)" : "clamp(48px, 7vw, 88px)",
+                  fontSize: isMobile ? "clamp(40px, 12vw, 72px)" : "clamp(48px, 7vw, 88px)",
                   fontWeight: 900,
                   letterSpacing: "-0.03em",
                   lineHeight: 0.92,
@@ -140,19 +140,20 @@ export function AutomotivePage() {
                   textTransform: "uppercase",
                 }}
               >
-                Auto
-                <br />
-                <span style={{ color: "rgba(255,251,224,0.3)" }}>motive</span>
+                Automotive
                 <br />
                 <em
                   style={{
                     fontStyle: "italic",
-                    fontWeight: 300,
+                    fontWeight: 400,
                     color: "#c8905a",
-                    fontSize: "0.78em",
+                    fontSize: "0.52em",
+                    letterSpacing: "0.01em",
+                    textTransform: "none",
+                    fontFamily: "'Cormorant Garamond', Georgia, serif",
                   }}
                 >
-                  Photography
+                  Photography & Film
                 </em>
               </h1>
             </div>
