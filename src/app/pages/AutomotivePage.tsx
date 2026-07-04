@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { portalFetch } from "../../lib/supabase";
 import { useMobile } from "../hooks/useMobile";
+import heroImage from "@/imports/_DSC0014.jpg";
 
 const WHATS_INCLUDED = [
   "1 vehicle — car, bike, truck or other",
@@ -177,7 +178,7 @@ export function AutomotivePage() {
       {/* ── Hero image ── */}
       <div style={{ position: "relative", height: isMobile ? "45vw" : "52vh", minHeight: "280px", overflow: "hidden" }}>
         <img
-          src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1920&q=80"
+          src={heroImage}
           alt="Automotive photography shoot"
           style={{
             width: "100%",
