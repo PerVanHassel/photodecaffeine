@@ -20,6 +20,7 @@ const PACKAGE_LABELS: Record<string, string> = {
   reserve: "Reserve — €2,400",
   blend: "Blend Retainer — €1,200/mo",
   custom: "Custom / Not Sure Yet",
+  automotive: "Automotive — €50/vehicle",
 };
 
 function timeAgo(str: string) {

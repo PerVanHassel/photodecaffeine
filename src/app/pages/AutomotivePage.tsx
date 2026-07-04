@@ -1,7 +1,69 @@
+import { useState } from "react";
 import { useNavigate } from "react-router";
+import { portalFetch } from "../../lib/supabase";
+import { useMobile } from "../hooks/useMobile";
+
+const WHATS_INCLUDED = [
+  "1 vehicle — car, bike, truck or other",
+  "Up to 2 hours on location",
+  "15 edited high-resolution photos",
+  "Delivered within 5 business days",
+  "Personal & commercial use license",
+];
 
 export function AutomotivePage() {
   const navigate = useNavigate();
+  const isMobile = useMobile();
+
+  const [form, setForm] = useState({ name: "", email: "", phone: "" });
+  const [focused, setFocused] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.email && !form.phone) {
+      setError("Please provide at least an email address or phone number.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      await portalFetch("/contact", {
+        method: "POST",
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          package: "automotive",
+          brand: "",
+          message: "Automotive package booking — €50 per vehicle.",
+        }),
+      });
+      setSubmitted(true);
+    } catch {
+      setError("Something went wrong. Please try again or contact us directly.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const inputStyle = (field: string) => ({
+    width: "100%",
+    backgroundColor: "transparent",
+    border: "none",
+    borderBottom: `1px solid ${focused === field ? "rgba(255,251,224,0.5)" : "rgba(255,251,224,0.12)"}`,
+    color: "#fffbe0",
+    fontSize: "15px",
+    fontWeight: 300,
+    fontFamily: "'Inter', sans-serif",
+    padding: "16px 0",
+    outline: "none",
+    letterSpacing: "0.02em",
+    transition: "border-color 0.2s ease",
+    boxSizing: "border-box" as const,
+  });
 
   return (
     <div
@@ -13,12 +75,12 @@ export function AutomotivePage() {
         paddingTop: "72px",
       }}
     >
-      {/* Header */}
+      {/* ── Header ── */}
       <div
         style={{
           backgroundColor: "#0d0703",
           borderBottom: "1px solid rgba(255,251,224,0.06)",
-          padding: "80px 40px 64px",
+          padding: isMobile ? "60px 20px 48px" : "80px 40px 64px",
         }}
       >
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
@@ -70,7 +132,7 @@ export function AutomotivePage() {
               <h1
                 style={{
                   color: "#fffbe0",
-                  fontSize: "clamp(48px, 7vw, 88px)",
+                  fontSize: isMobile ? "clamp(48px, 15vw, 72px)" : "clamp(48px, 7vw, 88px)",
                   fontWeight: 900,
                   letterSpacing: "-0.03em",
                   lineHeight: 0.92,
@@ -90,111 +152,107 @@ export function AutomotivePage() {
                     fontSize: "0.78em",
                   }}
                 >
-                  Photography & Film
+                  Photography
                 </em>
               </h1>
             </div>
-            <p
-              style={{
-                color: "rgba(255,251,224,0.35)",
-                fontSize: "14px",
-                fontWeight: 300,
-                lineHeight: 1.7,
-                margin: 0,
-                maxWidth: "340px",
-                textAlign: "right",
-              }}
-            >
-              Cinematic imagery that captures the power, precision and personality of every machine.
-            </p>
+            {!isMobile && (
+              <p
+                style={{
+                  color: "rgba(255,251,224,0.35)",
+                  fontSize: "14px",
+                  fontWeight: 300,
+                  lineHeight: 1.7,
+                  margin: 0,
+                  maxWidth: "320px",
+                  textAlign: "right",
+                }}
+              >
+                Cinematic imagery that captures the power, precision and personality of every machine.
+              </p>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Hero image */}
-      <div
-        style={{
-          position: "relative",
-          height: "55vh",
-          minHeight: "360px",
-          overflow: "hidden",
-        }}
-      >
+      {/* ── Hero image ── */}
+      <div style={{ position: "relative", height: isMobile ? "45vw" : "52vh", minHeight: "280px", overflow: "hidden" }}>
         <img
           src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1920&q=80"
-          alt="Automotive photography"
+          alt="Automotive photography shoot"
           style={{
             width: "100%",
             height: "100%",
             objectFit: "cover",
-            filter: "brightness(0.5) contrast(1.05) saturate(0.7)",
+            filter: "brightness(0.45) contrast(1.05) saturate(0.65)",
           }}
         />
       </div>
 
-      {/* Body */}
+      {/* ── Package + booking ── */}
       <div
         style={{
           maxWidth: "1400px",
           margin: "0 auto",
-          padding: "80px 40px",
+          padding: isMobile ? "60px 20px" : "100px 40px",
+          display: "grid",
+          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+          gap: isMobile ? "56px" : "100px",
+          alignItems: "start",
         }}
       >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "80px",
-            alignItems: "start",
-          }}
-          className="grid-cols-1 md:grid-cols-2"
-        >
-          {/* Left — intro text */}
-          <div>
-            <h2
+        {/* Left — package details */}
+        <div>
+          {/* Price */}
+          <div style={{ marginBottom: "48px" }}>
+            <span
               style={{
-                color: "#fffbe0",
-                fontSize: "clamp(28px, 3.5vw, 48px)",
-                fontWeight: 900,
-                letterSpacing: "-0.02em",
-                lineHeight: 1.0,
+                color: "rgba(255,251,224,0.3)",
+                fontSize: "10px",
+                fontWeight: 500,
+                letterSpacing: "0.3em",
                 textTransform: "uppercase",
-                marginBottom: "28px",
-                margin: "0 0 28px 0",
+                display: "block",
+                marginBottom: "16px",
               }}
             >
-              Machines in{" "}
-              <span style={{ color: "rgba(255,251,224,0.3)" }}>motion</span>
-            </h2>
-            <p
+              The package
+            </span>
+            <div
               style={{
-                fontSize: "14px",
-                fontWeight: 300,
-                color: "rgba(255,251,224,0.55)",
-                lineHeight: 1.8,
-                marginBottom: "20px",
+                display: "flex",
+                alignItems: "flex-end",
+                gap: "12px",
+                marginBottom: "8px",
               }}
             >
-              We create cinematic automotive imagery that goes beyond the car.
-              Whether it's a static studio shoot, a dynamic outdoor session, or
-              a full video production — we capture the personality, power, and
-              precision that makes each vehicle unique.
-            </p>
-            <p
-              style={{
-                fontSize: "14px",
-                fontWeight: 300,
-                color: "rgba(255,251,224,0.55)",
-                lineHeight: 1.8,
-              }}
-            >
-              From classic cars to modern performance machines, our approach is
-              always cinematic and detail-driven. We work closely with owners,
-              dealers, and brands to create content that truly represents the vehicle.
-            </p>
+              <span
+                style={{
+                  color: "#fffbe0",
+                  fontSize: isMobile ? "64px" : "80px",
+                  fontWeight: 900,
+                  letterSpacing: "-0.04em",
+                  lineHeight: 1,
+                }}
+              >
+                €50
+              </span>
+              <span
+                style={{
+                  color: "rgba(255,251,224,0.3)",
+                  fontSize: "13px",
+                  fontWeight: 300,
+                  letterSpacing: "0.05em",
+                  paddingBottom: "12px",
+                }}
+              >
+                per vehicle
+              </span>
+            </div>
+            <div style={{ width: "32px", height: "1px", backgroundColor: "#c8905a" }} />
           </div>
 
-          {/* Right — what we offer */}
+          {/* What's included */}
           <div>
             <span
               style={{
@@ -204,36 +262,29 @@ export function AutomotivePage() {
                 letterSpacing: "0.3em",
                 textTransform: "uppercase",
                 display: "block",
-                marginBottom: "32px",
+                marginBottom: "24px",
               }}
             >
-              What we offer
+              What's included
             </span>
-            {[
-              "Static & detail photography",
-              "Dynamic / rolling shots",
-              "Cinematic video production",
-              "Dealership content",
-              "Private owner shoots",
-              "Social media packages",
-            ].map((item) => (
+            {WHATS_INCLUDED.map((item) => (
               <div
                 key={item}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: "16px",
-                  padding: "16px 0",
+                  padding: "15px 0",
                   borderBottom: "1px solid rgba(255,251,224,0.06)",
                 }}
               >
                 <span
                   style={{
                     color: "#c8905a",
-                    fontSize: "10px",
+                    fontSize: "11px",
                     fontWeight: 600,
-                    letterSpacing: "0.25em",
                     fontFamily: "'Courier New', monospace",
+                    flexShrink: 0,
                   }}
                 >
                   —
@@ -241,10 +292,9 @@ export function AutomotivePage() {
                 <span
                   style={{
                     fontSize: "13px",
-                    fontWeight: 500,
+                    fontWeight: 400,
                     color: "rgba(255,251,224,0.65)",
-                    letterSpacing: "0.05em",
-                    textTransform: "uppercase",
+                    letterSpacing: "0.02em",
                   }}
                 >
                   {item}
@@ -253,32 +303,237 @@ export function AutomotivePage() {
             ))}
           </div>
         </div>
+
+        {/* Right — booking form */}
+        <div>
+          <span
+            style={{
+              color: "rgba(255,251,224,0.3)",
+              fontSize: "10px",
+              fontWeight: 500,
+              letterSpacing: "0.3em",
+              textTransform: "uppercase",
+              display: "block",
+              marginBottom: "16px",
+            }}
+          >
+            Book this package
+          </span>
+          <h2
+            style={{
+              color: "#fffbe0",
+              fontSize: isMobile ? "28px" : "clamp(28px, 3vw, 40px)",
+              fontWeight: 900,
+              letterSpacing: "-0.02em",
+              lineHeight: 1.05,
+              textTransform: "uppercase",
+              margin: "0 0 8px",
+            }}
+          >
+            Leave your details
+          </h2>
+          <p
+            style={{
+              color: "rgba(255,251,224,0.35)",
+              fontSize: "13px",
+              fontWeight: 300,
+              lineHeight: 1.7,
+              margin: "0 0 40px",
+            }}
+          >
+            Fill in your name and how we can reach you — we'll get back to you within 24 hours to confirm and plan the shoot.
+          </p>
+
+          {submitted ? (
+            <div
+              style={{
+                border: "1px solid rgba(200,144,90,0.3)",
+                padding: "48px 36px",
+                textAlign: "center",
+              }}
+            >
+              <div style={{ color: "#c8905a", fontSize: "28px", marginBottom: "20px" }}>✓</div>
+              <h4
+                style={{
+                  color: "#fffbe0",
+                  fontSize: "20px",
+                  fontWeight: 800,
+                  letterSpacing: "-0.01em",
+                  textTransform: "uppercase",
+                  margin: "0 0 12px",
+                }}
+              >
+                We've got your details
+              </h4>
+              <p
+                style={{
+                  color: "rgba(255,251,224,0.4)",
+                  fontSize: "13px",
+                  fontWeight: 300,
+                  lineHeight: 1.7,
+                  margin: 0,
+                }}
+              >
+                We'll contact you within 24 hours to plan the shoot. Talk soon.
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+              {/* Name */}
+              <div>
+                <label
+                  style={{
+                    color: "rgba(255,251,224,0.25)",
+                    fontSize: "9px",
+                    fontWeight: 600,
+                    letterSpacing: "0.25em",
+                    textTransform: "uppercase",
+                    display: "block",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  onFocus={() => setFocused("name")}
+                  onBlur={() => setFocused(null)}
+                  placeholder="Your name"
+                  style={inputStyle("name")}
+                />
+              </div>
+
+              {/* Email */}
+              <div>
+                <label
+                  style={{
+                    color: "rgba(255,251,224,0.25)",
+                    fontSize: "9px",
+                    fontWeight: 600,
+                    letterSpacing: "0.25em",
+                    textTransform: "uppercase",
+                    display: "block",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Email address
+                </label>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  onFocus={() => setFocused("email")}
+                  onBlur={() => setFocused(null)}
+                  placeholder="your@email.com"
+                  style={inputStyle("email")}
+                />
+              </div>
+
+              {/* Phone */}
+              <div>
+                <label
+                  style={{
+                    color: "rgba(255,251,224,0.25)",
+                    fontSize: "9px",
+                    fontWeight: 600,
+                    letterSpacing: "0.25em",
+                    textTransform: "uppercase",
+                    display: "block",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Phone number
+                </label>
+                <input
+                  type="tel"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  onFocus={() => setFocused("phone")}
+                  onBlur={() => setFocused(null)}
+                  placeholder="+31 6 ..."
+                  style={inputStyle("phone")}
+                />
+                <p
+                  style={{
+                    color: "rgba(255,251,224,0.2)",
+                    fontSize: "10px",
+                    fontWeight: 300,
+                    margin: "8px 0 0",
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  Email or phone — at least one required
+                </p>
+              </div>
+
+              {error && (
+                <p style={{ color: "#e87c6a", fontSize: "12px", fontWeight: 400, margin: 0, lineHeight: 1.6 }}>
+                  {error}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  backgroundColor: loading ? "#6b5a3e" : "#fffbe0",
+                  color: loading ? "rgba(255,251,224,0.5)" : "#1a0c04",
+                  border: "none",
+                  padding: "18px 40px",
+                  fontSize: "11px",
+                  fontWeight: 800,
+                  letterSpacing: "0.22em",
+                  textTransform: "uppercase",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  fontFamily: "'Inter', sans-serif",
+                  transition: "all 0.25s ease",
+                  alignSelf: "flex-start",
+                  width: isMobile ? "100%" : "auto",
+                }}
+                onMouseEnter={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.backgroundColor = "#c8905a";
+                    e.currentTarget.style.color = "#fffbe0";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.backgroundColor = "#fffbe0";
+                    e.currentTarget.style.color = "#1a0c04";
+                  }
+                }}
+              >
+                {loading ? "Sending…" : "Book for €50"}
+              </button>
+            </form>
+          )}
+        </div>
       </div>
 
-      {/* Gallery strip */}
+      {/* ── Gallery strip ── */}
       <div
         style={{
           maxWidth: "1400px",
           margin: "0 auto",
-          padding: "0 40px 80px",
+          padding: isMobile ? "0 20px 60px" : "0 40px 80px",
           display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
+          gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
           gap: "3px",
         }}
-        className="grid-cols-1 md:grid-cols-3"
       >
         {[
           "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?auto=format&fit=crop&w=800&q=80",
           "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80",
           "https://images.unsplash.com/photo-1525609004556-c46c7d6cf023?auto=format&fit=crop&w=800&q=80",
         ].map((src, i) => (
-          <div
-            key={i}
-            style={{ aspectRatio: "4/3", overflow: "hidden" }}
-          >
+          <div key={i} style={{ aspectRatio: "4/3", overflow: "hidden" }}>
             <img
               src={src}
-              alt={`Automotive ${i + 1}`}
+              alt={`Automotive example ${i + 1}`}
+              loading="lazy"
               style={{
                 width: "100%",
                 height: "100%",
@@ -286,22 +541,19 @@ export function AutomotivePage() {
                 filter: "contrast(1.05) saturate(0.6) brightness(0.8)",
                 transition: "transform 0.6s ease",
               }}
-              onMouseEnter={(e) =>
-                ((e.currentTarget as HTMLImageElement).style.transform = "scale(1.04)")
-              }
-              onMouseLeave={(e) =>
-                ((e.currentTarget as HTMLImageElement).style.transform = "scale(1)")
-              }
+              onMouseEnter={(e) => ((e.currentTarget as HTMLImageElement).style.transform = "scale(1.04)")}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLImageElement).style.transform = "scale(1)")}
             />
           </div>
         ))}
       </div>
 
-      {/* CTA */}
+      {/* ── Custom packages CTA ── */}
       <div
         style={{
           borderTop: "1px solid rgba(255,251,224,0.06)",
-          padding: "80px 40px",
+          backgroundColor: "#0d0703",
+          padding: isMobile ? "60px 20px" : "80px 40px",
           textAlign: "center",
         }}
       >
@@ -316,28 +568,39 @@ export function AutomotivePage() {
             marginBottom: "20px",
           }}
         >
-          Ready to shoot?
+          Need something more?
         </span>
         <h2
           style={{
             color: "#fffbe0",
-            fontSize: "clamp(28px, 4vw, 56px)",
+            fontSize: isMobile ? "clamp(28px, 8vw, 48px)" : "clamp(28px, 4vw, 52px)",
             fontWeight: 900,
             letterSpacing: "-0.03em",
-            lineHeight: 0.92,
+            lineHeight: 0.95,
             textTransform: "uppercase",
-            margin: "0 0 40px",
+            margin: "0 0 16px",
           }}
         >
-          Let's capture your{" "}
-          <span style={{ color: "rgba(255,251,224,0.3)" }}>machine</span>
+          Custom{" "}
+          <span style={{ color: "rgba(255,251,224,0.3)" }}>packages</span>
         </h2>
+        <p
+          style={{
+            color: "rgba(255,251,224,0.35)",
+            fontSize: "14px",
+            fontWeight: 300,
+            lineHeight: 1.7,
+            maxWidth: "420px",
+            margin: "0 auto 40px",
+          }}
+        >
+          Multiple vehicles, video, full-day shoots, or something else entirely — reach out and we'll put something together.
+        </p>
         <button
           onClick={() => {
             navigate("/");
             setTimeout(() => {
-              const el = document.getElementById("contact");
-              if (el) el.scrollIntoView({ behavior: "smooth" });
+              document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
             }, 300);
           }}
           style={{
@@ -362,7 +625,7 @@ export function AutomotivePage() {
             e.currentTarget.style.color = "#fffbe0";
           }}
         >
-          Book a shoot
+          Get in touch
         </button>
       </div>
     </div>
