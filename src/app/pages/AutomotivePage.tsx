@@ -2,19 +2,14 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { portalFetch } from "../../lib/supabase";
 import { useMobile } from "../hooks/useMobile";
+import { useLanguage } from "../context/LanguageContext";
 import heroImage from "@/imports/_DSC0014.jpg";
-
-const WHATS_INCLUDED = [
-  "1 vehicle — car, bike, truck or other",
-  "Up to 2 hours on location",
-  "15 edited high-resolution photos",
-  "Delivered within 5 business days",
-  "Personal & commercial use license",
-];
 
 export function AutomotivePage() {
   const navigate = useNavigate();
   const isMobile = useMobile();
+  const { t } = useLanguage();
+  const ta = t.automotivePage;
 
   const [form, setForm] = useState({ name: "", email: "", phone: "" });
   const [focused, setFocused] = useState<string | null>(null);
@@ -25,7 +20,7 @@ export function AutomotivePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.email && !form.phone) {
-      setError("Please provide at least an email address or phone number.");
+      setError(ta.errorContact);
       return;
     }
     setLoading(true);
@@ -44,7 +39,7 @@ export function AutomotivePage() {
       });
       setSubmitted(true);
     } catch {
-      setError("Something went wrong. Please try again or contact us directly.");
+      setError(ta.errorGeneric);
     } finally {
       setLoading(false);
     }
@@ -104,7 +99,7 @@ export function AutomotivePage() {
               fontFamily: "'Inter', sans-serif",
             }}
           >
-            ← Services
+            ← {ta.backLabel}
           </button>
 
           <div
@@ -128,7 +123,7 @@ export function AutomotivePage() {
                   marginBottom: "16px",
                 }}
               >
-                Services
+                {ta.sectionLabel}
               </span>
               <h1
                 style={{
@@ -169,7 +164,7 @@ export function AutomotivePage() {
                   textAlign: "right",
                 }}
               >
-                Cinematic imagery that captures the power, precision and personality of every machine.
+                {ta.subtitle}
               </p>
             )}
           </div>
@@ -217,7 +212,7 @@ export function AutomotivePage() {
                 marginBottom: "16px",
               }}
             >
-              The package
+              {ta.packageLabel}
             </span>
             <div
               style={{
@@ -247,7 +242,7 @@ export function AutomotivePage() {
                   paddingBottom: "12px",
                 }}
               >
-                per vehicle
+                {ta.perVehicle}
               </span>
             </div>
             <div style={{ width: "32px", height: "1px", backgroundColor: "#c8905a" }} />
@@ -266,9 +261,9 @@ export function AutomotivePage() {
                 marginBottom: "24px",
               }}
             >
-              What's included
+              {ta.includedLabel}
             </span>
-            {WHATS_INCLUDED.map((item) => (
+            {ta.included.map((item) => (
               <div
                 key={item}
                 style={{
@@ -318,7 +313,7 @@ export function AutomotivePage() {
               marginBottom: "16px",
             }}
           >
-            Book this package
+            {ta.bookLabel}
           </span>
           <h2
             style={{
@@ -331,7 +326,7 @@ export function AutomotivePage() {
               margin: "0 0 8px",
             }}
           >
-            Leave your details
+            {ta.bookTitle}
           </h2>
           <p
             style={{
@@ -342,7 +337,7 @@ export function AutomotivePage() {
               margin: "0 0 40px",
             }}
           >
-            Fill in your name and how we can reach you — we'll get back to you within 24 hours to confirm and plan the shoot.
+            {ta.bookSubtitle}
           </p>
 
           {submitted ? (
@@ -364,7 +359,7 @@ export function AutomotivePage() {
                   margin: "0 0 12px",
                 }}
               >
-                We've got your details
+                {ta.successTitle}
               </h4>
               <p
                 style={{
@@ -375,7 +370,7 @@ export function AutomotivePage() {
                   margin: 0,
                 }}
               >
-                We'll contact you within 24 hours to plan the shoot. Talk soon.
+                {ta.successBody}
               </p>
             </div>
           ) : (
@@ -402,7 +397,7 @@ export function AutomotivePage() {
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   onFocus={() => setFocused("name")}
                   onBlur={() => setFocused(null)}
-                  placeholder="Your name"
+                  placeholder={ta.namePlaceholder}
                   style={inputStyle("name")}
                 />
               </div>
@@ -420,7 +415,7 @@ export function AutomotivePage() {
                     marginBottom: "8px",
                   }}
                 >
-                  Email address
+                  {ta.emailLabel}
                 </label>
                 <input
                   type="email"
@@ -446,7 +441,7 @@ export function AutomotivePage() {
                     marginBottom: "8px",
                   }}
                 >
-                  Phone number
+                  {ta.phoneLabel}
                 </label>
                 <input
                   type="tel"
@@ -454,7 +449,7 @@ export function AutomotivePage() {
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   onFocus={() => setFocused("phone")}
                   onBlur={() => setFocused(null)}
-                  placeholder="+31 6 ..."
+                  placeholder={ta.phonePlaceholder}
                   style={inputStyle("phone")}
                 />
                 <p
@@ -466,7 +461,7 @@ export function AutomotivePage() {
                     letterSpacing: "0.02em",
                   }}
                 >
-                  Email or phone — at least one required
+                  {ta.phoneHint}
                 </p>
               </div>
 
@@ -507,7 +502,7 @@ export function AutomotivePage() {
                   }
                 }}
               >
-                {loading ? "Sending…" : "Book for €50"}
+                {loading ? ta.submitting : ta.submitButton}
               </button>
             </form>
           )}
@@ -569,7 +564,7 @@ export function AutomotivePage() {
             marginBottom: "20px",
           }}
         >
-          Need something more?
+          {ta.customLabel}
         </span>
         <h2
           style={{
@@ -582,8 +577,8 @@ export function AutomotivePage() {
             margin: "0 0 16px",
           }}
         >
-          Custom{" "}
-          <span style={{ color: "rgba(255,251,224,0.3)" }}>packages</span>
+          {ta.customTitle}{" "}
+          <span style={{ color: "rgba(255,251,224,0.3)" }}>{ta.customTitleDim}</span>
         </h2>
         <p
           style={{
@@ -595,7 +590,7 @@ export function AutomotivePage() {
             margin: "0 auto 40px",
           }}
         >
-          Multiple vehicles, video, full-day shoots, or something else entirely — reach out and we'll put something together.
+          {ta.customBody}
         </p>
         <button
           onClick={() => {
@@ -626,7 +621,7 @@ export function AutomotivePage() {
             e.currentTarget.style.color = "#fffbe0";
           }}
         >
-          Get in touch
+          {ta.customButton}
         </button>
       </div>
     </div>
