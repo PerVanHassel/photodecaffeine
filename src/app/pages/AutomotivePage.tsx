@@ -145,12 +145,10 @@ export function AutomotivePage() {
                 <em
                   style={{
                     fontStyle: "italic",
-                    fontWeight: 400,
+                    fontWeight: 300,
                     color: "#c8905a",
-                    fontSize: "0.52em",
-                    letterSpacing: "0.01em",
+                    fontSize: "0.78em",
                     textTransform: "none",
-                    fontFamily: "'Cormorant Garamond', Georgia, serif",
                   }}
                 >
                   Photography & Film
