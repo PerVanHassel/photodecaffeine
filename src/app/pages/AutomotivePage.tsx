@@ -150,6 +150,7 @@ export function AutomotivePage() {
                     color: "#c8905a",
                     fontSize: "0.78em",
                     textTransform: "none",
+                    fontFamily: "'Inter', sans-serif",
                   }}
                 >
                   Photography & Film
