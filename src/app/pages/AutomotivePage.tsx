@@ -1,15 +1,41 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { portalFetch } from "../../lib/supabase";
 import { useMobile } from "../hooks/useMobile";
 import { useLanguage } from "../context/LanguageContext";
+import { projectId, publicAnonKey } from "/utils/supabase/info";
 import heroImage from "@/imports/_DSC0014.jpg";
+
+const GALLERY_TITLE = "__automotive_gallery__";
+const FALLBACK_IMAGES = [
+  "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1525609004556-c46c7d6cf023?auto=format&fit=crop&w=800&q=80",
+];
 
 export function AutomotivePage() {
   const navigate = useNavigate();
   const isMobile = useMobile();
   const { t } = useLanguage();
   const ta = t.automotivePage;
+
+  const [galleryImages, setGalleryImages] = useState<string[]>(FALLBACK_IMAGES);
+
+  useEffect(() => {
+    fetch(`https://${projectId}.supabase.co/functions/v1/make-server-0951c59e/portfolio`, {
+      headers: { Authorization: `Bearer ${publicAnonKey}` },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        const article = (data.articles || []).find(
+          (a: { title: string; galleryUrls: string[] }) => a.title === GALLERY_TITLE
+        );
+        if (article?.galleryUrls?.length) {
+          setGalleryImages(article.galleryUrls);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const [form, setForm] = useState({ name: "", email: "", phone: "" });
   const [focused, setFocused] = useState<string | null>(null);
@@ -520,11 +546,7 @@ export function AutomotivePage() {
           gap: "3px",
         }}
       >
-        {[
-          "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?auto=format&fit=crop&w=800&q=80",
-          "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80",
-          "https://images.unsplash.com/photo-1525609004556-c46c7d6cf023?auto=format&fit=crop&w=800&q=80",
-        ].map((src, i) => (
+        {galleryImages.map((src, i) => (
           <div key={i} style={{ aspectRatio: "4/3", overflow: "hidden" }}>
             <img
               src={src}

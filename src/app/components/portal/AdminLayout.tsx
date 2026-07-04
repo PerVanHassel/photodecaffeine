@@ -1,7 +1,7 @@
 import image_PDClogo2_0_12_1 from '@/imports/PDClogo2.0-12-1.png';
 import { Outlet, Navigate, useNavigate, useLocation } from "react-router";
 import { useAuth } from "../../context/AuthContext";
-import { LayoutDashboard, Users, LogOut, ChevronRight, Menu, X, Mail, Images, Bell, Clock, Check, Settings } from "lucide-react";
+import { LayoutDashboard, Users, LogOut, ChevronRight, Menu, X, Mail, Images, Bell, Clock, Check, Settings, Car } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useMobile } from "../../hooks/useMobile";
 import { projectId } from "/utils/supabase/info";
@@ -23,6 +23,7 @@ const NAV_ITEMS = [
   { label: "Clients", path: "/admin/clients", icon: Users },
   { label: "Inquiries", path: "/admin/inquiries", icon: Mail },
   { label: "Portfolio", path: "/admin/portfolio", icon: Images },
+  { label: "Automotive", path: "/admin/services/automotive", icon: Car },
   { label: "Reminders", path: "/admin/reminders", icon: Bell },
   { label: "Settings", path: "/admin/settings", icon: Settings },
 ];

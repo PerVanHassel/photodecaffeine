@@ -22,6 +22,7 @@ import { AdminInquiriesPage } from "./pages/portal/AdminInquiriesPage";
 import { AdminPortfolioPage } from "./pages/portal/AdminPortfolioPage";
 import { AdminRemindersPage } from "./pages/portal/AdminRemindersPage";
 import { AdminSettingsPage } from "./pages/portal/AdminSettingsPage";
+import { AdminAutomotiveGalleryPage } from "./pages/portal/AdminAutomotiveGalleryPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { AutomotivePage } from "./pages/AutomotivePage";
 
@@ -67,6 +68,7 @@ export const router = createBrowserRouter([
           { path: "project/:id", Component: AdminProjectPage },
           { path: "inquiries", Component: AdminInquiriesPage },
           { path: "portfolio", Component: AdminPortfolioPage },
+          { path: "services/automotive", Component: AdminAutomotiveGalleryPage },
           { path: "reminders", Component: AdminRemindersPage },
           { path: "settings", Component: AdminSettingsPage },
         ],
