@@ -136,7 +136,7 @@ export function PortfolioPage() {
         }
       );
       const data = await res.json();
-      setArticles(data.articles || []);
+      setArticles((data.articles || []).filter((a: PortfolioArticle) => a.title !== "__automotive_gallery__"));
     } catch (err) {
       console.error("Failed to fetch portfolio:", err);
     } finally {
