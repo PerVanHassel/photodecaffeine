@@ -28,7 +28,8 @@ export function Hero() {
   async function fetchSettings() {
     try {
       const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-0951c59e/settings`
+        `https://${projectId}.supabase.co/functions/v1/make-server-0951c59e/settings`,
+        { cache: "no-store" }
       );
       const data = await res.json();
       setSettings(data.settings);

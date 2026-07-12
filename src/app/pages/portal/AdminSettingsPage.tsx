@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Settings, Save, Image as ImageIcon, Upload, X } from "lucide-react";
+import { Settings, Save, Image as ImageIcon, Upload, X, Check, AlertCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useMobile } from "../../hooks/useMobile";
 import { projectId } from "/utils/supabase/info";
@@ -29,8 +29,10 @@ export function AdminSettingsPage() {
   const [portfolioArticles, setPortfolioArticles] = useState<PortfolioArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [showImagePicker, setShowImagePicker] = useState<"desktop" | "mobile" | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const [uploading, setUploading] = useState<"desktop" | "mobile" | null>(null);
 
   useEffect(() => {
     if (session) {
@@ -106,38 +108,39 @@ export function AdminSettingsPage() {
     }
   }
 
+  async function saveToServer(updatedSettings: SiteSettings): Promise<boolean> {
+    if (!session) return false;
+    const res = await fetch(
+      `https://${projectId}.supabase.co/functions/v1/make-server-0951c59e/admin/settings`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(updatedSettings),
+      }
+    );
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`${res.status}: ${errorText}`);
+    }
+    return true;
+  }
+
   async function handleSave() {
     if (!session) return;
     setSaving(true);
+    setSaveStatus("idle");
+    setSaveError(null);
     try {
-      console.log("Saving settings:", settings);
-      const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-0951c59e/admin/settings`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify(settings),
-        }
-      );
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error("Save failed with status:", res.status, errorText);
-        throw new Error(`Failed to save settings: ${errorText}`);
-      }
-
-      const result = await res.json();
-      console.log("Save successful:", result);
-
-      // Refresh settings from server to confirm save
+      await saveToServer(settings);
       await fetchSettings();
-      alert("Settings saved successfully!");
+      setSaveStatus("success");
+      setTimeout(() => setSaveStatus("idle"), 3000);
     } catch (err) {
-      console.error("Failed to save settings:", err);
-      alert(`Failed to save settings: ${err}`);
+      setSaveStatus("error");
+      setSaveError(String(err));
     } finally {
       setSaving(false);
     }
@@ -146,11 +149,13 @@ export function AdminSettingsPage() {
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>, type: "desktop" | "mobile") {
     const file = e.target.files?.[0];
     if (!file || !session) return;
+    // Reset input so the same file can be re-selected if needed
+    e.target.value = "";
 
-    setUploading(true);
+    setUploading(type);
+    setSaveStatus("idle");
+    setSaveError(null);
     try {
-      // Upload to storage
-      const fileName = `${Date.now()}-${file.name.replace(/[^a-z0-9.-]/gi, "-").toLowerCase()}`;
       const formData = new FormData();
       formData.append("file", file);
       formData.append("bucketName", BUCKET);
@@ -159,117 +164,58 @@ export function AdminSettingsPage() {
         `https://${projectId}.supabase.co/functions/v1/make-server-0951c59e/admin/storage/upload`,
         {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
+          headers: { Authorization: `Bearer ${session.access_token}` },
           body: formData,
         }
       );
 
       if (!uploadRes.ok) {
         const errorText = await uploadRes.text();
-        console.error("Upload failed with status:", uploadRes.status, errorText);
-
-        if (uploadRes.status === 401) {
-          throw new Error("Upload failed: Not authorized. Please sign out and sign in again.");
-        }
-        throw new Error(`Upload failed (${uploadRes.status}): ${errorText}`);
+        throw new Error(`Upload mislukt (${uploadRes.status}): ${errorText}`);
       }
 
       const { url } = await uploadRes.json();
-      console.log("Upload successful, URL:", url);
+      if (!url) throw new Error("Server gaf geen URL terug na upload");
 
-      // Update settings state
-      const updatedSettings = {
+      const updatedSettings: SiteSettings = {
         ...settings,
         [type === "desktop" ? "heroImageUrl" : "heroImageMobileUrl"]: url,
       };
-      setSettings(updatedSettings);
 
-      // Auto-save after upload
-      console.log("Auto-saving settings:", updatedSettings);
-      const saveRes = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-0951c59e/admin/settings`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify(updatedSettings),
-        }
-      );
+      await saveToServer(updatedSettings);
 
-      if (!saveRes.ok) {
-        const errorText = await saveRes.text();
-        console.error("Save failed with status:", saveRes.status, errorText);
-
-        if (saveRes.status === 401) {
-          throw new Error("Save failed: Not authorized. Please sign out and sign in again.");
-        }
-        throw new Error(`Failed to save (${saveRes.status}): ${errorText}`);
-      }
-
-      console.log("Settings saved successfully");
-
-      // Refresh settings from server to confirm save
+      // Confirm from server that it's saved
       await fetchSettings();
-      alert(`${type === "desktop" ? "Desktop" : "Mobile"} hero image uploaded and saved!`);
+      setSaveStatus("success");
+      setTimeout(() => setSaveStatus("idle"), 3000);
     } catch (err) {
-      console.error("Upload error:", err);
-      alert(`Upload failed: ${err}`);
+      setSaveStatus("error");
+      setSaveError(String(err));
     } finally {
-      setUploading(false);
+      setUploading(null);
     }
   }
 
 
   async function selectPortfolioImage(url: string) {
     if (!session) return;
-
     const type = showImagePicker;
     setShowImagePicker(null);
+    setSaveStatus("idle");
+    setSaveError(null);
 
     try {
-      // Update settings state
-      const updatedSettings = {
+      const updatedSettings: SiteSettings = {
         ...settings,
         [type === "desktop" ? "heroImageUrl" : "heroImageMobileUrl"]: url,
       };
-      setSettings(updatedSettings);
-
-      // Auto-save after selection
-      console.log("Auto-saving settings after portfolio selection:", updatedSettings);
-      const saveRes = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-0951c59e/admin/settings`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify(updatedSettings),
-        }
-      );
-
-      if (!saveRes.ok) {
-        const errorText = await saveRes.text();
-        console.error("Save failed with status:", saveRes.status, errorText);
-
-        if (saveRes.status === 401) {
-          throw new Error("Save failed: Not authorized. Please sign out and sign in again.");
-        }
-        throw new Error(`Failed to save (${saveRes.status}): ${errorText}`);
-      }
-
-      console.log("Settings saved successfully");
-
-      // Refresh settings from server to confirm save
+      await saveToServer(updatedSettings);
       await fetchSettings();
-      alert(`${type === "desktop" ? "Desktop" : "Mobile"} hero image updated!`);
+      setSaveStatus("success");
+      setTimeout(() => setSaveStatus("idle"), 3000);
     } catch (err) {
-      console.error("Save error:", err);
-      alert(`Failed to save: ${err}`);
+      setSaveStatus("error");
+      setSaveError(String(err));
     }
   }
 
@@ -356,9 +302,43 @@ export function AdminSettingsPage() {
           }}
         >
           <Save size={16} />
-          {saving ? "Saving..." : "Save Changes"}
+          {saving ? "Opslaan…" : saveStatus === "success" ? "Opgeslagen ✓" : "Save Changes"}
         </button>
       </div>
+
+      {/* Inline status feedback */}
+      {saveStatus === "error" && saveError && (
+        <div style={{
+          backgroundColor: "rgba(224,112,96,0.1)",
+          border: "1px solid rgba(224,112,96,0.3)",
+          color: "#e07060",
+          padding: "12px 16px",
+          fontSize: "13px",
+          marginBottom: "16px",
+          display: "flex",
+          alignItems: "flex-start",
+          gap: "10px",
+        }}>
+          <AlertCircle size={16} style={{ flexShrink: 0, marginTop: "1px" }} />
+          <span><strong>Fout bij opslaan:</strong> {saveError}</span>
+        </div>
+      )}
+      {saveStatus === "success" && (
+        <div style={{
+          backgroundColor: "rgba(122,184,122,0.1)",
+          border: "1px solid rgba(122,184,122,0.3)",
+          color: "#7ab87a",
+          padding: "12px 16px",
+          fontSize: "13px",
+          marginBottom: "16px",
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+        }}>
+          <Check size={16} />
+          Opgeslagen — de homepage hero wordt nu bijgewerkt.
+        </div>
+      )}
 
       {/* Hero Images Section */}
       <div
@@ -496,7 +476,7 @@ export function AdminSettingsPage() {
                   fontWeight: 600,
                   letterSpacing: "0.1em",
                   textTransform: "uppercase",
-                  cursor: uploading ? "not-allowed" : "pointer",
+                  cursor: uploading === "desktop" ? "not-allowed" : "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -504,13 +484,13 @@ export function AdminSettingsPage() {
                 }}
               >
                 <Upload size={14} />
-                {uploading ? "Uploading..." : "Upload New"}
+                {uploading === "desktop" ? "Uploaden…" : "Upload New"}
                 <input
                   type="file"
                   accept="image/*"
                   onChange={(e) => handleImageUpload(e, "desktop")}
                   style={{ display: "none" }}
-                  disabled={uploading}
+                  disabled={uploading !== null}
                 />
               </label>
             </div>
@@ -614,7 +594,7 @@ export function AdminSettingsPage() {
                   fontWeight: 600,
                   letterSpacing: "0.1em",
                   textTransform: "uppercase",
-                  cursor: uploading ? "not-allowed" : "pointer",
+                  cursor: uploading === "mobile" ? "not-allowed" : "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -622,13 +602,13 @@ export function AdminSettingsPage() {
                 }}
               >
                 <Upload size={14} />
-                {uploading ? "Uploading..." : "Upload New"}
+                {uploading === "mobile" ? "Uploaden…" : "Upload New"}
                 <input
                   type="file"
                   accept="image/*"
                   onChange={(e) => handleImageUpload(e, "mobile")}
                   style={{ display: "none" }}
-                  disabled={uploading}
+                  disabled={uploading !== null}
                 />
               </label>
             </div>
