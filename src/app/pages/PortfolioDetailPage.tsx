@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { projectId, publicAnonKey } from "/utils/supabase/info";
@@ -23,10 +23,40 @@ export function PortfolioDetailPage() {
   const [article, setArticle] = useState<PortfolioArticle | null>(null);
   const [loading, setLoading] = useState(true);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const touchStartX = useRef<number | null>(null);
 
   useEffect(() => {
     if (id) fetchArticle(id);
   }, [id]);
+
+  const closeLightbox = useCallback(() => setLightboxIndex(null), []);
+
+  const goNext = useCallback(() => {
+    if (article && lightboxIndex !== null) {
+      setLightboxIndex((lightboxIndex + 1) % article.galleryUrls.length);
+    }
+  }, [article, lightboxIndex]);
+
+  const goPrev = useCallback(() => {
+    if (article && lightboxIndex !== null) {
+      setLightboxIndex((lightboxIndex - 1 + article.galleryUrls.length) % article.galleryUrls.length);
+    }
+  }, [article, lightboxIndex]);
+
+  useEffect(() => {
+    if (lightboxIndex === null) return;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeLightbox();
+      if (e.key === "ArrowRight") goNext();
+      if (e.key === "ArrowLeft") goPrev();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [lightboxIndex, closeLightbox, goNext, goPrev]);
 
   async function fetchArticle(articleId: string) {
     try {
@@ -47,17 +77,6 @@ export function PortfolioDetailPage() {
     }
   }
 
-  function nextImage() {
-    if (article && lightboxIndex !== null) {
-      setLightboxIndex((lightboxIndex + 1) % article.galleryUrls.length);
-    }
-  }
-
-  function prevImage() {
-    if (article && lightboxIndex !== null) {
-      setLightboxIndex((lightboxIndex - 1 + article.galleryUrls.length) % article.galleryUrls.length);
-    }
-  }
 
   if (loading) {
     return (
@@ -234,7 +253,7 @@ export function PortfolioDetailPage() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(min(400px, 100%), 1fr))",
             gap: "3px",
           }}
         >
@@ -313,6 +332,9 @@ export function PortfolioDetailPage() {
 
       {lightboxIndex !== null && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Image ${lightboxIndex + 1} of ${article.galleryUrls.length}`}
           style={{
             position: "fixed",
             inset: 0,
@@ -323,12 +345,20 @@ export function PortfolioDetailPage() {
             justifyContent: "center",
             padding: "40px",
           }}
-          onClick={() => setLightboxIndex(null)}
+          onClick={closeLightbox}
+          onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+          onTouchEnd={(e) => {
+            if (touchStartX.current === null) return;
+            const dx = e.changedTouches[0].clientX - touchStartX.current;
+            if (Math.abs(dx) > 50) dx < 0 ? goNext() : goPrev();
+            touchStartX.current = null;
+          }}
         >
           <button
+            aria-label="Close"
             onClick={(e) => {
               e.stopPropagation();
-              setLightboxIndex(null);
+              closeLightbox();
             }}
             style={{
               position: "absolute",
@@ -356,9 +386,10 @@ export function PortfolioDetailPage() {
           </button>
 
           <button
+            aria-label="Previous image"
             onClick={(e) => {
               e.stopPropagation();
-              prevImage();
+              goPrev();
             }}
             style={{
               position: "absolute",
@@ -385,9 +416,10 @@ export function PortfolioDetailPage() {
           </button>
 
           <button
+            aria-label="Next image"
             onClick={(e) => {
               e.stopPropagation();
-              nextImage();
+              goNext();
             }}
             style={{
               position: "absolute",

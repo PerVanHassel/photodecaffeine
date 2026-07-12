@@ -78,6 +78,17 @@
   --sidebar-ring: oklch(0.439 0 0);
 }
 
+/* Global focus-visible styles — ensures keyboard users always get a visible indicator */
+:focus-visible {
+  outline: 2px solid #c8905a;
+  outline-offset: 3px;
+}
+
+/* Suppress focus ring for mouse users on elements that set their own hover styles */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
 .hide-scrollbar {
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE/Edge */

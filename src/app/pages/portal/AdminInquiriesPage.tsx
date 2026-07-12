@@ -53,7 +53,12 @@ export function AdminInquiriesPage() {
   useEffect(() => {
     if (!session) return;
     portalFetch("/admin/inquiries", {}, session.access_token)
-      .then((data) => { setInquiries(data.inquiries || []); setLoading(false); })
+      .then((data) => {
+        // Filter out ad-tracking visit pings — those are shown on the Ads page
+        const real = (data.inquiries || []).filter((i: Inquiry) => i.name !== "__ad_visit__");
+        setInquiries(real);
+        setLoading(false);
+      })
       .catch((err) => { console.error("Failed to load inquiries:", err); setError("Failed to load inquiries."); setLoading(false); });
   }, [session]);
 

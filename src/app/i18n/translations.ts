@@ -264,7 +264,7 @@ export const translations = {
       includedLabel: "What's included",
       included: [
         "1 vehicle — car, bike, truck or other",
-        "Up to 2 hours on location",
+        "1 hour on location",
         "15 edited high-resolution photos",
         "Delivered within 5 business days",
         "Personal & commercial use license",
@@ -667,7 +667,7 @@ export const translations = {
       includedLabel: "Wat is inbegrepen",
       included: [
         "1 voertuig — auto, motor, vrachtwagen of ander",
-        "Tot 2 uur op locatie",
+        "1 uur op locatie",
         "15 bewerkte foto's op hoge resolutie",
         "Geleverd binnen 5 werkdagen",
         "Persoonlijke & commerciële gebruikslicentie",

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { portalFetch } from "../../../lib/supabase";
-import { ArrowLeft, Send, CheckCircle2, Circle } from "lucide-react";
+import { ArrowLeft, Send, CheckCircle2, Circle, Images } from "lucide-react";
 import { useMobile } from "../../hooks/useMobile";
 
 interface Deliverable {
@@ -27,6 +27,7 @@ interface Project {
     link?: string;
     notes?: string;
   };
+  galleryUrls?: string[];
 }
 
 interface Message {
@@ -555,6 +556,74 @@ export function PortalProjectPage() {
                       {d.name}
                     </span>
                   </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {/* Gallery */}
+          {project.galleryUrls && project.galleryUrls.length > 0 && (
+            <div
+              style={{
+                border: "1px solid rgba(255,251,224,0.06)",
+                padding: "32px",
+                backgroundColor: "rgba(255,251,224,0.01)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  marginBottom: "24px",
+                }}
+              >
+                <Images size={13} color="rgba(255,251,224,0.25)" />
+                <div
+                  style={{
+                    color: "rgba(255,251,224,0.25)",
+                    fontSize: "9px",
+                    fontWeight: 500,
+                    letterSpacing: "0.3em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Foto Gallery ({project.galleryUrls.length})
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+                  gap: "4px",
+                }}
+              >
+                {project.galleryUrls.map((url, i) => (
+                  <a
+                    key={i}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "block",
+                      aspectRatio: "4/3",
+                      overflow: "hidden",
+                      transition: "opacity 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
+                    onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                  >
+                    <img
+                      src={url}
+                      alt={`Photo ${i + 1}`}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        display: "block",
+                      }}
+                    />
+                  </a>
                 ))}
               </div>
             </div>

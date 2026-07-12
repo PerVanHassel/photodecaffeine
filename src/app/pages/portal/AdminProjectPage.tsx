@@ -3,7 +3,10 @@ import { useNavigate, useParams } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { portalFetch } from "../../../lib/supabase";
 import { useMobile } from "../../hooks/useMobile";
-import { ArrowLeft, Save, Plus, Trash2, Check, Send, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, Check, Send, AlertTriangle, Upload, Images, X } from "lucide-react";
+import { projectId as supabaseProjectId } from "/utils/supabase/info";
+
+const BUCKET = "portfolio-images-0951c59e";
 
 interface Deliverable {
   id: string;
@@ -28,6 +31,7 @@ interface Project {
     link?: string;
     notes?: string;
   };
+  galleryUrls?: string[];
 }
 
 interface Message {
@@ -105,6 +109,10 @@ export function AdminProjectPage() {
   const [sendingMsg, setSendingMsg] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Gallery
+  const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+
   // Delete
   const [showDelete, setShowDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -128,6 +136,7 @@ export function AdminProjectPage() {
           notes: p.meeting?.notes || "",
         });
         setDeliverables(p.deliverables || []);
+        setGalleryUrls(p.galleryUrls || []);
         setMessages(msgData.messages || []);
         setLoading(false);
       })
@@ -153,19 +162,13 @@ export function AdminProjectPage() {
         }
       : null;
 
-    const payload = { ...form, deliverables, meeting };
-    console.log("=== SAVING PROJECT ===");
-    console.log("Meeting form data:", meetingForm);
-    console.log("Meeting object being sent:", meeting);
-    console.log("Full payload:", payload);
+    const payload = { ...form, deliverables, meeting, galleryUrls };
 
     try {
       const data = await portalFetch(`/admin/project/${projectId}`, {
         method: "PUT",
         body: JSON.stringify(payload),
       }, session.access_token);
-      console.log("Save response:", data.project);
-      console.log("Meeting in response:", data.project.meeting);
       setProject(data.project);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2500);
@@ -235,6 +238,52 @@ export function AdminProjectPage() {
       setReply("");
     } catch (err) { console.error("Send message error:", err); }
     finally { setSendingMsg(false); }
+  }
+
+  async function uploadGalleryFile(file: File): Promise<string> {
+    if (!session) throw new Error("Not authenticated");
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("bucketName", BUCKET);
+    const res = await fetch(
+      `https://${supabaseProjectId}.supabase.co/functions/v1/make-server-0951c59e/admin/storage/upload`,
+      { method: "POST", headers: { Authorization: `Bearer ${session.access_token}` }, body: fd }
+    );
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Upload failed");
+    return data.url;
+  }
+
+  async function handleGalleryUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length || !session || !projectId) return;
+    setUploading(true);
+    try {
+      const urls = await Promise.all(files.map(uploadGalleryFile));
+      const updated = [...galleryUrls, ...urls];
+      setGalleryUrls(updated);
+      await portalFetch(`/admin/project/${projectId}`, {
+        method: "PUT",
+        body: JSON.stringify({ galleryUrls: updated }),
+      }, session.access_token);
+    } catch (err) {
+      alert(`Upload mislukt: ${err}`);
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  }
+
+  async function removeGalleryImage(index: number) {
+    if (!session || !projectId) return;
+    const updated = galleryUrls.filter((_, i) => i !== index);
+    setGalleryUrls(updated);
+    try {
+      await portalFetch(`/admin/project/${projectId}`, {
+        method: "PUT",
+        body: JSON.stringify({ galleryUrls: updated }),
+      }, session.access_token);
+    } catch (err) { console.error("Remove gallery image error:", err); }
   }
 
   async function handleDelete() {
@@ -527,6 +576,90 @@ export function AdminProjectPage() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {sectionDivider}
+
+          {/* ── Gallery ── */}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <Images size={13} color="rgba(255,251,224,0.25)" />
+                <span style={{ color: "rgba(255,251,224,0.25)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase" }}>
+                  Foto Gallery ({galleryUrls.length})
+                </span>
+              </div>
+              <label
+                style={{
+                  display: "flex", alignItems: "center", gap: "6px",
+                  border: "1px solid rgba(255,251,224,0.08)",
+                  color: uploading ? "#c8905a" : "rgba(255,251,224,0.4)",
+                  fontSize: "9px", fontWeight: 600,
+                  letterSpacing: "0.2em", textTransform: "uppercase",
+                  cursor: uploading ? "not-allowed" : "pointer",
+                  padding: "7px 12px", fontFamily: "'Inter', sans-serif",
+                  transition: "all 0.2s ease",
+                  backgroundColor: uploading ? "rgba(200,144,90,0.05)" : "transparent",
+                }}
+                onMouseEnter={(e) => { if (!uploading) { e.currentTarget.style.color = "#fffbe0"; e.currentTarget.style.borderColor = "rgba(255,251,224,0.15)"; } }}
+                onMouseLeave={(e) => { if (!uploading) { e.currentTarget.style.color = "rgba(255,251,224,0.4)"; e.currentTarget.style.borderColor = "rgba(255,251,224,0.08)"; } }}
+              >
+                <Upload size={11} />
+                {uploading ? "Uploading…" : "Upload Foto's"}
+                <input type="file" accept="image/*" multiple onChange={handleGalleryUpload} disabled={uploading} style={{ display: "none" }} />
+              </label>
+            </div>
+
+            {galleryUrls.length === 0 ? (
+              <div style={{
+                border: "1px dashed rgba(255,251,224,0.06)",
+                padding: "36px",
+                textAlign: "center",
+                color: "rgba(255,251,224,0.15)",
+                fontSize: "12px",
+              }}>
+                Nog geen foto's geüpload. Foto's die je hier toevoegt zijn zichtbaar in het client portaal.
+              </div>
+            ) : (
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+                gap: "6px",
+              }}>
+                {galleryUrls.map((url, i) => (
+                  <div key={i} style={{ position: "relative", aspectRatio: "4/3", overflow: "hidden" }}>
+                    <img
+                      src={url}
+                      alt={`Gallery ${i + 1}`}
+                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    />
+                    <div style={{
+                      position: "absolute", top: "6px", left: "6px",
+                      backgroundColor: "rgba(8,4,1,0.75)",
+                      color: "rgba(255,251,224,0.4)",
+                      fontSize: "9px", fontWeight: 600,
+                      fontFamily: "'Courier New', monospace",
+                      padding: "2px 6px",
+                    }}>
+                      {String(i + 1).padStart(2, "0")}
+                    </div>
+                    <button
+                      onClick={() => removeGalleryImage(i)}
+                      style={{
+                        position: "absolute", top: "6px", right: "6px",
+                        backgroundColor: "rgba(220,80,80,0.85)",
+                        border: "none", color: "#fff",
+                        width: "24px", height: "24px",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        cursor: "pointer", padding: 0,
+                      }}
+                    >
+                      <X size={11} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {sectionDivider}

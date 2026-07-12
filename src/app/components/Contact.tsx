@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useLanguage } from "../context/LanguageContext";
 import { useMobile } from "../hooks/useMobile";
 import { portalFetch } from "../../lib/supabase";
+import { getStoredAdRef } from "../hooks/useAdTracking";
 
 export function Contact() {
   const [formData, setFormData] = useState({
@@ -24,9 +25,13 @@ export function Contact() {
     setLoading(true);
     setError(null);
     try {
+      const ref = getStoredAdRef();
       await portalFetch("/contact", {
         method: "POST",
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          message: ref ? `${formData.message}\n\n[ref:${ref}]` : formData.message,
+        }),
       });
       setSubmitted(true);
     } catch {
@@ -546,6 +551,10 @@ export function Contact() {
                     ...inputStyle("package"),
                     cursor: "pointer",
                     appearance: "none" as const,
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,251,224,0.35)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "right 4px center",
+                    paddingRight: "24px",
                   }}
                 >
                   <option
@@ -607,7 +616,7 @@ export function Contact() {
                   }
                   onFocus={() => setFocused("message")}
                   onBlur={() => setFocused(null)}
-                  placeholder={t.contact.messagePlaceholder}
+                  placeholder="Tell us about your project, shoot date, location..."
                   style={{
                     ...inputStyle("message"),
                     resize: "none",

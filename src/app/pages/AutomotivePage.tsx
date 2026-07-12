@@ -4,7 +4,8 @@ import { portalFetch } from "../../lib/supabase";
 import { useMobile } from "../hooks/useMobile";
 import { useLanguage } from "../context/LanguageContext";
 import { projectId, publicAnonKey } from "/utils/supabase/info";
-import heroImage from "@/imports/_DSC0014.jpg";
+import { useAdTracking, getStoredAdRef } from "../hooks/useAdTracking";
+import heroImage from "@/imports/_DSC0893.jpg";
 
 const GALLERY_TITLE = "__automotive_gallery__";
 const FALLBACK_IMAGES = [
@@ -14,6 +15,8 @@ const FALLBACK_IMAGES = [
 ];
 
 export function AutomotivePage() {
+  useAdTracking("/services/automotive");
+
   const navigate = useNavigate();
   const isMobile = useMobile();
   const { t } = useLanguage();
@@ -60,7 +63,7 @@ export function AutomotivePage() {
           phone: form.phone,
           package: "automotive",
           brand: "",
-          message: "Automotive package booking — €50 per vehicle.",
+          message: `Automotive package booking — €50 per vehicle, 1 hour on location.${getStoredAdRef() ? `\n\n[ref:${getStoredAdRef()}]` : ""}`,
         }),
       });
       setSubmitted(true);
@@ -198,7 +201,7 @@ export function AutomotivePage() {
       </div>
 
       {/* ── Hero image ── */}
-      <div style={{ position: "relative", height: isMobile ? "45vw" : "52vh", minHeight: "280px", overflow: "hidden" }}>
+      <div style={{ position: "relative", height: isMobile ? "60vw" : "65vh", minHeight: "320px", overflow: "hidden" }}>
         <img
           src={heroImage}
           alt="Automotive photography shoot"
@@ -206,7 +209,8 @@ export function AutomotivePage() {
             width: "100%",
             height: "100%",
             objectFit: "cover",
-            filter: "brightness(0.45) contrast(1.05) saturate(0.65)",
+            objectPosition: "center 40%",
+            filter: "brightness(0.5) contrast(1.08) saturate(0.7)",
           }}
         />
       </div>

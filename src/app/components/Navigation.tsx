@@ -368,6 +368,9 @@ export function Navigation() {
         <button
           className="md:hidden"
           onClick={() => setMenuOpen(!menuOpen)}
+          aria-expanded={menuOpen}
+          aria-controls="mobile-menu"
+          aria-label={menuOpen ? "Close menu" : "Open menu"}
           style={{
             background: "none",
             border: "none",
@@ -405,6 +408,7 @@ export function Navigation() {
       {/* Mobile Menu */}
       {menuOpen && (
         <div
+          id="mobile-menu"
           style={{
             backgroundColor: "rgba(10, 5, 1, 0.98)",
             borderTop: "1px solid rgba(255,251,224,0.08)",
