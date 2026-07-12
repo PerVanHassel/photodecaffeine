@@ -97,10 +97,35 @@ export function Hero() {
         maxWidth: "1400px", margin: "0 auto",
         padding: isMobile ? "0 20px" : "0 40px",
         height: "100vh",
-        display: "flex", flexDirection: "column", justifyContent: "center",
-        paddingBottom: isMobile ? "40px" : "0",
-        paddingTop: isMobile ? "80px" : "0",
+        display: "flex", flexDirection: "column", justifyContent: isMobile ? "flex-end" : "center",
+        paddingBottom: isMobile ? "80px" : "0",
       }}>
+        {/* Mobile: small floating frame in top-right corner */}
+        {isMobile && (
+          <div style={{ position: "absolute", top: "90px", right: "20px", zIndex: 3 }}>
+            <div style={{
+              position: "relative", border: "1px solid rgba(255,251,224,0.15)",
+              padding: "5px", boxShadow: "0 12px 32px rgba(0,0,0,0.7)",
+            }}>
+              <div style={{ display: "flex", gap: "3px", marginBottom: "4px" }}>
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} style={{ flex: 1, height: "4px", backgroundColor: "rgba(255,251,224,0.12)", border: "1px solid rgba(255,251,224,0.06)" }} />
+                ))}
+              </div>
+              <ImageWithFallback
+                src={settings?.frameImageUrl || image__MAJ2869_1_}
+                alt="Recent shoot showcase"
+                style={{ width: "110px", height: "147px", objectFit: "cover", display: "block", filter: "contrast(1.05) saturate(0.85)" }}
+              />
+              <div style={{ display: "flex", gap: "3px", marginTop: "4px" }}>
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} style={{ flex: 1, height: "4px", backgroundColor: "rgba(255,251,224,0.12)", border: "1px solid rgba(255,251,224,0.06)" }} />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div
           style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "60px", alignItems: "center" }}
           className="flex flex-col lg:grid"
@@ -189,13 +214,12 @@ export function Hero() {
             </div>
           </div>
 
-          {/* Right — Film Frame — desktop + mobile */}
+          {/* Right — Film Frame — desktop only (mobile has floating version above) */}
           <div style={{
             position: "relative",
             flexShrink: 0,
-            display: "flex",
+            display: isMobile ? "none" : "flex",
             justifyContent: "center",
-            ...(isMobile ? { order: -1, marginBottom: "24px", marginTop: "80px" } : {}),
           }}>
             <div style={{
               position: "relative", border: "1px solid rgba(255,251,224,0.15)",
