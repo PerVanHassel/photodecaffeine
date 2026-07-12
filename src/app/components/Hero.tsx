@@ -13,6 +13,7 @@ const DEFAULT_HERO_BG =
 type SiteSettings = {
   heroImageUrl: string;
   heroImageMobileUrl: string;
+  frameImageUrl: string;
 };
 
 export function Hero() {
@@ -96,8 +97,9 @@ export function Hero() {
         maxWidth: "1400px", margin: "0 auto",
         padding: isMobile ? "0 20px" : "0 40px",
         height: "100vh",
-        display: "flex", flexDirection: "column", justifyContent: isMobile ? "flex-end" : "center",
-        paddingBottom: isMobile ? "80px" : "0",
+        display: "flex", flexDirection: "column", justifyContent: "center",
+        paddingBottom: isMobile ? "40px" : "0",
+        paddingTop: isMobile ? "80px" : "0",
       }}>
         <div
           style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "60px", alignItems: "center" }}
@@ -187,8 +189,14 @@ export function Hero() {
             </div>
           </div>
 
-          {/* Right — Film Frame — desktop only */}
-          <div className="hidden lg:block" style={{ position: "relative", flexShrink: 0 }}>
+          {/* Right — Film Frame — desktop + mobile */}
+          <div style={{
+            position: "relative",
+            flexShrink: 0,
+            display: "flex",
+            justifyContent: "center",
+            ...(isMobile ? { order: -1, marginBottom: "24px", marginTop: "80px" } : {}),
+          }}>
             <div style={{
               position: "relative", border: "1px solid rgba(255,251,224,0.15)",
               padding: "8px", boxShadow: "0 32px 80px rgba(0,0,0,0.7), 0 8px 24px rgba(0,0,0,0.5)",
@@ -198,7 +206,17 @@ export function Hero() {
                   <div key={i} style={{ flex: 1, height: "6px", backgroundColor: "rgba(255,251,224,0.12)", border: "1px solid rgba(255,251,224,0.06)" }} />
                 ))}
               </div>
-              <ImageWithFallback src={image__MAJ2869_1_} alt="Recent shoot showcase" style={{ width: "360px", height: "480px", objectFit: "cover", display: "block", filter: "contrast(1.05) saturate(0.85)" }} />
+              <ImageWithFallback
+                src={settings?.frameImageUrl || image__MAJ2869_1_}
+                alt="Recent shoot showcase"
+                style={{
+                  width: isMobile ? "200px" : "360px",
+                  height: isMobile ? "267px" : "480px",
+                  objectFit: "cover",
+                  display: "block",
+                  filter: "contrast(1.05) saturate(0.85)",
+                }}
+              />
               <div style={{ display: "flex", gap: "4px", marginTop: "6px", paddingLeft: "4px", paddingRight: "4px" }}>
                 {Array.from({ length: 12 }).map((_, i) => (
                   <div key={i} style={{ flex: 1, height: "6px", backgroundColor: "rgba(255,251,224,0.12)", border: "1px solid rgba(255,251,224,0.06)" }} />

@@ -9,6 +9,7 @@ const BUCKET = "portfolio-images-0951c59e";
 type SiteSettings = {
   heroImageUrl: string;
   heroImageMobileUrl: string;
+  frameImageUrl: string;
 };
 
 type PortfolioArticle = {
@@ -25,14 +26,15 @@ export function AdminSettingsPage() {
   const [settings, setSettings] = useState<SiteSettings>({
     heroImageUrl: "",
     heroImageMobileUrl: "",
+    frameImageUrl: "",
   });
   const [portfolioArticles, setPortfolioArticles] = useState<PortfolioArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [showImagePicker, setShowImagePicker] = useState<"desktop" | "mobile" | null>(null);
-  const [uploading, setUploading] = useState<"desktop" | "mobile" | null>(null);
+  const [showImagePicker, setShowImagePicker] = useState<"desktop" | "mobile" | "frame" | null>(null);
+  const [uploading, setUploading] = useState<"desktop" | "mobile" | "frame" | null>(null);
 
   useEffect(() => {
     if (session) {
@@ -148,7 +150,7 @@ export function AdminSettingsPage() {
     }
   }
 
-  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>, type: "desktop" | "mobile") {
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>, type: "desktop" | "mobile" | "frame") {
     const file = e.target.files?.[0];
     if (!file || !session) return;
     // Reset input so the same file can be re-selected if needed
@@ -179,10 +181,8 @@ export function AdminSettingsPage() {
       const { url } = await uploadRes.json();
       if (!url) throw new Error("Server gaf geen URL terug na upload");
 
-      const updatedSettings: SiteSettings = {
-        ...settings,
-        [type === "desktop" ? "heroImageUrl" : "heroImageMobileUrl"]: url,
-      };
+      const key = type === "desktop" ? "heroImageUrl" : type === "mobile" ? "heroImageMobileUrl" : "frameImageUrl";
+      const updatedSettings: SiteSettings = { ...settings, [key]: url };
 
       await saveToServer(updatedSettings);
 
@@ -207,10 +207,8 @@ export function AdminSettingsPage() {
     setSaveError(null);
 
     try {
-      const updatedSettings: SiteSettings = {
-        ...settings,
-        [type === "desktop" ? "heroImageUrl" : "heroImageMobileUrl"]: url,
-      };
+      const key = type === "desktop" ? "heroImageUrl" : type === "mobile" ? "heroImageMobileUrl" : "frameImageUrl";
+      const updatedSettings: SiteSettings = { ...settings, [key]: url };
       await saveToServer(updatedSettings);
       await fetchSettings();
       setSaveStatus("success");
@@ -614,6 +612,48 @@ export function AdminSettingsPage() {
                 />
               </label>
             </div>
+          </div>
+        </div>
+
+        {/* Frame Image */}
+        <div style={{ marginTop: "24px", borderTop: "1px solid rgba(255,251,224,0.06)", paddingTop: "24px" }}>
+          <label style={{
+            color: "rgba(255,251,224,0.5)", fontSize: "11px", fontWeight: 600,
+            letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "12px",
+          }}>
+            Portret foto (filmstrip frame)
+          </label>
+          <p style={{ color: "rgba(255,251,224,0.25)", fontSize: "12px", margin: "0 0 16px 0", lineHeight: 1.5 }}>
+            De staande foto in het filmstrip-kader naast de tekst op de homepage.
+          </p>
+          {settings.frameImageUrl ? (
+            <div style={{ position: "relative", display: "inline-block" }}>
+              <img src={settings.frameImageUrl} alt="Frame" style={{ width: "160px", height: "213px", objectFit: "cover", display: "block", border: "1px solid rgba(255,251,224,0.1)" }} />
+              <button
+                onClick={() => setSettings((prev) => ({ ...prev, frameImageUrl: "" }))}
+                style={{ position: "absolute", top: "8px", right: "8px", backgroundColor: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,100,100,0.5)", color: "#ff6464", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+          ) : (
+            <div style={{ width: "160px", height: "213px", border: "2px dashed rgba(255,251,224,0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,251,224,0.3)", fontSize: "12px" }}>
+              Geen foto
+            </div>
+          )}
+          <div style={{ display: "flex", gap: "8px", marginTop: "12px", maxWidth: "360px" }}>
+            <button
+              onClick={() => setShowImagePicker("frame")}
+              style={{ flex: 1, backgroundColor: "rgba(255,251,224,0.05)", border: "1px solid rgba(255,251,224,0.15)", color: "rgba(255,251,224,0.6)", padding: "10px", fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+            >
+              <ImageIcon size={14} />
+              Portfolio
+            </button>
+            <label style={{ flex: 1, backgroundColor: "rgba(255,251,224,0.05)", border: "1px solid rgba(255,251,224,0.15)", color: "rgba(255,251,224,0.6)", padding: "10px", fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", cursor: uploading === "frame" ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+              <Upload size={14} />
+              {uploading === "frame" ? "Uploaden…" : "Upload"}
+              <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, "frame")} style={{ display: "none" }} disabled={uploading !== null} />
+            </label>
           </div>
         </div>
       </div>
