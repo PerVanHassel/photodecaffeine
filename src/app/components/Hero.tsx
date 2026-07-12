@@ -5,7 +5,7 @@ import { useNavigate } from "react-router";
 import { useLanguage } from "../context/LanguageContext";
 import { useMobile } from "../hooks/useMobile";
 import { useState, useEffect } from "react";
-import { projectId } from "/utils/supabase/info";
+import { projectId, publicAnonKey } from "/utils/supabase/info";
 
 const DEFAULT_HERO_BG =
   "https://images.unsplash.com/photo-1613158556069-e7d8eae76214?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkYXJrJTIwY2luZW1hdGljJTIwZXNwcmVzc28lMjBjb2ZmZWUlMjBzdHVkaW8lMjBtb29keXxlbnwxfHx8fDE3NzY1OTY2NTB8MA&ixlib=rb-4.1.0&q=80&w=1080";
@@ -29,7 +29,10 @@ export function Hero() {
     try {
       const res = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-0951c59e/settings`,
-        { cache: "no-store" }
+        {
+          cache: "no-store",
+          headers: { Authorization: `Bearer ${publicAnonKey}` },
+        }
       );
       const data = await res.json();
       setSettings(data.settings);

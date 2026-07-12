@@ -79,9 +79,11 @@ export function AdminSettingsPage() {
   }
 
   async function fetchSettings() {
+    if (!session) return;
     try {
       const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-0951c59e/settings`
+        `https://${projectId}.supabase.co/functions/v1/make-server-0951c59e/settings`,
+        { headers: { Authorization: `Bearer ${session.access_token}` } }
       );
       const data = await res.json();
       setSettings(data.settings || { heroImageUrl: "", heroImageMobileUrl: "" });
