@@ -126,10 +126,10 @@ export function Hero() {
           </div>
         )}
 
-        <div
-          style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "60px", alignItems: "center" }}
-          className="flex flex-col lg:grid"
-        >
+        <div style={isMobile
+          ? { display: "flex", flexDirection: "column" }
+          : { display: "grid", gridTemplateColumns: "1fr auto", gap: "60px", alignItems: "center" }
+        }>
           {/* Left — Text */}
           <div style={{ maxWidth: "680px" }}>
             {/* Label */}
