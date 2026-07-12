@@ -95,39 +95,101 @@ export function Hero() {
       <div style={{
         position: "relative", zIndex: 2,
         maxWidth: "1400px", margin: "0 auto",
-        padding: isMobile ? "0 20px" : "0 40px",
+        padding: isMobile ? "0 24px" : "0 40px",
         height: "100vh",
-        display: "flex", flexDirection: "column", justifyContent: isMobile ? "flex-end" : "center",
-        paddingBottom: isMobile ? "80px" : "0",
+        display: "flex", flexDirection: "column",
+        justifyContent: isMobile ? "flex-end" : "center",
+        paddingBottom: isMobile ? "52px" : "0",
       }}>
-        {/* Mobile: small floating frame in top-right corner */}
+
+        {/* Mobile layout: frame + text stacked, pinned to bottom */}
         {isMobile && (
-          <div style={{ position: "absolute", top: "90px", right: "20px", zIndex: 3 }}>
-            <div style={{
-              position: "relative", border: "1px solid rgba(255,251,224,0.15)",
-              padding: "5px", boxShadow: "0 12px 32px rgba(0,0,0,0.7)",
-            }}>
-              <div style={{ display: "flex", gap: "3px", marginBottom: "4px" }}>
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} style={{ flex: 1, height: "4px", backgroundColor: "rgba(255,251,224,0.12)", border: "1px solid rgba(255,251,224,0.06)" }} />
-                ))}
+          <div style={{ display: "flex", alignItems: "flex-end", gap: "20px" }}>
+            {/* Film frame — left side on mobile */}
+            <div style={{ flexShrink: 0 }}>
+              <div style={{
+                border: "1px solid rgba(255,251,224,0.15)",
+                padding: "5px", boxShadow: "0 16px 40px rgba(0,0,0,0.7)",
+              }}>
+                <div style={{ display: "flex", gap: "2px", marginBottom: "4px" }}>
+                  {Array.from({ length: 10 }).map((_, i) => (
+                    <div key={i} style={{ flex: 1, height: "4px", backgroundColor: "rgba(255,251,224,0.12)", border: "1px solid rgba(255,251,224,0.06)" }} />
+                  ))}
+                </div>
+                <ImageWithFallback
+                  src={settings?.frameImageUrl || image__MAJ2869_1_}
+                  alt="Recent shoot showcase"
+                  style={{ width: "120px", height: "160px", objectFit: "cover", display: "block", filter: "contrast(1.05) saturate(0.85)" }}
+                />
+                <div style={{ display: "flex", gap: "2px", marginTop: "4px" }}>
+                  {Array.from({ length: 10 }).map((_, i) => (
+                    <div key={i} style={{ flex: 1, height: "4px", backgroundColor: "rgba(255,251,224,0.12)", border: "1px solid rgba(255,251,224,0.06)" }} />
+                  ))}
+                </div>
               </div>
-              <ImageWithFallback
-                src={settings?.frameImageUrl || image__MAJ2869_1_}
-                alt="Recent shoot showcase"
-                style={{ width: "110px", height: "147px", objectFit: "cover", display: "block", filter: "contrast(1.05) saturate(0.85)" }}
-              />
-              <div style={{ display: "flex", gap: "3px", marginTop: "4px" }}>
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} style={{ flex: 1, height: "4px", backgroundColor: "rgba(255,251,224,0.12)", border: "1px solid rgba(255,251,224,0.06)" }} />
-                ))}
+            </div>
+
+            {/* Text — right side on mobile */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h1 style={{
+                color: "#fffbe0",
+                fontSize: "clamp(28px, 9.5vw, 52px)",
+                fontWeight: 900,
+                lineHeight: 0.9,
+                letterSpacing: "-0.03em",
+                margin: 0,
+                marginBottom: "14px",
+                textTransform: "uppercase",
+                textShadow: "0 2px 12px rgba(0,0,0,0.6)",
+              }}>
+                {t.hero.headline1}
+                <br />
+                <span style={{ color: "rgba(255,251,224,0.55)" }}>{t.hero.headline2}</span>
+                <br />
+                {t.hero.headline3}
+                <br />
+                <em style={{ fontStyle: "italic", fontWeight: 300, color: "#c8905a", letterSpacing: "-0.01em" }}>
+                  {t.hero.headline4}
+                </em>
+              </h1>
+              <div style={{ display: "flex", gap: "10px" }}>
+                <button
+                  onClick={scrollToPortfolio}
+                  style={{
+                    backgroundColor: "#fffbe0", color: "#1a0c04", border: "none",
+                    padding: "11px 0", flex: 1,
+                    fontSize: "9px", fontWeight: 700, letterSpacing: "0.18em",
+                    textTransform: "uppercase", cursor: "pointer",
+                    fontFamily: "'Inter', sans-serif", transition: "all 0.25s ease",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#c8905a"; e.currentTarget.style.color = "#fffbe0"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#fffbe0"; e.currentTarget.style.color = "#1a0c04"; }}
+                >
+                  {t.hero.viewPortfolio}
+                </button>
+                <button
+                  onClick={() => { const el = document.getElementById("contact"); if (el) el.scrollIntoView({ behavior: "smooth" }); }}
+                  style={{
+                    backgroundColor: "transparent", color: "rgba(255,251,224,0.7)",
+                    border: "1px solid rgba(255,251,224,0.2)",
+                    padding: "11px 0", flex: 1,
+                    fontSize: "9px", fontWeight: 600, letterSpacing: "0.18em",
+                    textTransform: "uppercase", cursor: "pointer",
+                    fontFamily: "'Inter', sans-serif", transition: "all 0.25s ease",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(255,251,224,0.5)"; e.currentTarget.style.color = "#fffbe0"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,251,224,0.2)"; e.currentTarget.style.color = "rgba(255,251,224,0.7)"; }}
+                >
+                  {t.hero.bookShoot}
+                </button>
               </div>
             </div>
           </div>
         )}
 
+        {/* Desktop layout: grid with text + frame */}
         <div style={isMobile
-          ? { display: "flex", flexDirection: "column" }
+          ? { display: "none" }
           : { display: "grid", gridTemplateColumns: "1fr auto", gap: "60px", alignItems: "center" }
         }>
           {/* Left — Text */}
@@ -214,11 +276,11 @@ export function Hero() {
             </div>
           </div>
 
-          {/* Right — Film Frame — desktop only (mobile has floating version above) */}
+          {/* Right — Film Frame — desktop only */}
           <div style={{
             position: "relative",
             flexShrink: 0,
-            display: isMobile ? "none" : "flex",
+            display: "flex",
             justifyContent: "center",
           }}>
             <div style={{
