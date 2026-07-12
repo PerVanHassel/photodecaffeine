@@ -13,9 +13,9 @@ export const translations = {
     hero: {
       label: "Visual Content Studio — Est. 2025",
       headline1: "Where",
-      headline2: "You Will",
-      headline3: "Find Your",
-      headline4: "Light.",
+      headline2: "Your",
+      headline3: "Story",
+      headline4: "Begins.",
       tagline: "Crafted like Coffee, Shot Like Cinema.",
       subtagline:
         "Premium visual storytelling for brands that refuse to blend in.",
@@ -415,12 +415,12 @@ export const translations = {
     hero: {
       label: "Visuele Content Studio — Opg. 2025",
       headline1: "Waar",
-      headline2: "Merken",
-      headline3: "Hun Licht",
-      headline4: "Vinden.",
+      headline2: "Jouw",
+      headline3: "Verhaal",
+      headline4: "Begint.",
       tagline: "Gemaakt als Koffie, Geschoten als Cinema.",
       subtagline:
-        "Premium visueel verhalen voor merken die weigeren op te gaan in de massa.",
+        "Premium visueel verhalen voor iedereen die wil opvallen.",
       viewPortfolio: "Bekijk Portfolio",
       bookShoot: "Boek een Shoot",
       recentlyShown: "Recent Getoond",
