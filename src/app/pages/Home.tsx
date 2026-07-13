@@ -7,6 +7,7 @@ import { Contact } from "../components/Contact";
 import { Hero } from "../components/Hero";
 import { CustomCTA } from "../components/CustomCTA";
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router";
 import { projectId, publicAnonKey } from "/utils/supabase/info";
 
 const Divider = () => (
@@ -39,6 +40,14 @@ const DEFAULT_SECTIONS: Sections = {
 
 export function Home() {
   const [sections, setSections] = useState<Sections>(DEFAULT_SECTIONS);
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.scrollTo) {
+      const el = document.getElementById(location.state.scrollTo);
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [location.state]);
 
   useEffect(() => {
     fetch(

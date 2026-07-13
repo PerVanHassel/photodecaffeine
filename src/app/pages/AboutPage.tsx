@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import image_IMG_0114_TIF from "@/imports/IMG_0114_TIF.jpg";
 import image_IMG_9694 from "@/imports/IMG_9694.jpg";
 import image_IMG_0115_TIF from "@/imports/IMG_0115_TIF.jpg";
@@ -17,7 +17,7 @@ const TEAM = [
   {
     id: "majd",
     name: "Majd Tawashe",
-    role: "Co-Founder & Head Of Ofice Portugal",
+    role: "Co-Founder & Head Of Office Portugal",
     img: "https://images.unsplash.com/photo-1649355422617-df9957b853a8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjcmVhdGl2ZSUyMHByb2Zlc3Npb25hbCUyMHBvcnRyYWl0JTIwZGFyayUyMGJhY2tncm91bmQlMjBlZGl0b3JpYWx8ZW58MXx8fHwxNzc3NTgyNjU1fDA&ixlib=rb-4.1.0&q=80&w=1080",
     intro:
       "Storytelling has always been at the heart of what I do. With over six years of experience in photography and filmmaking, my focus is creating visual content that feels authentic, cinematic, and impactful. \n\n At PDC Productions, I lead the creative vision behind our projects, from concept development to final delivery. Together with my co-founders, I help build meaningful content and experiences that connect brands with their audience. \n\n For me, great content isn’t just about beautiful visuals—it’s about telling stories people remember.",
@@ -259,6 +259,8 @@ export function AboutPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const ta = t.aboutPage;
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [activeIdx, setActiveIdx] = useState(0);
 
   return (
     <div
@@ -560,10 +562,11 @@ export function AboutPage() {
           <div style={{ position: "relative" }}>
             <div
               className="pdc-values-track"
-              ref={(el) => {
-                if (el) {
-                  (window as any).pdcValuesTrack = el;
-                }
+              ref={trackRef}
+              onScroll={(e) => {
+                const el = e.currentTarget;
+                const cardWidth = el.scrollWidth / ta.values.length;
+                setActiveIdx(Math.round(el.scrollLeft / cardWidth));
               }}
             >
               {ta.values.map((v) => (
@@ -614,18 +617,53 @@ export function AboutPage() {
               ))}
             </div>
 
+            {/* Dots indicator */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: "6px",
+                marginTop: "20px",
+                marginBottom: "4px",
+              }}
+            >
+              {ta.values.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => {
+                    const track = trackRef.current;
+                    if (track) {
+                      const cardWidth = track.scrollWidth / ta.values.length;
+                      track.scrollTo({ left: cardWidth * i, behavior: "smooth" });
+                    }
+                  }}
+                  style={{
+                    width: i === activeIdx ? "20px" : "6px",
+                    height: "6px",
+                    borderRadius: "3px",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: 0,
+                    backgroundColor: i === activeIdx ? "#c8905a" : "rgba(255,251,224,0.2)",
+                    transition: "all 0.25s ease",
+                  }}
+                  aria-label={`Kaart ${i + 1}`}
+                />
+              ))}
+            </div>
+
             <div
               style={{
                 display: "flex",
                 justifyContent: "center",
                 gap: "12px",
-                marginTop: "32px",
+                marginTop: "12px",
               }}
             >
               <button
                 className="pdc-slider-arrow"
                 onClick={() => {
-                  const track = (window as any).pdcValuesTrack;
+                  const track = trackRef.current;
                   if (track) {
                     const scrollAmount =
                       track.offsetWidth * 0.8;
@@ -653,7 +691,7 @@ export function AboutPage() {
               <button
                 className="pdc-slider-arrow"
                 onClick={() => {
-                  const track = (window as any).pdcValuesTrack;
+                  const track = trackRef.current;
                   if (track) {
                     const scrollAmount =
                       track.offsetWidth * 0.8;
@@ -735,7 +773,7 @@ export function AboutPage() {
               marginBottom: "24px",
             }}
           >
-            The Process
+            {ta.darkroomProcess}
           </span>
           <p
             style={{
@@ -747,11 +785,10 @@ export function AboutPage() {
               margin: 0,
               textTransform: "uppercase",
               maxWidth: "640px",
+              whiteSpace: "pre-line",
             }}
           >
-            "Every frame starts in the mind
-            <br />
-            long before the shutter fires."
+            {ta.darkroomQuote}
           </p>
         </div>
       </div>
@@ -808,12 +845,7 @@ export function AboutPage() {
           >
             <button
               onClick={() => {
-                navigate("/");
-                setTimeout(() => {
-                  const el = document.getElementById("contact");
-                  if (el)
-                    el.scrollIntoView({ behavior: "smooth" });
-                }, 300);
+                navigate("/", { state: { scrollTo: "contact" } });
               }}
               style={{
                 backgroundColor: "#fffbe0",

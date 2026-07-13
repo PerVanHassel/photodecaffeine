@@ -400,6 +400,8 @@ export const translations = {
         "Tell us about your brand and what you're trying to say. We'll handle the light.",
       ctaButton: "Start a Project →",
       ctaPortfolio: "View Portfolio",
+      darkroomProcess: "The Process",
+      darkroomQuote: "\"Every frame starts in the mind\nlong before the shutter fires.\"",
     },
   },
 
@@ -803,6 +805,8 @@ export const translations = {
         "Vertel ons over jouw merk en wat je wilt uitdrukken. Wij verzorgen het licht.",
       ctaButton: "Start een Project →",
       ctaPortfolio: "Bekijk Portfolio",
+      darkroomProcess: "Het Proces",
+      darkroomQuote: "\"Elk frame begint in de gedachten\nlang voordat de sluiter valt.\"",
     },
   },
 } as const;
