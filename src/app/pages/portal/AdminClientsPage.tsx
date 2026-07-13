@@ -71,8 +71,7 @@ export function AdminClientsPage() {
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteName, setInviteName] = useState("");
-  const [inviting, setInviting] = useState(false);
-  const [inviteError, setInviteError] = useState("");
+  const [inviteError] = useState("");
   const [inviteSuccess, setInviteSuccess] = useState("");
   const inviteEmailRef = useRef<HTMLInputElement>(null);
 
@@ -103,25 +102,19 @@ export function AdminClientsPage() {
     }
   }
 
-  async function handleInvite(e: React.FormEvent) {
+  function handleInvite(e: React.FormEvent) {
     e.preventDefault();
-    if (!session || !inviteEmail.trim()) return;
-    setInviting(true);
-    setInviteError("");
-    setInviteSuccess("");
-    try {
-      await portalFetch("/admin/invite-client", {
-        method: "POST",
-        body: JSON.stringify({ email: inviteEmail.trim(), name: inviteName.trim() }),
-      }, session.access_token);
-      setInviteSuccess(`Invitation sent to ${inviteEmail.trim()}`);
-      setInviteEmail("");
-      setInviteName("");
-    } catch (err) {
-      setInviteError(err instanceof Error ? err.message : "Failed to send invitation.");
-    } finally {
-      setInviting(false);
-    }
+    if (!inviteEmail.trim()) return;
+    const name = inviteName.trim();
+    const greeting = name ? `Hi ${name},` : "Hi,";
+    const subject = encodeURIComponent("Your Photo De Caffeine Client Portal access");
+    const body = encodeURIComponent(
+      `${greeting}\n\nYou've been invited to the Photo De Caffeine client portal.\n\nYou can sign up and access your projects here:\nhttps://photodecaffeine.com/portal\n\nBest regards,\nPhoto De Caffeine`
+    );
+    window.open(`mailto:${inviteEmail.trim()}?subject=${subject}&body=${body}`, "_blank");
+    setInviteSuccess(`Email client opened for ${inviteEmail.trim()}`);
+    setInviteEmail("");
+    setInviteName("");
   }
 
   const filtered = clients.filter((c) => {
@@ -523,18 +516,20 @@ export function AdminClientsPage() {
                   </button>
                   <button
                     type="submit"
-                    disabled={inviting || !inviteEmail.trim()}
+                    disabled={!inviteEmail.trim()}
                     style={{
                       flex: 1, padding: "12px",
-                      backgroundColor: inviting ? "rgba(200,144,90,0.05)" : "rgba(200,144,90,0.15)",
+                      backgroundColor: "rgba(200,144,90,0.15)",
                       border: "1px solid rgba(200,144,90,0.3)",
-                      color: inviting ? "rgba(200,144,90,0.4)" : "#c8905a",
+                      color: "#c8905a",
                       fontSize: "10px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase",
-                      cursor: inviting ? "not-allowed" : "pointer",
+                      cursor: "pointer",
                       fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
                     }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(200,144,90,0.25)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "rgba(200,144,90,0.15)"; }}
                   >
-                    {inviting ? "Sending…" : "Send Invite"}
+                    Open Email Client
                   </button>
                 </div>
               </form>
