@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { portalFetch } from "../../../lib/supabase";
-import { ArrowLeft, Send, CheckCircle2, Circle, Images } from "lucide-react";
+import { ArrowLeft, Send, CheckCircle2, Circle, Images, Download, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMobile } from "../../hooks/useMobile";
 
 interface Deliverable {
@@ -85,7 +85,9 @@ export function PortalProjectPage() {
   const [sending, setSending] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [error, setError] = useState("");
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const touchStartX = useRef<number | null>(null);
 
   useEffect(() => {
     if (!session || !id) return;
@@ -115,6 +117,35 @@ export function PortalProjectPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Poll for new messages every 30 seconds
+  useEffect(() => {
+    if (!session || !id) return;
+    const interval = setInterval(() => {
+      portalFetch(`/portal/project/${id}/messages`, {}, session.access_token)
+        .then((data) => setMessages(data.messages || []))
+        .catch(() => {});
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [session, id]);
+
+  const galleryUrls = project?.galleryUrls ?? [];
+
+  const closeLightbox = useCallback(() => setLightboxIdx(null), []);
+  const goPrev = useCallback(() => setLightboxIdx((i) => i === null ? null : (i - 1 + galleryUrls.length) % galleryUrls.length), [galleryUrls.length]);
+  const goNext = useCallback(() => setLightboxIdx((i) => i === null ? null : (i + 1) % galleryUrls.length), [galleryUrls.length]);
+
+  useEffect(() => {
+    if (lightboxIdx === null) return;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeLightbox();
+      if (e.key === "ArrowLeft") goPrev();
+      if (e.key === "ArrowRight") goNext();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => { document.body.style.overflow = ""; window.removeEventListener("keydown", onKey); };
+  }, [lightboxIdx, closeLightbox, goPrev, goNext]);
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
@@ -371,7 +402,7 @@ export function PortalProjectPage() {
                     textTransform: "uppercase",
                   }}
                 >
-                  Aankomende Meeting
+                  {new Date(project.meeting.date) < new Date() ? "Past Meeting" : "Upcoming Meeting"}
                 </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -386,10 +417,10 @@ export function PortalProjectPage() {
                       marginBottom: "6px",
                     }}
                   >
-                    Datum & Tijd
+                    Date & Time
                   </div>
                   <div style={{ color: "#fffbe0", fontSize: "14px", fontWeight: 500 }}>
-                    {new Date(project.meeting.date).toLocaleString("nl-NL", {
+                    {new Date(project.meeting.date).toLocaleString("en-GB", {
                       weekday: "long",
                       day: "numeric",
                       month: "long",
@@ -411,7 +442,7 @@ export function PortalProjectPage() {
                         marginBottom: "6px",
                       }}
                     >
-                      Locatie
+                      Location
                     </div>
                     <div style={{ color: "rgba(255,251,224,0.6)", fontSize: "13px" }}>
                       {project.meeting.location}
@@ -461,7 +492,7 @@ export function PortalProjectPage() {
                         marginBottom: "6px",
                       }}
                     >
-                      Notities
+                      Notes
                     </div>
                     <div
                       style={{
@@ -561,7 +592,7 @@ export function PortalProjectPage() {
             </div>
           )}
           {/* Gallery */}
-          {project.galleryUrls && project.galleryUrls.length > 0 && (
+          {galleryUrls.length > 0 && (
             <div
               style={{
                 border: "1px solid rgba(255,251,224,0.06)",
@@ -569,61 +600,55 @@ export function PortalProjectPage() {
                 backgroundColor: "rgba(255,251,224,0.01)",
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  marginBottom: "24px",
-                }}
-              >
-                <Images size={13} color="rgba(255,251,224,0.25)" />
-                <div
-                  style={{
-                    color: "rgba(255,251,224,0.25)",
-                    fontSize: "9px",
-                    fontWeight: 500,
-                    letterSpacing: "0.3em",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Foto Gallery ({project.galleryUrls.length})
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <Images size={13} color="rgba(255,251,224,0.25)" />
+                  <div style={{ color: "rgba(255,251,224,0.25)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase" }}>
+                    Photo Gallery ({galleryUrls.length})
+                  </div>
                 </div>
               </div>
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-                  gap: "4px",
-                }}
-              >
-                {project.galleryUrls.map((url, i) => (
-                  <a
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "4px" }}>
+                {galleryUrls.map((url, i) => (
+                  <div
                     key={i}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      display: "block",
-                      aspectRatio: "4/3",
-                      overflow: "hidden",
-                      transition: "opacity 0.2s ease",
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
-                    onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                    style={{ position: "relative", aspectRatio: "4/3", overflow: "hidden", cursor: "pointer" }}
+                    onClick={() => setLightboxIdx(i)}
                   >
                     <img
                       src={url}
                       alt={`Photo ${i + 1}`}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        display: "block",
-                      }}
+                      loading="lazy"
+                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform 0.3s ease" }}
+                      onMouseEnter={(e) => ((e.target as HTMLImageElement).style.transform = "scale(1.04)")}
+                      onMouseLeave={(e) => ((e.target as HTMLImageElement).style.transform = "scale(1)")}
                     />
-                  </a>
+                    <a
+                      href={url}
+                      download={`photo-${i + 1}.jpg`}
+                      onClick={(e) => e.stopPropagation()}
+                      title="Download"
+                      style={{
+                        position: "absolute",
+                        bottom: "6px",
+                        right: "6px",
+                        backgroundColor: "rgba(8,4,1,0.7)",
+                        border: "1px solid rgba(255,251,224,0.15)",
+                        color: "rgba(255,251,224,0.55)",
+                        width: "28px",
+                        height: "28px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        textDecoration: "none",
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = "#fffbe0"; e.currentTarget.style.backgroundColor = "rgba(8,4,1,0.9)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,251,224,0.55)"; e.currentTarget.style.backgroundColor = "rgba(8,4,1,0.7)"; }}
+                    >
+                      <Download size={12} />
+                    </a>
+                  </div>
                 ))}
               </div>
             </div>
@@ -794,65 +819,109 @@ export function PortalProjectPage() {
           <form
             onSubmit={handleSend}
             style={{
-              padding: "16px 24px",
+              padding: "12px 24px 16px",
               borderTop: "1px solid rgba(255,251,224,0.05)",
               display: "flex",
-              gap: "10px",
-              alignItems: "flex-end",
+              flexDirection: "column",
+              gap: "8px",
             }}
           >
-            <textarea
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Write a message…"
-              rows={2}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend(e as unknown as React.FormEvent);
-                }
-              }}
-              style={{
-                flex: 1,
-                backgroundColor: "rgba(255,251,224,0.03)",
-                border: "1px solid rgba(255,251,224,0.08)",
-                color: "#fffbe0",
-                fontSize: "13px",
-                fontWeight: 300,
-                fontFamily: "'Inter', sans-serif",
-                padding: "10px 14px",
-                resize: "none",
-                outline: "none",
-                lineHeight: 1.5,
-                transition: "border-color 0.2s ease",
-              }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,251,224,0.08)")}
-            />
-            <button
-              type="submit"
-              disabled={sending || !newMessage.trim()}
-              style={{
-                backgroundColor:
-                  sending || !newMessage.trim() ? "rgba(255,251,224,0.05)" : "#c8905a",
-                border: "none",
-                color:
-                  sending || !newMessage.trim() ? "rgba(255,251,224,0.2)" : "#080401",
-                width: "40px",
-                height: "40px",
-                cursor: sending || !newMessage.trim() ? "not-allowed" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-                transition: "all 0.2s ease",
-              }}
-            >
-              <Send size={14} />
-            </button>
+            <div style={{ display: "flex", gap: "10px", alignItems: "flex-end" }}>
+              <div style={{ flex: 1 }}>
+                <textarea
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Write a message…"
+                  rows={2}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend(e as unknown as React.FormEvent);
+                    }
+                  }}
+                  style={{
+                    width: "100%",
+                    backgroundColor: "rgba(255,251,224,0.03)",
+                    border: "1px solid rgba(255,251,224,0.08)",
+                    color: "#fffbe0",
+                    fontSize: "13px",
+                    fontWeight: 300,
+                    fontFamily: "'Inter', sans-serif",
+                    padding: "10px 14px",
+                    resize: "none",
+                    outline: "none",
+                    lineHeight: 1.5,
+                    transition: "border-color 0.2s ease",
+                    boxSizing: "border-box",
+                  }}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,251,224,0.08)")}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={sending || !newMessage.trim()}
+                style={{
+                  backgroundColor: sending || !newMessage.trim() ? "rgba(255,251,224,0.05)" : "#c8905a",
+                  border: "none",
+                  color: sending || !newMessage.trim() ? "rgba(255,251,224,0.2)" : "#080401",
+                  width: "40px",
+                  height: "40px",
+                  cursor: sending || !newMessage.trim() ? "not-allowed" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  transition: "all 0.2s ease",
+                }}
+              >
+                <Send size={14} />
+              </button>
+            </div>
+            <p style={{ color: "rgba(255,251,224,0.15)", fontSize: "10px", margin: 0, letterSpacing: "0.04em" }}>
+              Enter to send · Shift + Enter for new line
+            </p>
           </form>
         </div>
       </div>
+
+      {/* Lightbox */}
+      {lightboxIdx !== null && galleryUrls.length > 0 && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{ position: "fixed", inset: 0, backgroundColor: "rgba(8,4,1,0.98)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px" }}
+          onClick={closeLightbox}
+          onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+          onTouchEnd={(e) => {
+            if (touchStartX.current === null) return;
+            const dx = e.changedTouches[0].clientX - touchStartX.current;
+            if (Math.abs(dx) > 50) dx < 0 ? goNext() : goPrev();
+            touchStartX.current = null;
+          }}
+        >
+          <button onClick={(e) => { e.stopPropagation(); closeLightbox(); }} style={{ position: "absolute", top: "20px", right: "20px", background: "rgba(255,251,224,0.1)", border: "1px solid rgba(255,251,224,0.2)", color: "#fffbe0", width: "44px", height: "44px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+            <X size={20} />
+          </button>
+          {!isMobile && (
+            <>
+              <button onClick={(e) => { e.stopPropagation(); goPrev(); }} style={{ position: "absolute", left: "20px", background: "rgba(255,251,224,0.1)", border: "1px solid rgba(255,251,224,0.2)", color: "#fffbe0", width: "44px", height: "44px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                <ChevronLeft size={20} />
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); goNext(); }} style={{ position: "absolute", right: "20px", background: "rgba(255,251,224,0.1)", border: "1px solid rgba(255,251,224,0.2)", color: "#fffbe0", width: "44px", height: "44px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                <ChevronRight size={20} />
+              </button>
+            </>
+          )}
+          <img src={galleryUrls[lightboxIdx]} alt={`Photo ${lightboxIdx + 1}`} style={{ maxWidth: "90%", maxHeight: "90%", objectFit: "contain" }} onClick={(e) => e.stopPropagation()} />
+          <div style={{ position: "absolute", bottom: "20px", display: "flex", alignItems: "center", gap: "16px" }}>
+            <span style={{ color: "rgba(255,251,224,0.4)", fontSize: "11px", letterSpacing: "0.2em" }}>{lightboxIdx + 1} / {galleryUrls.length}</span>
+            <a href={galleryUrls[lightboxIdx]} download={`photo-${lightboxIdx + 1}.jpg`} onClick={(e) => e.stopPropagation()} style={{ color: "rgba(255,251,224,0.4)", display: "flex", alignItems: "center", gap: "4px", fontSize: "10px", letterSpacing: "0.15em", textDecoration: "none", textTransform: "uppercase" }} onMouseEnter={(e) => (e.currentTarget.style.color = "#fffbe0")} onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,251,224,0.4)")}>
+              <Download size={11} /> Download
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

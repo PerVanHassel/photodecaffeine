@@ -190,7 +190,7 @@ function ProjectCard({ project, onClick }: { project: Project; onClick: () => vo
               Meeting
             </div>
             <div style={{ color: "rgba(255,251,224,0.6)", fontSize: "11px", marginTop: "2px" }}>
-              {new Date(project.meeting.date).toLocaleDateString("nl-NL", {
+              {new Date(project.meeting.date).toLocaleString("en-GB", {
                 day: "numeric",
                 month: "short",
                 hour: "2-digit",
@@ -272,23 +272,32 @@ export function PortalDashboardPage() {
   const isMobile = useMobile();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
   const name = user?.user_metadata?.name || user?.email || "Client";
   const firstName = name.split(" ")[0];
 
-  useEffect(() => {
+  function loadProjects(isRefresh = false) {
     if (!session) return;
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
     portalFetch("/portal/projects", {}, session.access_token)
       .then((data) => {
         setProjects(data.projects || []);
-        setLoading(false);
+        setError("");
       })
-      .catch((err) => {
-        console.error("Failed to load projects:", err);
+      .catch(() => {
         setError("Failed to load projects. Please try again.");
+      })
+      .finally(() => {
         setLoading(false);
+        setRefreshing(false);
       });
+  }
+
+  useEffect(() => {
+    loadProjects();
   }, [session]);
 
   return (
@@ -361,14 +370,29 @@ export function PortalDashboardPage() {
           Active Projects
         </span>
         <div style={{ flex: 1, height: "1px", backgroundColor: "rgba(255,251,224,0.05)" }} />
-        <span
-          style={{
-            color: "rgba(255,251,224,0.2)",
-            fontSize: "10px",
-          }}
-        >
+        <span style={{ color: "rgba(255,251,224,0.2)", fontSize: "10px" }}>
           {projects.length} project{projects.length !== 1 ? "s" : ""}
         </span>
+        <button
+          onClick={() => loadProjects(true)}
+          disabled={refreshing}
+          title="Refresh projects"
+          style={{
+            background: "none",
+            border: "1px solid rgba(255,251,224,0.08)",
+            color: refreshing ? "rgba(255,251,224,0.15)" : "rgba(255,251,224,0.3)",
+            cursor: refreshing ? "default" : "pointer",
+            padding: "4px 8px",
+            fontSize: "10px",
+            fontFamily: "'Inter', sans-serif",
+            letterSpacing: "0.1em",
+            transition: "all 0.2s ease",
+          }}
+          onMouseEnter={(e) => { if (!refreshing) e.currentTarget.style.color = "#fffbe0"; }}
+          onMouseLeave={(e) => { if (!refreshing) e.currentTarget.style.color = "rgba(255,251,224,0.3)"; }}
+        >
+          {refreshing ? "…" : "↻"}
+        </button>
       </div>
 
       {/* Loading */}
@@ -407,15 +431,37 @@ export function PortalDashboardPage() {
           style={{
             textAlign: "center",
             padding: "80px 0",
-            color: "rgba(255,251,224,0.2)",
-            fontSize: "13px",
-            lineHeight: 1.7,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "20px",
           }}
         >
-          <p>No projects yet.</p>
-          <p style={{ fontSize: "11px", letterSpacing: "0.1em" }}>
+          <p style={{ color: "rgba(255,251,224,0.2)", fontSize: "13px", lineHeight: 1.7, margin: 0 }}>
+            No projects yet.
+          </p>
+          <p style={{ color: "rgba(255,251,224,0.15)", fontSize: "11px", letterSpacing: "0.1em", margin: 0 }}>
             Your PDC team will add projects here once your brief is confirmed.
           </p>
+          <a
+            href="mailto:contact@photodecaffeine.com"
+            style={{
+              color: "#c8905a",
+              fontSize: "10px",
+              fontWeight: 600,
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              textDecoration: "none",
+              border: "1px solid rgba(200,144,90,0.25)",
+              padding: "10px 20px",
+              transition: "all 0.2s ease",
+              display: "inline-block",
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(200,144,90,0.08)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; }}
+          >
+            Contact PDC Studio →
+          </a>
         </div>
       )}
 
@@ -424,7 +470,7 @@ export function PortalDashboardPage() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(440px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fill, minmax(min(340px, 100%), 1fr))",
             gap: "16px",
           }}
         >
