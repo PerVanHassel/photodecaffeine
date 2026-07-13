@@ -6,10 +6,29 @@ import { projectId } from "/utils/supabase/info";
 
 const BUCKET = "portfolio-images-0951c59e";
 
+type Sections = {
+  workProcess: boolean;
+  portfolio: boolean;
+  about: boolean;
+  services: boolean;
+  socialProof: boolean;
+  customCTA: boolean;
+};
+
 type SiteSettings = {
   heroImageUrl: string;
   heroImageMobileUrl: string;
   frameImageUrl: string;
+  sections: Sections;
+};
+
+const DEFAULT_SECTIONS: Sections = {
+  workProcess: true,
+  portfolio: true,
+  about: true,
+  services: true,
+  socialProof: true,
+  customCTA: true,
 };
 
 type PortfolioArticle = {
@@ -27,6 +46,7 @@ export function AdminSettingsPage() {
     heroImageUrl: "",
     heroImageMobileUrl: "",
     frameImageUrl: "",
+    sections: DEFAULT_SECTIONS,
   });
   const [portfolioArticles, setPortfolioArticles] = useState<PortfolioArticle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,7 +108,13 @@ export function AdminSettingsPage() {
         { headers: { Authorization: `Bearer ${session.access_token}` } }
       );
       const data = await res.json();
-      setSettings(data.settings || { heroImageUrl: "", heroImageMobileUrl: "" });
+      const s = data.settings || {};
+      setSettings({
+        heroImageUrl: s.heroImageUrl || "",
+        heroImageMobileUrl: s.heroImageMobileUrl || "",
+        frameImageUrl: s.frameImageUrl || "",
+        sections: { ...DEFAULT_SECTIONS, ...(s.sections || {}) },
+      });
     } catch (err) {
       console.error("Failed to fetch settings:", err);
     }
@@ -655,6 +681,52 @@ export function AdminSettingsPage() {
               <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, "frame")} style={{ display: "none" }} disabled={uploading !== null} />
             </label>
           </div>
+        </div>
+      </div>
+
+      {/* Section Visibility */}
+      <div style={{
+        backgroundColor: "rgba(13,7,3,0.6)",
+        border: "1px solid rgba(255,251,224,0.1)",
+        padding: isMobile ? "20px" : "32px",
+        marginBottom: "24px",
+      }}>
+        <h2 style={{ color: "#fffbe0", fontSize: "18px", fontWeight: 700, margin: "0 0 8px 0", textTransform: "uppercase" }}>
+          Secties Homepage
+        </h2>
+        <p style={{ color: "rgba(255,251,224,0.4)", fontSize: "13px", margin: "0 0 24px 0", lineHeight: 1.6 }}>
+          Zet secties aan of uit op de homepage. Wijzigingen worden opgeslagen via "Save Changes".
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          {(Object.entries({
+            workProcess: "Werkproces",
+            portfolio: "Portfolio",
+            about: "Over ons",
+            services: "Diensten",
+            socialProof: "Reviews / Social Proof",
+            customCTA: "Call to Action (CTA)",
+          }) as [keyof Sections, string][]).map(([key, label]) => (
+            <div key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", backgroundColor: "rgba(255,251,224,0.03)", border: "1px solid rgba(255,251,224,0.07)" }}>
+              <span style={{ color: "rgba(255,251,224,0.7)", fontSize: "13px", fontWeight: 500 }}>{label}</span>
+              <button
+                onClick={() => setSettings(prev => ({ ...prev, sections: { ...prev.sections, [key]: !prev.sections[key] } }))}
+                style={{
+                  width: "44px", height: "24px",
+                  backgroundColor: settings.sections[key] ? "#c8905a" : "rgba(255,251,224,0.1)",
+                  border: "none", borderRadius: "12px", cursor: "pointer",
+                  position: "relative", transition: "background-color 0.2s ease", flexShrink: 0,
+                }}
+              >
+                <span style={{
+                  position: "absolute", top: "2px",
+                  left: settings.sections[key] ? "22px" : "2px",
+                  width: "20px", height: "20px", borderRadius: "50%",
+                  backgroundColor: "#fffbe0", transition: "left 0.2s ease",
+                  display: "block",
+                }} />
+              </button>
+            </div>
+          ))}
         </div>
       </div>
 

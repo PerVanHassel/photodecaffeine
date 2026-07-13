@@ -6,6 +6,8 @@ import { SocialProof } from "../components/SocialProof";
 import { Contact } from "../components/Contact";
 import { Hero } from "../components/Hero";
 import { CustomCTA } from "../components/CustomCTA";
+import { useState, useEffect } from "react";
+import { projectId, publicAnonKey } from "/utils/supabase/info";
 
 const Divider = () => (
   <div
@@ -17,28 +19,50 @@ const Divider = () => (
   />
 );
 
+type Sections = {
+  workProcess: boolean;
+  portfolio: boolean;
+  about: boolean;
+  services: boolean;
+  socialProof: boolean;
+  customCTA: boolean;
+};
+
+const DEFAULT_SECTIONS: Sections = {
+  workProcess: true,
+  portfolio: true,
+  about: true,
+  services: true,
+  socialProof: true,
+  customCTA: true,
+};
+
 export function Home() {
+  const [sections, setSections] = useState<Sections>(DEFAULT_SECTIONS);
+
+  useEffect(() => {
+    fetch(
+      `https://${projectId}.supabase.co/functions/v1/make-server-0951c59e/settings`,
+      { cache: "no-store", headers: { Authorization: `Bearer ${publicAnonKey}` } }
+    )
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.settings?.sections) {
+          setSections({ ...DEFAULT_SECTIONS, ...data.settings.sections });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   return (
-    <div
-      style={{
-        backgroundColor: "#080401",
-        fontFamily: "'Inter', sans-serif",
-        overflowX: "hidden",
-      }}
-    >
+    <div style={{ backgroundColor: "#080401", fontFamily: "'Inter', sans-serif", overflowX: "hidden" }}>
       <Hero />
-      <Divider />
-      <WorkProcess />
-      <Divider />
-      <Portfolio />
-      <Divider />
-      <About />
-      <Divider />
-      <CustomCTA />
-      <Divider />
-      <Services />
-      <Divider />
-      <SocialProof />
+      {sections.workProcess && <><Divider /><WorkProcess /></>}
+      {sections.portfolio && <><Divider /><Portfolio /></>}
+      {sections.about && <><Divider /><About /></>}
+      {sections.services && <><Divider /><Services /></>}
+      {sections.socialProof && <><Divider /><SocialProof /></>}
+      {sections.customCTA && <><Divider /><CustomCTA /></>}
       <Contact />
     </div>
   );
