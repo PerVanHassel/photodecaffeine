@@ -2,9 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { portalFetch } from "../../../lib/supabase";
-import { ArrowLeft, Plus, Clock, CheckCircle, Circle, AlertCircle, X, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Clock, CheckCircle, Circle, AlertCircle, X, Trash2, Pencil, Check } from "lucide-react";
 import { useMobile } from "../../hooks/useMobile";
-import { projectId } from "/utils/supabase/info";
 
 interface Deliverable {
   id: string;
@@ -71,31 +70,22 @@ export function AdminClientDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
-  // Auth test
-  const [authTest, setAuthTest] = useState<any>(null);
+  // Edit profile
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [editForm, setEditForm] = useState({ name: "", company: "" });
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState("");
 
   useEffect(() => {
-    if (!clientId) return;
+    if (!clientId || !session?.access_token) return;
 
     async function loadClient() {
-      if (!session?.access_token) {
-        console.error("No session or access token available");
-        setError("Not authenticated");
-        setLoading(false);
-        return;
-      }
-
-      console.log("Fetching client, session exists:", !!session, "access_token exists:", !!session.access_token);
-      console.log("Token (first 20 chars):", session.access_token.substring(0, 20) + "...");
-
       try {
-        const data = await portalFetch(`/admin/client/${clientId}`, {}, session.access_token);
+        const data = await portalFetch(`/admin/client/${clientId}`, {}, session!.access_token);
         setClient(data.client);
         setProjects(data.projects || []);
         setLoading(false);
       } catch (err) {
-        console.error("Failed to load client:", err);
-        console.error("Error details:", err instanceof Error ? err.message : String(err));
         setError(`Failed to load client: ${err instanceof Error ? err.message : String(err)}`);
         setLoading(false);
       }
@@ -104,27 +94,22 @@ export function AdminClientDetailPage() {
     loadClient();
   }, [session, clientId]);
 
-  async function testAuth() {
-    if (!session?.access_token) {
-      alert("No session or access token");
-      return;
-    }
+  async function handleEditProfile(e: React.FormEvent) {
+    e.preventDefault();
+    if (!session || !clientId || !client) return;
+    setEditSaving(true);
+    setEditError("");
     try {
-      const res = await fetch(
-        `https://${window.location.hostname.includes('localhost') ? 'localhost:54321' : projectId + '.supabase.co'}/functions/v1/make-server-0951c59e/admin/auth/test`,
-        {
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        }
-      );
-      const data = await res.json();
-      console.log("Auth test result:", data);
-      setAuthTest(data);
-      alert(JSON.stringify(data, null, 2));
+      const data = await portalFetch(`/admin/client/${clientId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ name: editForm.name.trim(), company: editForm.company.trim() }),
+      }, session.access_token);
+      setClient(data.client ?? { ...client, ...editForm });
+      setEditingProfile(false);
     } catch (err) {
-      console.error("Auth test error:", err);
-      alert("Auth test failed: " + String(err));
+      setEditError(err instanceof Error ? err.message : "Failed to save changes.");
+    } finally {
+      setEditSaving(false);
     }
   }
 
@@ -211,27 +196,8 @@ export function AdminClientDetailPage() {
       )}
 
       {error && (
-        <div>
-          <div style={{ padding: "16px", border: "1px solid rgba(224,112,96,0.2)", color: "#e07060", fontSize: "13px", marginBottom: "12px" }}>
-            {error}
-          </div>
-          <button
-            onClick={testAuth}
-            style={{
-              backgroundColor: "rgba(200,144,90,0.1)",
-              border: "1px solid rgba(200,144,90,0.3)",
-              color: "#c8905a",
-              padding: "10px 16px",
-              fontSize: "10px",
-              fontWeight: 600,
-              letterSpacing: "0.15em",
-              textTransform: "uppercase",
-              cursor: "pointer",
-              fontFamily: "'Inter', sans-serif",
-            }}
-          >
-            Test Auth Status
-          </button>
+        <div style={{ padding: "16px", border: "1px solid rgba(224,112,96,0.2)", color: "#e07060", fontSize: "13px" }}>
+          {error}
         </div>
       )}
 
@@ -255,20 +221,87 @@ export function AdminClientDetailPage() {
             }}>
               {getInitials(client.name)}
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <h1 style={{ color: "#fffbe0", fontSize: isMobile ? "20px" : "24px", fontWeight: 800, margin: "0 0 4px", letterSpacing: "-0.01em" }}>
-                {client.name}
-              </h1>
-              {client.company && (
-                <div style={{ color: "rgba(255,251,224,0.4)", fontSize: "13px", marginBottom: "6px" }}>{client.company}</div>
-              )}
-              <div style={{ color: "rgba(255,251,224,0.3)", fontSize: "12px" }}>{client.email}</div>
-            </div>
+
+            {editingProfile ? (
+              <form onSubmit={handleEditProfile} style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "10px" }}>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  required
+                  placeholder="Client name"
+                  style={{ ...inputStyle, fontSize: "18px", fontWeight: 700 }}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,251,224,0.08)")}
+                />
+                <input
+                  type="text"
+                  value={editForm.company}
+                  onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
+                  placeholder="Company (optional)"
+                  style={inputStyle}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,251,224,0.08)")}
+                />
+                <div style={{ color: "rgba(255,251,224,0.3)", fontSize: "12px" }}>{client.email}</div>
+                {editError && <p style={{ color: "#e07060", fontSize: "12px", margin: 0 }}>{editError}</p>}
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button type="submit" disabled={editSaving} style={{
+                    display: "flex", alignItems: "center", gap: "5px",
+                    background: "none", border: "1px solid rgba(120,190,140,0.4)",
+                    color: "rgba(120,190,140,0.9)", fontSize: "9px", fontWeight: 700,
+                    letterSpacing: "0.15em", textTransform: "uppercase",
+                    cursor: editSaving ? "not-allowed" : "pointer", padding: "6px 12px",
+                    fontFamily: "'Inter', sans-serif",
+                  }}>
+                    <Check size={11} /> {editSaving ? "Saving…" : "Save"}
+                  </button>
+                  <button type="button" onClick={() => setEditingProfile(false)} style={{
+                    display: "flex", alignItems: "center", gap: "5px",
+                    background: "none", border: "1px solid rgba(255,251,224,0.1)",
+                    color: "rgba(255,251,224,0.4)", fontSize: "9px", fontWeight: 600,
+                    letterSpacing: "0.15em", textTransform: "uppercase",
+                    cursor: "pointer", padding: "6px 12px",
+                    fontFamily: "'Inter', sans-serif",
+                  }}>
+                    <X size={11} /> Cancel
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h1 style={{ color: "#fffbe0", fontSize: isMobile ? "20px" : "24px", fontWeight: 800, margin: "0 0 4px", letterSpacing: "-0.01em" }}>
+                  {client.name}
+                </h1>
+                {client.company && (
+                  <div style={{ color: "rgba(255,251,224,0.4)", fontSize: "13px", marginBottom: "6px" }}>{client.company}</div>
+                )}
+                <div style={{ color: "rgba(255,251,224,0.3)", fontSize: "12px" }}>{client.email}</div>
+              </div>
+            )}
+
             <div style={{ display: "flex", flexDirection: "column", alignItems: isMobile ? "flex-start" : "flex-end", gap: "12px", flexShrink: 0 }}>
               <div style={{ textAlign: isMobile ? "left" : "right" }}>
                 <div style={{ color: "rgba(255,251,224,0.2)", fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "4px" }}>Client since</div>
                 <div style={{ color: "rgba(255,251,224,0.5)", fontSize: "12px" }}>{formatDate(client.createdAt)}</div>
               </div>
+              {!editingProfile && (
+                <button
+                  onClick={() => { setEditForm({ name: client.name, company: client.company || "" }); setEditError(""); setEditingProfile(true); }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "6px",
+                    background: "none", border: "1px solid rgba(255,251,224,0.1)",
+                    color: "rgba(255,251,224,0.3)", fontSize: "9px", fontWeight: 600,
+                    letterSpacing: "0.2em", textTransform: "uppercase",
+                    cursor: "pointer", padding: "7px 12px",
+                    fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = "#fffbe0"; e.currentTarget.style.borderColor = "rgba(255,251,224,0.25)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,251,224,0.3)"; e.currentTarget.style.borderColor = "rgba(255,251,224,0.1)"; }}
+                >
+                  <Pencil size={10} /> Edit
+                </button>
+              )}
               <button
                 onClick={() => { setShowDeleteConfirm(true); setDeleteError(""); }}
                 style={{
