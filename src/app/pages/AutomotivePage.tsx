@@ -5,14 +5,10 @@ import { useMobile } from "../hooks/useMobile";
 import { useLanguage } from "../context/LanguageContext";
 import { projectId, publicAnonKey } from "/utils/supabase/info";
 import { useAdTracking, getStoredAdRef } from "../hooks/useAdTracking";
+import { ArrowLeft } from "lucide-react";
 import heroImage from "@/imports/_DSC0893.jpg";
 
 const GALLERY_TITLE = "__automotive_gallery__";
-const FALLBACK_IMAGES = [
-  "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1525609004556-c46c7d6cf023?auto=format&fit=crop&w=800&q=80",
-];
 
 export function AutomotivePage() {
   useAdTracking("/services/automotive");
@@ -22,7 +18,7 @@ export function AutomotivePage() {
   const { t } = useLanguage();
   const ta = t.automotivePage;
 
-  const [galleryImages, setGalleryImages] = useState<string[]>(FALLBACK_IMAGES);
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
 
   useEffect(() => {
     fetch(`https://${projectId}.supabase.co/functions/v1/make-server-0951c59e/portfolio`, {
@@ -40,7 +36,7 @@ export function AutomotivePage() {
       .catch(() => {});
   }, []);
 
-  const [form, setForm] = useState({ name: "", email: "", phone: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", carBrand: "", date: "", location: "" });
   const [focused, setFocused] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -48,12 +44,21 @@ export function AutomotivePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.name.trim()) {
+      setError(ta.errorName);
+      return;
+    }
     if (!form.email && !form.phone) {
       setError(ta.errorContact);
       return;
     }
     setLoading(true);
     setError(null);
+    const details = [
+      form.carBrand && `Vehicle: ${form.carBrand}`,
+      form.date && `Date: ${form.date}`,
+      form.location && `Location: ${form.location}`,
+    ].filter(Boolean).join("\n");
     try {
       await portalFetch("/contact", {
         method: "POST",
@@ -63,7 +68,7 @@ export function AutomotivePage() {
           phone: form.phone,
           package: "automotive",
           brand: "",
-          message: `Automotive package booking — €50 per vehicle, 1 hour on location.${getStoredAdRef() ? `\n\n[ref:${getStoredAdRef()}]` : ""}`,
+          message: `Automotive package booking — €50 per vehicle, 1 hour on location.${details ? `\n\n${details}` : ""}${getStoredAdRef() ? `\n\n[ref:${getStoredAdRef()}]` : ""}`,
         }),
       });
       setSubmitted(true);
@@ -128,7 +133,8 @@ export function AutomotivePage() {
               fontFamily: "'Inter', sans-serif",
             }}
           >
-            ← {ta.backLabel}
+            <ArrowLeft size={14} />
+            {ta.backLabel}
           </button>
 
           <div
@@ -328,6 +334,73 @@ export function AutomotivePage() {
               </div>
             ))}
           </div>
+
+          {/* Second package — custom/multi-vehicle */}
+          <div
+            style={{
+              marginTop: "48px",
+              border: "1px solid rgba(255,251,224,0.08)",
+              padding: "32px",
+              backgroundColor: "rgba(255,251,224,0.02)",
+            }}
+          >
+            <span
+              style={{
+                color: "rgba(255,251,224,0.3)",
+                fontSize: "9px",
+                fontWeight: 600,
+                letterSpacing: "0.3em",
+                textTransform: "uppercase",
+                display: "block",
+                marginBottom: "12px",
+              }}
+            >
+              {ta.package2Label}
+            </span>
+            <div
+              style={{
+                color: "#fffbe0",
+                fontSize: "22px",
+                fontWeight: 900,
+                letterSpacing: "-0.02em",
+                textTransform: "uppercase",
+                marginBottom: "12px",
+              }}
+            >
+              {ta.package2Title}
+            </div>
+            <p
+              style={{
+                color: "rgba(255,251,224,0.45)",
+                fontSize: "13px",
+                fontWeight: 300,
+                lineHeight: 1.7,
+                margin: "0 0 20px",
+              }}
+            >
+              {ta.package2Body}
+            </p>
+            <button
+              onClick={() => navigate("/", { state: { scrollTo: "contact" } })}
+              style={{
+                background: "none",
+                border: "1px solid rgba(255,251,224,0.2)",
+                color: "rgba(255,251,224,0.6)",
+                fontSize: "10px",
+                fontWeight: 600,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                padding: "10px 20px",
+                fontFamily: "'Inter', sans-serif",
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(255,251,224,0.4)"; e.currentTarget.style.color = "#fffbe0"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,251,224,0.2)"; e.currentTarget.style.color = "rgba(255,251,224,0.6)"; }}
+            >
+              {ta.package2Button}
+            </button>
+          </div>
         </div>
 
         {/* Right — booking form */}
@@ -418,11 +491,10 @@ export function AutomotivePage() {
                     marginBottom: "8px",
                   }}
                 >
-                  Name
+                  {ta.namePlaceholder}
                 </label>
                 <input
                   type="text"
-                  required
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   onFocus={() => setFocused("name")}
@@ -495,6 +567,54 @@ export function AutomotivePage() {
                 </p>
               </div>
 
+              {/* Car brand/model */}
+              <div>
+                <label style={{ color: "rgba(255,251,224,0.25)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase", display: "block", marginBottom: "8px" }}>
+                  {ta.carBrandLabel}
+                </label>
+                <input
+                  type="text"
+                  value={form.carBrand}
+                  onChange={(e) => setForm({ ...form, carBrand: e.target.value })}
+                  onFocus={() => setFocused("carBrand")}
+                  onBlur={() => setFocused(null)}
+                  placeholder={ta.carBrandPlaceholder}
+                  style={inputStyle("carBrand")}
+                />
+              </div>
+
+              {/* Preferred date */}
+              <div>
+                <label style={{ color: "rgba(255,251,224,0.25)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase", display: "block", marginBottom: "8px" }}>
+                  {ta.dateLabel}
+                </label>
+                <input
+                  type="text"
+                  value={form.date}
+                  onChange={(e) => setForm({ ...form, date: e.target.value })}
+                  onFocus={() => setFocused("date")}
+                  onBlur={() => setFocused(null)}
+                  placeholder={ta.datePlaceholder}
+                  style={inputStyle("date")}
+                />
+              </div>
+
+              {/* Location */}
+              <div>
+                <label style={{ color: "rgba(255,251,224,0.25)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase", display: "block", marginBottom: "8px" }}>
+                  {ta.locationLabel}
+                </label>
+                <input
+                  type="text"
+                  value={form.location}
+                  onChange={(e) => setForm({ ...form, location: e.target.value })}
+                  onFocus={() => setFocused("location")}
+                  onBlur={() => setFocused(null)}
+                  placeholder={ta.locationPlaceholder}
+                  style={inputStyle("location")}
+                />
+              </div>
+
               {error && (
                 <p style={{ color: "#e87c6a", fontSize: "12px", fontWeight: 400, margin: 0, lineHeight: 1.6 }}>
                   {error}
@@ -539,36 +659,38 @@ export function AutomotivePage() {
         </div>
       </div>
 
-      {/* ── Gallery strip ── */}
-      <div
-        style={{
-          maxWidth: "1400px",
-          margin: "0 auto",
-          padding: isMobile ? "0 20px 60px" : "0 40px 80px",
-          display: "grid",
-          gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
-          gap: "3px",
-        }}
-      >
-        {galleryImages.map((src, i) => (
-          <div key={i} style={{ aspectRatio: "4/3", overflow: "hidden" }}>
-            <img
-              src={src}
-              alt={`Automotive example ${i + 1}`}
-              loading="lazy"
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                filter: "contrast(1.05) saturate(0.6) brightness(0.8)",
-                transition: "transform 0.6s ease",
-              }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLImageElement).style.transform = "scale(1.04)")}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLImageElement).style.transform = "scale(1)")}
-            />
-          </div>
-        ))}
-      </div>
+      {/* ── Gallery strip — only when images are available ── */}
+      {galleryImages.length > 0 && (
+        <div
+          style={{
+            maxWidth: "1400px",
+            margin: "0 auto",
+            padding: isMobile ? "0 20px 60px" : "0 40px 80px",
+            display: "grid",
+            gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
+            gap: "3px",
+          }}
+        >
+          {galleryImages.map((src, i) => (
+            <div key={i} style={{ aspectRatio: "4/3", overflow: "hidden" }}>
+              <img
+                src={src}
+                alt={`Automotive example ${i + 1}`}
+                loading="lazy"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  filter: "contrast(1.05) saturate(0.6) brightness(0.8)",
+                  transition: "transform 0.6s ease",
+                }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLImageElement).style.transform = "scale(1.04)")}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLImageElement).style.transform = "scale(1)")}
+              />
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* ── Custom packages CTA ── */}
       <div
@@ -619,12 +741,7 @@ export function AutomotivePage() {
           {ta.customBody}
         </p>
         <button
-          onClick={() => {
-            navigate("/");
-            setTimeout(() => {
-              document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
-            }, 300);
-          }}
+          onClick={() => navigate("/", { state: { scrollTo: "contact" } })}
           style={{
             background: "none",
             border: "1px solid rgba(255,251,224,0.3)",
