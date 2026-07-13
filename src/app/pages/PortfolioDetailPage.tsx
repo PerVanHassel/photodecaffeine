@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { projectId, publicAnonKey } from "/utils/supabase/info";
 import { ArrowLeft, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { useMobile } from "../hooks/useMobile";
 
 type PortfolioArticle = {
   id: string;
@@ -20,6 +21,7 @@ type PortfolioArticle = {
 export function PortfolioDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const isMobile = useMobile();
   const [article, setArticle] = useState<PortfolioArticle | null>(null);
   const [loading, setLoading] = useState(true);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -250,44 +252,60 @@ export function PortfolioDetailPage() {
           padding: "80px 40px 120px",
         }}
       >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(min(400px, 100%), 1fr))",
-            gap: "3px",
-          }}
-        >
-          {article.galleryUrls.map((url, idx) => (
-            <div
-              key={idx}
-              style={{
-                position: "relative",
-                overflow: "hidden",
-                cursor: "pointer",
-                aspectRatio: "4/3",
-              }}
-              onClick={() => setLightboxIndex(idx)}
-            >
-              <ImageWithFallback
-                src={url}
-                alt={`${article.title} ${idx + 1}`}
+        {article.galleryUrls.length === 0 ? (
+          <div
+            style={{
+              textAlign: "center",
+              padding: "80px 0",
+              color: "rgba(255,251,224,0.2)",
+              fontSize: "12px",
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+            }}
+          >
+            No images in this gallery yet.
+          </div>
+        ) : (
+          <div
+            style={{
+              columns: isMobile ? 1 : 3,
+              columnGap: "3px",
+            }}
+          >
+            {article.galleryUrls.map((url, idx) => (
+              <div
+                key={idx}
                 style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  filter: "contrast(1.05) saturate(0.75)",
-                  transition: "transform 0.4s ease",
+                  position: "relative",
+                  overflow: "hidden",
+                  cursor: "pointer",
+                  breakInside: "avoid",
+                  marginBottom: "3px",
                 }}
-                onMouseEnter={(e) => {
-                  (e.target as HTMLImageElement).style.transform = "scale(1.03)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.target as HTMLImageElement).style.transform = "scale(1)";
-                }}
-              />
-            </div>
-          ))}
-        </div>
+                onClick={() => setLightboxIndex(idx)}
+              >
+                <ImageWithFallback
+                  src={url}
+                  alt={`${article.title} ${idx + 1}`}
+                  loading="lazy"
+                  style={{
+                    width: "100%",
+                    height: "auto",
+                    display: "block",
+                    filter: "contrast(1.05) saturate(0.75)",
+                    transition: "transform 0.4s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.target as HTMLImageElement).style.transform = "scale(1.03)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.target as HTMLImageElement).style.transform = "scale(1)";
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        )}
 
         <div
           style={{
@@ -296,13 +314,7 @@ export function PortfolioDetailPage() {
           }}
         >
           <button
-            onClick={() => {
-              navigate("/");
-              setTimeout(() => {
-                const el = document.getElementById("contact");
-                if (el) el.scrollIntoView({ behavior: "smooth" });
-              }, 300);
-            }}
+            onClick={() => navigate("/", { state: { scrollTo: "contact" } })}
             style={{
               backgroundColor: "#fffbe0",
               color: "#1a0c04",
@@ -385,65 +397,99 @@ export function PortfolioDetailPage() {
             <X size={24} />
           </button>
 
-          <button
-            aria-label="Previous image"
-            onClick={(e) => {
-              e.stopPropagation();
-              goPrev();
-            }}
-            style={{
-              position: "absolute",
-              left: "24px",
-              background: "rgba(255,251,224,0.1)",
-              border: "1px solid rgba(255,251,224,0.2)",
-              color: "#fffbe0",
-              width: "48px",
-              height: "48px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "rgba(255,251,224,0.2)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "rgba(255,251,224,0.1)";
-            }}
-          >
-            <ChevronLeft size={24} />
-          </button>
-
-          <button
-            aria-label="Next image"
-            onClick={(e) => {
-              e.stopPropagation();
-              goNext();
-            }}
-            style={{
-              position: "absolute",
-              right: "24px",
-              background: "rgba(255,251,224,0.1)",
-              border: "1px solid rgba(255,251,224,0.2)",
-              color: "#fffbe0",
-              width: "48px",
-              height: "48px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "rgba(255,251,224,0.2)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "rgba(255,251,224,0.1)";
-            }}
-          >
-            <ChevronRight size={24} />
-          </button>
+          {isMobile ? (
+            <div
+              style={{
+                position: "absolute",
+                bottom: "64px",
+                display: "flex",
+                gap: "16px",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                aria-label="Previous image"
+                onClick={(e) => { e.stopPropagation(); goPrev(); }}
+                style={{
+                  background: "rgba(255,251,224,0.1)",
+                  border: "1px solid rgba(255,251,224,0.2)",
+                  color: "#fffbe0",
+                  width: "52px",
+                  height: "52px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                }}
+              >
+                <ChevronLeft size={24} />
+              </button>
+              <button
+                aria-label="Next image"
+                onClick={(e) => { e.stopPropagation(); goNext(); }}
+                style={{
+                  background: "rgba(255,251,224,0.1)",
+                  border: "1px solid rgba(255,251,224,0.2)",
+                  color: "#fffbe0",
+                  width: "52px",
+                  height: "52px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                }}
+              >
+                <ChevronRight size={24} />
+              </button>
+            </div>
+          ) : (
+            <>
+              <button
+                aria-label="Previous image"
+                onClick={(e) => { e.stopPropagation(); goPrev(); }}
+                style={{
+                  position: "absolute",
+                  left: "24px",
+                  background: "rgba(255,251,224,0.1)",
+                  border: "1px solid rgba(255,251,224,0.2)",
+                  color: "#fffbe0",
+                  width: "48px",
+                  height: "48px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(255,251,224,0.2)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "rgba(255,251,224,0.1)"; }}
+              >
+                <ChevronLeft size={24} />
+              </button>
+              <button
+                aria-label="Next image"
+                onClick={(e) => { e.stopPropagation(); goNext(); }}
+                style={{
+                  position: "absolute",
+                  right: "24px",
+                  background: "rgba(255,251,224,0.1)",
+                  border: "1px solid rgba(255,251,224,0.2)",
+                  color: "#fffbe0",
+                  width: "48px",
+                  height: "48px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(255,251,224,0.2)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "rgba(255,251,224,0.1)"; }}
+              >
+                <ChevronRight size={24} />
+              </button>
+            </>
+          )}
 
           <img
             src={article.galleryUrls[lightboxIndex]}
