@@ -301,6 +301,8 @@ export const translations = {
         `Showing ${shown} of ${total} projects`,
       bookShoot: "Book a Shoot →",
       noWork: "No work in this category yet.",
+      loadError: "Failed to load portfolio. Check your connection.",
+      retry: "Try Again",
       categories: {
         All: "All",
         "Brand Identity": "Brand Identity",
@@ -706,6 +708,8 @@ export const translations = {
         `${shown} van ${total} projecten`,
       bookShoot: "Boek een Shoot →",
       noWork: "Nog geen werk in deze categorie.",
+      loadError: "Portfolio kon niet worden geladen. Controleer je verbinding.",
+      retry: "Opnieuw proberen",
       categories: {
         All: "Alles",
         "Brand Identity": "Merkidentiteit",

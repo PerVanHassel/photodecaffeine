@@ -114,11 +114,40 @@ function PortfolioCard({ item, onClick }: { item: PortfolioArticle; onClick: () 
   );
 }
 
+function SkeletonGrid() {
+  const heights = [320, 480, 260, 400, 340, 560, 300, 420, 380];
+  return (
+    <div className="portfolio-masonry" style={{ columnCount: 3, columnGap: "3px" }}>
+      {heights.map((h, i) => (
+        <div
+          key={i}
+          style={{
+            width: "100%",
+            height: `${h}px`,
+            backgroundColor: "rgba(255,251,224,0.04)",
+            marginBottom: "3px",
+            breakInside: "avoid",
+            animation: "pulse 1.6s ease-in-out infinite",
+            animationDelay: `${i * 0.1}s`,
+          }}
+        />
+      ))}
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 0.4; }
+          50% { opacity: 0.8; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 export function PortfolioPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [articles, setArticles] = useState<PortfolioArticle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [activeCategory, setActiveCategory] = useState("All");
 
   useEffect(() => {
@@ -126,6 +155,8 @@ export function PortfolioPage() {
   }, []);
 
   async function fetchPortfolio() {
+    setError(false);
+    setLoading(true);
     try {
       const res = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-0951c59e/portfolio`,
@@ -135,16 +166,20 @@ export function PortfolioPage() {
           },
         }
       );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setArticles((data.articles || []).filter((a: PortfolioArticle) => a.title !== "__automotive_gallery__"));
-    } catch (err) {
-      console.error("Failed to fetch portfolio:", err);
+    } catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
   }
 
-  const categories = ["All", ...Array.from(new Set(articles.map((a) => a.category).filter(Boolean)))];
+  const categories = [
+    "All",
+    ...Array.from(new Set(articles.map((a) => a.category).filter(Boolean))).sort(),
+  ];
 
   const filtered =
     activeCategory === "All"
@@ -320,16 +355,41 @@ export function PortfolioPage() {
         }}
       >
         {loading ? (
+          <SkeletonGrid />
+        ) : error ? (
           <div
             style={{
               textAlign: "center",
               padding: "120px 0",
-              color: "rgba(255,251,224,0.3)",
-              fontSize: "12px",
-              letterSpacing: "0.2em",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "20px",
             }}
           >
-            Loading portfolio...
+            <span style={{ color: "rgba(255,251,224,0.3)", fontSize: "12px", letterSpacing: "0.2em", textTransform: "uppercase" }}>
+              {t.portfolioPage.loadError}
+            </span>
+            <button
+              onClick={fetchPortfolio}
+              style={{
+                background: "none",
+                border: "1px solid rgba(255,251,224,0.15)",
+                color: "rgba(255,251,224,0.55)",
+                fontSize: "10px",
+                fontWeight: 600,
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                padding: "12px 28px",
+                fontFamily: "'Inter', sans-serif",
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(255,251,224,0.4)"; e.currentTarget.style.color = "#fffbe0"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,251,224,0.15)"; e.currentTarget.style.color = "rgba(255,251,224,0.55)"; }}
+            >
+              {t.portfolioPage.retry}
+            </button>
           </div>
         ) : filtered.length === 0 ? (
           <div
@@ -389,25 +449,21 @@ export function PortfolioPage() {
             alignItems: "center",
           }}
         >
-          <span
-            style={{
-              color: "rgba(255,251,224,0.2)",
-              fontSize: "10px",
-              fontWeight: 400,
-              letterSpacing: "0.2em",
-              textTransform: "uppercase",
-            }}
-          >
-            {t.portfolioPage.showingOf(filtered.length, articles.length)}
-          </span>
+          {activeCategory !== "All" && (
+            <span
+              style={{
+                color: "rgba(255,251,224,0.2)",
+                fontSize: "10px",
+                fontWeight: 400,
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+              }}
+            >
+              {t.portfolioPage.showingOf(filtered.length, articles.length)}
+            </span>
+          )}
           <button
-            onClick={() => {
-              navigate("/");
-              setTimeout(() => {
-                const el = document.getElementById("contact");
-                if (el) el.scrollIntoView({ behavior: "smooth" });
-              }, 300);
-            }}
+            onClick={() => navigate("/", { state: { scrollTo: "contact" } })}
             style={{
               backgroundColor: "transparent",
               color: "#fffbe0",
