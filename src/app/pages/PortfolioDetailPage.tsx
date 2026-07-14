@@ -169,6 +169,28 @@ export function PortfolioDetailPage() {
         <meta name="twitter:title" content={`${article.title} | PhotoDeCaffeine`} />
         <meta name="twitter:description" content={article.description ? article.description.slice(0, 140) : `Professionele fotoserie door PhotoDeCaffeine.`} />
         {article.coverUrl && <meta name="twitter:image" content={article.coverUrl} />}
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "ImageGallery",
+          "name": article.title,
+          "description": article.description || `Fotoserie door PhotoDeCaffeine — ${article.title}`,
+          "url": `https://www.photodecaffeine.com/portfolio/${article.id}`,
+          "image": article.coverUrl || undefined,
+          "author": {
+            "@type": "LocalBusiness",
+            "name": "PhotoDeCaffeine",
+            "url": "https://www.photodecaffeine.com"
+          }
+        })}</script>
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.photodecaffeine.com/" },
+            { "@type": "ListItem", "position": 2, "name": "Portfolio", "item": "https://www.photodecaffeine.com/portfolio" },
+            { "@type": "ListItem", "position": 3, "name": article.title, "item": `https://www.photodecaffeine.com/portfolio/${article.id}` }
+          ]
+        })}</script>
       </Helmet>
       <div
         style={{

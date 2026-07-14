@@ -207,6 +207,14 @@ export function PortfolioPage() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Portfolio | PhotoDeCaffeine" />
         <meta name="twitter:description" content="Automotive, editorial en studio fotografie uit Rotterdam. Bekijk onze shoots." />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.photodecaffeine.com/" },
+            { "@type": "ListItem", "position": 2, "name": "Portfolio", "item": "https://www.photodecaffeine.com/portfolio" }
+          ]
+        })}</script>
       </Helmet>
       <div
         style={{
