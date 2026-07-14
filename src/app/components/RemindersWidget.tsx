@@ -48,7 +48,7 @@ export function RemindersWidget() {
       const computed: WidgetItem[] = [];
       let urgent = 0;
 
-      const pending = inquiries.filter(i => !i.status || i.status === "pending");
+      const pending = inquiries.filter(i => i.name !== "__ad_visit__" && (!i.status || i.status === "pending"));
       const veryNew = pending.filter(i => hoursAgo(i.createdAt) < 4);
       const overdue48 = pending.filter(i => hoursAgo(i.createdAt) >= 48);
       const overdue24 = pending.filter(i => hoursAgo(i.createdAt) >= 24 && hoursAgo(i.createdAt) < 48);

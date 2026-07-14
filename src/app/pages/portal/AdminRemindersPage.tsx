@@ -80,7 +80,7 @@ function buildActionItems(
   const now = new Date();
   const month = now.getMonth();
 
-  const pending = inquiries.filter(i => !i.status || i.status === "pending");
+  const pending = inquiries.filter(i => i.name !== "__ad_visit__" && (!i.status || i.status === "pending"));
 
   // --- URGENT ---
 
