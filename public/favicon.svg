@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" fill="#080401" rx="4"/>
+  <!-- Aperture blades (simplified 6-blade shutter) -->
+  <g transform="translate(16,16)" fill="none" stroke="#fffbe0" stroke-width="1.1" opacity="0.85">
+    <ellipse rx="7" ry="7"/>
+    <!-- blade 1 -->
+    <path d="M0,-7 A7,7,0,0,1,6.06,-3.5 L1,0 Z" fill="#fffbe0" opacity="0.55"/>
+    <path d="M6.06,-3.5 A7,7,0,0,1,6.06,3.5 L1,0 Z" fill="#fffbe0" opacity="0.35"/>
+    <path d="M6.06,3.5 A7,7,0,0,1,0,7 L1,0 Z" fill="#fffbe0" opacity="0.55"/>
+    <path d="M0,7 A7,7,0,0,1,-6.06,3.5 L-1,0 Z" fill="#fffbe0" opacity="0.35"/>
+    <path d="M-6.06,3.5 A7,7,0,0,1,-6.06,-3.5 L-1,0 Z" fill="#fffbe0" opacity="0.55"/>
+    <path d="M-6.06,-3.5 A7,7,0,0,1,0,-7 L-1,0 Z" fill="#fffbe0" opacity="0.35"/>
+    <!-- center hole -->
+    <circle r="2.2" fill="#080401"/>
+  </g>
+  <!-- PDC text -->
+  <text x="16" y="28.5" font-family="Georgia,serif" font-size="6.5" font-weight="700" fill="#fffbe0" text-anchor="middle" letter-spacing="1.2">PDC</text>
+</svg>
