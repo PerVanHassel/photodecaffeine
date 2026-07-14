@@ -231,7 +231,7 @@ export function AutomotivePage() {
       <div style={{ position: "relative", height: isMobile ? "60vw" : "65vh", minHeight: "320px", overflow: "hidden" }}>
         <img
           src={heroImage}
-          alt="Automotive photography shoot"
+          alt="Automotive fotograaf Rotterdam — buitenshoot sportwagen"
           style={{
             width: "100%",
             height: "100%",
@@ -240,6 +240,34 @@ export function AutomotivePage() {
             filter: "brightness(0.5) contrast(1.08) saturate(0.7)",
           }}
         />
+      </div>
+
+      {/* ── Keyword intro ── */}
+      <div
+        style={{
+          maxWidth: "800px",
+          margin: "0 auto",
+          padding: isMobile ? "48px 20px 0" : "72px 40px 0",
+          textAlign: "center",
+        }}
+      >
+        <h2
+          style={{
+            color: "rgba(255,251,224,0.55)",
+            fontSize: "14px",
+            fontWeight: 400,
+            lineHeight: 1.85,
+            letterSpacing: "0.02em",
+            margin: 0,
+          }}
+        >
+          Als{" "}
+          <strong style={{ color: "rgba(255,251,224,0.8)" }}>automotive fotograaf in Rotterdam</strong>{" "}
+          fotografeer ik personenauto's, sportauto's, oldtimers en bedrijfswagens voor dealerships,
+          showrooms en particuliere eigenaren. Een shoot duurt circa één uur op locatie — in Rotterdam
+          of in heel Nederland — en levert scherpe, klaargestoomde beelden op die direct inzetbaar zijn
+          voor social media, advertenties of jouw website.
+        </h2>
       </div>
 
       {/* ── Package + booking ── */}
@@ -696,7 +724,7 @@ export function AutomotivePage() {
             <div key={i} style={{ aspectRatio: "4/3", overflow: "hidden" }}>
               <img
                 src={src}
-                alt={`Automotive example ${i + 1}`}
+                alt={`Automotive fotografie Rotterdam — foto ${i + 1}`}
                 loading="lazy"
                 style={{
                   width: "100%",

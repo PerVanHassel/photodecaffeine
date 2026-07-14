@@ -85,6 +85,31 @@ export function Home() {
       {sections.services && <><Divider /><Services /></>}
       {sections.socialProof && <><Divider /><SocialProof /></>}
       {sections.customCTA && <><Divider /><CustomCTA /></>}
+      <section
+        style={{
+          maxWidth: "900px",
+          margin: "0 auto",
+          padding: "64px 40px",
+          textAlign: "center",
+        }}
+      >
+        <h2
+          style={{
+            color: "rgba(255,251,224,0.55)",
+            fontSize: "13px",
+            fontWeight: 500,
+            letterSpacing: "0.05em",
+            lineHeight: 1.9,
+            margin: 0,
+          }}
+        >
+          PhotoDeCaffeine is een fotograaf in Rotterdam, gespecialiseerd in{" "}
+          <strong style={{ color: "rgba(255,251,224,0.75)" }}>automotive fotografie</strong>,{" "}
+          studio-shoots en editorial beelden voor merken en particulieren. Wij werken voor showrooms,
+          autodealers, autobedrijven en privérijders in Rotterdam, Den Haag, Utrecht en de rest van
+          Nederland. Elke shoot is op maat — scherpe beelden die je auto of merk laten opvallen.
+        </h2>
+      </section>
       <Contact />
     </div>
   );

@@ -323,7 +323,7 @@ export function PortfolioDetailPage() {
               >
                 <ImageWithFallback
                   src={url}
-                  alt={`${article.title} ${idx + 1}`}
+                  alt={`${article.title} — foto ${idx + 1}`}
                   loading="lazy"
                   style={{
                     width: "100%",
