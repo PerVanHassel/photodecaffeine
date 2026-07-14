@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
@@ -155,6 +156,16 @@ export function PortfolioDetailPage() {
         paddingTop: "72px",
       }}
     >
+      <Helmet>
+        <title>{article.title} — Portfolio | PhotoDeCaffeine</title>
+        <meta name="description" content={article.description ? `${article.description.slice(0, 140)}…` : `Bekijk de '${article.title}' shoot van PhotoDeCaffeine — professionele fotografie uit Rotterdam.`} />
+        <link rel="canonical" href={`https://www.photodecaffeine.com/portfolio/${article.id}`} />
+        <meta property="og:title" content={`${article.title} | PhotoDeCaffeine`} />
+        <meta property="og:description" content={article.description ? article.description.slice(0, 140) : `Professionele fotoserie door PhotoDeCaffeine.`} />
+        <meta property="og:url" content={`https://www.photodecaffeine.com/portfolio/${article.id}`} />
+        <meta property="og:type" content="article" />
+        {article.coverUrl && <meta property="og:image" content={article.coverUrl} />}
+      </Helmet>
       <div
         style={{
           backgroundColor: "#0d0703",

@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { portalFetch } from "../../lib/supabase";
@@ -105,6 +106,15 @@ export function AutomotivePage() {
         paddingTop: "72px",
       }}
     >
+      <Helmet>
+        <title>Automotive Fotografie Rotterdam | PhotoDeCaffeine</title>
+        <meta name="description" content="Professionele automotive fotografie in Rotterdam en omgeving. Scherpe beelden voor showrooms, dealers en particulieren. Meerdere voertuigen mogelijk. Vanaf €50." />
+        <link rel="canonical" href="https://www.photodecaffeine.com/services/automotive" />
+        <meta property="og:title" content="Automotive Fotografie Rotterdam | PhotoDeCaffeine" />
+        <meta property="og:description" content="Professionele automotive fotografie in Rotterdam. Voor showrooms, dealers en particulieren. Vanaf €50." />
+        <meta property="og:url" content="https://www.photodecaffeine.com/services/automotive" />
+        <meta property="og:type" content="website" />
+      </Helmet>
       {/* ── Header ── */}
       <div
         style={{

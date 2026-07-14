@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
@@ -195,6 +196,15 @@ export function PortfolioPage() {
         paddingTop: "72px",
       }}
     >
+      <Helmet>
+        <title>Portfolio — Fotografie & Video | PhotoDeCaffeine</title>
+        <meta name="description" content="Bekijk het portfolio van PhotoDeCaffeine — automotive, editorial en studio fotografie uit Rotterdam. Scherpe beelden voor merken, showrooms en particulieren." />
+        <link rel="canonical" href="https://www.photodecaffeine.com/portfolio" />
+        <meta property="og:title" content="Portfolio | PhotoDeCaffeine" />
+        <meta property="og:description" content="Automotive, editorial en studio fotografie uit Rotterdam. Bekijk onze shoots." />
+        <meta property="og:url" content="https://www.photodecaffeine.com/portfolio" />
+        <meta property="og:type" content="website" />
+      </Helmet>
       <div
         style={{
           backgroundColor: "#0d0703",

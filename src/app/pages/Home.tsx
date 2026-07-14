@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { WorkProcess } from "../components/WorkProcess";
 import { Portfolio } from "../components/Portfolio";
 import { About } from "../components/About";
@@ -65,6 +66,15 @@ export function Home() {
 
   return (
     <div style={{ backgroundColor: "#080401", fontFamily: "'Inter', sans-serif", overflowX: "hidden" }}>
+      <Helmet>
+        <title>Automotive & Studio Fotografie Rotterdam | PhotoDeCaffeine</title>
+        <meta name="description" content="Professionele fotografie en videografie in Rotterdam. Automotive, studio en editorial shoots. Scherpe beelden die je merk versterken. Vraag een offerte aan." />
+        <link rel="canonical" href="https://www.photodecaffeine.com/" />
+        <meta property="og:title" content="Automotive & Studio Fotografie Rotterdam | PhotoDeCaffeine" />
+        <meta property="og:description" content="Professionele fotografie en videografie in Rotterdam. Automotive, studio en editorial shoots. Scherpe beelden die je merk versterken." />
+        <meta property="og:url" content="https://www.photodecaffeine.com/" />
+        <meta property="og:type" content="website" />
+      </Helmet>
       <Hero />
       {sections.workProcess && <><Divider /><WorkProcess /></>}
       {sections.portfolio && <><Divider /><Portfolio /></>}
