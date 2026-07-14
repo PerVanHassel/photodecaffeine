@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /portal/
+Allow: /
+
+Sitemap: https://www.photodecaffeine.com/sitemap.xml
