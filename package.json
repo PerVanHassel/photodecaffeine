@@ -5,7 +5,16 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
+    "postbuild": "react-snap",
     "dev": "vite"
+  },
+  "reactSnap": {
+    "include": ["/", "/portfolio", "/about", "/services/automotive"],
+    "puppeteerArgs": ["--no-sandbox", "--disable-setuid-sandbox"],
+    "headless": true,
+    "inlineCss": false,
+    "minifyCss": false,
+    "saveAs": "html"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",
@@ -69,6 +78,7 @@
   "devDependencies": {
     "@tailwindcss/vite": "4.1.12",
     "@vitejs/plugin-react": "4.7.0",
+    "react-snap": "^1.23.0",
     "tailwindcss": "4.1.12",
     "vite": "6.3.5"
   },
