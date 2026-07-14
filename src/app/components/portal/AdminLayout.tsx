@@ -1,22 +1,9 @@
 import image_PDClogo2_0_12_1 from '@/imports/PDClogo2.0-12-1.png';
 import { Outlet, Navigate, useNavigate, useLocation } from "react-router";
 import { useAuth } from "../../context/AuthContext";
-import { LayoutDashboard, Users, LogOut, ChevronRight, Menu, X, Mail, Images, Bell, Clock, Check, Settings, Car, Megaphone } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { LayoutDashboard, Users, LogOut, ChevronRight, Menu, X, Mail, Images, Bell, Settings, Car, Megaphone } from "lucide-react";
+import { useState } from "react";
 import { useMobile } from "../../hooks/useMobile";
-import { projectId } from "/utils/supabase/info";
-
-type Reminder = {
-  id: string;
-  title: string;
-  description: string;
-  dueDate: string;
-  type: string;
-  relatedId: string | null;
-  completed: boolean;
-  createdBy: string;
-  createdAt: string;
-};
 
 const NAV_ITEMS = [
   { label: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
@@ -25,7 +12,7 @@ const NAV_ITEMS = [
   { label: "Portfolio", path: "/admin/portfolio", icon: Images },
   { label: "Automotive", path: "/admin/services/automotive", icon: Car },
   { label: "Advertenties", path: "/admin/ads", icon: Megaphone },
-  { label: "Reminders", path: "/admin/reminders", icon: Bell },
+  { label: "Actiepunten", path: "/admin/reminders", icon: Bell },
   { label: "Settings", path: "/admin/settings", icon: Settings },
 ];
 
@@ -35,55 +22,8 @@ export function AdminLayout() {
   const location = useLocation();
   const [signingOut, setSigningOut] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [reminders, setReminders] = useState<Reminder[]>([]);
-  const notifRef = useRef<HTMLDivElement>(null);
   const isMobile = useMobile();
 
-  useEffect(() => {
-    if (session) fetchReminders();
-  }, [session]);
-
-  useEffect(() => {
-    if (!loading && user) {
-      console.log("AdminLayout - Current user:", {
-        id: user.id,
-        email: user.email,
-        role: user.user_metadata?.role,
-        metadata: user.user_metadata,
-      });
-    }
-  }, [loading, user]);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
-        setNotificationsOpen(false);
-      }
-    }
-    if (notificationsOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [notificationsOpen]);
-
-  async function fetchReminders() {
-    if (!session) return;
-    try {
-      const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-0951c59e/admin/reminders`,
-        {
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        }
-      );
-      const data = await res.json();
-      setReminders(data.reminders || []);
-    } catch (err) {
-      console.error("Failed to fetch reminders:", err);
-    }
-  }
 
   if (loading) {
     return (
@@ -261,13 +201,12 @@ export function AdminLayout() {
               </>
             )}
           </div>
-          <NotificationBell
-            reminders={reminders}
-            notificationsOpen={notificationsOpen}
-            setNotificationsOpen={setNotificationsOpen}
-            notifRef={notifRef}
-            isMobile={true}
-          />
+          <button
+            onClick={() => { navigate("/admin/reminders"); setSidebarOpen(false); }}
+            style={{ background: "none", border: "1px solid rgba(255,251,224,0.1)", color: "rgba(255,251,224,0.5)", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+          >
+            <Bell size={16} />
+          </button>
           <div style={{
             width: "28px", height: "28px",
             backgroundColor: "rgba(200,144,90,0.15)",
@@ -334,13 +273,15 @@ export function AdminLayout() {
             {currentLabel}
           </span>
           <div style={{ marginLeft: "auto" }}>
-            <NotificationBell
-              reminders={reminders}
-              notificationsOpen={notificationsOpen}
-              setNotificationsOpen={setNotificationsOpen}
-              notifRef={notifRef}
-              isMobile={false}
-            />
+            <button
+              onClick={() => navigate("/admin/reminders")}
+              style={{ background: "none", border: "1px solid rgba(255,251,224,0.1)", color: "rgba(255,251,224,0.5)", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.2s ease" }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,251,224,0.3)"; e.currentTarget.style.color = "#fffbe0"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,251,224,0.1)"; e.currentTarget.style.color = "rgba(255,251,224,0.5)"; }}
+              title="Actiepunten"
+            >
+              <Bell size={16} />
+            </button>
           </div>
         </div>
         <Outlet />
@@ -349,287 +290,3 @@ export function AdminLayout() {
   );
 }
 
-function NotificationBell({
-  reminders,
-  notificationsOpen,
-  setNotificationsOpen,
-  notifRef,
-  isMobile,
-}: {
-  reminders: Reminder[];
-  notificationsOpen: boolean;
-  setNotificationsOpen: (open: boolean) => void;
-  notifRef: React.RefObject<HTMLDivElement>;
-  isMobile: boolean;
-}) {
-  const navigate = useNavigate();
-  const activeReminders = reminders.filter((r) => !r.completed);
-  const overdueCount = activeReminders.filter((r) => {
-    const dueDate = new Date(r.dueDate);
-    return dueDate < new Date();
-  }).length;
-
-  return (
-    <div style={{ position: "relative" }} ref={notifRef}>
-      <button
-        onClick={() => setNotificationsOpen(!notificationsOpen)}
-        style={{
-          background: "none",
-          border: "1px solid rgba(255,251,224,0.1)",
-          color: "rgba(255,251,224,0.5)",
-          width: "32px",
-          height: "32px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          position: "relative",
-          transition: "all 0.2s ease",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = "rgba(255,251,224,0.3)";
-          e.currentTarget.style.color = "#fffbe0";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = "rgba(255,251,224,0.1)";
-          e.currentTarget.style.color = "rgba(255,251,224,0.5)";
-        }}
-      >
-        <Bell size={16} />
-        {activeReminders.length > 0 && (
-          <div
-            style={{
-              position: "absolute",
-              top: "-4px",
-              right: "-4px",
-              backgroundColor: overdueCount > 0 ? "#e07060" : "#c8905a",
-              color: "#080401",
-              width: "16px",
-              height: "16px",
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "9px",
-              fontWeight: 700,
-              border: "1px solid #080401",
-            }}
-          >
-            {activeReminders.length}
-          </div>
-        )}
-      </button>
-
-      {notificationsOpen && (
-        <div
-          style={{
-            position: "absolute",
-            top: "40px",
-            right: 0,
-            width: isMobile ? "280px" : "320px",
-            maxHeight: "400px",
-            backgroundColor: "#0d0703",
-            border: "1px solid rgba(255,251,224,0.15)",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
-            zIndex: 100,
-            overflow: "hidden",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <div
-            style={{
-              padding: "12px 16px",
-              borderBottom: "1px solid rgba(255,251,224,0.1)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <span
-              style={{
-                color: "#fffbe0",
-                fontSize: "11px",
-                fontWeight: 700,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-              }}
-            >
-              Reminders ({activeReminders.length})
-            </span>
-            <button
-              onClick={() => setNotificationsOpen(false)}
-              style={{
-                background: "none",
-                border: "none",
-                color: "rgba(255,251,224,0.3)",
-                cursor: "pointer",
-                padding: 0,
-                display: "flex",
-              }}
-            >
-              <X size={14} />
-            </button>
-          </div>
-
-          <div style={{ overflowY: "auto", maxHeight: "350px" }}>
-            {activeReminders.length === 0 ? (
-              <div
-                style={{
-                  padding: "32px 16px",
-                  textAlign: "center",
-                  color: "rgba(255,251,224,0.25)",
-                  fontSize: "11px",
-                }}
-              >
-                No active reminders
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
-                {activeReminders.slice(0, 10).map((reminder) => {
-                  const dueDate = new Date(reminder.dueDate);
-                  const now = new Date();
-                  const isOverdue = dueDate < now;
-                  const timeDiff = dueDate.getTime() - now.getTime();
-                  const minutesDiff = Math.floor(timeDiff / 60000);
-                  const hoursDiff = Math.floor(minutesDiff / 60);
-                  const daysDiff = Math.floor(hoursDiff / 24);
-
-                  let timeText = "";
-                  if (isOverdue) {
-                    timeText = "Overdue";
-                  } else if (daysDiff > 0) {
-                    timeText = `${daysDiff}d`;
-                  } else if (hoursDiff > 0) {
-                    timeText = `${hoursDiff}h`;
-                  } else if (minutesDiff > 0) {
-                    timeText = `${minutesDiff}m`;
-                  } else {
-                    timeText = "Now";
-                  }
-
-                  return (
-                    <div
-                      key={reminder.id}
-                      style={{
-                        padding: "12px 16px",
-                        backgroundColor: isOverdue
-                          ? "rgba(200,100,90,0.08)"
-                          : "rgba(255,251,224,0.02)",
-                        borderBottom: "1px solid rgba(255,251,224,0.05)",
-                        transition: "background-color 0.2s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = isOverdue
-                          ? "rgba(200,100,90,0.12)"
-                          : "rgba(255,251,224,0.05)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = isOverdue
-                          ? "rgba(200,100,90,0.08)"
-                          : "rgba(255,251,224,0.02)";
-                      }}
-                    >
-                      <div
-                        style={{
-                          color: "#fffbe0",
-                          fontSize: "12px",
-                          fontWeight: 600,
-                          marginBottom: "4px",
-                        }}
-                      >
-                        {reminder.title}
-                      </div>
-                      {reminder.description && (
-                        <div
-                          style={{
-                            color: "rgba(255,251,224,0.3)",
-                            fontSize: "10px",
-                            marginBottom: "6px",
-                            lineHeight: 1.4,
-                          }}
-                        >
-                          {reminder.description.slice(0, 60)}
-                          {reminder.description.length > 60 ? "..." : ""}
-                        </div>
-                      )}
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                        }}
-                      >
-                        <Clock size={10} color={isOverdue ? "#e07060" : "rgba(255,251,224,0.3)"} />
-                        <span
-                          style={{
-                            color: isOverdue ? "#e07060" : "rgba(255,251,224,0.35)",
-                            fontSize: "9px",
-                            fontWeight: 500,
-                          }}
-                        >
-                          {timeText}
-                        </span>
-                        <span
-                          style={{
-                            color: "rgba(200,144,90,0.5)",
-                            fontSize: "8px",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.1em",
-                            marginLeft: "auto",
-                          }}
-                        >
-                          {reminder.type}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* View All Link */}
-          {activeReminders.length > 0 && (
-            <div
-              style={{
-                padding: "12px 16px",
-                borderTop: "1px solid rgba(255,251,224,0.1)",
-              }}
-            >
-              <button
-                onClick={() => {
-                  navigate("/admin/reminders");
-                  setNotificationsOpen(false);
-                }}
-                style={{
-                  width: "100%",
-                  backgroundColor: "rgba(255,251,224,0.05)",
-                  border: "1px solid rgba(255,251,224,0.1)",
-                  color: "rgba(255,251,224,0.6)",
-                  padding: "8px 12px",
-                  fontSize: "10px",
-                  fontWeight: 600,
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "rgba(255,251,224,0.1)";
-                  e.currentTarget.style.color = "#fffbe0";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "rgba(255,251,224,0.05)";
-                  e.currentTarget.style.color = "rgba(255,251,224,0.6)";
-                }}
-              >
-                View All Reminders
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
