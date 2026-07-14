@@ -1,11 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { projectId } from "/utils/supabase/info";
-import { Upload, X, Save } from "lucide-react";
+import { Upload, X, Save, ChevronUp, ChevronDown } from "lucide-react";
 
 const BUCKET = "portfolio-images-0951c59e";
 const GALLERY_CATEGORY = "_automotive-gallery";
 const GALLERY_TITLE = "__automotive_gallery__";
+
+type Toast = { msg: string; type: "success" | "error" } | null;
 
 export function AdminAutomotiveGalleryPage() {
   const { session } = useAuth();
@@ -14,7 +16,22 @@ export function AdminAutomotiveGalleryPage() {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [saved, setSaved] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [toast, setToast] = useState<Toast>(null);
+
+  function showToast(msg: string, type: "success" | "error") {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  }
+
+  const handleBeforeUnload = useCallback((e: BeforeUnloadEvent) => {
+    if (isDirty) { e.preventDefault(); e.returnValue = ""; }
+  }, [isDirty]);
+
+  useEffect(() => {
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [handleBeforeUnload]);
 
   useEffect(() => {
     if (session) fetchGallery();
@@ -63,8 +80,9 @@ export function AdminAutomotiveGalleryPage() {
     try {
       const urls = await Promise.all(files.map(uploadFile));
       setGalleryUrls((prev) => [...prev, ...urls]);
+      setIsDirty(true);
     } catch (err) {
-      alert(`Upload failed: ${err}`);
+      showToast(`Upload failed: ${err}`, "error");
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -73,6 +91,18 @@ export function AdminAutomotiveGalleryPage() {
 
   function removeImage(index: number) {
     setGalleryUrls((prev) => prev.filter((_, i) => i !== index));
+    setIsDirty(true);
+  }
+
+  function moveImage(index: number, dir: -1 | 1) {
+    const next = index + dir;
+    if (next < 0 || next >= galleryUrls.length) return;
+    setGalleryUrls((prev) => {
+      const arr = [...prev];
+      [arr[index], arr[next]] = [arr[next], arr[index]];
+      return arr;
+    });
+    setIsDirty(true);
   }
 
   async function saveGallery() {
@@ -103,10 +133,10 @@ export function AdminAutomotiveGalleryPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Save failed");
       if (!articleId && data.article?.id) setArticleId(data.article.id);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
+      setIsDirty(false);
+      showToast("Gallery saved successfully", "success");
     } catch (err) {
-      alert(`Failed to save: ${err}`);
+      showToast(`Failed to save: ${err}`, "error");
     } finally {
       setSaving(false);
     }
@@ -121,24 +151,55 @@ export function AdminAutomotiveGalleryPage() {
   }
 
   return (
-    <div style={{ padding: "40px", fontFamily: "'Inter', sans-serif", maxWidth: "900px" }}>
+    <div style={{ padding: "40px", fontFamily: "'Inter', sans-serif", maxWidth: "900px", position: "relative" }}>
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: "fixed", bottom: "24px", right: "24px", zIndex: 100,
+          backgroundColor: toast.type === "success" ? "rgba(80,160,100,0.95)" : "rgba(200,80,70,0.95)",
+          color: "#fff", padding: "12px 20px", fontSize: "13px", fontWeight: 500,
+          border: `1px solid ${toast.type === "success" ? "rgba(80,200,120,0.4)" : "rgba(220,80,70,0.4)"}`,
+          boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
+        }}>
+          {toast.msg}
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ marginBottom: "40px" }}>
         <div style={{ color: "rgba(255,251,224,0.2)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: "10px" }}>
           Services › Automotive
         </div>
-        <h1 style={{ color: "#fffbe0", fontSize: "clamp(22px, 3vw, 36px)", fontWeight: 800, letterSpacing: "-0.02em", margin: "0 0 8px", lineHeight: 1.1, textTransform: "uppercase" }}>
-          Gallery beheren
-        </h1>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "8px", flexWrap: "wrap" }}>
+          <h1 style={{ color: "#fffbe0", fontSize: "clamp(22px, 3vw, 36px)", fontWeight: 800, letterSpacing: "-0.02em", margin: 0, lineHeight: 1.1, textTransform: "uppercase" }}>
+            Manage Gallery
+          </h1>
+          {isDirty && (
+            <span style={{
+              backgroundColor: "rgba(200,144,90,0.1)", border: "1px solid rgba(200,144,90,0.25)",
+              color: "#c8905a", fontSize: "9px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase",
+              padding: "4px 10px",
+            }}>
+              Unsaved changes
+            </span>
+          )}
+        </div>
         <p style={{ color: "rgba(255,251,224,0.35)", fontSize: "13px", fontWeight: 300, margin: 0 }}>
-          De foto's die je hier uploadt verschijnen op de automotive pagina van de website. Sleep ze in de gewenste volgorde.
+          Photos uploaded here appear on the automotive page of the website. Use ▲/▼ to reorder.
         </p>
       </div>
 
       {/* Current gallery */}
-      <div style={{ marginBottom: "32px" }}>
-        <div style={{ color: "rgba(255,251,224,0.3)", fontSize: "10px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: "16px" }}>
-          Huidige foto's ({galleryUrls.length})
+      <div style={{ marginBottom: "8px" }}>
+        <div style={{ color: "rgba(255,251,224,0.3)", fontSize: "10px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: "6px" }}>
+          Current photos ({galleryUrls.length})
+        </div>
+        {/* Photo count hint */}
+        <div style={{ color: "rgba(255,251,224,0.2)", fontSize: "11px", marginBottom: "16px" }}>
+          Recommended: 12–20 photos. More than 30 may slow the page.
+          {galleryUrls.length > 30 && (
+            <span style={{ color: "#e07060", marginLeft: "8px" }}>⚠ {galleryUrls.length} photos — consider reducing.</span>
+          )}
         </div>
 
         {galleryUrls.length === 0 ? (
@@ -149,7 +210,7 @@ export function AdminAutomotiveGalleryPage() {
             color: "rgba(255,251,224,0.2)",
             fontSize: "13px",
           }}>
-            Nog geen foto's geüpload
+            No photos uploaded yet
           </div>
         ) : (
           <div style={{
@@ -158,7 +219,7 @@ export function AdminAutomotiveGalleryPage() {
             gap: "8px",
           }}>
             {galleryUrls.map((url, i) => (
-              <div key={i} style={{ position: "relative", aspectRatio: "4/3", overflow: "hidden" }}>
+              <div key={url + i} style={{ position: "relative", aspectRatio: "4/3", overflow: "hidden" }}>
                 <img
                   src={url}
                   alt={`Gallery ${i + 1}`}
@@ -175,6 +236,23 @@ export function AdminAutomotiveGalleryPage() {
                   padding: "3px 7px",
                 }}>
                   {String(i + 1).padStart(2, "0")}
+                </div>
+                {/* Reorder buttons */}
+                <div style={{ position: "absolute", top: "8px", right: "36px", display: "flex", flexDirection: "column", gap: "2px" }}>
+                  <button
+                    onClick={() => moveImage(i, -1)}
+                    disabled={i === 0}
+                    style={{ backgroundColor: "rgba(8,4,1,0.75)", border: "none", color: i === 0 ? "rgba(255,251,224,0.2)" : "#fffbe0", width: "22px", height: "22px", display: "flex", alignItems: "center", justifyContent: "center", cursor: i === 0 ? "default" : "pointer", padding: 0 }}
+                  >
+                    <ChevronUp size={13} />
+                  </button>
+                  <button
+                    onClick={() => moveImage(i, 1)}
+                    disabled={i === galleryUrls.length - 1}
+                    style={{ backgroundColor: "rgba(8,4,1,0.75)", border: "none", color: i === galleryUrls.length - 1 ? "rgba(255,251,224,0.2)" : "#fffbe0", width: "22px", height: "22px", display: "flex", alignItems: "center", justifyContent: "center", cursor: i === galleryUrls.length - 1 ? "default" : "pointer", padding: 0 }}
+                  >
+                    <ChevronDown size={13} />
+                  </button>
                 </div>
                 {/* Remove button */}
                 <button
@@ -197,7 +275,7 @@ export function AdminAutomotiveGalleryPage() {
       </div>
 
       {/* Upload zone */}
-      <div style={{ marginBottom: "32px" }}>
+      <div style={{ marginBottom: "32px", marginTop: "24px" }}>
         <label
           style={{
             display: "flex",
@@ -222,7 +300,7 @@ export function AdminAutomotiveGalleryPage() {
           }}
         >
           <Upload size={18} />
-          {uploading ? "Bezig met uploaden…" : "Foto's uploaden (meerdere tegelijk mogelijk)"}
+          {uploading ? "Uploading…" : "Upload photos (multiple at once supported)"}
           <input
             type="file"
             accept="image/*"
@@ -240,9 +318,9 @@ export function AdminAutomotiveGalleryPage() {
           onClick={saveGallery}
           disabled={saving || uploading}
           style={{
-            backgroundColor: saved ? "rgba(100,200,100,0.15)" : saving ? "rgba(255,251,224,0.2)" : "#fffbe0",
-            color: saved ? "#80c880" : saving ? "rgba(255,251,224,0.4)" : "#1a0c04",
-            border: saved ? "1px solid rgba(100,200,100,0.3)" : "none",
+            backgroundColor: saving ? "rgba(255,251,224,0.1)" : isDirty ? "#c8905a" : "#fffbe0",
+            color: saving ? "rgba(255,251,224,0.4)" : isDirty ? "#fffbe0" : "#1a0c04",
+            border: "none",
             padding: "14px 32px",
             fontSize: "11px",
             fontWeight: 700,
@@ -256,23 +334,23 @@ export function AdminAutomotiveGalleryPage() {
             transition: "all 0.25s ease",
           }}
           onMouseEnter={(e) => {
-            if (!saving && !uploading && !saved) {
+            if (!saving && !uploading) {
               e.currentTarget.style.backgroundColor = "#c8905a";
               e.currentTarget.style.color = "#fffbe0";
             }
           }}
           onMouseLeave={(e) => {
-            if (!saving && !uploading && !saved) {
-              e.currentTarget.style.backgroundColor = "#fffbe0";
-              e.currentTarget.style.color = "#1a0c04";
+            if (!saving && !uploading) {
+              e.currentTarget.style.backgroundColor = isDirty ? "#c8905a" : "#fffbe0";
+              e.currentTarget.style.color = isDirty ? "#fffbe0" : "#1a0c04";
             }
           }}
         >
           <Save size={14} />
-          {saved ? "Opgeslagen ✓" : saving ? "Opslaan…" : "Opslaan & publiceren"}
+          {saving ? "Saving…" : "Save & publish"}
         </button>
         <p style={{ color: "rgba(255,251,224,0.2)", fontSize: "11px", margin: 0 }}>
-          Wijzigingen zijn direct zichtbaar op de website na opslaan.
+          Changes are visible on the website immediately after saving.
         </p>
       </div>
     </div>

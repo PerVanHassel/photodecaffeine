@@ -1,8 +1,8 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { portalFetch } from "../../../lib/supabase";
 import { useMobile } from "../../hooks/useMobile";
-import { Megaphone, TrendingUp, Users, MousePointerClick, Copy, Check, Pencil, X, Trash2 } from "lucide-react";
+import { Megaphone, TrendingUp, Users, MousePointerClick, Copy, Check, Pencil, X, Trash2, Download, AlertCircle } from "lucide-react";
 
 interface RawInquiry {
   id: string;
@@ -61,17 +61,17 @@ function cvr(visits: number, leads: number): string {
 function timeAgo(str: string) {
   const diff = Date.now() - new Date(str).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "Zojuist";
-  if (mins < 60) return `${mins}m geleden`;
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}u geleden`;
+  if (hrs < 24) return `${hrs}h ago`;
   const days = Math.floor(hrs / 24);
-  if (days < 7) return `${days}d geleden`;
-  return new Date(str).toLocaleDateString("nl-NL", { day: "numeric", month: "short", year: "numeric" });
+  if (days < 7) return `${days}d ago`;
+  return new Date(str).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
 function formatDate(str: string) {
-  return new Date(str).toLocaleString("nl-NL", {
+  return new Date(str).toLocaleString("en-GB", {
     day: "numeric", month: "short", year: "numeric",
     hour: "2-digit", minute: "2-digit",
   });
@@ -105,9 +105,9 @@ function StatCard({ label, value, sub }: { label: string; value: string | number
   );
 }
 
-function CopyUrl({ campaign }: { campaign: string }) {
+function CopyUrl({ campaign, page }: { campaign: string; page: string }) {
   const [copied, setCopied] = useState(false);
-  const url = `https://www.photodecaffeine.com/services/automotive?ref=${campaign}`;
+  const url = `https://www.photodecaffeine.com${page}?ref=${campaign}`;
   function copy() {
     navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
   }
@@ -117,7 +117,7 @@ function CopyUrl({ campaign }: { campaign: string }) {
         {url}
       </span>
       <button onClick={copy} style={{ background: "none", border: "1px solid rgba(255,251,224,0.08)", color: copied ? "#80c880" : "rgba(255,251,224,0.35)", cursor: "pointer", padding: "4px 8px", display: "flex", alignItems: "center", gap: "4px", fontSize: "9px", fontFamily: "'Inter', sans-serif", letterSpacing: "0.1em", transition: "all 0.2s ease", flexShrink: 0 }}>
-        {copied ? <><Check size={10} /> Gekopieerd</> : <><Copy size={10} /> Kopieer</>}
+        {copied ? <><Check size={10} /> Copied</> : <><Copy size={10} /> Copy</>}
       </button>
     </div>
   );
@@ -184,11 +184,11 @@ function LabelEditor({ value, onChange }: { value: string; onChange: (v: string)
       {value ? (
         <span style={{ color: "#fffbe0", fontSize: "13px", fontWeight: 600 }}>{value}</span>
       ) : (
-        <span style={{ color: "rgba(255,251,224,0.2)", fontSize: "12px", fontStyle: "italic" }}>Label toevoegen…</span>
+        <span style={{ color: "rgba(255,251,224,0.2)", fontSize: "12px", fontStyle: "italic" }}>Add label…</span>
       )}
       <button
         onClick={startEdit}
-        title="Label bewerken"
+        title="Edit label"
         style={{ background: "none", border: "none", color: "rgba(255,251,224,0.2)", cursor: "pointer", padding: "2px", display: "flex", transition: "color 0.15s ease" }}
         onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,251,224,0.6)")}
         onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,251,224,0.2)")}
@@ -199,12 +199,12 @@ function LabelEditor({ value, onChange }: { value: string; onChange: (v: string)
   );
 }
 
-/** Pill toggle: Actief / Inactief */
+/** Pill toggle: Active / Inactive */
 function ActiveToggle({ active, onChange }: { active: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
       onClick={(e) => { e.stopPropagation(); onChange(!active); }}
-      title={active ? "Markeer als inactief" : "Markeer als actief"}
+      title={active ? "Mark as inactive" : "Mark as active"}
       style={{
         display: "flex",
         alignItems: "center",
@@ -232,18 +232,65 @@ function ActiveToggle({ active, onChange }: { active: boolean; onChange: (v: boo
         backgroundColor: active ? "rgba(120,190,140,0.9)" : "rgba(255,251,224,0.25)",
         flexShrink: 0,
       }} />
-      {active ? "Actief" : "Inactief"}
+      {active ? "Active" : "Inactive"}
     </button>
   );
 }
 
 type FilterTab = "all" | "active" | "inactive";
+type Period = "all" | "7d" | "30d" | "90d";
+
+const PAGE_OPTIONS = [
+  { label: "Automotive", value: "/services/automotive" },
+  { label: "Homepage", value: "/" },
+  { label: "Contact", value: "/contact" },
+  { label: "Portfolio", value: "/portfolio" },
+];
+
+function buildStats(all: RawInquiry[], cutoff?: Date): CampaignStat[] {
+  const filtered = cutoff ? all.filter(i => new Date(i.createdAt) >= cutoff) : all;
+  const map = new Map<string, CampaignStat>();
+  const ensure = (ref: string, page: string) => {
+    if (!map.has(ref)) map.set(ref, { ref, page, visits: 0, leads: [], lastActivity: "" });
+    return map.get(ref)!;
+  };
+  const bump = (stat: CampaignStat, date: string) => {
+    if (!stat.lastActivity || date > stat.lastActivity) stat.lastActivity = date;
+  };
+  for (const inq of filtered) {
+    if (inq.name === "__ad_visit__") {
+      let page = "/";
+      try { page = JSON.parse(inq.message).page || "/"; } catch { /* ignore */ }
+      const s = ensure(inq.brand, page);
+      s.visits += 1;
+      bump(s, inq.createdAt);
+    } else {
+      const ref = extractRef(inq.message);
+      if (ref) {
+        const s = ensure(ref, "");
+        s.leads.push(inq);
+        bump(s, inq.createdAt);
+      }
+    }
+  }
+  return Array.from(map.values()).sort((a, b) =>
+    b.leads.length !== a.leads.length ? b.leads.length - a.leads.length : b.visits - a.visits
+  );
+}
+
+function getCutoff(period: Period): Date | undefined {
+  if (period === "all") return undefined;
+  const days = period === "7d" ? 7 : period === "30d" ? 30 : 90;
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d;
+}
 
 export function AdminAdsPage() {
   const { session } = useAuth();
   const isMobile = useMobile();
 
-  const [campaigns, setCampaigns] = useState<CampaignStat[]>([]);
+  const [rawInquiries, setRawInquiries] = useState<RawInquiry[]>([]);
   const [meta, setMeta] = useState<Record<string, CampaignMeta>>(loadMeta);
   const [deleted, setDeleted] = useState<Set<string>>(loadDeleted);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -251,45 +298,17 @@ export function AdminAdsPage() {
   const [error, setError] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterTab>("all");
+  const [period, setPeriod] = useState<Period>("all");
+  const [targetPage, setTargetPage] = useState("/services/automotive");
 
   useEffect(() => {
     if (!session) return;
     portalFetch("/admin/inquiries", {}, session.access_token)
-      .then((data) => { buildStats(data.inquiries || []); setLoading(false); })
-      .catch((err) => { console.error(err); setError("Kon data niet laden."); setLoading(false); });
+      .then((data) => { setRawInquiries(data.inquiries || []); setLoading(false); })
+      .catch((err) => { console.error(err); setError("Failed to load data."); setLoading(false); });
   }, [session]);
 
-  function buildStats(all: RawInquiry[]) {
-    const map = new Map<string, CampaignStat>();
-    const ensure = (ref: string, page: string) => {
-      if (!map.has(ref)) map.set(ref, { ref, page, visits: 0, leads: [], lastActivity: "" });
-      return map.get(ref)!;
-    };
-    const bump = (stat: CampaignStat, date: string) => {
-      if (!stat.lastActivity || date > stat.lastActivity) stat.lastActivity = date;
-    };
-    for (const inq of all) {
-      if (inq.name === "__ad_visit__") {
-        let page = "/";
-        try { page = JSON.parse(inq.message).page || "/"; } catch { /* ignore */ }
-        const s = ensure(inq.brand, page);
-        s.visits += 1;
-        bump(s, inq.createdAt);
-      } else {
-        const ref = extractRef(inq.message);
-        if (ref) {
-          const s = ensure(ref, "");
-          s.leads.push(inq);
-          bump(s, inq.createdAt);
-        }
-      }
-    }
-    setCampaigns(
-      Array.from(map.values()).sort((a, b) =>
-        b.leads.length !== a.leads.length ? b.leads.length - a.leads.length : b.visits - a.visits
-      )
-    );
-  }
+  const campaigns = useMemo(() => buildStats(rawInquiries, getCutoff(period)), [rawInquiries, period]);
 
   function updateMeta(ref: string, patch: Partial<CampaignMeta>) {
     setMeta((prev) => {
@@ -339,6 +358,22 @@ export function AdminAdsPage() {
     transition: "all 0.2s ease",
   });
 
+  function exportCsv() {
+    const rows = [
+      ["Ref", "Label", "Visits", "Leads", "CVR", "Last Activity", "Active"],
+      ...filtered.map(c => {
+        const m = getMeta(c.ref);
+        return [c.ref, m.label, c.visits, c.leads.length, cvr(c.visits, c.leads.length), c.lastActivity ? new Date(c.lastActivity).toISOString() : "", m.active ? "yes" : "no"];
+      }),
+    ];
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "campaigns.csv"; a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div style={{ padding: isMobile ? "24px 16px 60px" : "48px 40px 80px", maxWidth: "1100px" }}>
       {/* Header */}
@@ -347,52 +382,111 @@ export function AdminAdsPage() {
         <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
           <Megaphone size={20} color="rgba(255,251,224,0.6)" />
           <h1 style={{ color: "#fffbe0", fontSize: "clamp(22px, 3vw, 38px)", fontWeight: 800, letterSpacing: "-0.02em", margin: 0, lineHeight: 1.1 }}>
-            Advertenties
+            Ad Campaigns
           </h1>
         </div>
         <p style={{ color: "rgba(255,251,224,0.3)", fontSize: "13px", fontWeight: 300, margin: 0 }}>
-          Volg welke advertenties bezoekers en leads opleveren. Gebruik <code style={{ color: "#c8905a", fontFamily: "'Courier New', monospace" }}>?ref=campagne-naam</code> achter elke advertentie-URL.
+          Track which ads bring visitors and leads. Add <code style={{ color: "#c8905a", fontFamily: "'Courier New', monospace" }}>?ref=campaign-name</code> to every ad URL.
+        </p>
+      </div>
+
+      {/* localStorage warning */}
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "10px", border: "1px solid rgba(200,160,48,0.2)", backgroundColor: "rgba(200,160,48,0.05)", padding: "14px 16px", marginBottom: "24px" }}>
+        <AlertCircle size={14} color="#c8a030" style={{ flexShrink: 0, marginTop: "2px" }} />
+        <p style={{ color: "rgba(255,251,224,0.4)", fontSize: "12px", fontWeight: 300, lineHeight: 1.6, margin: 0 }}>
+          <strong style={{ color: "rgba(255,251,224,0.6)", fontWeight: 600 }}>Labels and active/inactive status</strong> are stored in this browser only. They won't appear on other devices or after clearing browser data. Visit data is always loaded from the server.
         </p>
       </div>
 
       {/* How-to banner */}
       <div style={{ border: "1px solid rgba(200,144,90,0.15)", backgroundColor: "rgba(200,144,90,0.04)", padding: "20px 24px", marginBottom: "32px" }}>
-        <div style={{ color: "#c8905a", fontSize: "9px", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase", marginBottom: "10px" }}>Hoe werkt het?</div>
-        <p style={{ color: "rgba(255,251,224,0.45)", fontSize: "13px", fontWeight: 300, lineHeight: 1.7, margin: "0 0 12px" }}>
-          Voeg <strong style={{ color: "rgba(255,251,224,0.7)", fontWeight: 500 }}>?ref=jouw-campagne</strong> toe aan elke advertentielink. Elk bezoek en elke lead worden automatisch gekoppeld.
+        <div style={{ color: "#c8905a", fontSize: "9px", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase", marginBottom: "10px" }}>How does it work?</div>
+        <p style={{ color: "rgba(255,251,224,0.45)", fontSize: "13px", fontWeight: 300, lineHeight: 1.7, margin: "0 0 14px" }}>
+          Add <strong style={{ color: "rgba(255,251,224,0.7)", fontWeight: 500 }}>?ref=your-campaign</strong> to every ad link. Every visit and lead are automatically attributed.
         </p>
+        {/* Page selector */}
+        <div style={{ marginBottom: "12px", display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+          <span style={{ color: "rgba(255,251,224,0.2)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase" }}>Target page</span>
+          <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+            {PAGE_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setTargetPage(opt.value)}
+                style={{
+                  background: targetPage === opt.value ? "rgba(200,144,90,0.12)" : "none",
+                  border: `1px solid ${targetPage === opt.value ? "rgba(200,144,90,0.3)" : "rgba(255,251,224,0.08)"}`,
+                  color: targetPage === opt.value ? "#c8905a" : "rgba(255,251,224,0.3)",
+                  fontSize: "9px", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase",
+                  fontFamily: "'Inter', sans-serif", cursor: "pointer", padding: "5px 10px", transition: "all 0.15s ease",
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-          <div style={{ color: "rgba(255,251,224,0.2)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "2px" }}>Voorbeeldlinks</div>
-          {["fb-automotive-jul25", "ig-automotive-video", "google-automotive"].map((ex) => (
-            <CopyUrl key={ex} campaign={ex} />
+          <div style={{ color: "rgba(255,251,224,0.2)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "2px" }}>Example links</div>
+          {["fb-campaign-jul25", "ig-video-ad", "google-search"].map((ex) => (
+            <CopyUrl key={ex} campaign={ex} page={targetPage} />
           ))}
         </div>
       </div>
 
       {/* Stats overview — only active campaigns */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "8px" }}>
-        <StatCard label="Campagnes actief" value={activeCampaigns.length} />
-        <StatCard label="Bezoeken" value={totalVisits} sub="actieve campagnes" />
-        <StatCard label="Leads" value={totalLeads} sub="actieve campagnes" />
-        <StatCard label="Gem. conversie" value={cvr(totalVisits, totalLeads)} sub="bezoek → lead" />
+        <StatCard label="Active campaigns" value={activeCampaigns.length} />
+        <StatCard label="Visits" value={totalVisits} sub="active campaigns" />
+        <StatCard label="Leads" value={totalLeads} sub="active campaigns" />
+        <StatCard label="Avg. conversion" value={cvr(totalVisits, totalLeads)} sub="visit → lead" />
+      </div>
+
+      {/* Period filter + export */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px", flexWrap: "wrap", gap: "8px" }}>
+        <div style={{ display: "flex", gap: "4px" }}>
+          {(["all", "7d", "30d", "90d"] as Period[]).map((p) => (
+            <button key={p} onClick={() => setPeriod(p)} style={{
+              background: period === p ? "rgba(255,251,224,0.06)" : "none",
+              border: `1px solid ${period === p ? "rgba(255,251,224,0.15)" : "rgba(255,251,224,0.06)"}`,
+              color: period === p ? "#fffbe0" : "rgba(255,251,224,0.3)",
+              fontSize: "9px", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase",
+              fontFamily: "'Inter', sans-serif", cursor: "pointer", padding: "6px 12px", transition: "all 0.15s ease",
+            }}>
+              {p === "all" ? "All time" : p}
+            </button>
+          ))}
+        </div>
+        {filtered.length > 0 && (
+          <button onClick={exportCsv} style={{
+            display: "flex", alignItems: "center", gap: "6px",
+            background: "none", border: "1px solid rgba(255,251,224,0.08)",
+            color: "rgba(255,251,224,0.35)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase",
+            fontFamily: "'Inter', sans-serif", cursor: "pointer", padding: "6px 12px", transition: "all 0.2s ease",
+          }}
+            onMouseEnter={e => { e.currentTarget.style.color = "#fffbe0"; e.currentTarget.style.borderColor = "rgba(255,251,224,0.2)"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,251,224,0.35)"; e.currentTarget.style.borderColor = "rgba(255,251,224,0.08)"; }}
+          >
+            <Download size={10} /> Export CSV
+          </button>
+        )}
       </div>
 
       {/* Filter tabs */}
       <div style={{ display: "flex", borderBottom: "1px solid rgba(255,251,224,0.05)", marginBottom: "16px" }}>
         {(["all", "active", "inactive"] as FilterTab[]).map((t) => (
           <button key={t} style={tabStyle(t)} onClick={() => setFilter(t)}>
-            {t === "all" ? `Alle (${visible.length})` : t === "active" ? `Actief (${activeCampaigns.length})` : `Inactief (${visible.length - activeCampaigns.length})`}
+            {t === "all" ? `All (${visible.length})` : t === "active" ? `Active (${activeCampaigns.length})` : `Inactive (${visible.length - activeCampaigns.length})`}
           </button>
         ))}
       </div>
 
       {error && <div style={{ padding: "16px", border: "1px solid rgba(224,112,96,0.2)", color: "#e07060", fontSize: "13px", marginBottom: "16px" }}>{error}</div>}
-      {loading && <div style={{ textAlign: "center", padding: "64px 0", color: "rgba(255,251,224,0.2)", fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase" }}>Laden…</div>}
+      {loading && <div style={{ textAlign: "center", padding: "64px 0", color: "rgba(255,251,224,0.2)", fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase" }}>Loading…</div>}
 
       {!loading && visible.length === 0 && !error && (
         <div style={{ textAlign: "center", padding: "64px 0", border: "1px solid rgba(255,251,224,0.04)", color: "rgba(255,251,224,0.2)", fontSize: "13px", lineHeight: 1.8 }}>
-          Nog geen data.<br />
-          <span style={{ fontSize: "12px" }}>Zet je eerste advertentie live met een <code style={{ color: "rgba(255,251,224,0.4)", fontFamily: "'Courier New', monospace" }}>?ref=</code> parameter.</span>
+          No data yet.<br />
+          <span style={{ fontSize: "12px" }}>Launch your first ad with a <code style={{ color: "rgba(255,251,224,0.4)", fontFamily: "'Courier New', monospace" }}>?ref=</code> parameter.</span>
         </div>
       )}
 
@@ -402,7 +496,7 @@ export function AdminAdsPage() {
           {/* Column headers */}
           {!isMobile && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr auto 90px 90px 90px 150px 110px", gap: "0", padding: "8px 20px", borderBottom: "1px solid rgba(255,251,224,0.05)" }}>
-              {["Campagne / Label", "", "Bezoeken", "Leads", "CVR", "Laatste activiteit", "Status"].map((h, i) => (
+              {["Campaign / Label", "", "Visits", "Leads", "CVR", "Last activity", "Status"].map((h, i) => (
                 <span key={i} style={{ color: "rgba(255,251,224,0.2)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase" }}>{h}</span>
               ))}
             </div>
@@ -479,14 +573,14 @@ export function AdminAdsPage() {
 
                   {/* Visits */}
                   <div>
-                    {isMobile && <span style={{ color: "rgba(255,251,224,0.2)", fontSize: "9px", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "2px" }}>Bezoeken</span>}
+                    {isMobile && <span style={{ color: "rgba(255,251,224,0.2)", fontSize: "9px", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "2px" }}>Visits</span>}
                     <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                       <MousePointerClick size={11} color="rgba(255,251,224,0.3)" />
                       <span style={{ color: "rgba(255,251,224,0.6)", fontSize: "14px", fontWeight: 600 }}>{c.visits}</span>
                     </div>
                   </div>
 
-                  {/* Leads count */}
+                  {/* Leads */}
                   <div>
                     {isMobile && <span style={{ color: "rgba(255,251,224,0.2)", fontSize: "9px", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "2px" }}>Leads</span>}
                     <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
@@ -506,13 +600,14 @@ export function AdminAdsPage() {
 
                   {/* Last activity */}
                   <div style={{ color: "rgba(255,251,224,0.25)", fontSize: "11px" }}>
-                    {isMobile && <span style={{ color: "rgba(255,251,224,0.2)", fontSize: "9px", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "2px" }}>Laatste activiteit</span>}
+                    {isMobile && <span style={{ color: "rgba(255,251,224,0.2)", fontSize: "9px", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "2px" }}>Last activity</span>}
                     {c.lastActivity ? timeAgo(c.lastActivity) : "—"}
                   </div>
 
                   {/* Active toggle + delete */}
                   <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "flex-start" }}>
                     {isMobile && <span style={{ color: "rgba(255,251,224,0.2)", fontSize: "9px", letterSpacing: "0.1em", textTransform: "uppercase" }}>Status</span>}
+
                     <ActiveToggle active={isActive} onChange={(v) => updateMeta(c.ref, { active: v })} />
                     {confirmDelete === c.ref ? (
                       <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -528,7 +623,7 @@ export function AdminAdsPage() {
                             cursor: "pointer", padding: "4px 10px",
                           }}
                         >
-                          Verwijderen
+                          Delete
                         </button>
                         <button
                           onClick={() => setConfirmDelete(null)}
@@ -540,7 +635,7 @@ export function AdminAdsPage() {
                     ) : (
                       <button
                         onClick={() => setConfirmDelete(c.ref)}
-                        title="Campagne verwijderen"
+                        title="Remove campaign"
                         style={{
                           background: "none", border: "none",
                           color: "rgba(255,251,224,0.15)",
@@ -553,7 +648,7 @@ export function AdminAdsPage() {
                         onMouseEnter={(e) => (e.currentTarget.style.color = "#e07060")}
                         onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,251,224,0.15)")}
                       >
-                        <Trash2 size={11} /> Verwijder
+                        <Trash2 size={11} /> Remove
                       </button>
                     )}
                   </div>
@@ -563,7 +658,7 @@ export function AdminAdsPage() {
                 {isOpen && c.leads.length > 0 && (
                   <div style={{ borderTop: "1px solid rgba(255,251,224,0.05)", padding: "0 20px 20px" }}>
                     <div style={{ color: "rgba(255,251,224,0.2)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase", padding: "16px 0 12px" }}>
-                      Leads van deze campagne ({c.leads.length})
+                      Leads from this campaign ({c.leads.length})
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                       {c.leads.map((lead) => (
@@ -588,12 +683,12 @@ export function AdminAdsPage() {
                             </div>
                           )}
                           <a
-                            href={`mailto:${lead.email}?subject=Re: Jouw aanvraag via PDC`}
+                            href={`mailto:${lead.email}?subject=Re: Your inquiry via PDC`}
                             style={{ display: "inline-flex", alignItems: "center", gap: "6px", marginTop: "12px", color: "#c8905a", fontSize: "10px", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", textDecoration: "none" }}
                             onMouseEnter={(e) => (e.currentTarget.style.color = "#fffbe0")}
                             onMouseLeave={(e) => (e.currentTarget.style.color = "#c8905a")}
                           >
-                            Beantwoorden via e-mail →
+                            Reply via email →
                           </a>
                         </div>
                       ))}
@@ -608,7 +703,7 @@ export function AdminAdsPage() {
 
       {!loading && filtered.length === 0 && visible.length > 0 && (
         <div style={{ textAlign: "center", padding: "48px 0", color: "rgba(255,251,224,0.2)", fontSize: "13px" }}>
-          Geen campagnes in dit filter.
+          No campaigns match this filter.
         </div>
       )}
     </div>

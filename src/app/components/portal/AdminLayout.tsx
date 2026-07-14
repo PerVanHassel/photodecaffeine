@@ -11,7 +11,7 @@ const NAV_ITEMS = [
   { label: "Inquiries", path: "/admin/inquiries", icon: Mail },
   { label: "Portfolio", path: "/admin/portfolio", icon: Images },
   { label: "Automotive", path: "/admin/services/automotive", icon: Car },
-  { label: "Advertenties", path: "/admin/ads", icon: Megaphone },
+  { label: "Ads", path: "/admin/ads", icon: Megaphone },
   { label: "Actiepunten", path: "/admin/reminders", icon: Bell },
   { label: "Settings", path: "/admin/settings", icon: Settings },
 ];
