@@ -20,6 +20,8 @@ type SiteSettings = {
   heroImageMobileUrl: string;
   frameImageUrl: string;
   sections: Sections;
+  studioName: string;
+  contactEmail: string;
 };
 
 const DEFAULT_SECTIONS: Sections = {
@@ -47,6 +49,8 @@ export function AdminSettingsPage() {
     heroImageMobileUrl: "",
     frameImageUrl: "",
     sections: DEFAULT_SECTIONS,
+    studioName: "",
+    contactEmail: "",
   });
   const [portfolioArticles, setPortfolioArticles] = useState<PortfolioArticle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -114,6 +118,8 @@ export function AdminSettingsPage() {
         heroImageMobileUrl: s.heroImageMobileUrl || "",
         frameImageUrl: s.frameImageUrl || "",
         sections: { ...DEFAULT_SECTIONS, ...(s.sections || {}) },
+        studioName: s.studioName || "",
+        contactEmail: s.contactEmail || "",
       });
     } catch (err) {
       console.error("Failed to fetch settings:", err);
@@ -224,6 +230,22 @@ export function AdminSettingsPage() {
     }
   }
 
+
+  async function removeImage(key: "heroImageUrl" | "heroImageMobileUrl" | "frameImageUrl") {
+    const updatedSettings: SiteSettings = { ...settings, [key]: "" };
+    setSettings(updatedSettings);
+    setSaveStatus("idle");
+    setSaveError(null);
+    try {
+      await saveToServer(updatedSettings);
+      await fetchSettings();
+      setSaveStatus("success");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+    } catch (err) {
+      setSaveStatus("error");
+      setSaveError(String(err));
+    }
+  }
 
   async function selectPortfolioImage(url: string) {
     if (!session) return;
@@ -433,7 +455,7 @@ export function AdminSettingsPage() {
                   }}
                 />
                 <button
-                  onClick={() => setSettings((prev) => ({ ...prev, heroImageUrl: "" }))}
+                  onClick={() => removeImage("heroImageUrl")}
                   style={{
                     position: "absolute",
                     top: "8px",
@@ -551,7 +573,7 @@ export function AdminSettingsPage() {
                   }}
                 />
                 <button
-                  onClick={() => setSettings((prev) => ({ ...prev, heroImageMobileUrl: "" }))}
+                  onClick={() => removeImage("heroImageMobileUrl")}
                   style={{
                     position: "absolute",
                     top: "8px",
@@ -656,7 +678,7 @@ export function AdminSettingsPage() {
             <div style={{ position: "relative", display: "inline-block" }}>
               <img src={settings.frameImageUrl} alt="Frame" style={{ width: "160px", height: "213px", objectFit: "cover", display: "block", border: "1px solid rgba(255,251,224,0.1)" }} />
               <button
-                onClick={() => setSettings((prev) => ({ ...prev, frameImageUrl: "" }))}
+                onClick={() => removeImage("frameImageUrl")}
                 style={{ position: "absolute", top: "8px", right: "8px", backgroundColor: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,100,100,0.5)", color: "#ff6464", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
               >
                 <X size={16} />
@@ -729,6 +751,78 @@ export function AdminSettingsPage() {
           ))}
         </div>
       </div>
+
+      {/* Studio Info */}
+      <div style={{
+        backgroundColor: "rgba(13,7,3,0.6)",
+        border: "1px solid rgba(255,251,224,0.1)",
+        padding: isMobile ? "20px" : "32px",
+        marginBottom: "24px",
+      }}>
+        <h2 style={{ color: "#fffbe0", fontSize: "18px", fontWeight: 700, margin: "0 0 8px 0", textTransform: "uppercase" }}>
+          Studio Info
+        </h2>
+        <p style={{ color: "rgba(255,251,224,0.4)", fontSize: "13px", margin: "0 0 24px 0", lineHeight: 1.6 }}>
+          Basic studio information shown on the site. Save via "Save Changes" above.
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          <div>
+            <label style={{ color: "rgba(255,251,224,0.5)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "8px" }}>
+              Studio Name
+            </label>
+            <input
+              type="text"
+              value={settings.studioName}
+              onChange={(e) => setSettings(prev => ({ ...prev, studioName: e.target.value }))}
+              placeholder="e.g. Photo De Caffeine"
+              style={{ width: "100%", backgroundColor: "rgba(255,251,224,0.04)", border: "1px solid rgba(255,251,224,0.12)", color: "#fffbe0", padding: "12px 14px", fontSize: "14px", fontFamily: "'Inter', sans-serif", boxSizing: "border-box" }}
+            />
+          </div>
+          <div>
+            <label style={{ color: "rgba(255,251,224,0.5)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "8px" }}>
+              Contact Email
+            </label>
+            <input
+              type="email"
+              value={settings.contactEmail}
+              onChange={(e) => setSettings(prev => ({ ...prev, contactEmail: e.target.value }))}
+              placeholder="e.g. hello@photodecaffeine.nl"
+              style={{ width: "100%", backgroundColor: "rgba(255,251,224,0.04)", border: "1px solid rgba(255,251,224,0.12)", color: "#fffbe0", padding: "12px 14px", fontSize: "14px", fontFamily: "'Inter', sans-serif", boxSizing: "border-box" }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Hero Context Preview */}
+      {(settings.heroImageUrl || settings.heroImageMobileUrl) && (
+        <div style={{
+          backgroundColor: "rgba(13,7,3,0.6)",
+          border: "1px solid rgba(255,251,224,0.1)",
+          padding: isMobile ? "20px" : "32px",
+          marginBottom: "24px",
+        }}>
+          <h2 style={{ color: "#fffbe0", fontSize: "18px", fontWeight: 700, margin: "0 0 16px 0", textTransform: "uppercase" }}>
+            Hero Preview
+          </h2>
+          <div style={{ position: "relative", height: "220px", overflow: "hidden", backgroundColor: "#080401" }}>
+            {settings.heroImageUrl && (
+              <img src={settings.heroImageUrl} alt="Hero preview" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.6 }} />
+            )}
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, transparent 40%, rgba(8,4,1,0.9) 100%)" }} />
+            <div style={{ position: "absolute", bottom: "24px", left: "24px" }}>
+              <div style={{ color: "rgba(255,251,224,0.3)", fontSize: "8px", letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: "6px" }}>
+                {settings.studioName || "Studio Name"}
+              </div>
+              <div style={{ color: "#fffbe0", fontSize: "clamp(18px, 3vw, 28px)", fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+                Photography & Film
+              </div>
+            </div>
+          </div>
+          <p style={{ color: "rgba(255,251,224,0.25)", fontSize: "11px", margin: "8px 0 0 0" }}>
+            Approximate desktop hero rendering — actual overlay and typography may differ.
+          </p>
+        </div>
+      )}
 
       {/* Portfolio Image Picker Modal */}
       {showImagePicker && (

@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Plus, Edit2, Trash2, X, Upload, Check, Eye, EyeOff, Sparkles } from "lucide-react";
+import { Plus, Edit2, Trash2, X, Upload, Check, Eye, Sparkles, ChevronUp, ChevronDown, AlertCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { projectId, publicAnonKey } from "/utils/supabase/info";
+import { projectId } from "/utils/supabase/info";
 
 const BUCKET = "portfolio-images-0951c59e";
 
@@ -60,6 +60,10 @@ export function AdminPortfolioPage() {
   });
   const [uploading, setUploading] = useState(false);
   const [generatingDescription, setGeneratingDescription] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
 
   useEffect(() => {
     if (session) {
@@ -116,7 +120,7 @@ export function AdminPortfolioPage() {
         }
       );
       const data = await res.json();
-      setArticles(data.articles || []);
+      setArticles((data.articles || []).filter((a: Article) => a.id !== "__automotive_gallery__"));
     } catch (err) {
       console.error("Failed to fetch articles:", err);
     } finally {
@@ -157,7 +161,7 @@ export function AdminPortfolioPage() {
       setFormData((prev) => ({ ...prev, coverUrl: url }));
     } catch (err) {
       console.error("Upload error:", err);
-      alert("Failed to upload file");
+      showToast("Failed to upload file", "error");
     } finally {
       setUploading(false);
     }
@@ -172,10 +176,25 @@ export function AdminPortfolioPage() {
       setFormData((prev) => ({ ...prev, galleryUrls: [...prev.galleryUrls, ...urls] }));
     } catch (err) {
       console.error("Upload error:", err);
-      alert("Failed to upload files");
+      showToast("Failed to upload files", "error");
     } finally {
       setUploading(false);
     }
+  }
+
+  function moveGalleryImage(index: number, dir: -1 | 1) {
+    setFormData((prev) => {
+      const urls = [...prev.galleryUrls];
+      const target = index + dir;
+      if (target < 0 || target >= urls.length) return prev;
+      [urls[index], urls[target]] = [urls[target], urls[index]];
+      return { ...prev, galleryUrls: urls };
+    });
+  }
+
+  function showToast(msg: string, type: "success" | "error") {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 2500);
   }
 
   function removeGalleryImage(index: number) {
@@ -186,14 +205,7 @@ export function AdminPortfolioPage() {
   }
 
   async function handleSubmit() {
-    if (!formData.title.trim()) {
-      alert("Title is required");
-      return;
-    }
-    if (!session) {
-      alert("Not authenticated");
-      return;
-    }
+    if (!formData.title.trim() || !session) return;
 
     try {
       const url = editingId
@@ -214,35 +226,33 @@ export function AdminPortfolioPage() {
 
       await fetchArticles();
       resetForm();
-      alert(editingId ? "Article updated" : "Article created");
+      showToast(editingId ? "Article updated" : "Article created", "success");
     } catch (err) {
       console.error("Save error:", err);
-      alert(`Failed to save: ${err}`);
+      showToast(`Failed to save: ${err}`, "error");
     }
   }
 
-  async function handleDelete(id: string, title: string) {
-    if (!confirm(`Delete article "${title}"?`)) return;
-    if (!session) {
-      alert("Not authenticated");
-      return;
-    }
+  async function confirmDelete() {
+    if (!deleteTarget || !session) return;
+    setDeleting(true);
+    setDeleteError(null);
     try {
       const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-0951c59e/admin/portfolio/${id}`,
+        `https://${projectId}.supabase.co/functions/v1/make-server-0951c59e/admin/portfolio/${deleteTarget.id}`,
         {
           method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
+          headers: { Authorization: `Bearer ${session.access_token}` },
         }
       );
       if (!res.ok) throw new Error("Failed to delete");
+      setDeleteTarget(null);
       await fetchArticles();
-      alert("Article deleted");
+      showToast("Article deleted", "success");
     } catch (err) {
-      console.error("Delete error:", err);
-      alert(`Failed to delete: ${err}`);
+      setDeleteError(String(err));
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -264,7 +274,7 @@ export function AdminPortfolioPage() {
       await fetchArticles();
     } catch (err) {
       console.error("Toggle featured error:", err);
-      alert(`Failed to toggle featured: ${err}`);
+      showToast(`Failed to toggle featured: ${err}`, "error");
     }
   }
 
@@ -299,14 +309,7 @@ export function AdminPortfolioPage() {
   }
 
   async function generateDescription() {
-    if (!session) {
-      alert("Not authenticated");
-      return;
-    }
-    if (!formData.title.trim()) {
-      alert("Please enter a title first");
-      return;
-    }
+    if (!session || !formData.title.trim()) return;
 
     setGeneratingDescription(true);
     try {
@@ -332,7 +335,7 @@ export function AdminPortfolioPage() {
       setFormData((prev) => ({ ...prev, description: data.description }));
     } catch (err) {
       console.error("Generate description error:", err);
-      alert(`Failed to generate description: ${err}`);
+      showToast(`Failed to generate description: ${err}`, "error");
     } finally {
       setGeneratingDescription(false);
     }
@@ -401,6 +404,23 @@ export function AdminPortfolioPage() {
           New Article
         </button>
       </div>
+
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: "fixed", top: "24px", right: "24px", zIndex: 10000,
+          backgroundColor: toast.type === "success" ? "rgba(122,184,122,0.12)" : "rgba(224,112,96,0.12)",
+          border: `1px solid ${toast.type === "success" ? "rgba(122,184,122,0.35)" : "rgba(224,112,96,0.35)"}`,
+          color: toast.type === "success" ? "#7ab87a" : "#e07060",
+          padding: "12px 18px", fontSize: "13px",
+          display: "flex", alignItems: "center", gap: "10px",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
+          maxWidth: "320px",
+        }}>
+          {toast.type === "success" ? <Check size={15} /> : <AlertCircle size={15} />}
+          {toast.msg}
+        </div>
+      )}
 
       {/* Articles List */}
       <div style={{ display: "grid", gap: "16px" }}>
@@ -622,7 +642,7 @@ export function AdminPortfolioPage() {
                 <Edit2 size={16} />
               </button>
               <button
-                onClick={() => handleDelete(article.id, article.title)}
+                onClick={() => { setDeleteTarget({ id: article.id, title: article.title }); setDeleteError(null); }}
                 style={{
                   backgroundColor: "rgba(255,251,224,0.05)",
                   border: "1px solid rgba(255,251,224,0.1)",
@@ -667,13 +687,50 @@ export function AdminPortfolioPage() {
         )}
       </div>
 
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.75)", zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
+          onClick={(e) => { if (e.target === e.currentTarget) { setDeleteTarget(null); setDeleteError(null); } }}
+        >
+          <div style={{ backgroundColor: "#0d0703", border: "1px solid rgba(255,251,224,0.15)", padding: "32px", maxWidth: "440px", width: "100%" }}>
+            <h3 style={{ color: "#fffbe0", fontSize: "18px", fontWeight: 700, margin: "0 0 12px 0" }}>Delete Article</h3>
+            <p style={{ color: "rgba(255,251,224,0.5)", fontSize: "14px", margin: "0 0 24px 0", lineHeight: 1.6 }}>
+              Delete <strong style={{ color: "#fffbe0" }}>{deleteTarget.title}</strong>? This cannot be undone.
+            </p>
+            {deleteError && (
+              <div style={{ backgroundColor: "rgba(224,112,96,0.1)", border: "1px solid rgba(224,112,96,0.3)", color: "#e07060", padding: "10px 14px", fontSize: "12px", marginBottom: "16px", display: "flex", gap: "8px", alignItems: "center" }}>
+                <AlertCircle size={14} />
+                {deleteError}
+              </div>
+            )}
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button
+                onClick={confirmDelete}
+                disabled={deleting}
+                style={{ flex: 1, backgroundColor: deleting ? "rgba(224,112,96,0.3)" : "rgba(224,112,96,0.15)", border: "1px solid rgba(224,112,96,0.4)", color: "#e07060", padding: "12px", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", cursor: deleting ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+              >
+                <Trash2 size={14} />
+                {deleting ? "Deleting…" : "Delete"}
+              </button>
+              <button
+                onClick={() => { setDeleteTarget(null); setDeleteError(null); }}
+                style={{ flex: 1, backgroundColor: "transparent", border: "1px solid rgba(255,251,224,0.15)", color: "rgba(255,251,224,0.5)", padding: "12px", fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer" }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Form Modal */}
       {showForm && (
         <div
           style={{
             position: "fixed",
             inset: 0,
-            backgroundColor: "rgba(8,4,1,0.95)",
+            backgroundColor: "rgba(4,2,0,0.92)",
+            backdropFilter: "blur(4px)",
             zIndex: 9999,
             overflow: "auto",
             padding: "40px",
@@ -955,24 +1012,26 @@ export function AdminPortfolioPage() {
                       />
                       <button
                         onClick={() => removeGalleryImage(idx)}
-                        style={{
-                          position: "absolute",
-                          top: "4px",
-                          right: "4px",
-                          backgroundColor: "rgba(255,100,100,0.9)",
-                          border: "none",
-                          color: "#fff",
-                          width: "24px",
-                          height: "24px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          cursor: "pointer",
-                          fontSize: "12px",
-                        }}
+                        style={{ position: "absolute", top: "4px", right: "4px", backgroundColor: "rgba(255,100,100,0.9)", border: "none", color: "#fff", width: "24px", height: "24px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
                       >
                         <X size={14} />
                       </button>
+                      <div style={{ position: "absolute", bottom: "4px", left: "4px", display: "flex", flexDirection: "column", gap: "2px" }}>
+                        <button
+                          onClick={() => moveGalleryImage(idx, -1)}
+                          disabled={idx === 0}
+                          style={{ backgroundColor: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,251,224,0.2)", color: idx === 0 ? "rgba(255,251,224,0.2)" : "rgba(255,251,224,0.8)", width: "20px", height: "20px", display: "flex", alignItems: "center", justifyContent: "center", cursor: idx === 0 ? "not-allowed" : "pointer", padding: 0 }}
+                        >
+                          <ChevronUp size={12} />
+                        </button>
+                        <button
+                          onClick={() => moveGalleryImage(idx, 1)}
+                          disabled={idx === formData.galleryUrls.length - 1}
+                          style={{ backgroundColor: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,251,224,0.2)", color: idx === formData.galleryUrls.length - 1 ? "rgba(255,251,224,0.2)" : "rgba(255,251,224,0.8)", width: "20px", height: "20px", display: "flex", alignItems: "center", justifyContent: "center", cursor: idx === formData.galleryUrls.length - 1 ? "not-allowed" : "pointer", padding: 0 }}
+                        >
+                          <ChevronDown size={12} />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
