@@ -114,6 +114,9 @@ export function AutomotivePage() {
         <meta property="og:description" content="Professionele automotive fotografie in Rotterdam. Voor showrooms, dealers en particulieren. Vanaf €50." />
         <meta property="og:url" content="https://www.photodecaffeine.com/services/automotive" />
         <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Automotive Fotografie Rotterdam | PhotoDeCaffeine" />
+        <meta name="twitter:description" content="Professionele automotive fotografie in Rotterdam. Voor showrooms, dealers en particulieren. Vanaf €50." />
       </Helmet>
       {/* ── Header ── */}
       <div

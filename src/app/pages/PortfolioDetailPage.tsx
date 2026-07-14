@@ -165,6 +165,10 @@ export function PortfolioDetailPage() {
         <meta property="og:url" content={`https://www.photodecaffeine.com/portfolio/${article.id}`} />
         <meta property="og:type" content="article" />
         {article.coverUrl && <meta property="og:image" content={article.coverUrl} />}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${article.title} | PhotoDeCaffeine`} />
+        <meta name="twitter:description" content={article.description ? article.description.slice(0, 140) : `Professionele fotoserie door PhotoDeCaffeine.`} />
+        {article.coverUrl && <meta name="twitter:image" content={article.coverUrl} />}
       </Helmet>
       <div
         style={{

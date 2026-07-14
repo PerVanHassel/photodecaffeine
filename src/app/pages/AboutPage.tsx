@@ -279,6 +279,9 @@ export function AboutPage() {
         <meta property="og:description" content="Maak kennis met het team van PhotoDeCaffeine — gepassioneerde fotografen in Rotterdam." />
         <meta property="og:url" content="https://www.photodecaffeine.com/about" />
         <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Over Ons | PhotoDeCaffeine" />
+        <meta name="twitter:description" content="Maak kennis met het team van PhotoDeCaffeine — gepassioneerde fotografen in Rotterdam." />
       </Helmet>
       {/* ── PAGE HEADER ── */}
       <div

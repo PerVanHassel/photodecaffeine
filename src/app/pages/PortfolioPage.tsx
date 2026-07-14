@@ -204,6 +204,9 @@ export function PortfolioPage() {
         <meta property="og:description" content="Automotive, editorial en studio fotografie uit Rotterdam. Bekijk onze shoots." />
         <meta property="og:url" content="https://www.photodecaffeine.com/portfolio" />
         <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Portfolio | PhotoDeCaffeine" />
+        <meta name="twitter:description" content="Automotive, editorial en studio fotografie uit Rotterdam. Bekijk onze shoots." />
       </Helmet>
       <div
         style={{

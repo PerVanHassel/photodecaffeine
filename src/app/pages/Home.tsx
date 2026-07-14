@@ -74,6 +74,9 @@ export function Home() {
         <meta property="og:description" content="Professionele fotografie en videografie in Rotterdam. Automotive, studio en editorial shoots. Scherpe beelden die je merk versterken." />
         <meta property="og:url" content="https://www.photodecaffeine.com/" />
         <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Automotive & Studio Fotografie Rotterdam | PhotoDeCaffeine" />
+        <meta name="twitter:description" content="Professionele fotografie en videografie in Rotterdam. Automotive, studio en editorial shoots." />
       </Helmet>
       <Hero />
       {sections.workProcess && <><Divider /><WorkProcess /></>}
