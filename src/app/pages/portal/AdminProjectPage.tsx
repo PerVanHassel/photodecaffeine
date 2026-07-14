@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { portalFetch } from "../../../lib/supabase";
 import { useMobile } from "../../hooks/useMobile";
-import { ArrowLeft, Save, Plus, Trash2, Check, Send, AlertTriangle, Upload, Images, X } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, Check, Send, AlertTriangle, Upload, Images, X, Bell, ChevronUp, ChevronDown } from "lucide-react";
 import { projectId as supabaseProjectId } from "/utils/supabase/info";
 
 const BUCKET = "portfolio-images-0951c59e";
@@ -101,7 +101,12 @@ export function AdminProjectPage() {
   const [newDelName, setNewDelName] = useState("");
   const [newDelCount, setNewDelCount] = useState("1");
   const [addingDel, setAddingDel] = useState(false);
-  const [savingDels, setSavingDels] = useState(false);
+  const [delSaveFlash, setDelSaveFlash] = useState(false);
+
+  // Notify client
+  const [showNotify, setShowNotify] = useState(false);
+  const [notifyMsg, setNotifyMsg] = useState("");
+  const [notifying, setNotifying] = useState(false);
 
   // Messages
   const [messages, setMessages] = useState<Message[]>([]);
@@ -179,50 +184,68 @@ export function AdminProjectPage() {
     }
   }
 
-  async function toggleDeliverable(id: string) {
-    const updated = deliverables.map((d) => d.id === id ? { ...d, done: !d.done } : d);
-    setDeliverables(updated);
+  async function saveDeliverables(updated: Deliverable[]) {
     if (!session || !projectId) return;
     try {
       await portalFetch(`/admin/project/${projectId}`, {
         method: "PUT",
         body: JSON.stringify({ deliverables: updated }),
       }, session.access_token);
-    } catch (err) { console.error("Toggle deliverable error:", err); }
+      setDelSaveFlash(true);
+      setTimeout(() => setDelSaveFlash(false), 1800);
+    } catch (err) { console.error("Save deliverables error:", err); }
+  }
+
+  async function toggleDeliverable(id: string) {
+    const updated = deliverables.map((d) => d.id === id ? { ...d, done: !d.done } : d);
+    setDeliverables(updated);
+    await saveDeliverables(updated);
   }
 
   async function addDeliverable() {
     if (!newDelName.trim()) return;
-    const newDel: Deliverable = {
-      id: crypto.randomUUID(),
-      name: newDelName.trim(),
-      count: parseInt(newDelCount) || 1,
-      done: false,
-    };
+    const newDel: Deliverable = { id: crypto.randomUUID(), name: newDelName.trim(), count: parseInt(newDelCount) || 1, done: false };
     const updated = [...deliverables, newDel];
     setDeliverables(updated);
     setNewDelName("");
     setNewDelCount("1");
     setAddingDel(false);
-    if (!session || !projectId) return;
-    try {
-      await portalFetch(`/admin/project/${projectId}`, {
-        method: "PUT",
-        body: JSON.stringify({ deliverables: updated }),
-      }, session.access_token);
-    } catch (err) { console.error("Add deliverable error:", err); }
+    await saveDeliverables(updated);
   }
 
   async function removeDeliverable(id: string) {
     const updated = deliverables.filter((d) => d.id !== id);
     setDeliverables(updated);
+    await saveDeliverables(updated);
+  }
+
+  function moveGalleryImage(index: number, direction: -1 | 1) {
+    const next = index + direction;
+    if (next < 0 || next >= galleryUrls.length) return;
+    const updated = [...galleryUrls];
+    [updated[index], updated[next]] = [updated[next], updated[index]];
+    setGalleryUrls(updated);
     if (!session || !projectId) return;
+    portalFetch(`/admin/project/${projectId}`, {
+      method: "PUT",
+      body: JSON.stringify({ galleryUrls: updated }),
+    }, session.access_token).catch(console.error);
+  }
+
+  async function handleNotify(e: React.FormEvent) {
+    e.preventDefault();
+    if (!notifyMsg.trim() || !session || !projectId) return;
+    setNotifying(true);
     try {
-      await portalFetch(`/admin/project/${projectId}`, {
-        method: "PUT",
-        body: JSON.stringify({ deliverables: updated }),
+      const data = await portalFetch(`/admin/project/${projectId}/messages`, {
+        method: "POST",
+        body: JSON.stringify({ content: notifyMsg.trim() }),
       }, session.access_token);
-    } catch (err) { console.error("Remove deliverable error:", err); }
+      setMessages((prev) => [...prev, data.message]);
+      setNotifyMsg("");
+      setShowNotify(false);
+    } catch (err) { console.error("Notify error:", err); }
+    finally { setNotifying(false); }
   }
 
   async function handleSendMessage(e: React.FormEvent) {
@@ -363,7 +386,7 @@ export function AdminProjectPage() {
               <label style={labelStyle}>Project Title</label>
               <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} style={inputStyle} onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")} onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,251,224,0.08)")} />
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: "12px" }}>
               <div>
                 <label style={labelStyle}>Status</label>
                 <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as Project["status"] })} style={{ ...inputStyle, appearance: "none" }}>
@@ -391,13 +414,13 @@ export function AdminProjectPage() {
           <div>
             <div style={{ marginBottom: "16px" }}>
               <span style={{ color: "rgba(255,251,224,0.25)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase" }}>
-                Aankomende Meeting
+                Meeting
               </span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <div>
-                  <label style={labelStyle}>Datum & Tijd</label>
+                  <label style={labelStyle}>Date & Time</label>
                   <input
                     type="datetime-local"
                     value={meetingForm.date}
@@ -408,7 +431,7 @@ export function AdminProjectPage() {
                   />
                 </div>
                 <div>
-                  <label style={labelStyle}>Locatie (optioneel)</label>
+                  <label style={labelStyle}>Location (optional)</label>
                   <input
                     type="text"
                     value={meetingForm.location}
@@ -421,7 +444,7 @@ export function AdminProjectPage() {
                 </div>
               </div>
               <div>
-                <label style={labelStyle}>Meeting Link (optioneel)</label>
+                <label style={labelStyle}>Meeting Link (optional)</label>
                 <input
                   type="url"
                   value={meetingForm.link}
@@ -433,12 +456,12 @@ export function AdminProjectPage() {
                 />
               </div>
               <div>
-                <label style={labelStyle}>Notities (optioneel)</label>
+                <label style={labelStyle}>Notes (optional)</label>
                 <textarea
                   value={meetingForm.notes}
                   onChange={(e) => setMeetingForm({ ...meetingForm, notes: e.target.value })}
                   rows={2}
-                  placeholder="Agenda, voorbereiding, etc."
+                  placeholder="Agenda, preparation, etc."
                   style={{ ...inputStyle, resize: "vertical", lineHeight: 1.65 }}
                   onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
                   onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,251,224,0.08)")}
@@ -470,7 +493,7 @@ export function AdminProjectPage() {
                     e.currentTarget.style.borderColor = "rgba(255,251,224,0.08)";
                   }}
                 >
-                  Meeting Verwijderen
+                  Remove Meeting
                 </button>
               )}
             </div>
@@ -483,6 +506,11 @@ export function AdminProjectPage() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
               <span style={{ color: "rgba(255,251,224,0.25)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase" }}>
                 Deliverables ({deliverables.filter((d) => d.done).length}/{deliverables.length})
+              {delSaveFlash && (
+                <span style={{ color: "rgba(120,190,140,0.8)", fontSize: "9px", letterSpacing: "0.15em", marginLeft: "10px", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                  <Check size={9} /> Saved
+                </span>
+              )}
               </span>
               {!addingDel && (
                 <button
@@ -586,7 +614,7 @@ export function AdminProjectPage() {
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <Images size={13} color="rgba(255,251,224,0.25)" />
                 <span style={{ color: "rgba(255,251,224,0.25)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase" }}>
-                  Foto Gallery ({galleryUrls.length})
+                  Photo Gallery ({galleryUrls.length})
                 </span>
               </div>
               <label
@@ -618,7 +646,7 @@ export function AdminProjectPage() {
                 color: "rgba(255,251,224,0.15)",
                 fontSize: "12px",
               }}>
-                Nog geen foto's geüpload. Foto's die je hier toevoegt zijn zichtbaar in het client portaal.
+                No photos uploaded yet. Photos added here are visible in the client portal.
               </div>
             ) : (
               <div style={{
@@ -627,7 +655,7 @@ export function AdminProjectPage() {
                 gap: "6px",
               }}>
                 {galleryUrls.map((url, i) => (
-                  <div key={i} style={{ position: "relative", aspectRatio: "4/3", overflow: "hidden" }}>
+                  <div key={url + i} style={{ position: "relative", aspectRatio: "4/3", overflow: "hidden" }}>
                     <img
                       src={url}
                       alt={`Gallery ${i + 1}`}
@@ -635,24 +663,32 @@ export function AdminProjectPage() {
                     />
                     <div style={{
                       position: "absolute", top: "6px", left: "6px",
-                      backgroundColor: "rgba(8,4,1,0.75)",
-                      color: "rgba(255,251,224,0.4)",
-                      fontSize: "9px", fontWeight: 600,
-                      fontFamily: "'Courier New', monospace",
+                      backgroundColor: "rgba(8,4,1,0.75)", color: "rgba(255,251,224,0.4)",
+                      fontSize: "9px", fontWeight: 600, fontFamily: "'Courier New', monospace",
                       padding: "2px 6px",
                     }}>
                       {String(i + 1).padStart(2, "0")}
                     </div>
+                    {/* Reorder buttons */}
+                    <div style={{ position: "absolute", bottom: "6px", left: "6px", display: "flex", flexDirection: "column", gap: "2px" }}>
+                      <button
+                        onClick={() => moveGalleryImage(i, -1)}
+                        disabled={i === 0}
+                        style={{ backgroundColor: "rgba(8,4,1,0.75)", border: "none", color: i === 0 ? "rgba(255,251,224,0.2)" : "#fffbe0", width: "22px", height: "22px", display: "flex", alignItems: "center", justifyContent: "center", cursor: i === 0 ? "not-allowed" : "pointer", padding: 0 }}
+                      >
+                        <ChevronUp size={12} />
+                      </button>
+                      <button
+                        onClick={() => moveGalleryImage(i, 1)}
+                        disabled={i === galleryUrls.length - 1}
+                        style={{ backgroundColor: "rgba(8,4,1,0.75)", border: "none", color: i === galleryUrls.length - 1 ? "rgba(255,251,224,0.2)" : "#fffbe0", width: "22px", height: "22px", display: "flex", alignItems: "center", justifyContent: "center", cursor: i === galleryUrls.length - 1 ? "not-allowed" : "pointer", padding: 0 }}
+                      >
+                        <ChevronDown size={12} />
+                      </button>
+                    </div>
                     <button
                       onClick={() => removeGalleryImage(i)}
-                      style={{
-                        position: "absolute", top: "6px", right: "6px",
-                        backgroundColor: "rgba(220,80,80,0.85)",
-                        border: "none", color: "#fff",
-                        width: "24px", height: "24px",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        cursor: "pointer", padding: 0,
-                      }}
+                      style={{ position: "absolute", top: "6px", right: "6px", backgroundColor: "rgba(220,80,80,0.85)", border: "none", color: "#fff", width: "24px", height: "24px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", padding: 0 }}
                     >
                       <X size={11} />
                     </button>
@@ -666,8 +702,25 @@ export function AdminProjectPage() {
 
           {/* ── Messages ── */}
           <div>
-            <div style={{ color: "rgba(255,251,224,0.25)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: "20px" }}>
-              Client Messages ({messages.length})
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+              <span style={{ color: "rgba(255,251,224,0.25)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase" }}>
+                Client Messages ({messages.length})
+              </span>
+              <button
+                onClick={() => setShowNotify(true)}
+                style={{
+                  display: "flex", alignItems: "center", gap: "5px",
+                  background: "none", border: "1px solid rgba(200,144,90,0.25)",
+                  color: "#c8905a", fontSize: "9px", fontWeight: 700,
+                  letterSpacing: "0.15em", textTransform: "uppercase",
+                  cursor: "pointer", padding: "6px 11px",
+                  fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(200,144,90,0.1)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+              >
+                <Bell size={10} /> Notify Client
+              </button>
             </div>
 
             {/* Thread */}
@@ -692,7 +745,7 @@ export function AdminProjectPage() {
                     key={msg.id}
                     style={{
                       display: "flex",
-                      flexDirection: isPDC ? "row-reverse" : "row",
+                      flexDirection: isPDC ? "row" : "row-reverse",
                       gap: "10px",
                       alignItems: "flex-start",
                     }}
@@ -826,6 +879,69 @@ export function AdminProjectPage() {
             )}
           </div>
         </>
+      )}
+
+      {/* Notify client modal */}
+      {showNotify && (
+        <div
+          style={{ position: "fixed", inset: 0, zIndex: 1000, backgroundColor: "rgba(8,4,1,0.85)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowNotify(false); }}
+        >
+          <div style={{ backgroundColor: "#0d0804", border: "1px solid rgba(200,144,90,0.2)", padding: isMobile ? "24px 20px" : "36px", maxWidth: "460px", width: "100%" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <Bell size={15} color="#c8905a" />
+                <span style={{ color: "#c8905a", fontSize: "10px", fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase" }}>Notify Client</span>
+              </div>
+              <button onClick={() => setShowNotify(false)} style={{ background: "none", border: "none", color: "rgba(255,251,224,0.3)", cursor: "pointer", padding: "2px" }}>
+                <X size={15} />
+              </button>
+            </div>
+            <p style={{ color: "rgba(255,251,224,0.4)", fontSize: "12px", margin: "0 0 16px", lineHeight: 1.6 }}>
+              Send a message to the client. It will appear in their portal chat.
+            </p>
+            <div style={{ display: "flex", gap: "8px", marginBottom: "12px", flexWrap: "wrap" }}>
+              {["Your gallery has been updated.", "Your project status has changed.", "We have an update for you — please check your portal."].map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setNotifyMsg(t)}
+                  style={{
+                    background: "none", border: "1px solid rgba(255,251,224,0.1)",
+                    color: "rgba(255,251,224,0.35)", fontSize: "9px", fontWeight: 500,
+                    letterSpacing: "0.05em", cursor: "pointer", padding: "5px 9px",
+                    fontFamily: "'Inter', sans-serif", transition: "all 0.15s ease",
+                    textAlign: "left",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = "#fffbe0"; e.currentTarget.style.borderColor = "rgba(255,251,224,0.2)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,251,224,0.35)"; e.currentTarget.style.borderColor = "rgba(255,251,224,0.1)"; }}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+            <form onSubmit={handleNotify} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <textarea
+                value={notifyMsg}
+                onChange={(e) => setNotifyMsg(e.target.value)}
+                placeholder="Write your message…"
+                rows={4}
+                autoFocus
+                style={{ ...inputStyle, resize: "vertical", lineHeight: 1.65 }}
+                onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
+                onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,251,224,0.08)")}
+              />
+              <div style={{ display: "flex", gap: "10px" }}>
+                <button type="button" onClick={() => setShowNotify(false)} style={{ flex: 1, padding: "11px", background: "none", border: "1px solid rgba(255,251,224,0.1)", color: "rgba(255,251,224,0.4)", fontSize: "10px", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>
+                  Cancel
+                </button>
+                <button type="submit" disabled={notifying || !notifyMsg.trim()} style={{ flex: 1, padding: "11px", backgroundColor: notifyMsg.trim() ? "#c8905a" : "rgba(255,251,224,0.05)", border: "none", color: notifyMsg.trim() ? "#080401" : "rgba(255,251,224,0.2)", fontSize: "10px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", cursor: notifyMsg.trim() ? "pointer" : "not-allowed", fontFamily: "'Inter', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                  <Send size={11} />
+                  {notifying ? "Sending…" : "Send Message"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );
