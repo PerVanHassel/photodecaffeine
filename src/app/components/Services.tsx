@@ -1,84 +1,10 @@
 import { useState } from "react";
-
-const PACKAGES = [
-  {
-    id: "espresso",
-    label: "SINGLE ORIGIN",
-    name: "ESPRESSO",
-    description: "Focused. Sharp. For businesses that want to look professional without going all-in yet.",
-    price: "€399,-",
-    per: "per month",
-    includes: [
-      "1 shoot day per month",
-      "Up to 3 hours on location",
-      "20 final edited images",
-      "3 short-form reels / TikToks",
-      "5 story clips",
-      "Basic colour grade & retouch",
-      "Vertical exports for Instagram, TikTok & Facebook",
-      "Basic captions included",
-      "Web + social delivery",
-      "Online gallery delivery",
-    ],
-    ideal: "Small car dealers, independent real estate agents, Airbnb hosts, small businesses",
-  },
-  {
-    id: "reserve",
-    label: "STUDIO SIGNATURE",
-    name: "RESERVE",
-    description: "The full PDC experience — cinematic, strategic, sales-driven and built to create attention.",
-    price: "€749,-",
-    per: "per month",
-    includes: [
-      "2 shoot days per month",
-      "Up to 4.5 hours per shoot",
-      "40–50 final edited images",
-      "6 short-form reels / TikToks",
-      "10 story clips",
-      "1 hero video per month",
-      "Cinematic colour grade",
-      "Thumbnail covers for reels",
-      "Sales-focused captions",
-      "Monthly content calendar",
-      "Monthly strategy call",
-      "Basic performance review",
-      "Web, social & ad-ready delivery",
-    ],
-    ideal: "Growing car dealerships, active real estate agents, rental companies, property managers",
-  },
-  {
-    id: "blend",
-    label: "ONGOING RETAINER",
-    name: "BLEND",
-    description: "Consistent visual identity across every channel, every month. Built for brands that want to dominate their region.",
-    price: "€1.399,-",
-    per: "per month",
-    includes: [
-      "4 shoot days per month",
-      "Weekly or bi-weekly production schedule",
-      "80–100 final edited images",
-      "12 short-form reels / TikToks",
-      "20 story clips",
-      "1 premium hero brand video",
-      "1 monthly campaign video",
-      "Full cinematic colour grade",
-      "Advanced retouching",
-      "Dedicated brand style guide",
-      "Monthly content calendar",
-      "Monthly strategy session",
-      "Competitor content check",
-      "Performance review",
-      "Priority scheduling",
-      "Ad-ready exports",
-      "Website banners",
-      "Same-week turnaround",
-    ],
-    ideal: "Premium dealerships, makelaarskantoren, projectontwikkelaars, vastgoedbeleggers",
-  },
-];
+import { useLanguage } from "../context/LanguageContext";
 
 export function Services() {
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+  const { t } = useLanguage();
+  const ts = t.services;
 
   return (
     <section
@@ -89,13 +15,7 @@ export function Services() {
         fontFamily: "'Inter', sans-serif",
       }}
     >
-      <div
-        style={{
-          maxWidth: "1400px",
-          margin: "0 auto",
-        }}
-      >
-        {/* Pricing cards */}
+      <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
         <div
           className="pricing-grid"
           style={{
@@ -106,31 +26,26 @@ export function Services() {
         >
           <style>{`
             @media (max-width: 1024px) and (min-width: 768px) {
-              .pricing-grid {
-                grid-template-columns: repeat(2, 1fr) !important;
-              }
-              .pricing-grid > div:last-child {
-                grid-column: 1 / -1;
-              }
+              .pricing-grid { grid-template-columns: repeat(2, 1fr) !important; }
+              .pricing-grid > div:last-child { grid-column: 1 / -1; }
             }
             @media (max-width: 767px) {
-              .pricing-grid {
-                grid-template-columns: 1fr !important;
-              }
+              .pricing-grid { grid-template-columns: 1fr !important; }
             }
           `}</style>
 
-          {PACKAGES.map((pkg) => (
+          {ts.packages.map((pkg) => (
             <div
               key={pkg.id}
               onMouseEnter={() => setHoveredCard(pkg.id)}
               onMouseLeave={() => setHoveredCard(null)}
               style={{
-                backgroundColor: pkg.id === "reserve"
-                  ? "rgba(62,37,10,0.4)"
-                  : hoveredCard === pkg.id
-                  ? "rgba(13,7,3,0.8)"
-                  : "#0d0703",
+                backgroundColor:
+                  pkg.id === "reserve"
+                    ? "rgba(62,37,10,0.4)"
+                    : hoveredCard === pkg.id
+                    ? "rgba(13,7,3,0.8)"
+                    : "#0d0703",
                 border: `1px solid ${
                   pkg.id === "reserve"
                     ? "rgba(200,144,90,0.25)"
@@ -141,7 +56,6 @@ export function Services() {
                 position: "relative",
               }}
             >
-              {/* Small top label */}
               <div
                 style={{
                   color: pkg.id === "reserve" ? "#c8905a" : "rgba(255,251,224,0.3)",
@@ -155,7 +69,6 @@ export function Services() {
                 {pkg.label}
               </div>
 
-              {/* Package title */}
               <h3
                 style={{
                   color: "#fffbe0",
@@ -171,7 +84,6 @@ export function Services() {
                 {pkg.name}
               </h3>
 
-              {/* Description */}
               <p
                 style={{
                   color: "rgba(255,251,224,0.45)",
@@ -185,12 +97,7 @@ export function Services() {
                 {pkg.description}
               </p>
 
-              {/* Price */}
-              <div
-                style={{
-                  marginBottom: "32px",
-                }}
-              >
+              <div style={{ marginBottom: "32px" }}>
                 <div
                   style={{
                     display: "flex",
@@ -223,7 +130,6 @@ export function Services() {
                 </div>
               </div>
 
-              {/* Divider */}
               <div
                 style={{
                   width: "100%",
@@ -233,7 +139,6 @@ export function Services() {
                 }}
               />
 
-              {/* Section title */}
               <div
                 style={{
                   color: "rgba(255,251,224,0.25)",
@@ -244,10 +149,9 @@ export function Services() {
                   marginBottom: "20px",
                 }}
               >
-                WHAT'S INCLUDED
+                {ts.whatsIncluded}
               </div>
 
-              {/* Checklist */}
               <ul style={{ listStyle: "none", margin: 0, padding: 0, marginBottom: "32px" }}>
                 {pkg.includes.map((item, idx) => (
                   <li
@@ -283,7 +187,6 @@ export function Services() {
                 ))}
               </ul>
 
-              {/* Divider */}
               <div
                 style={{
                   width: "100%",
@@ -293,7 +196,6 @@ export function Services() {
                 }}
               />
 
-              {/* Ideal for */}
               <div style={{ marginBottom: "32px" }}>
                 <div
                   style={{
@@ -305,7 +207,7 @@ export function Services() {
                     marginBottom: "8px",
                   }}
                 >
-                  Ideal for:
+                  {ts.idealFor}:
                 </div>
                 <div
                   style={{
@@ -319,7 +221,6 @@ export function Services() {
                 </div>
               </div>
 
-              {/* Button */}
               <button
                 onClick={() => {
                   const el = document.getElementById("contact");
@@ -330,9 +231,10 @@ export function Services() {
                   width: "100%",
                   backgroundColor: pkg.id === "reserve" ? "#fffbe0" : "transparent",
                   color: pkg.id === "reserve" ? "#1a0c04" : "rgba(255,251,224,0.6)",
-                  border: pkg.id === "reserve"
-                    ? "none"
-                    : "1px solid rgba(255,251,224,0.15)",
+                  border:
+                    pkg.id === "reserve"
+                      ? "none"
+                      : "1px solid rgba(255,251,224,0.15)",
                   padding: "16px",
                   fontSize: "10px",
                   fontWeight: 700,
@@ -361,19 +263,13 @@ export function Services() {
                   }
                 }}
               >
-                BOOK THIS PACKAGE
+                {ts.bookPackage}
               </button>
             </div>
           ))}
         </div>
 
-        {/* Bottom note */}
-        <div
-          style={{
-            marginTop: "56px",
-            textAlign: "center",
-          }}
-        >
+        <div style={{ marginTop: "56px", textAlign: "center" }}>
           <p
             style={{
               color: "rgba(255,251,224,0.25)",
@@ -384,7 +280,7 @@ export function Services() {
               margin: 0,
             }}
           >
-            All prices are excluding VAT. Minimum collaboration: 3 months. Custom campaigns available on request.
+            {ts.bottomNote}
           </p>
         </div>
       </div>
