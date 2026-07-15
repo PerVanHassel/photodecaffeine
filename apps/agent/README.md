@@ -36,60 +36,87 @@ Supabase-project, niet het bestaande.
 4. Ga naar **SQL Editor**, plak de inhoud van `supabase/schema.sql` uit deze map,
    en voer uit. Dit zet de tabellen + pgvector-extensie neer.
 
-### Twilio (WhatsApp Sandbox)
-Voor de spike gebruiken we Twilio's WhatsApp Sandbox -- geen Meta Business
-Account-verificatie nodig, binnen enkele minuten werkend. Voor het echte
-product wordt dit later de directe Meta Cloud API (zie §8 van het
-ontwerpdocument) -- de adapter-code in `src/whatsapp/twilio.ts` is bewust
-geïsoleerd zodat die overstap later één bestand raakt, niet de hele agent.
+### Twilio (permanent WhatsApp-nummer, geen Sandbox)
+We slaan de Sandbox bewust over: die verloopt elke 72u en past niet bij "altijd
+beschikbaar". In plaats daarvan vraag je via Twilio een **echte WhatsApp
+Sender** aan -- dat is een productie-WhatsApp-nummer, gekoppeld via Meta
+Business-verificatie, maar met Twilio's begeleide flow (makkelijker dan de
+Meta Cloud API rechtstreeks). De code in `src/whatsapp/twilio.ts` verandert
+hier niet door -- alleen de waarde van `TWILIO_WHATSAPP_FROM` wordt straks een
+eigen nummer i.p.v. het gedeelde sandboxnummer. Rechtstreeks Meta Cloud API
+blijft de aanbevolen overstap zodra dit qua volume gaat schalen (§8 van het
+ontwerpdocument) -- voor nu, met één gebruiker, is de Twilio-marge
+verwaarloosbaar en is dit de snelste weg naar een permanent nummer.
 
-1. Ga naar https://console.twilio.com en maak een account (gratis trial-tegoed
-   is voldoende voor de spike).
+1. Ga naar https://console.twilio.com en maak een account.
 2. Kopieer van het dashboard: **Account SID** -> `TWILIO_ACCOUNT_SID` en
    **Auth Token** -> `TWILIO_AUTH_TOKEN`.
-3. Ga naar **Messaging -> Try it out -> Send a WhatsApp message**. Volg de
-   instructie om vanaf je eigen telefoon `join <jouw-sandbox-code>` te sturen
-   naar het getoonde Twilio-sandboxnummer (meestal `+1 415 523 8886`). Dit
-   koppelt jouw telefoon tijdelijk (72u, daarna opnieuw joinen) aan de sandbox.
-4. `TWILIO_WHATSAPP_FROM` is dat sandboxnummer in de vorm `whatsapp:+14155238886`.
+3. Ga naar **Messaging -> Senders -> WhatsApp Senders -> Request a Sender**.
+   Twilio loodst je hier doorheen: een Facebook Business Manager koppelen (of
+   aanmaken), bedrijfsgegevens invullen, en een telefoonnummer registreren
+   (een nieuw Twilio-nummer, of een bestaand nummer dat nog niet aan WhatsApp
+   gekoppeld is -- een nummer kan maar aan één WhatsApp-account tegelijk
+   hangen). **Reken op enkele dagen doorlooptijd** voor Meta's
+   business-verificatie; dit is niet instant zoals de sandbox.
+4. Zodra de sender is goedgekeurd, is `TWILIO_WHATSAPP_FROM` dat nummer in de
+   vorm `whatsapp:+31...`.
+5. **Tot de verificatie rond is:** kun je gewoon met de Sandbox blijven
+   ontwikkelen/testen (zie git-historie van dit bestand voor de sandbox-
+   instructies) en later alleen `TWILIO_WHATSAPP_FROM` + de webhook-URL in
+   Twilio omzetten naar de nieuwe sender -- geen codewijziging nodig.
+6. **Template-berichten:** voor proactieve berichten buiten het 24u-venster
+   (de accountability-features uit fase 2) moet je in de Twilio Console onder
+   **Content Templates** vooraf berichten laten goedkeuren door Meta. Dat is
+   nog niet nodig voor deze spike (reactieve gesprekken vallen altijd binnen
+   het venster).
 
-## 2. Lokaal opzetten
+## 2. Verifiëren (optioneel, zonder live accounts)
 
 ```bash
 cd apps/agent
-cp .env.example .env
-# vul .env in met de waarden van hierboven
 pnpm install
 pnpm typecheck   # verifieert dat alles compileert
 pnpm test        # offline smoke test (geen live accounts nodig)
 ```
 
-## 3. Webhook publiek bereikbaar maken (lokaal testen)
+## 3. Altijd-aan hosten op Railway
 
-Twilio moet je lokale server kunnen bereiken. Gebruik een tunnel, bv. ngrok:
+De server draait 24/7 op Railway, niet lokaal -- zo blijft de assistent
+bereikbaar zonder dat er een laptop aan hoeft te staan. `railway.json` (repo-
+root) en `apps/agent/Dockerfile` staan al klaar; Railway hoeft alleen verteld
+te worden waar te bouwen.
 
-```bash
-ngrok http 8787
-```
+1. Ga naar https://railway.app, maak een account, en koppel je GitHub-account.
+2. **New Project -> Deploy from GitHub repo** -> kies `photodecaffeine`.
+3. In de service-instellingen (**Settings -> Source**):
+   - **Root Directory**: laat op de repo-root staan (`/`) -- de Dockerfile
+     heeft de hele monorepo als build-context nodig vanwege de pnpm-workspace.
+   - Railway pikt `railway.json` automatisch op en gebruikt daarmee
+     `apps/agent/Dockerfile` om te bouwen.
+4. **Variables**: zet daar dezelfde variabelen als in `.env.example`
+   (`ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
+   `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM`). Laat
+   `SKIP_TWILIO_SIGNATURE_CHECK` weg/op `false` -- die is alleen voor lokaal
+   testen zonder publieke URL.
+5. **Settings -> Networking -> Generate Domain** geeft een permanente
+   `https://<naam>.up.railway.app`-URL. Zet die (met `/webhooks/whatsapp`
+   erachter) als:
+   - `PUBLIC_WEBHOOK_URL` in de Railway-variabelen (voor correcte Twilio-
+     signature-verificatie), en
+   - als **"When a message comes in"**-webhook bij je WhatsApp Sender in de
+     Twilio Console (methode `POST`).
+6. Elke push naar de `claude/ai-personal-agent-architecture-9p0hib`-branch (of
+   later `main`) triggert automatisch een nieuwe Railway-deploy.
+7. Controleer of de service leeft: `https://<naam>.up.railway.app/healthz`
+   hoort `{"ok":true}` terug te geven.
 
-Kopieer de `https://...ngrok-free.app`-URL. Zet in `.env`:
+Lokaal draaien (`pnpm dev` + een tunnel als ngrok) blijft mogelijk voor snel
+itereren tijdens development, maar is niet nodig voor "altijd beschikbaar" --
+dat is precies waar Railway voor is neergezet.
 
-```
-PUBLIC_WEBHOOK_URL=https://<jouw-ngrok-url>/webhooks/whatsapp
-```
+## 4. Testen tegen de live deploy
 
-In de Twilio Console: **Messaging -> Try it out -> Send a WhatsApp message ->
-Sandbox settings**, zet **"When a message comes in"** op
-`https://<jouw-ngrok-url>/webhooks/whatsapp` (methode `POST`).
-
-## 4. Draaien en testen
-
-```bash
-pnpm dev
-```
-
-Stuur vanaf je eigen (bij de sandbox gejoinde) WhatsApp-nummer een bericht,
-bijvoorbeeld:
+Stuur vanaf je WhatsApp een bericht naar het gekoppelde nummer, bijvoorbeeld:
 
 - `"Ik moet morgen de tandarts bellen"` -> zou een taak moeten aanmaken en dat
   bevestigen in het antwoord.
