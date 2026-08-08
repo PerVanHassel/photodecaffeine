@@ -20,7 +20,7 @@ app.use(
 
 // --- Email ---
 const EMAIL_FROM = "PhotoDeCaffeine <noreply@photodecaffeine.com>";
-const EMAIL_ADMIN_NOTIFY = "info@photodecaffeine.com";
+const EMAIL_ADMIN_NOTIFY = "contact@photodecaffeine.com";
 
 async function sendEmail(opts: {
   to: string | string[];
