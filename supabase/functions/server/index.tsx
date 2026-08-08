@@ -21,6 +21,7 @@ app.use(
 // --- Email ---
 const EMAIL_FROM = "PhotoDeCaffeine <noreply@photodecaffeine.com>";
 const EMAIL_ADMIN_NOTIFY = "contact@photodecaffeine.com";
+const SITE_URL = "https://www.photodecaffeine.com";
 
 async function sendEmail(opts: {
   to: string | string[];
@@ -54,6 +55,110 @@ async function sendEmail(opts: {
     }
   } catch (err) {
     console.log("sendEmail: failed to send", err);
+  }
+}
+
+// Looks up a Supabase Auth user's email + display name by id. Used to notify
+// clients by project.clientId, since project records only store the id.
+async function getPortalUser(userId: string): Promise<{ email: string; name: string } | null> {
+  try {
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+    const { data, error } = await supabase.auth.admin.getUserById(userId);
+    if (error || !data?.user?.email) return null;
+    return {
+      email: data.user.email,
+      name: data.user.user_metadata?.name || data.user.email,
+    };
+  } catch {
+    return null;
+  }
+}
+
+const EMAIL_LOGO_ROW = `
+  <tr>
+    <td style="padding:28px 36px 24px;border-bottom:1px solid rgba(255,251,224,0.08);">
+      <img src="${SITE_URL}/email-logo.png" width="150" height="60" alt="PhotoDeCaffeine Productions" style="display:block;width:150px;height:60px;" />
+    </td>
+  </tr>`;
+
+// Wraps a set of <tr> rows in the shared 560px dark card + logo header that
+// every outgoing email uses.
+function emailWrap(bodyRows: string): string {
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background-color:#0d0703;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">${EMAIL_LOGO_ROW}${bodyRows}</table>`;
+}
+
+// A full-bleed photo card with a tinted "glass" panel over the bottom holding
+// eyebrow/title/subtitle text, wrapped in a link. Falls back to a solid dark
+// card (no photo) if imageUrl is omitted. Used for gallery-update, delivery,
+// and portfolio-promo emails.
+function glassImageCard(opts: {
+  imageUrl?: string;
+  eyebrow: string;
+  title: string;
+  subtitle?: string;
+  /** Optional link text rendered inside the glass panel, under the title (e.g. "Bekijk in de portfolio →"). */
+  ctaText?: string;
+  accentColor?: string;
+  linkUrl: string;
+  topSpace?: number;
+}): string {
+  const accent = opts.accentColor || "#c8905a";
+  const top = opts.topSpace ?? 180;
+  const bg = opts.imageUrl
+    ? `background="${opts.imageUrl}" bgcolor="#0d0703" style="background-image:url('${opts.imageUrl}');background-size:cover;background-position:center;"`
+    : `bgcolor="#0d0703" style="background-color:#0d0703;"`;
+  return `
+    <tr>
+      <td style="padding:0;">
+        <a href="${opts.linkUrl}" style="display:block;text-decoration:none;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td ${bg}>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr><td style="height:${top}px;line-height:${top}px;font-size:0;">&nbsp;</td></tr>
+                  <tr>
+                    <td style="background-color:rgba(8,4,1,0.82);padding:22px 30px 26px;">
+                      <span style="color:${accent};font-size:9px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;">${opts.eyebrow}</span>
+                      <div style="height:8px;line-height:8px;font-size:0;">&nbsp;</div>
+                      <span style="display:block;color:#fffbe0;font-size:22px;font-weight:800;letter-spacing:-0.01em;">${opts.title}</span>
+                      ${opts.subtitle ? `<div style="height:6px;line-height:6px;font-size:0;">&nbsp;</div><span style="color:rgba(255,251,224,0.5);font-size:12px;">${opts.subtitle}</span>` : ""}
+                      ${opts.ctaText ? `<div style="height:10px;line-height:10px;font-size:0;">&nbsp;</div><span style="color:${accent};font-size:11px;font-weight:700;letter-spacing:0.08em;">${opts.ctaText}</span>` : ""}
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </a>
+      </td>
+    </tr>`;
+}
+
+// Picks a portfolio piece to feature in the visitor-confirmation email:
+// published, image-covered, not an internal/system entry (category
+// starting with "_", e.g. the automotive-gallery placeholder). Prefers
+// featured pieces, picks randomly among the pool for variety.
+async function getPromoPortfolioArticle() {
+  try {
+    const allIdsStr = await kv.get("portfolio:articleIds");
+    if (!allIdsStr) return null;
+    const allIds = JSON.parse(allIdsStr) as string[];
+    const values = await Promise.all(allIds.map((id) => kv.get(`portfolio:article:${id}`)));
+    const articles = values
+      .filter(Boolean)
+      .map((v) => JSON.parse(v as string))
+      .filter(
+        (a) => a.published && a.coverType === "image" && a.coverUrl && !String(a.category || "").startsWith("_")
+      );
+    if (articles.length === 0) return null;
+    const featured = articles.filter((a) => a.featured);
+    const pool = featured.length > 0 ? featured : articles;
+    return pool[Math.floor(Math.random() * pool.length)];
+  } catch {
+    return null;
   }
 }
 
@@ -272,6 +377,37 @@ app.post("/make-server-0951c59e/portal/signup", async (c) => {
     // Initialize empty project list for new client
     await kv.set(`portal:client:${userId}:projectIds`, JSON.stringify([]));
 
+    // Notify admin of the new signup
+    await sendEmail({
+      to: EMAIL_ADMIN_NOTIFY,
+      subject: `Nieuwe klantaccount — ${name || email}`,
+      html: emailWrap(`
+        <tr>
+          <td style="padding:32px 36px 0;">
+            <span style="color:#c8905a;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;">Nieuwe Klant</span>
+            <div style="height:10px;line-height:10px;font-size:0;">&nbsp;</div>
+            <span style="display:block;color:#fffbe0;font-size:22px;font-weight:800;letter-spacing:-0.01em;">${name || email}</span>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:22px 36px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);width:88px;color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;vertical-align:top;">E-mail</td>
+                <td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);color:#fffbe0;font-size:13px;">${email}</td>
+              </tr>
+              ${company ? `<tr><td style="padding:9px 0;color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;vertical-align:top;">Bedrijf</td><td style="padding:9px 0;color:#fffbe0;font-size:13px;">${company}</td></tr>` : ""}
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:26px 36px 36px;">
+            <a href="${SITE_URL}/admin/clients" style="display:inline-block;background-color:#fffbe0;color:#1a0c04;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 26px;">Bekijk klanten</a>
+          </td>
+        </tr>
+      `),
+    });
+
     return c.json({ success: true });
   } catch (err) {
     console.log("Signup unexpected error:", err);
@@ -384,6 +520,34 @@ app.post("/make-server-0951c59e/portal/project/:id/messages", async (c) => {
       `portal:project:${projectId}:messages`,
       JSON.stringify(messages)
     );
+
+    // Notify admin — clients otherwise only surface in the portal, which isn't checked daily
+    await sendEmail({
+      to: EMAIL_ADMIN_NOTIFY,
+      subject: `${newMessage.senderName} heeft gereageerd — ${project.title}`,
+      html: emailWrap(`
+        <tr>
+          <td style="padding:32px 36px 0;">
+            <span style="color:#c8905a;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;">Klant Reactie</span>
+            <div style="height:10px;line-height:10px;font-size:0;">&nbsp;</div>
+            <span style="display:block;color:#fffbe0;font-size:22px;font-weight:800;letter-spacing:-0.01em;">${newMessage.senderName}</span>
+            <span style="display:block;color:rgba(255,251,224,0.3);font-size:12px;margin-top:4px;">${project.title}</span>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 36px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:rgba(255,251,224,0.03);border-left:2px solid #c8905a;">
+              <tr><td style="padding:16px 18px;color:rgba(255,251,224,0.65);font-size:13.5px;line-height:1.7;">${newMessage.content.replace(/\n/g, "<br>")}</td></tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:26px 36px 36px;">
+            <a href="${SITE_URL}/admin/project/${projectId}" style="display:inline-block;background-color:#fffbe0;color:#1a0c04;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 26px;">Open in admin</a>
+          </td>
+        </tr>
+      `),
+    });
 
     return c.json({ message: newMessage });
   } catch (err) {
@@ -992,6 +1156,129 @@ app.put("/make-server-0951c59e/admin/project/:id", async (c) => {
     await kv.set(`portal:project:${projectId}`, JSON.stringify(updated));
     console.log("✅ Project saved to KV store");
 
+    // Client notifications for the changes that actually matter to them.
+    // Compared against `existing` (pre-update) so re-saving unrelated fields
+    // never re-fires these.
+    const galleryGrew = (updated.galleryUrls?.length || 0) > (existing.galleryUrls?.length || 0);
+    const justDelivered = existing.status !== "delivered" && updated.status === "delivered";
+    const meetingChanged = !!updated.meeting?.date && existing.meeting?.date !== updated.meeting.date;
+
+    if (galleryGrew || justDelivered || meetingChanged) {
+      const clientUser = await getPortalUser(existing.clientId);
+      if (clientUser) {
+        const firstName = clientUser.name.split(" ")[0];
+        const gs = updated.gallerySettings || {};
+        const galleryTitle = gs.title || updated.title;
+        const accent = gs.accentColor || "#c8905a";
+        const coverUrl = gs.coverUrl || updated.galleryUrls?.[0];
+        const galleryLink = `${SITE_URL}/portal/project/${projectId}/gallery`;
+        const projectLink = `${SITE_URL}/portal/project/${projectId}`;
+
+        if (galleryGrew) {
+          const added = (updated.galleryUrls?.length || 0) - (existing.galleryUrls?.length || 0);
+          const photoWord = added === 1 ? "foto" : "foto's";
+          await sendEmail({
+            to: clientUser.email,
+            subject: `Je galerij is bijgewerkt — ${added} nieuwe ${photoWord}`,
+            html: emailWrap(`
+              ${glassImageCard({
+                imageUrl: coverUrl,
+                eyebrow: "Galerij Bijgewerkt",
+                title: galleryTitle,
+                subtitle: `${added} nieuwe ${photoWord} toegevoegd &middot; ${updated.galleryUrls.length} in totaal`,
+                accentColor: accent,
+                linkUrl: galleryLink,
+              })}
+              <tr>
+                <td style="padding:32px 36px 0;text-align:center;"><span style="color:rgba(255,251,224,0.55);font-size:14px;font-weight:300;line-height:1.75;">Hi ${firstName}, we hebben ${added} nieuwe ${photoWord} aan je galerij toegevoegd. Bekijk en download ze via de link hieronder.</span></td>
+              </tr>
+              <tr>
+                <td style="padding:26px 36px 40px;text-align:center;">
+                  <a href="${galleryLink}" style="display:inline-block;background-color:${accent};color:#0a1413;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 30px;">Bekijk je galerij</a>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:18px 36px 28px;border-top:1px solid rgba(255,251,224,0.06);"><span style="color:rgba(255,251,224,0.2);font-size:11px;">Je hebt deze mail ontvangen omdat je een actief project hebt bij PhotoDeCaffeine.</span></td>
+              </tr>
+            `),
+          });
+        }
+
+        if (justDelivered) {
+          await sendEmail({
+            to: clientUser.email,
+            subject: `Je project is afgerond — ${updated.title}`,
+            html: emailWrap(`
+              ${glassImageCard({
+                imageUrl: coverUrl,
+                eyebrow: "Project Afgerond",
+                title: updated.title,
+                accentColor: "#c8905a",
+                linkUrl: galleryLink,
+                topSpace: 150,
+              })}
+              <tr>
+                <td style="padding:32px 36px 0;text-align:center;"><span style="color:rgba(255,251,224,0.55);font-size:14px;font-weight:300;line-height:1.75;">Hi ${firstName}, je volledige galerij staat klaar. Alle foto's zijn bewerkt en in hoge resolutie beschikbaar om te bekijken en downloaden.</span></td>
+              </tr>
+              <tr>
+                <td style="padding:26px 36px 44px;text-align:center;">
+                  <a href="${galleryLink}" style="display:inline-block;background-color:#fffbe0;color:#1a0c04;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:14px 32px;">Bekijk &amp; download</a>
+                  <div style="height:18px;line-height:18px;font-size:0;">&nbsp;</div>
+                  <span style="color:rgba(255,251,224,0.3);font-size:11px;">Bedankt voor het vertrouwen &mdash; we horen graag hoe de shoot is bevallen.</span>
+                </td>
+              </tr>
+            `),
+          });
+        }
+
+        if (meetingChanged) {
+          const meetingDate = new Date(updated.meeting.date).toLocaleString("nl-NL", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+          await sendEmail({
+            to: clientUser.email,
+            subject: `Meeting ingepland — ${updated.title}`,
+            html: emailWrap(`
+              <tr>
+                <td style="padding:32px 36px 0;">
+                  <span style="color:#c8905a;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;">Meeting Ingepland</span>
+                  <div style="height:10px;line-height:10px;font-size:0;">&nbsp;</div>
+                  <span style="display:block;color:#fffbe0;font-size:22px;font-weight:800;letter-spacing:-0.01em;">${updated.title}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:24px 36px 0;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:rgba(255,251,224,0.03);border:1px solid rgba(255,251,224,0.06);">
+                    <tr>
+                      <td style="padding:20px 22px;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                          <tr><td style="padding-bottom:14px;color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;">Wanneer</td></tr>
+                          <tr><td style="padding-bottom:${updated.meeting.location ? "16px" : "0"};color:#fffbe0;font-size:15px;font-weight:600;">${meetingDate}</td></tr>
+                          ${updated.meeting.location ? `<tr><td style="padding-bottom:8px;color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;">Locatie</td></tr><tr><td style="color:rgba(255,251,224,0.7);font-size:13px;">${updated.meeting.location}</td></tr>` : ""}
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:26px 36px 36px;">
+                  <a href="${projectLink}" style="display:inline-block;background-color:#fffbe0;color:#1a0c04;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 26px;">Bekijk projectdetails</a>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:18px 36px 28px;border-top:1px solid rgba(255,251,224,0.06);"><span style="color:rgba(255,251,224,0.2);font-size:11px;">Kun je niet? Stuur even een berichtje via het portaal.</span></td>
+              </tr>
+            `),
+          });
+        }
+      }
+    }
+
     return c.json({ project: updated });
   } catch (err) {
     console.log("Admin update project error:", err);
@@ -1071,6 +1358,49 @@ app.post("/make-server-0951c59e/admin/project/:id/messages", async (c) => {
     messages.push(newMessage);
     await kv.set(`portal:project:${projectId}:messages`, JSON.stringify(messages));
 
+    // Notify the client — otherwise they'd only see this by logging into the portal
+    const projectStr = await kv.get(`portal:project:${projectId}`);
+    if (projectStr) {
+      const project = JSON.parse(projectStr);
+      const clientUser = await getPortalUser(project.clientId);
+      if (clientUser) {
+        await sendEmail({
+          to: clientUser.email,
+          subject: "Nieuw bericht van PDC Studio",
+          html: emailWrap(`
+            <tr>
+              <td style="padding:32px 36px 0;">
+                <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+                  <td style="width:30px;height:30px;background-color:rgba(200,144,90,0.15);border:1px solid rgba(200,144,90,0.3);text-align:center;vertical-align:middle;">
+                    <span style="color:#c8905a;font-size:11px;font-weight:800;">P</span>
+                  </td>
+                  <td style="padding-left:12px;">
+                    <span style="display:block;color:#c8905a;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">PDC Studio</span>
+                    <span style="display:block;color:rgba(255,251,224,0.3);font-size:11px;">over ${project.title}</span>
+                  </td>
+                </tr></table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 36px 0;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:rgba(200,144,90,0.06);border:1px solid rgba(200,144,90,0.12);">
+                  <tr><td style="padding:18px 20px;color:rgba(255,251,224,0.75);font-size:14px;line-height:1.7;">${newMessage.content.replace(/\n/g, "<br>")}</td></tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:26px 36px 36px;">
+                <a href="${SITE_URL}/portal/project/${projectId}" style="display:inline-block;background-color:#fffbe0;color:#1a0c04;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 26px;">Bekijk &amp; reageer</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px 36px 28px;border-top:1px solid rgba(255,251,224,0.06);"><span style="color:rgba(255,251,224,0.2);font-size:11px;">Reageren kan direct in je projectportaal.</span></td>
+            </tr>
+          `),
+        });
+      }
+    }
+
     return c.json({ message: newMessage });
   } catch (err) {
     console.log("Admin send message error:", err);
@@ -1134,28 +1464,105 @@ app.post("/make-server-0951c59e/contact", async (c) => {
     await sendEmail({
       to: EMAIL_ADMIN_NOTIFY,
       replyTo: inquiry.email,
-      subject: `New inquiry from ${inquiry.name}${inquiry.brand ? ` (${inquiry.brand})` : ""}`,
-      html: `
-        <h2>New contact form submission</h2>
-        <p><strong>Name:</strong> ${inquiry.name}</p>
-        <p><strong>Email:</strong> ${inquiry.email}</p>
-        ${inquiry.phone ? `<p><strong>Phone:</strong> ${inquiry.phone}</p>` : ""}
-        ${inquiry.brand ? `<p><strong>Brand:</strong> ${inquiry.brand}</p>` : ""}
-        ${inquiry.package ? `<p><strong>Package:</strong> ${inquiry.package}</p>` : ""}
-        <p><strong>Message:</strong></p>
-        <p>${inquiry.message.replace(/\n/g, "<br>")}</p>
-      `,
+      subject: `Nieuwe aanvraag van ${inquiry.name}${inquiry.brand ? ` (${inquiry.brand})` : ""}`,
+      html: emailWrap(`
+        <tr>
+          <td style="padding:32px 36px 0;">
+            <span style="color:#c8905a;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;">Nieuwe Aanvraag</span>
+            <div style="height:12px;line-height:12px;font-size:0;">&nbsp;</div>
+            <span style="display:block;color:#fffbe0;font-size:24px;font-weight:800;letter-spacing:-0.01em;line-height:1.2;">${inquiry.name}</span>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:22px 36px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);width:88px;color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;vertical-align:top;">E-mail</td>
+                <td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);"><a href="mailto:${inquiry.email}" style="color:#c8905a;font-size:13px;text-decoration:none;">${inquiry.email}</a></td>
+              </tr>
+              ${inquiry.phone ? `<tr><td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;vertical-align:top;">Telefoon</td><td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);color:#fffbe0;font-size:13px;">${inquiry.phone}</td></tr>` : ""}
+              ${inquiry.brand ? `<tr><td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;vertical-align:top;">Merk</td><td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);color:#fffbe0;font-size:13px;">${inquiry.brand}</td></tr>` : ""}
+              ${inquiry.package ? `<tr><td style="padding:9px 0;color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;vertical-align:top;">Pakket</td><td style="padding:9px 0;color:#fffbe0;font-size:13px;">${inquiry.package}</td></tr>` : ""}
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:26px 36px 0;"><span style="color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;">Bericht</span></td>
+        </tr>
+        <tr>
+          <td style="padding:10px 36px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:rgba(255,251,224,0.03);border-left:2px solid #c8905a;">
+              <tr><td style="padding:16px 18px;color:rgba(255,251,224,0.65);font-size:13.5px;line-height:1.7;">${inquiry.message.replace(/\n/g, "<br>")}</td></tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:28px 36px 36px;">
+            <a href="mailto:${inquiry.email}" style="display:inline-block;background-color:#fffbe0;color:#1a0c04;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 26px;">Reageer naar ${inquiry.name.split(" ")[0]}</a>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:18px 36px 28px;border-top:1px solid rgba(255,251,224,0.06);"><span style="color:rgba(255,251,224,0.2);font-size:11px;">Verzonden via het contactformulier op photodecaffeine.com</span></td>
+        </tr>
+      `),
     });
 
-    // Confirmation to the visitor
+    // Confirmation to the visitor, with an optional "meer van ons werk" promo card
+    const promo = await getPromoPortfolioArticle();
+    const promoRows = promo
+      ? `
+        <tr>
+          <td style="padding:40px 36px 0;"><span style="color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;">Meer Van Ons Werk</span></td>
+        </tr>
+        ${glassImageCard({
+          imageUrl: promo.coverUrl,
+          eyebrow: promo.category || "Portfolio",
+          title: promo.title,
+          ctaText: "Bekijk in de portfolio &rarr;",
+          accentColor: "#c8905a",
+          linkUrl: `${SITE_URL}/portfolio/${promo.id}`,
+          topSpace: 190,
+        })}`
+      : "";
+
     await sendEmail({
       to: inquiry.email,
-      subject: "We received your message — PhotoDeCaffeine",
-      html: `
-        <p>Hi ${inquiry.name},</p>
-        <p>Thanks for reaching out to PhotoDeCaffeine. We've received your message and will get back to you soon.</p>
-        <p>— The PhotoDeCaffeine team</p>
-      `,
+      subject: "We hebben je bericht ontvangen — PhotoDeCaffeine",
+      html: emailWrap(`
+        <tr>
+          <td style="padding:40px 36px 0;text-align:center;">
+            <span style="color:#c8905a;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;">Bericht Ontvangen</span>
+            <div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div>
+            <span style="display:block;color:#fffbe0;font-size:30px;font-weight:800;letter-spacing:-0.02em;line-height:1.15;text-transform:uppercase;">Bedankt, ${inquiry.name.split(" ")[0]}.</span>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 48px 0;text-align:center;"><span style="color:rgba(255,251,224,0.55);font-size:14px;font-weight:300;line-height:1.75;">We bekijken jouw brief en nemen binnen één werkdag contact met je op. Bedankt voor het overwegen van PDC.</span></td>
+        </tr>
+        <tr>
+          <td style="padding:32px 36px 0;"><span style="color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;">Jouw Bericht</span></td>
+        </tr>
+        <tr>
+          <td style="padding:10px 36px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:rgba(255,251,224,0.03);border-left:2px solid #c8905a;">
+              <tr><td style="padding:16px 18px;color:rgba(255,251,224,0.55);font-size:13.5px;line-height:1.7;font-style:italic;">"${inquiry.message.replace(/\n/g, "<br>")}"</td></tr>
+            </table>
+          </td>
+        </tr>
+        ${promoRows}
+        <tr>
+          <td style="padding:36px 36px 0;text-align:center;"><span style="color:#c8905a;font-size:14px;font-style:italic;font-weight:300;">Gemaakt als Koffie, Geschoten als Cinema.</span></td>
+        </tr>
+        <tr>
+          <td style="padding:32px 36px 32px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid rgba(255,251,224,0.06);">
+              <tr><td style="height:24px;line-height:24px;font-size:0;">&nbsp;</td></tr>
+              <tr><td style="padding:5px 0;color:rgba(255,251,224,0.25);font-size:11px;text-align:center;"><a href="mailto:contact@photodecaffeine.com" style="color:rgba(255,251,224,0.45);text-decoration:none;">contact@photodecaffeine.com</a> &nbsp;·&nbsp; +31 6 36112514 &nbsp;·&nbsp; Roosendaal, Nederland</td></tr>
+              <tr><td style="padding:5px 0;color:rgba(255,251,224,0.2);font-size:11px;text-align:center;">Reactie binnen 24u &nbsp;·&nbsp; @photodecaffeine</td></tr>
+            </table>
+          </td>
+        </tr>
+      `),
     });
 
     return c.json({ success: true });
