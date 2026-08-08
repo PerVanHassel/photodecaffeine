@@ -18,6 +18,45 @@ app.use(
   })
 );
 
+// --- Email ---
+const EMAIL_FROM = "PhotoDeCaffeine <noreply@photodecaffeine.com>";
+const EMAIL_ADMIN_NOTIFY = "info@photodecaffeine.com";
+
+async function sendEmail(opts: {
+  to: string | string[];
+  subject: string;
+  html: string;
+  replyTo?: string;
+}) {
+  const apiKey = Deno.env.get("RESEND_API_KEY");
+  if (!apiKey) {
+    console.log("sendEmail: RESEND_API_KEY not set, skipping email send");
+    return;
+  }
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: EMAIL_FROM,
+        to: opts.to,
+        subject: opts.subject,
+        html: opts.html,
+        reply_to: opts.replyTo,
+      }),
+    });
+    if (!res.ok) {
+      const errBody = await res.text();
+      console.log("sendEmail: Resend API error", res.status, errBody);
+    }
+  } catch (err) {
+    console.log("sendEmail: failed to send", err);
+  }
+}
+
 // --- Auth helpers ---
 async function verifyAuth(authHeader: string | null) {
   if (!authHeader) {
@@ -1090,6 +1129,34 @@ app.post("/make-server-0951c59e/contact", async (c) => {
     const allIds = allIdsStr ? JSON.parse(allIdsStr) : [];
     allIds.push(id);
     await kv.set("contact:inquiryIds", JSON.stringify(allIds));
+
+    // Notify admin — reply-to set to the visitor so replying goes straight to them
+    await sendEmail({
+      to: EMAIL_ADMIN_NOTIFY,
+      replyTo: inquiry.email,
+      subject: `New inquiry from ${inquiry.name}${inquiry.brand ? ` (${inquiry.brand})` : ""}`,
+      html: `
+        <h2>New contact form submission</h2>
+        <p><strong>Name:</strong> ${inquiry.name}</p>
+        <p><strong>Email:</strong> ${inquiry.email}</p>
+        ${inquiry.phone ? `<p><strong>Phone:</strong> ${inquiry.phone}</p>` : ""}
+        ${inquiry.brand ? `<p><strong>Brand:</strong> ${inquiry.brand}</p>` : ""}
+        ${inquiry.package ? `<p><strong>Package:</strong> ${inquiry.package}</p>` : ""}
+        <p><strong>Message:</strong></p>
+        <p>${inquiry.message.replace(/\n/g, "<br>")}</p>
+      `,
+    });
+
+    // Confirmation to the visitor
+    await sendEmail({
+      to: inquiry.email,
+      subject: "We received your message — PhotoDeCaffeine",
+      html: `
+        <p>Hi ${inquiry.name},</p>
+        <p>Thanks for reaching out to PhotoDeCaffeine. We've received your message and will get back to you soon.</p>
+        <p>— The PhotoDeCaffeine team</p>
+      `,
+    });
 
     return c.json({ success: true });
   } catch (err) {

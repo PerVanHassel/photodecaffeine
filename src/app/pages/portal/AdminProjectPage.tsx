@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { portalFetch } from "../../../lib/supabase";
 import { useMobile } from "../../hooks/useMobile";
-import { ArrowLeft, Save, Plus, Trash2, Check, Send, AlertTriangle, Upload, Images, X, Bell, ChevronUp, ChevronDown } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, Check, Send, AlertTriangle, Upload, Images, X, Bell, ChevronUp, ChevronDown, Star, ExternalLink } from "lucide-react";
 import { projectId as supabaseProjectId } from "/utils/supabase/info";
 
 const BUCKET = "portfolio-images-0951c59e";
@@ -13,6 +13,13 @@ interface Deliverable {
   name: string;
   count: number;
   done: boolean;
+}
+
+interface GallerySettings {
+  title?: string;
+  subtitle?: string;
+  coverUrl?: string;
+  accentColor?: string;
 }
 
 interface Project {
@@ -32,7 +39,17 @@ interface Project {
     notes?: string;
   };
   galleryUrls?: string[];
+  gallerySettings?: GallerySettings;
 }
+
+const ACCENT_PRESETS = [
+  { name: "Gold", value: "#c8905a" },
+  { name: "Rose", value: "#c07a7a" },
+  { name: "Sage", value: "#8a9a7a" },
+  { name: "Teal", value: "#5a8a8a" },
+  { name: "Terracotta", value: "#b8683f" },
+  { name: "Slate", value: "#7a95b0" },
+];
 
 interface Message {
   id: string;
@@ -117,6 +134,7 @@ export function AdminProjectPage() {
   // Gallery
   const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [gallerySettings, setGallerySettings] = useState<GallerySettings>({});
 
   // Delete
   const [showDelete, setShowDelete] = useState(false);
@@ -142,6 +160,7 @@ export function AdminProjectPage() {
         });
         setDeliverables(p.deliverables || []);
         setGalleryUrls(p.galleryUrls || []);
+        setGallerySettings(p.gallerySettings || {});
         setMessages(msgData.messages || []);
         setLoading(false);
       })
@@ -167,7 +186,7 @@ export function AdminProjectPage() {
         }
       : null;
 
-    const payload = { ...form, deliverables, meeting, galleryUrls };
+    const payload = { ...form, deliverables, meeting, galleryUrls, gallerySettings };
 
     try {
       const data = await portalFetch(`/admin/project/${projectId}`, {
@@ -217,6 +236,16 @@ export function AdminProjectPage() {
     const updated = deliverables.filter((d) => d.id !== id);
     setDeliverables(updated);
     await saveDeliverables(updated);
+  }
+
+  function setCoverImage(url: string) {
+    const updated = { ...gallerySettings, coverUrl: url };
+    setGallerySettings(updated);
+    if (!session || !projectId) return;
+    portalFetch(`/admin/project/${projectId}`, {
+      method: "PUT",
+      body: JSON.stringify({ gallerySettings: updated }),
+    }, session.access_token).catch(console.error);
   }
 
   function moveGalleryImage(index: number, direction: -1 | 1) {
@@ -299,12 +328,18 @@ export function AdminProjectPage() {
 
   async function removeGalleryImage(index: number) {
     if (!session || !projectId) return;
+    const removedUrl = galleryUrls[index];
     const updated = galleryUrls.filter((_, i) => i !== index);
     setGalleryUrls(updated);
+    // Clear a dangling cover reference if the removed photo was the chosen cover.
+    const updatedSettings = gallerySettings.coverUrl === removedUrl
+      ? { ...gallerySettings, coverUrl: undefined }
+      : gallerySettings;
+    if (updatedSettings !== gallerySettings) setGallerySettings(updatedSettings);
     try {
       await portalFetch(`/admin/project/${projectId}`, {
         method: "PUT",
-        body: JSON.stringify({ galleryUrls: updated }),
+        body: JSON.stringify({ galleryUrls: updated, gallerySettings: updatedSettings }),
       }, session.access_token);
     } catch (err) { console.error("Remove gallery image error:", err); }
   }
@@ -617,25 +652,112 @@ export function AdminProjectPage() {
                   Photo Gallery ({galleryUrls.length})
                 </span>
               </div>
-              <label
-                style={{
-                  display: "flex", alignItems: "center", gap: "6px",
-                  border: "1px solid rgba(255,251,224,0.08)",
-                  color: uploading ? "#c8905a" : "rgba(255,251,224,0.4)",
-                  fontSize: "9px", fontWeight: 600,
-                  letterSpacing: "0.2em", textTransform: "uppercase",
-                  cursor: uploading ? "not-allowed" : "pointer",
-                  padding: "7px 12px", fontFamily: "'Inter', sans-serif",
-                  transition: "all 0.2s ease",
-                  backgroundColor: uploading ? "rgba(200,144,90,0.05)" : "transparent",
-                }}
-                onMouseEnter={(e) => { if (!uploading) { e.currentTarget.style.color = "#fffbe0"; e.currentTarget.style.borderColor = "rgba(255,251,224,0.15)"; } }}
-                onMouseLeave={(e) => { if (!uploading) { e.currentTarget.style.color = "rgba(255,251,224,0.4)"; e.currentTarget.style.borderColor = "rgba(255,251,224,0.08)"; } }}
-              >
-                <Upload size={11} />
-                {uploading ? "Uploading…" : "Upload Foto's"}
-                <input type="file" accept="image/*" multiple onChange={handleGalleryUpload} disabled={uploading} style={{ display: "none" }} />
-              </label>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                {galleryUrls.length > 0 && (
+                  <a
+                    href={`/admin/project/${projectId}/gallery`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "flex", alignItems: "center", gap: "6px",
+                      border: "1px solid rgba(200,144,90,0.25)",
+                      color: "#c8905a", fontSize: "9px", fontWeight: 600,
+                      letterSpacing: "0.2em", textTransform: "uppercase",
+                      padding: "7px 12px", fontFamily: "'Inter', sans-serif",
+                      textDecoration: "none", transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(200,144,90,0.1)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                  >
+                    <ExternalLink size={11} /> Preview
+                  </a>
+                )}
+                <label
+                  style={{
+                    display: "flex", alignItems: "center", gap: "6px",
+                    border: "1px solid rgba(255,251,224,0.08)",
+                    color: uploading ? "#c8905a" : "rgba(255,251,224,0.4)",
+                    fontSize: "9px", fontWeight: 600,
+                    letterSpacing: "0.2em", textTransform: "uppercase",
+                    cursor: uploading ? "not-allowed" : "pointer",
+                    padding: "7px 12px", fontFamily: "'Inter', sans-serif",
+                    transition: "all 0.2s ease",
+                    backgroundColor: uploading ? "rgba(200,144,90,0.05)" : "transparent",
+                  }}
+                  onMouseEnter={(e) => { if (!uploading) { e.currentTarget.style.color = "#fffbe0"; e.currentTarget.style.borderColor = "rgba(255,251,224,0.15)"; } }}
+                  onMouseLeave={(e) => { if (!uploading) { e.currentTarget.style.color = "rgba(255,251,224,0.4)"; e.currentTarget.style.borderColor = "rgba(255,251,224,0.08)"; } }}
+                >
+                  <Upload size={11} />
+                  {uploading ? "Uploading…" : "Upload Foto's"}
+                  <input type="file" accept="image/*" multiple onChange={handleGalleryUpload} disabled={uploading} style={{ display: "none" }} />
+                </label>
+              </div>
+            </div>
+
+            {/* Gallery identity — customized per client, shown on the dedicated gallery page */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "20px", padding: "16px", border: "1px solid rgba(255,251,224,0.05)", backgroundColor: "rgba(255,251,224,0.01)" }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "12px" }}>
+                <div>
+                  <label style={labelStyle}>Gallery Title</label>
+                  <input
+                    type="text"
+                    value={gallerySettings.title || ""}
+                    onChange={(e) => setGallerySettings({ ...gallerySettings, title: e.target.value })}
+                    placeholder={form.title || "Defaults to project title"}
+                    style={{ ...inputStyle, fontSize: "12px" }}
+                    onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,251,224,0.08)")}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Gallery Subtitle (optional)</label>
+                  <input
+                    type="text"
+                    value={gallerySettings.subtitle || ""}
+                    onChange={(e) => setGallerySettings({ ...gallerySettings, subtitle: e.target.value })}
+                    placeholder="e.g. Autumn Campaign 2026"
+                    style={{ ...inputStyle, fontSize: "12px" }}
+                    onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,251,224,0.08)")}
+                  />
+                </div>
+              </div>
+              <div>
+                <label style={labelStyle}>Accent Color</label>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                  {ACCENT_PRESETS.map((preset) => {
+                    const active = (gallerySettings.accentColor || "#c8905a") === preset.value;
+                    return (
+                      <button
+                        key={preset.value}
+                        type="button"
+                        title={preset.name}
+                        onClick={() => setGallerySettings({ ...gallerySettings, accentColor: preset.value })}
+                        style={{
+                          width: "24px", height: "24px", borderRadius: "50%",
+                          backgroundColor: preset.value,
+                          border: active ? "2px solid #fffbe0" : "2px solid transparent",
+                          boxShadow: active ? `0 0 0 2px ${preset.value}` : "none",
+                          cursor: "pointer", padding: 0,
+                        }}
+                      />
+                    );
+                  })}
+                  <input
+                    type="color"
+                    value={gallerySettings.accentColor || "#c8905a"}
+                    onChange={(e) => setGallerySettings({ ...gallerySettings, accentColor: e.target.value })}
+                    title="Custom color"
+                    style={{ width: "26px", height: "26px", padding: 0, border: "1px solid rgba(255,251,224,0.15)", backgroundColor: "transparent", cursor: "pointer" }}
+                  />
+                  <span style={{ color: "rgba(255,251,224,0.3)", fontSize: "11px", fontFamily: "'Courier New', monospace" }}>
+                    {gallerySettings.accentColor || "#c8905a"}
+                  </span>
+                </div>
+              </div>
+              <p style={{ color: "rgba(255,251,224,0.2)", fontSize: "10px", margin: 0, lineHeight: 1.6 }}>
+                Saved with "Save Changes" above. Click the star on a photo below to set it as the gallery cover.
+              </p>
             </div>
 
             {galleryUrls.length === 0 ? (
@@ -654,7 +776,9 @@ export function AdminProjectPage() {
                 gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
                 gap: "6px",
               }}>
-                {galleryUrls.map((url, i) => (
+                {galleryUrls.map((url, i) => {
+                  const isCover = (gallerySettings.coverUrl || galleryUrls[0]) === url;
+                  return (
                   <div key={url + i} style={{ position: "relative", aspectRatio: "4/3", overflow: "hidden" }}>
                     <img
                       src={url}
@@ -669,6 +793,19 @@ export function AdminProjectPage() {
                     }}>
                       {String(i + 1).padStart(2, "0")}
                     </div>
+                    <button
+                      onClick={() => setCoverImage(url)}
+                      title={isCover ? "Gallery cover" : "Set as gallery cover"}
+                      style={{
+                        position: "absolute", top: "6px", right: "34px",
+                        backgroundColor: isCover ? "rgba(200,144,90,0.85)" : "rgba(8,4,1,0.75)",
+                        border: "none", color: isCover ? "#080401" : "rgba(255,251,224,0.6)",
+                        width: "24px", height: "24px", display: "flex", alignItems: "center", justifyContent: "center",
+                        cursor: "pointer", padding: 0,
+                      }}
+                    >
+                      <Star size={11} fill={isCover ? "#080401" : "none"} />
+                    </button>
                     {/* Reorder buttons */}
                     <div style={{ position: "absolute", bottom: "6px", left: "6px", display: "flex", flexDirection: "column", gap: "2px" }}>
                       <button
@@ -693,7 +830,8 @@ export function AdminProjectPage() {
                       <X size={11} />
                     </button>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

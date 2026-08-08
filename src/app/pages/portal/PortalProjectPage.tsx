@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { portalFetch } from "../../../lib/supabase";
-import { ArrowLeft, Send, CheckCircle2, Circle, Images, Download, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Send, CheckCircle2, Circle, Images } from "lucide-react";
 import { useMobile } from "../../hooks/useMobile";
 
 interface Deliverable {
@@ -10,6 +10,13 @@ interface Deliverable {
   name: string;
   count: number;
   done: boolean;
+}
+
+interface GallerySettings {
+  title?: string;
+  subtitle?: string;
+  coverUrl?: string;
+  accentColor?: string;
 }
 
 interface Project {
@@ -28,6 +35,7 @@ interface Project {
     notes?: string;
   };
   galleryUrls?: string[];
+  gallerySettings?: GallerySettings;
 }
 
 interface Message {
@@ -85,9 +93,7 @@ export function PortalProjectPage() {
   const [sending, setSending] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [error, setError] = useState("");
-  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const touchStartX = useRef<number | null>(null);
 
   useEffect(() => {
     if (!session || !id) return;
@@ -130,22 +136,7 @@ export function PortalProjectPage() {
   }, [session, id]);
 
   const galleryUrls = project?.galleryUrls ?? [];
-
-  const closeLightbox = useCallback(() => setLightboxIdx(null), []);
-  const goPrev = useCallback(() => setLightboxIdx((i) => i === null ? null : (i - 1 + galleryUrls.length) % galleryUrls.length), [galleryUrls.length]);
-  const goNext = useCallback(() => setLightboxIdx((i) => i === null ? null : (i + 1) % galleryUrls.length), [galleryUrls.length]);
-
-  useEffect(() => {
-    if (lightboxIdx === null) return;
-    document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeLightbox();
-      if (e.key === "ArrowLeft") goPrev();
-      if (e.key === "ArrowRight") goNext();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => { document.body.style.overflow = ""; window.removeEventListener("keydown", onKey); };
-  }, [lightboxIdx, closeLightbox, goPrev, goNext]);
+  const gallerySettings = project?.gallerySettings;
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
@@ -591,65 +582,71 @@ export function PortalProjectPage() {
               </div>
             </div>
           )}
-          {/* Gallery */}
+          {/* Gallery preview — links out to the dedicated full gallery page */}
           {galleryUrls.length > 0 && (
             <div
+              onClick={() => navigate(`/portal/project/${id}/gallery`)}
               style={{
+                position: "relative",
+                minHeight: "220px",
+                overflow: "hidden",
+                cursor: "pointer",
                 border: "1px solid rgba(255,251,224,0.06)",
-                padding: "32px",
-                backgroundColor: "rgba(255,251,224,0.01)",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <Images size={13} color="rgba(255,251,224,0.25)" />
-                  <div style={{ color: "rgba(255,251,224,0.25)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase" }}>
-                    Photo Gallery ({galleryUrls.length})
+              <img
+                src={gallerySettings?.coverUrl || galleryUrls[0]}
+                alt=""
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  transition: "transform 0.5s ease",
+                }}
+                onMouseEnter={(e) => ((e.target as HTMLImageElement).style.transform = "scale(1.04)")}
+                onMouseLeave={(e) => ((e.target as HTMLImageElement).style.transform = "scale(1)")}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background: "linear-gradient(to top, rgba(8,4,1,0.92) 0%, rgba(8,4,1,0.35) 60%, rgba(8,4,1,0.15) 100%)",
+                }}
+              />
+              <div style={{ position: "relative", padding: "28px", display: "flex", flexDirection: "column", justifyContent: "flex-end", minHeight: "220px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", color: gallerySettings?.accentColor || "#c8905a", fontSize: "9px", fontWeight: 600, letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: "10px" }}>
+                  <Images size={12} />
+                  Photo Gallery
+                </div>
+                <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: "16px" }}>
+                  <div>
+                    <div style={{ color: "#fffbe0", fontSize: "20px", fontWeight: 800, letterSpacing: "-0.01em", marginBottom: "4px" }}>
+                      {gallerySettings?.title || "View Your Gallery"}
+                    </div>
+                    <div style={{ color: "rgba(255,251,224,0.45)", fontSize: "12px" }}>
+                      {galleryUrls.length} {galleryUrls.length === 1 ? "photo" : "photos"}
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      color: "#fffbe0",
+                      fontSize: "10px",
+                      fontWeight: 700,
+                      letterSpacing: "0.15em",
+                      textTransform: "uppercase",
+                      border: "1px solid rgba(255,251,224,0.25)",
+                      padding: "10px 16px",
+                      flexShrink: 0,
+                    }}
+                  >
+                    View Gallery <ArrowRight size={12} />
                   </div>
                 </div>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "4px" }}>
-                {galleryUrls.map((url, i) => (
-                  <div
-                    key={i}
-                    style={{ position: "relative", aspectRatio: "4/3", overflow: "hidden", cursor: "pointer" }}
-                    onClick={() => setLightboxIdx(i)}
-                  >
-                    <img
-                      src={url}
-                      alt={`Photo ${i + 1}`}
-                      loading="lazy"
-                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform 0.3s ease" }}
-                      onMouseEnter={(e) => ((e.target as HTMLImageElement).style.transform = "scale(1.04)")}
-                      onMouseLeave={(e) => ((e.target as HTMLImageElement).style.transform = "scale(1)")}
-                    />
-                    <a
-                      href={url}
-                      download={`photo-${i + 1}.jpg`}
-                      onClick={(e) => e.stopPropagation()}
-                      title="Download"
-                      style={{
-                        position: "absolute",
-                        bottom: "6px",
-                        right: "6px",
-                        backgroundColor: "rgba(8,4,1,0.7)",
-                        border: "1px solid rgba(255,251,224,0.15)",
-                        color: "rgba(255,251,224,0.55)",
-                        width: "28px",
-                        height: "28px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        textDecoration: "none",
-                      }}
-                      onMouseEnter={(e) => { e.currentTarget.style.color = "#fffbe0"; e.currentTarget.style.backgroundColor = "rgba(8,4,1,0.9)"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,251,224,0.55)"; e.currentTarget.style.backgroundColor = "rgba(8,4,1,0.7)"; }}
-                    >
-                      <Download size={12} />
-                    </a>
-                  </div>
-                ))}
               </div>
             </div>
           )}
@@ -884,44 +881,6 @@ export function PortalProjectPage() {
           </form>
         </div>
       </div>
-
-      {/* Lightbox */}
-      {lightboxIdx !== null && galleryUrls.length > 0 && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          style={{ position: "fixed", inset: 0, backgroundColor: "rgba(8,4,1,0.98)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px" }}
-          onClick={closeLightbox}
-          onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
-          onTouchEnd={(e) => {
-            if (touchStartX.current === null) return;
-            const dx = e.changedTouches[0].clientX - touchStartX.current;
-            if (Math.abs(dx) > 50) dx < 0 ? goNext() : goPrev();
-            touchStartX.current = null;
-          }}
-        >
-          <button onClick={(e) => { e.stopPropagation(); closeLightbox(); }} style={{ position: "absolute", top: "20px", right: "20px", background: "rgba(255,251,224,0.1)", border: "1px solid rgba(255,251,224,0.2)", color: "#fffbe0", width: "44px", height: "44px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-            <X size={20} />
-          </button>
-          {!isMobile && (
-            <>
-              <button onClick={(e) => { e.stopPropagation(); goPrev(); }} style={{ position: "absolute", left: "20px", background: "rgba(255,251,224,0.1)", border: "1px solid rgba(255,251,224,0.2)", color: "#fffbe0", width: "44px", height: "44px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                <ChevronLeft size={20} />
-              </button>
-              <button onClick={(e) => { e.stopPropagation(); goNext(); }} style={{ position: "absolute", right: "20px", background: "rgba(255,251,224,0.1)", border: "1px solid rgba(255,251,224,0.2)", color: "#fffbe0", width: "44px", height: "44px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                <ChevronRight size={20} />
-              </button>
-            </>
-          )}
-          <img src={galleryUrls[lightboxIdx]} alt={`Photo ${lightboxIdx + 1}`} style={{ maxWidth: "90%", maxHeight: "90%", objectFit: "contain" }} onClick={(e) => e.stopPropagation()} />
-          <div style={{ position: "absolute", bottom: "20px", display: "flex", alignItems: "center", gap: "16px" }}>
-            <span style={{ color: "rgba(255,251,224,0.4)", fontSize: "11px", letterSpacing: "0.2em" }}>{lightboxIdx + 1} / {galleryUrls.length}</span>
-            <a href={galleryUrls[lightboxIdx]} download={`photo-${lightboxIdx + 1}.jpg`} onClick={(e) => e.stopPropagation()} style={{ color: "rgba(255,251,224,0.4)", display: "flex", alignItems: "center", gap: "4px", fontSize: "10px", letterSpacing: "0.15em", textDecoration: "none", textTransform: "uppercase" }} onMouseEnter={(e) => (e.currentTarget.style.color = "#fffbe0")} onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,251,224,0.4)")}>
-              <Download size={11} /> Download
-            </a>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
