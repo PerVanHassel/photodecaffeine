@@ -9,6 +9,7 @@
     "dev": "vite"
   },
   "reactSnap": {
+    "source": "dist",
     "include": ["/", "/portfolio", "/about", "/services/automotive"],
     "puppeteerArgs": ["--no-sandbox", "--disable-setuid-sandbox"],
     "headless": true,
