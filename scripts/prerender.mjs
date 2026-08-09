@@ -15,12 +15,30 @@ const rootDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const distDir = path.join(rootDir, "dist");
 const ssrEntry = path.join(rootDir, "dist-ssr", "entry-server.js");
 
-const ROUTES = ["/", "/portfolio", "/about", "/services/automotive"];
+const ROUTES = ["/", "/portfolio", "/about", "/services/automotive", "/services/social-media"];
 
 function outputPathFor(route) {
   if (route === "/") return path.join(distDir, "index.html");
   return path.join(distDir, route.replace(/^\//, ""), "index.html");
 }
+
+// Base index.html carries fallback SEO tags (for the client-side SPA shell
+// before Helmet mounts, and as a safety net for routes with no Helmet block).
+// Every prerendered marketing page's Helmet sets its own version of these same
+// tags, so the base ones must be stripped first — otherwise both copies land
+// in <head> and crawlers read the first (generic) <title>/<meta>, silently
+// shadowing the per-page one Helmet just injected.
+const BASE_TAGS_OVERRIDDEN_BY_HELMET = [
+  /<title>[\s\S]*?<\/title>\s*/,
+  /<meta\s+name="description"[^>]*>\s*/,
+  /<meta\s+property="og:title"[^>]*>\s*/,
+  /<meta\s+property="og:description"[^>]*>\s*/,
+  /<meta\s+property="og:url"[^>]*>\s*/,
+  /<meta\s+property="og:type"[^>]*>\s*/,
+  /<meta\s+name="twitter:card"[^>]*>\s*/,
+  /<meta\s+name="twitter:title"[^>]*>\s*/,
+  /<meta\s+name="twitter:description"[^>]*>\s*/,
+];
 
 async function main() {
   if (!existsSync(ssrEntry)) {
@@ -30,10 +48,15 @@ async function main() {
   }
 
   const { render } = await import(`file://${ssrEntry.replace(/\\/g, "/")}`);
-  const template = await readFile(path.join(distDir, "index.html"), "utf-8");
+  const baseTemplate = await readFile(path.join(distDir, "index.html"), "utf-8");
 
   for (const route of ROUTES) {
     const { appHtml, headHtml } = await render(route);
+
+    let template = baseTemplate;
+    for (const pattern of BASE_TAGS_OVERRIDDEN_BY_HELMET) {
+      template = template.replace(pattern, "");
+    }
 
     const html = template
       .replace('<div id="root"></div>', `<div id="root">${appHtml}</div>`)

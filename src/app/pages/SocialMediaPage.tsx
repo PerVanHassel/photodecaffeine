@@ -1,43 +1,26 @@
 import { Helmet } from "react-helmet-async";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { portalFetch } from "../../lib/supabase";
 import { useMobile } from "../hooks/useMobile";
-import { useLanguage } from "../context/LanguageContext";
-import { projectId, publicAnonKey } from "/utils/supabase/info";
 import { useAdTracking, getStoredAdRef } from "../hooks/useAdTracking";
 import { ArrowLeft } from "lucide-react";
-import heroImage from "@/imports/_DSC0893.jpg";
+import heroImage from "@/imports/IMG_9694.jpg";
 
-const GALLERY_TITLE = "__automotive_gallery__";
+const INCLUDED = [
+  "Contentplanning afgestemd op jouw merk",
+  "Fotografie & video op locatie",
+  "Posting & community beheer",
+  "Vast aanspreekpunt, geen wisselend team",
+];
 
-export function AutomotivePage() {
-  useAdTracking("/services/automotive");
+export function SocialMediaPage() {
+  useAdTracking("/services/social-media");
 
   const navigate = useNavigate();
   const isMobile = useMobile();
-  const { t } = useLanguage();
-  const ta = t.automotivePage;
 
-  const [galleryImages, setGalleryImages] = useState<string[]>([]);
-
-  useEffect(() => {
-    fetch(`https://${projectId}.supabase.co/functions/v1/make-server-0951c59e/portfolio`, {
-      headers: { Authorization: `Bearer ${publicAnonKey}` },
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        const article = (data.articles || []).find(
-          (a: { title: string; galleryUrls: string[] }) => a.title === GALLERY_TITLE
-        );
-        if (article?.galleryUrls?.length) {
-          setGalleryImages(article.galleryUrls);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  const [form, setForm] = useState({ name: "", email: "", phone: "", carBrand: "", date: "", location: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", company: "", message: "" });
   const [focused, setFocused] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -46,20 +29,15 @@ export function AutomotivePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) {
-      setError(ta.errorName);
+      setError("Vul je naam in.");
       return;
     }
     if (!form.email && !form.phone) {
-      setError(ta.errorContact);
+      setError("Vul minimaal een e-mailadres of telefoonnummer in.");
       return;
     }
     setLoading(true);
     setError(null);
-    const details = [
-      form.carBrand && `Vehicle: ${form.carBrand}`,
-      form.date && `Date: ${form.date}`,
-      form.location && `Location: ${form.location}`,
-    ].filter(Boolean).join("\n");
     try {
       await portalFetch("/contact", {
         method: "POST",
@@ -67,14 +45,14 @@ export function AutomotivePage() {
           name: form.name,
           email: form.email,
           phone: form.phone,
-          package: "automotive",
-          brand: "",
-          message: `Automotive package booking — €50 per vehicle, 1 hour on location.${details ? `\n\n${details}` : ""}${getStoredAdRef() ? `\n\n[ref:${getStoredAdRef()}]` : ""}`,
+          package: "social-media",
+          brand: form.company,
+          message: `Social media beheer aanvraag.${form.message ? `\n\n${form.message}` : ""}${getStoredAdRef() ? `\n\n[ref:${getStoredAdRef()}]` : ""}`,
         }),
       });
       setSubmitted(true);
     } catch {
-      setError(ta.errorGeneric);
+      setError("Er is iets misgegaan. Probeer het opnieuw of neem direct contact op.");
     } finally {
       setLoading(false);
     }
@@ -107,22 +85,22 @@ export function AutomotivePage() {
       }}
     >
       <Helmet>
-        <title>Automotive Fotografie — Auto's & Motoren | PhotoDeCaffeine</title>
-        <meta name="description" content="Professionele automotive fotografie door heel Nederland. Auto's, motoren en de mensen erachter — voor showrooms, dealers en particuliere eigenaren. Vanaf €50." />
-        <link rel="canonical" href="https://www.photodecaffeine.com/services/automotive" />
-        <meta property="og:title" content="Automotive Fotografie — Auto's & Motoren | PhotoDeCaffeine" />
-        <meta property="og:description" content="Professionele automotive fotografie door heel Nederland. Voor showrooms, dealers en particuliere eigenaren. Vanaf €50." />
-        <meta property="og:url" content="https://www.photodecaffeine.com/services/automotive" />
+        <title>Social Media Beheer voor Automotive | PhotoDeCaffeine</title>
+        <meta name="description" content="Content en social media beheer voor autobedrijven, dealers en particuliere eigenaren. Fotografie, video en een consistente social media aanwezigheid — door heel Nederland." />
+        <link rel="canonical" href="https://www.photodecaffeine.com/services/social-media" />
+        <meta property="og:title" content="Social Media Beheer voor Automotive | PhotoDeCaffeine" />
+        <meta property="og:description" content="Content en social media beheer voor autobedrijven, dealers en particuliere eigenaren — door heel Nederland." />
+        <meta property="og:url" content="https://www.photodecaffeine.com/services/social-media" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Automotive Fotografie — Auto's & Motoren | PhotoDeCaffeine" />
-        <meta name="twitter:description" content="Professionele automotive fotografie door heel Nederland. Voor showrooms, dealers en particuliere eigenaren. Vanaf €50." />
+        <meta name="twitter:title" content="Social Media Beheer voor Automotive | PhotoDeCaffeine" />
+        <meta name="twitter:description" content="Content en social media beheer voor autobedrijven, dealers en particuliere eigenaren — door heel Nederland." />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "BreadcrumbList",
           "itemListElement": [
             { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.photodecaffeine.com/" },
-            { "@type": "ListItem", "position": 2, "name": "Automotive Fotografie", "item": "https://www.photodecaffeine.com/services/automotive" }
+            { "@type": "ListItem", "position": 2, "name": "Social Media Beheer", "item": "https://www.photodecaffeine.com/services/social-media" }
           ]
         })}</script>
       </Helmet>
@@ -155,7 +133,7 @@ export function AutomotivePage() {
             }}
           >
             <ArrowLeft size={14} />
-            {ta.backLabel}
+            Diensten
           </button>
 
           <div
@@ -179,12 +157,12 @@ export function AutomotivePage() {
                   marginBottom: "16px",
                 }}
               >
-                {ta.sectionLabel}
+                Diensten
               </span>
               <h1
                 style={{
                   color: "#fffbe0",
-                  fontSize: isMobile ? "clamp(40px, 12vw, 72px)" : "clamp(48px, 7vw, 88px)",
+                  fontSize: isMobile ? "clamp(36px, 10vw, 64px)" : "clamp(44px, 6vw, 76px)",
                   fontWeight: 900,
                   letterSpacing: "-0.03em",
                   lineHeight: 0.92,
@@ -192,7 +170,7 @@ export function AutomotivePage() {
                   textTransform: "uppercase",
                 }}
               >
-                Automotive
+                Social Media
                 <br />
                 <em
                   style={{
@@ -204,7 +182,7 @@ export function AutomotivePage() {
                     fontFamily: "'Inter', sans-serif",
                   }}
                 >
-                  Photography & Film
+                  Beheer & Content
                 </em>
               </h1>
             </div>
@@ -220,7 +198,7 @@ export function AutomotivePage() {
                   textAlign: "right",
                 }}
               >
-                {ta.subtitle}
+                Consistente, professionele content voor je automotive merk — van shoot tot geplaatste post.
               </p>
             )}
           </div>
@@ -231,12 +209,12 @@ export function AutomotivePage() {
       <div style={{ position: "relative", height: isMobile ? "60vw" : "65vh", minHeight: "320px", overflow: "hidden" }}>
         <img
           src={heroImage}
-          alt="Automotive fotograaf — buitenshoot sportwagen"
+          alt="Social media contentproductie op locatie — PhotoDeCaffeine"
           style={{
             width: "100%",
             height: "100%",
             objectFit: "cover",
-            objectPosition: "center 40%",
+            objectPosition: "center 30%",
             filter: "brightness(0.5) contrast(1.08) saturate(0.7)",
           }}
         />
@@ -261,17 +239,15 @@ export function AutomotivePage() {
             margin: 0,
           }}
         >
-          Als{" "}
-          <strong style={{ color: "rgba(255,251,224,0.8)" }}>automotive fotograaf</strong>{" "}
-          fotografeer ik personenauto's, sportauto's, oldtimers, motoren en bedrijfswagens voor
-          dealerships, showrooms en particuliere eigenaren — én de mensen erachter, met persoonlijke
-          shoots op en rond het voertuig. Een shoot duurt circa één uur op locatie, door heel Nederland,
-          en levert scherpe, klaargestoomde beelden op die direct inzetbaar zijn voor social media,
-          advertenties of jouw website.
+          Naast losse shoots verzorgen we ook{" "}
+          <strong style={{ color: "rgba(255,251,224,0.8)" }}>social media beheer voor automotive</strong>{" "}
+          bedrijven: dealers, showrooms, autobedrijven en particuliere eigenaren die willen opvallen op
+          Instagram en TikTok. Wij regelen de content — van auto's en motoren tot de mensen erachter — en
+          zorgen dat je kanalen actief en professioneel blijven, door heel Nederland.
         </h2>
       </div>
 
-      {/* ── Package + booking ── */}
+      {/* ── What's included + form ── */}
       <div
         style={{
           maxWidth: "1400px",
@@ -283,109 +259,56 @@ export function AutomotivePage() {
           alignItems: "start",
         }}
       >
-        {/* Left — package details */}
+        {/* Left — what's included */}
         <div>
-          {/* Price */}
-          <div style={{ marginBottom: "48px" }}>
-            <span
-              style={{
-                color: "rgba(255,251,224,0.3)",
-                fontSize: "10px",
-                fontWeight: 500,
-                letterSpacing: "0.3em",
-                textTransform: "uppercase",
-                display: "block",
-                marginBottom: "16px",
-              }}
-            >
-              {ta.packageLabel}
-            </span>
+          <span
+            style={{
+              color: "rgba(255,251,224,0.3)",
+              fontSize: "10px",
+              fontWeight: 500,
+              letterSpacing: "0.3em",
+              textTransform: "uppercase",
+              display: "block",
+              marginBottom: "24px",
+            }}
+          >
+            Wat je kunt verwachten
+          </span>
+          {INCLUDED.map((item) => (
             <div
+              key={item}
               style={{
                 display: "flex",
-                alignItems: "flex-end",
-                gap: "12px",
-                marginBottom: "8px",
+                alignItems: "center",
+                gap: "16px",
+                padding: "15px 0",
+                borderBottom: "1px solid rgba(255,251,224,0.06)",
               }}
             >
               <span
                 style={{
-                  color: "#fffbe0",
-                  fontSize: isMobile ? "64px" : "80px",
-                  fontWeight: 900,
-                  letterSpacing: "-0.04em",
-                  lineHeight: 1,
+                  color: "#c8905a",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  fontFamily: "'Courier New', monospace",
+                  flexShrink: 0,
                 }}
               >
-                €50
+                —
               </span>
               <span
                 style={{
-                  color: "rgba(255,251,224,0.3)",
                   fontSize: "13px",
-                  fontWeight: 300,
-                  letterSpacing: "0.05em",
-                  paddingBottom: "12px",
+                  fontWeight: 400,
+                  color: "rgba(255,251,224,0.65)",
+                  letterSpacing: "0.02em",
                 }}
               >
-                {ta.perVehicle}
+                {item}
               </span>
             </div>
-            <div style={{ width: "32px", height: "1px", backgroundColor: "#c8905a" }} />
-          </div>
+          ))}
 
-          {/* What's included */}
-          <div>
-            <span
-              style={{
-                color: "rgba(255,251,224,0.3)",
-                fontSize: "10px",
-                fontWeight: 500,
-                letterSpacing: "0.3em",
-                textTransform: "uppercase",
-                display: "block",
-                marginBottom: "24px",
-              }}
-            >
-              {ta.includedLabel}
-            </span>
-            {ta.included.map((item) => (
-              <div
-                key={item}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "16px",
-                  padding: "15px 0",
-                  borderBottom: "1px solid rgba(255,251,224,0.06)",
-                }}
-              >
-                <span
-                  style={{
-                    color: "#c8905a",
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    fontFamily: "'Courier New', monospace",
-                    flexShrink: 0,
-                  }}
-                >
-                  —
-                </span>
-                <span
-                  style={{
-                    fontSize: "13px",
-                    fontWeight: 400,
-                    color: "rgba(255,251,224,0.65)",
-                    letterSpacing: "0.02em",
-                  }}
-                >
-                  {item}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Second package — custom/multi-vehicle */}
           <div
             style={{
               marginTop: "48px",
@@ -405,55 +328,24 @@ export function AutomotivePage() {
                 marginBottom: "12px",
               }}
             >
-              {ta.package2Label}
+              Pakketten
             </span>
-            <div
-              style={{
-                color: "#fffbe0",
-                fontSize: "22px",
-                fontWeight: 900,
-                letterSpacing: "-0.02em",
-                textTransform: "uppercase",
-                marginBottom: "12px",
-              }}
-            >
-              {ta.package2Title}
-            </div>
             <p
               style={{
                 color: "rgba(255,251,224,0.45)",
                 fontSize: "13px",
                 fontWeight: 300,
                 lineHeight: 1.7,
-                margin: "0 0 20px",
+                margin: 0,
               }}
             >
-              {ta.package2Body}
+              Ieder merk heeft een andere aanpak nodig, dus we stellen een voorstel op maat samen —
+              vraag het hiernaast aan en we nemen binnen 24 uur contact op.
             </p>
-            <button
-              onClick={() => navigate("/", { state: { scrollTo: "contact" } })}
-              style={{
-                background: "none",
-                border: "1px solid rgba(255,251,224,0.2)",
-                color: "rgba(255,251,224,0.6)",
-                fontSize: "10px",
-                fontWeight: 600,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                cursor: "pointer",
-                padding: "10px 20px",
-                fontFamily: "'Inter', sans-serif",
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(255,251,224,0.4)"; e.currentTarget.style.color = "#fffbe0"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,251,224,0.2)"; e.currentTarget.style.color = "rgba(255,251,224,0.6)"; }}
-            >
-              {ta.package2Button}
-            </button>
           </div>
         </div>
 
-        {/* Right — booking form */}
+        {/* Right — request form */}
         <div>
           <span
             style={{
@@ -466,7 +358,7 @@ export function AutomotivePage() {
               marginBottom: "16px",
             }}
           >
-            {ta.bookLabel}
+            Vraag een voorstel aan
           </span>
           <h2
             style={{
@@ -479,7 +371,7 @@ export function AutomotivePage() {
               margin: "0 0 8px",
             }}
           >
-            {ta.bookTitle}
+            Laat je gegevens achter
           </h2>
           <p
             style={{
@@ -490,7 +382,7 @@ export function AutomotivePage() {
               margin: "0 0 40px",
             }}
           >
-            {ta.bookSubtitle}
+            Vertel kort over je bedrijf en huidige kanalen — we nemen binnen 24 uur contact op.
           </p>
 
           {submitted ? (
@@ -512,7 +404,7 @@ export function AutomotivePage() {
                   margin: "0 0 12px",
                 }}
               >
-                {ta.successTitle}
+                We hebben je gegevens ontvangen
               </h4>
               <p
                 style={{
@@ -523,12 +415,11 @@ export function AutomotivePage() {
                   margin: 0,
                 }}
               >
-                {ta.successBody}
+                We nemen binnen 24 uur contact met je op om je voorstel te bespreken. Tot snel.
               </p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
-              {/* Name */}
               <div>
                 <label
                   style={{
@@ -541,7 +432,7 @@ export function AutomotivePage() {
                     marginBottom: "8px",
                   }}
                 >
-                  {ta.namePlaceholder}
+                  Jouw naam
                 </label>
                 <input
                   type="text"
@@ -549,12 +440,11 @@ export function AutomotivePage() {
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   onFocus={() => setFocused("name")}
                   onBlur={() => setFocused(null)}
-                  placeholder={ta.namePlaceholder}
+                  placeholder="Jouw naam"
                   style={inputStyle("name")}
                 />
               </div>
 
-              {/* Email */}
               <div>
                 <label
                   style={{
@@ -567,7 +457,7 @@ export function AutomotivePage() {
                     marginBottom: "8px",
                   }}
                 >
-                  {ta.emailLabel}
+                  E-mailadres
                 </label>
                 <input
                   type="email"
@@ -575,12 +465,11 @@ export function AutomotivePage() {
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   onFocus={() => setFocused("email")}
                   onBlur={() => setFocused(null)}
-                  placeholder="your@email.com"
+                  placeholder="jouw@email.com"
                   style={inputStyle("email")}
                 />
               </div>
 
-              {/* Phone */}
               <div>
                 <label
                   style={{
@@ -593,7 +482,7 @@ export function AutomotivePage() {
                     marginBottom: "8px",
                   }}
                 >
-                  {ta.phoneLabel}
+                  Telefoonnummer
                 </label>
                 <input
                   type="tel"
@@ -601,7 +490,7 @@ export function AutomotivePage() {
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   onFocus={() => setFocused("phone")}
                   onBlur={() => setFocused(null)}
-                  placeholder={ta.phonePlaceholder}
+                  placeholder="+31 6 ..."
                   style={inputStyle("phone")}
                 />
                 <p
@@ -613,55 +502,37 @@ export function AutomotivePage() {
                     letterSpacing: "0.02em",
                   }}
                 >
-                  {ta.phoneHint}
+                  E-mail of telefoon — minimaal één verplicht
                 </p>
               </div>
 
-              {/* Car brand/model */}
               <div>
                 <label style={{ color: "rgba(255,251,224,0.25)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase", display: "block", marginBottom: "8px" }}>
-                  {ta.carBrandLabel}
+                  Bedrijfsnaam (optioneel)
                 </label>
                 <input
                   type="text"
-                  value={form.carBrand}
-                  onChange={(e) => setForm({ ...form, carBrand: e.target.value })}
-                  onFocus={() => setFocused("carBrand")}
+                  value={form.company}
+                  onChange={(e) => setForm({ ...form, company: e.target.value })}
+                  onFocus={() => setFocused("company")}
                   onBlur={() => setFocused(null)}
-                  placeholder={ta.carBrandPlaceholder}
-                  style={inputStyle("carBrand")}
+                  placeholder="bijv. Autobedrijf Jansen"
+                  style={inputStyle("company")}
                 />
               </div>
 
-              {/* Preferred date */}
               <div>
                 <label style={{ color: "rgba(255,251,224,0.25)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase", display: "block", marginBottom: "8px" }}>
-                  {ta.dateLabel}
+                  Vertel over je kanalen (optioneel)
                 </label>
                 <input
                   type="text"
-                  value={form.date}
-                  onChange={(e) => setForm({ ...form, date: e.target.value })}
-                  onFocus={() => setFocused("date")}
+                  value={form.message}
+                  onChange={(e) => setForm({ ...form, message: e.target.value })}
+                  onFocus={() => setFocused("message")}
                   onBlur={() => setFocused(null)}
-                  placeholder={ta.datePlaceholder}
-                  style={inputStyle("date")}
-                />
-              </div>
-
-              {/* Location */}
-              <div>
-                <label style={{ color: "rgba(255,251,224,0.25)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase", display: "block", marginBottom: "8px" }}>
-                  {ta.locationLabel}
-                </label>
-                <input
-                  type="text"
-                  value={form.location}
-                  onChange={(e) => setForm({ ...form, location: e.target.value })}
-                  onFocus={() => setFocused("location")}
-                  onBlur={() => setFocused(null)}
-                  placeholder={ta.locationPlaceholder}
-                  style={inputStyle("location")}
+                  placeholder="bijv. Instagram @autobedrijfjansen, willen vaker posten"
+                  style={inputStyle("message")}
                 />
               </div>
 
@@ -702,47 +573,14 @@ export function AutomotivePage() {
                   }
                 }}
               >
-                {loading ? ta.submitting : ta.submitButton}
+                {loading ? "Bezig…" : "Vraag een voorstel aan"}
               </button>
             </form>
           )}
         </div>
       </div>
 
-      {/* ── Gallery strip — only when images are available ── */}
-      {galleryImages.length > 0 && (
-        <div
-          style={{
-            maxWidth: "1400px",
-            margin: "0 auto",
-            padding: isMobile ? "0 20px 60px" : "0 40px 80px",
-            display: "grid",
-            gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
-            gap: "3px",
-          }}
-        >
-          {galleryImages.map((src, i) => (
-            <div key={i} style={{ aspectRatio: "4/3", overflow: "hidden" }}>
-              <img
-                src={src}
-                alt={`Automotive fotografie — foto ${i + 1}`}
-                loading="lazy"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  filter: "contrast(1.05) saturate(0.6) brightness(0.8)",
-                  transition: "transform 0.6s ease",
-                }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLImageElement).style.transform = "scale(1.04)")}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLImageElement).style.transform = "scale(1)")}
-              />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ── Custom packages CTA ── */}
+      {/* ── Custom CTA ── */}
       <div
         style={{
           borderTop: "1px solid rgba(255,251,224,0.06)",
@@ -762,7 +600,7 @@ export function AutomotivePage() {
             marginBottom: "20px",
           }}
         >
-          {ta.customLabel}
+          Ook losse shoot nodig?
         </span>
         <h2
           style={{
@@ -775,8 +613,7 @@ export function AutomotivePage() {
             margin: "0 0 16px",
           }}
         >
-          {ta.customTitle}{" "}
-          <span style={{ color: "rgba(255,251,224,0.3)" }}>{ta.customTitleDim}</span>
+          Bekijk onze <span style={{ color: "rgba(255,251,224,0.3)" }}>automotive fotografie</span>
         </h2>
         <p
           style={{
@@ -788,10 +625,10 @@ export function AutomotivePage() {
             margin: "0 auto 40px",
           }}
         >
-          {ta.customBody}
+          Losse shoots voor auto's en motoren, vanaf €50 per voertuig.
         </p>
         <button
-          onClick={() => navigate("/", { state: { scrollTo: "contact" } })}
+          onClick={() => navigate("/services/automotive")}
           style={{
             background: "none",
             border: "1px solid rgba(255,251,224,0.3)",
@@ -814,7 +651,7 @@ export function AutomotivePage() {
             e.currentTarget.style.color = "#fffbe0";
           }}
         >
-          {ta.customButton}
+          Naar Automotive Fotografie →
         </button>
       </div>
     </div>

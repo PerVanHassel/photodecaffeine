@@ -33,10 +33,13 @@ export function Navigation() {
   const isPortfolioPage = location.pathname === "/portfolio";
   const isAboutPage = location.pathname === "/about";
   const isAutomotivePage = location.pathname === "/services/automotive";
-  const isSubPage = isPortfolioPage || isAboutPage || isAutomotivePage;
+  const isSocialMediaPage = location.pathname === "/services/social-media";
+  const isServicesPage = isAutomotivePage || isSocialMediaPage;
+  const isSubPage = isPortfolioPage || isAboutPage || isServicesPage;
 
   const SERVICES = [
     { label: "Automotive", path: "/services/automotive" },
+    { label: "Social Media Beheer", path: "/services/social-media" },
   ];
 
   const scrollLinkKeys = [
@@ -157,9 +160,9 @@ export function Navigation() {
               style={{
                 background: "none",
                 border: "none",
-                color: isAutomotivePage ? "#fffbe0" : "rgba(255,251,224,0.55)",
+                color: isServicesPage ? "#fffbe0" : "rgba(255,251,224,0.55)",
                 fontSize: "10px",
-                fontWeight: isAutomotivePage ? 600 : 500,
+                fontWeight: isServicesPage ? 600 : 500,
                 letterSpacing: "0.2em",
                 textTransform: "uppercase",
                 cursor: "pointer",
@@ -174,7 +177,7 @@ export function Navigation() {
                 ((e.currentTarget as HTMLElement).style.color = "#fffbe0")
               }
               onMouseLeave={(e) =>
-                ((e.currentTarget as HTMLElement).style.color = isAutomotivePage
+                ((e.currentTarget as HTMLElement).style.color = isServicesPage
                   ? "#fffbe0"
                   : "rgba(255,251,224,0.55)")
               }

@@ -158,7 +158,7 @@ export function PortfolioDetailPage() {
     >
       <Helmet>
         <title>{article.title} — Portfolio | PhotoDeCaffeine</title>
-        <meta name="description" content={article.description ? `${article.description.slice(0, 140)}…` : `Bekijk de '${article.title}' shoot van PhotoDeCaffeine — professionele fotografie uit Rotterdam.`} />
+        <meta name="description" content={article.description ? `${article.description.slice(0, 140)}…` : `Bekijk de '${article.title}' shoot van PhotoDeCaffeine — professionele automotive fotografie door heel Nederland.`} />
         <link rel="canonical" href={`https://www.photodecaffeine.com/portfolio/${article.id}`} />
         <meta property="og:title" content={`${article.title} | PhotoDeCaffeine`} />
         <meta property="og:description" content={article.description ? article.description.slice(0, 140) : `Professionele fotoserie door PhotoDeCaffeine.`} />

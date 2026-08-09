@@ -198,15 +198,15 @@ export function PortfolioPage() {
     >
       <Helmet>
         <title>Portfolio — Fotografie & Video | PhotoDeCaffeine</title>
-        <meta name="description" content="Bekijk het portfolio van PhotoDeCaffeine — automotive, editorial en studio fotografie uit Rotterdam. Scherpe beelden voor merken, showrooms en particulieren." />
+        <meta name="description" content="Bekijk het portfolio van PhotoDeCaffeine — automotive, editorial en studio fotografie door heel Nederland. Scherpe beelden voor merken, showrooms en particulieren." />
         <link rel="canonical" href="https://www.photodecaffeine.com/portfolio" />
         <meta property="og:title" content="Portfolio | PhotoDeCaffeine" />
-        <meta property="og:description" content="Automotive, editorial en studio fotografie uit Rotterdam. Bekijk onze shoots." />
+        <meta property="og:description" content="Automotive, editorial en studio fotografie door heel Nederland. Bekijk onze shoots." />
         <meta property="og:url" content="https://www.photodecaffeine.com/portfolio" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Portfolio | PhotoDeCaffeine" />
-        <meta name="twitter:description" content="Automotive, editorial en studio fotografie uit Rotterdam. Bekijk onze shoots." />
+        <meta name="twitter:description" content="Automotive, editorial en studio fotografie door heel Nederland. Bekijk onze shoots." />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "BreadcrumbList",

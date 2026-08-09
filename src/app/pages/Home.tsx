@@ -67,16 +67,16 @@ export function Home() {
   return (
     <div style={{ backgroundColor: "#080401", fontFamily: "'Inter', sans-serif", overflowX: "hidden" }}>
       <Helmet>
-        <title>Automotive & Studio Fotografie Rotterdam | PhotoDeCaffeine</title>
-        <meta name="description" content="Professionele fotografie en videografie in Rotterdam. Automotive, studio en editorial shoots. Scherpe beelden die je merk versterken. Vraag een offerte aan." />
+        <title>Automotive Fotografie & Social Media Beheer | PhotoDeCaffeine</title>
+        <meta name="description" content="Automotive fotografie, videografie en social media beheer door heel Nederland. Voor auto's, motoren en de mensen erachter — zakelijk en particulier. Vraag een offerte aan." />
         <link rel="canonical" href="https://www.photodecaffeine.com/" />
-        <meta property="og:title" content="Automotive & Studio Fotografie Rotterdam | PhotoDeCaffeine" />
-        <meta property="og:description" content="Professionele fotografie en videografie in Rotterdam. Automotive, studio en editorial shoots. Scherpe beelden die je merk versterken." />
+        <meta property="og:title" content="Automotive Fotografie & Social Media Beheer | PhotoDeCaffeine" />
+        <meta property="og:description" content="Automotive fotografie, videografie en social media beheer door heel Nederland. Voor auto's, motoren en de mensen erachter." />
         <meta property="og:url" content="https://www.photodecaffeine.com/" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Automotive & Studio Fotografie Rotterdam | PhotoDeCaffeine" />
-        <meta name="twitter:description" content="Professionele fotografie en videografie in Rotterdam. Automotive, studio en editorial shoots." />
+        <meta name="twitter:title" content="Automotive Fotografie & Social Media Beheer | PhotoDeCaffeine" />
+        <meta name="twitter:description" content="Automotive fotografie, videografie en social media beheer door heel Nederland." />
       </Helmet>
       <Hero />
       {sections.workProcess && <><Divider /><WorkProcess /></>}
@@ -103,11 +103,11 @@ export function Home() {
             margin: 0,
           }}
         >
-          PhotoDeCaffeine is een fotograaf in Rotterdam, gespecialiseerd in{" "}
-          <strong style={{ color: "rgba(255,251,224,0.75)" }}>automotive fotografie</strong>,{" "}
-          studio-shoots en editorial beelden voor merken en particulieren. Wij werken voor showrooms,
-          autodealers, autobedrijven en privérijders in Rotterdam, Den Haag, Utrecht en de rest van
-          Nederland. Elke shoot is op maat — scherpe beelden die je auto of merk laten opvallen.
+          PhotoDeCaffeine is gespecialiseerd in{" "}
+          <strong style={{ color: "rgba(255,251,224,0.75)" }}>automotive fotografie en social media beheer</strong>
+          . Van auto's en motoren tot de mensen erachter — we fotograferen en filmen voor showrooms,
+          autodealers, autobedrijven en privé-eigenaren door heel Nederland. Elke shoot is op maat —
+          scherpe beelden die je auto, motor of merk laten opvallen.
         </h2>
       </section>
       <Contact />

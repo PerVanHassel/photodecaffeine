@@ -8,6 +8,7 @@ const PortfolioPage = lazy(() => import("./pages/PortfolioPage").then(m => ({ de
 const PortfolioDetailPage = lazy(() => import("./pages/PortfolioDetailPage").then(m => ({ default: m.PortfolioDetailPage })));
 const AboutPage = lazy(() => import("./pages/AboutPage").then(m => ({ default: m.AboutPage })));
 const AutomotivePage = lazy(() => import("./pages/AutomotivePage").then(m => ({ default: m.AutomotivePage })));
+const SocialMediaPage = lazy(() => import("./pages/SocialMediaPage").then(m => ({ default: m.SocialMediaPage })));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage").then(m => ({ default: m.NotFoundPage })));
 
 // Portal pages — never needed by regular visitors
@@ -60,6 +61,7 @@ const LazyPortfolioPage = wrap(PortfolioPage);
 const LazyPortfolioDetailPage = wrap(PortfolioDetailPage);
 const LazyAboutPage = wrap(AboutPage);
 const LazyAutomotivePage = wrap(AutomotivePage);
+const LazySocialMediaPage = wrap(SocialMediaPage);
 const LazyNotFoundPage = wrap(NotFoundPage);
 const LazyPortalLayout = wrap(PortalLayout);
 const LazyPortalLoginPage = wrap(PortalLoginPage);
@@ -94,6 +96,7 @@ export const router = createBrowserRouter([
       { path: "portfolio/:id", Component: LazyPortfolioDetailPage },
       { path: "about", Component: LazyAboutPage },
       { path: "services/automotive", Component: LazyAutomotivePage },
+      { path: "services/social-media", Component: LazySocialMediaPage },
     ],
   },
   {

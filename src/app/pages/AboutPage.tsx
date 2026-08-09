@@ -273,15 +273,15 @@ export function AboutPage() {
       }}>
       <Helmet>
         <title>Over Ons — Het Team achter de Lens | PhotoDeCaffeine</title>
-        <meta name="description" content="Maak kennis met het team van PhotoDeCaffeine. Gepassioneerde fotografen en videomakers gevestigd in Rotterdam, met een oog voor detail en een liefde voor het vak." />
+        <meta name="description" content="Maak kennis met het team van PhotoDeCaffeine. Gepassioneerde automotive fotografen en videomakers, actief door heel Nederland, met een oog voor detail en een liefde voor het vak." />
         <link rel="canonical" href="https://www.photodecaffeine.com/about" />
         <meta property="og:title" content="Over Ons | PhotoDeCaffeine" />
-        <meta property="og:description" content="Maak kennis met het team van PhotoDeCaffeine — gepassioneerde fotografen in Rotterdam." />
+        <meta property="og:description" content="Maak kennis met het team van PhotoDeCaffeine — gepassioneerde automotive fotografen door heel Nederland." />
         <meta property="og:url" content="https://www.photodecaffeine.com/about" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Over Ons | PhotoDeCaffeine" />
-        <meta name="twitter:description" content="Maak kennis met het team van PhotoDeCaffeine — gepassioneerde fotografen in Rotterdam." />
+        <meta name="twitter:description" content="Maak kennis met het team van PhotoDeCaffeine — gepassioneerde automotive fotografen door heel Nederland." />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "BreadcrumbList",
