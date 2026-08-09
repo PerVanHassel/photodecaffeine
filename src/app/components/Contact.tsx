@@ -186,8 +186,8 @@ export function Contact() {
           alignItems: "start",
         }}
       >
-        {/* Left — Info */}
-        <div>
+        {/* Left — Info (shown after the form on mobile, since the CTA above scrolls straight to this section) */}
+        <div style={{ order: isMobile ? 2 : 0 }}>
           <h3
             style={{
               color: "#fffbe0",
@@ -331,7 +331,7 @@ export function Contact() {
         </div>
 
         {/* Right — Form */}
-        <div>
+        <div style={{ order: isMobile ? 1 : 0 }}>
           {submitted ? (
             <div
               style={{

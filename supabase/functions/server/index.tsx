@@ -85,9 +85,32 @@ const EMAIL_LOGO_ROW = `
   </tr>`;
 
 // Wraps a set of <tr> rows in the shared 560px dark card + logo header that
-// every outgoing email uses.
+// every outgoing email uses, inside a full HTML document that declares
+// color-scheme support. Without an explicit <head>/color-scheme, Gmail's iOS
+// app applies its own automatic dark-mode remap to emails it assumes are
+// light-mode-only — which mangles a template that's already dark by design.
+// Declaring "dark light" support here (plus bgcolor attributes as a Gmail-app
+// fallback, since it doesn't always trust inline CSS alone) tells clients to
+// leave our colors as-is in both themes.
 function emailWrap(bodyRows: string): string {
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background-color:#0d0703;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">${EMAIL_LOGO_ROW}${bodyRows}</table>`;
+  const innerTable = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#0d0703" style="max-width:560px;margin:0 auto;background-color:#0d0703;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">${EMAIL_LOGO_ROW}${bodyRows}</table>`;
+  return `<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="color-scheme" content="dark light" />
+<meta name="supported-color-schemes" content="dark light" />
+<style>:root { color-scheme: dark light; supported-color-schemes: dark light; }</style>
+</head>
+<body bgcolor="#0d0703" style="margin:0;padding:0;background-color:#0d0703;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#0d0703" style="background-color:#0d0703;">
+<tr><td align="center" style="padding:24px 16px;">
+${innerTable}
+</td></tr>
+</table>
+</body>
+</html>`;
 }
 
 // A full-bleed photo card with a tinted "glass" panel over the bottom holding
