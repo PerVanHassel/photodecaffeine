@@ -86,12 +86,13 @@ const EMAIL_LOGO_ROW = `
 
 // Wraps a set of <tr> rows in the shared 560px dark card + logo header that
 // every outgoing email uses, inside a full HTML document that declares
-// color-scheme support. Without an explicit <head>/color-scheme, Gmail's iOS
-// app applies its own automatic dark-mode remap to emails it assumes are
-// light-mode-only — which mangles a template that's already dark by design.
-// Declaring "dark light" support here (plus bgcolor attributes as a Gmail-app
-// fallback, since it doesn't always trust inline CSS alone) tells clients to
-// leave our colors as-is in both themes.
+// color-scheme support. The template is a FIXED dark design, not a
+// light/dark-adaptive one — declaring "dark light" support previously told
+// Gmail's app it was free to run its own automatic remap on the message,
+// which flipped our intentionally-dark colors to light (dark bg -> cream,
+// cream text -> near-black). "only light" tells clients this message does
+// NOT adapt and to render it exactly as authored, which is what stops that
+// remap (per Gmail/Google's own color-scheme meta documentation).
 function emailWrap(bodyRows: string): string {
   const innerTable = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#0d0703" style="max-width:560px;margin:0 auto;background-color:#0d0703;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">${EMAIL_LOGO_ROW}${bodyRows}</table>`;
   return `<!DOCTYPE html>
@@ -99,9 +100,10 @@ function emailWrap(bodyRows: string): string {
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="color-scheme" content="dark light" />
-<meta name="supported-color-schemes" content="dark light" />
-<style>:root { color-scheme: dark light; supported-color-schemes: dark light; }</style>
+<meta name="x-apple-disable-message-reformatting" />
+<meta name="color-scheme" content="only light" />
+<meta name="supported-color-schemes" content="only light" />
+<style>:root { color-scheme: light; }</style>
 </head>
 <body bgcolor="#0d0703" style="margin:0;padding:0;background-color:#0d0703;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#0d0703" style="background-color:#0d0703;">
