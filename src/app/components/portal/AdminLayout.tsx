@@ -1,7 +1,8 @@
 import image_PDClogo2_0_12_1 from '@/imports/PDClogo2.0-12-1.png';
 import { Outlet, Navigate, useNavigate, useLocation } from "react-router";
 import { useAuth } from "../../context/AuthContext";
-import { LayoutDashboard, Users, LogOut, ChevronRight, Menu, X, Mail, Images, Bell, Settings, Car, Megaphone, Receipt, Shield } from "lucide-react";
+import { AdminThemeProvider, useAdminTheme } from "../../context/AdminThemeContext";
+import { LayoutDashboard, Users, LogOut, ChevronRight, Menu, X, Mail, Images, Bell, Settings, Car, Megaphone, Receipt, Shield, Sun, Moon } from "lucide-react";
 import { useState } from "react";
 import { useMobile } from "../../hooks/useMobile";
 
@@ -41,6 +42,38 @@ const NAV_GROUPS = [
 const NAV_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
 
 export function AdminLayout() {
+  return (
+    <AdminThemeProvider>
+      <AdminLayoutInner />
+    </AdminThemeProvider>
+  );
+}
+
+function ThemeToggle({ compact }: { compact?: boolean }) {
+  const { theme, toggleTheme } = useAdminTheme();
+  const isDark = theme === "dark";
+  return (
+    <button
+      onClick={toggleTheme}
+      title={isDark ? "Schakel naar licht thema" : "Schakel naar donker thema"}
+      style={{
+        background: "none",
+        border: "1px solid rgba(var(--admin-fg-rgb),0.1)",
+        color: "rgba(var(--admin-fg-rgb),0.5)",
+        width: compact ? "32px" : "32px",
+        height: "32px",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        cursor: "pointer", transition: "all 0.2s ease", flexShrink: 0,
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.3)"; e.currentTarget.style.color = "var(--admin-fg-solid)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.1)"; e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.5)"; }}
+    >
+      {isDark ? <Sun size={15} /> : <Moon size={15} />}
+    </button>
+  );
+}
+
+function AdminLayoutInner() {
   const { session, user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -52,13 +85,13 @@ export function AdminLayout() {
   if (loading) {
     return (
       <div style={{
-        minHeight: "100vh", backgroundColor: "#080401",
+        minHeight: "100vh", backgroundColor: "var(--admin-bg-page)",
         display: "flex", alignItems: "center", justifyContent: "center",
         fontFamily: "'Inter', sans-serif",
       }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
           <div style={{ width: "32px", height: "2px", backgroundColor: "#c8905a" }} />
-          <span style={{ color: "rgba(255,251,224,0.3)", fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase" }}>
+          <span style={{ color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase" }}>
             Loading
           </span>
         </div>
@@ -93,7 +126,7 @@ export function AdminLayout() {
       {/* Logo */}
       <div style={{
         padding: isMobile ? "20px 20px 16px" : "24px 20px 20px",
-        borderBottom: "1px solid rgba(255,251,224,0.04)",
+        borderBottom: "1px solid rgba(var(--admin-fg-rgb),0.04)",
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
         <div>
@@ -104,7 +137,7 @@ export function AdminLayout() {
           />
           <div style={{
             marginTop: "6px",
-            color: "rgba(255,251,224,0.2)",
+            color: "rgba(var(--admin-fg-rgb),0.2)",
             fontSize: "8px", fontWeight: 600,
             letterSpacing: "0.3em", textTransform: "uppercase",
           }}>
@@ -114,7 +147,7 @@ export function AdminLayout() {
         {isMobile && (
           <button
             onClick={() => setSidebarOpen(false)}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,251,224,0.4)", padding: "4px" }}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(var(--admin-fg-rgb),0.4)", padding: "4px" }}
           >
             <X size={18} />
           </button>
@@ -128,7 +161,7 @@ export function AdminLayout() {
             {group.label && (
               <div style={{
                 padding: "0 12px 8px",
-                color: "rgba(255,251,224,0.2)",
+                color: "rgba(var(--admin-fg-rgb),0.2)",
                 fontSize: "9px", fontWeight: 700,
                 letterSpacing: "0.2em", textTransform: "uppercase",
               }}>
@@ -144,9 +177,9 @@ export function AdminLayout() {
                   style={{
                     display: "flex", alignItems: "center", gap: "10px",
                     padding: "11px 12px",
-                    background: active ? "rgba(255,251,224,0.06)" : "none",
+                    background: active ? "rgba(var(--admin-fg-rgb),0.06)" : "none",
                     border: "none",
-                    color: active ? "#fffbe0" : "rgba(255,251,224,0.35)",
+                    color: active ? "var(--admin-fg-solid)" : "rgba(var(--admin-fg-rgb),0.35)",
                     fontSize: "11px", fontWeight: active ? 600 : 400,
                     letterSpacing: "0.08em", textTransform: "uppercase",
                     cursor: "pointer", fontFamily: "'Inter', sans-serif",
@@ -154,8 +187,8 @@ export function AdminLayout() {
                     transition: "all 0.2s ease",
                     borderLeft: active ? "2px solid #c8905a" : "2px solid transparent",
                   }}
-                  onMouseEnter={(e) => { if (!active) e.currentTarget.style.color = "rgba(255,251,224,0.65)"; }}
-                  onMouseLeave={(e) => { if (!active) e.currentTarget.style.color = "rgba(255,251,224,0.35)"; }}
+                  onMouseEnter={(e) => { if (!active) e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.65)"; }}
+                  onMouseLeave={(e) => { if (!active) e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.35)"; }}
                 >
                   <Icon size={14} />
                   {label}
@@ -169,7 +202,7 @@ export function AdminLayout() {
       {/* Footer — user + sign out */}
       <div style={{
         padding: "16px 12px",
-        borderTop: "1px solid rgba(255,251,224,0.04)",
+        borderTop: "1px solid rgba(var(--admin-fg-rgb),0.04)",
         display: "flex", flexDirection: "column", gap: "12px",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -182,27 +215,28 @@ export function AdminLayout() {
           }}>
             {initials}
           </div>
-          <div style={{ overflow: "hidden" }}>
-            <div style={{ color: "#fffbe0", fontSize: "11px", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <div style={{ overflow: "hidden", flex: 1 }}>
+            <div style={{ color: "var(--admin-fg-solid)", fontSize: "11px", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {adminName}
             </div>
-            <div style={{ color: "rgba(255,251,224,0.25)", fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase" }}>Admin</div>
+            <div style={{ color: "rgba(var(--admin-fg-rgb),0.25)", fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase" }}>Admin</div>
           </div>
+          <ThemeToggle />
         </div>
         <button
           onClick={handleSignOut}
           disabled={signingOut}
           style={{
             display: "flex", alignItems: "center", gap: "8px",
-            background: "none", border: "1px solid rgba(255,251,224,0.07)",
-            color: "rgba(255,251,224,0.3)",
+            background: "none", border: "1px solid rgba(var(--admin-fg-rgb),0.07)",
+            color: "rgba(var(--admin-fg-rgb),0.3)",
             fontSize: "10px", fontWeight: 500, letterSpacing: "0.15em", textTransform: "uppercase",
             cursor: "pointer", padding: "8px 12px",
             fontFamily: "'Inter', sans-serif",
             width: "100%", transition: "all 0.2s ease",
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = "rgba(255,251,224,0.6)"; e.currentTarget.style.borderColor = "rgba(255,251,224,0.15)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,251,224,0.3)"; e.currentTarget.style.borderColor = "rgba(255,251,224,0.07)"; }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.6)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.15)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.3)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.07)"; }}
         >
           <LogOut size={12} />
           {signingOut ? "Signing out…" : "Sign Out"}
@@ -213,12 +247,12 @@ export function AdminLayout() {
 
   if (isMobile) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", fontFamily: "'Inter', sans-serif", backgroundColor: "#050301" }}>
+      <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", fontFamily: "'Inter', sans-serif", backgroundColor: "var(--admin-bg-header)" }}>
         {/* Mobile top bar */}
         <header style={{
           height: "56px",
-          backgroundColor: "#0a0603",
-          borderBottom: "1px solid rgba(255,251,224,0.05)",
+          backgroundColor: "var(--admin-bg-sidebar)",
+          borderBottom: "1px solid rgba(var(--admin-fg-rgb),0.05)",
           display: "flex", alignItems: "center",
           padding: "0 16px", gap: "12px",
           position: "sticky", top: 0, zIndex: 60,
@@ -226,22 +260,23 @@ export function AdminLayout() {
         }}>
           <button
             onClick={() => setSidebarOpen(true)}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,251,224,0.6)", padding: "4px", display: "flex" }}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(var(--admin-fg-rgb),0.6)", padding: "4px", display: "flex" }}
           >
             <Menu size={20} />
           </button>
           <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ color: "rgba(255,251,224,0.25)", fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase" }}>Admin</span>
+            <span style={{ color: "rgba(var(--admin-fg-rgb),0.25)", fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase" }}>Admin</span>
             {currentLabel && (
               <>
-                <ChevronRight size={10} color="rgba(255,251,224,0.15)" />
-                <span style={{ color: "rgba(255,251,224,0.55)", fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase" }}>{currentLabel}</span>
+                <ChevronRight size={10} color="rgba(var(--admin-fg-rgb),0.15)" />
+                <span style={{ color: "rgba(var(--admin-fg-rgb),0.55)", fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase" }}>{currentLabel}</span>
               </>
             )}
           </div>
+          <ThemeToggle compact />
           <button
             onClick={() => { navigate("/admin/reminders"); setSidebarOpen(false); }}
-            style={{ background: "none", border: "1px solid rgba(255,251,224,0.1)", color: "rgba(255,251,224,0.5)", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+            style={{ background: "none", border: "1px solid rgba(var(--admin-fg-rgb),0.1)", color: "rgba(var(--admin-fg-rgb),0.5)", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
           >
             <Bell size={16} />
           </button>
@@ -266,8 +301,8 @@ export function AdminLayout() {
             <aside style={{
               position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 80,
               width: "260px",
-              backgroundColor: "#0a0603",
-              borderRight: "1px solid rgba(255,251,224,0.05)",
+              backgroundColor: "var(--admin-bg-sidebar)",
+              borderRight: "1px solid rgba(var(--admin-fg-rgb),0.05)",
               overflowY: "auto",
             }}>
               <SidebarContent />
@@ -276,7 +311,7 @@ export function AdminLayout() {
         )}
 
         {/* Main content */}
-        <main style={{ flex: 1, minWidth: 0, backgroundColor: "#080401", overflowY: "auto" }}>
+        <main style={{ flex: 1, minWidth: 0, backgroundColor: "var(--admin-bg-page)", overflowY: "auto" }}>
           <Outlet />
         </main>
       </div>
@@ -284,12 +319,12 @@ export function AdminLayout() {
   }
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'Inter', sans-serif", backgroundColor: "#050301" }}>
+    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'Inter', sans-serif", backgroundColor: "var(--admin-bg-header)" }}>
       {/* Sidebar */}
       <aside style={{
         width: "220px", minWidth: "220px",
-        backgroundColor: "#0a0603",
-        borderRight: "1px solid rgba(255,251,224,0.05)",
+        backgroundColor: "var(--admin-bg-sidebar)",
+        borderRight: "1px solid rgba(var(--admin-fg-rgb),0.05)",
         position: "sticky", top: 0, height: "100vh",
         overflow: "hidden",
       }}>
@@ -297,25 +332,26 @@ export function AdminLayout() {
       </aside>
 
       {/* Main content */}
-      <main style={{ flex: 1, minWidth: 0, backgroundColor: "#080401", overflowY: "auto" }}>
+      <main style={{ flex: 1, minWidth: 0, backgroundColor: "var(--admin-bg-page)", overflowY: "auto" }}>
         {/* Top breadcrumb bar */}
         <div style={{
           height: "48px",
-          borderBottom: "1px solid rgba(255,251,224,0.04)",
+          borderBottom: "1px solid rgba(var(--admin-fg-rgb),0.04)",
           display: "flex", alignItems: "center",
           padding: "0 32px", gap: "6px",
         }}>
-          <span style={{ color: "rgba(255,251,224,0.2)", fontSize: "10px", letterSpacing: "0.15em", textTransform: "uppercase" }}>Admin</span>
-          <ChevronRight size={10} color="rgba(255,251,224,0.15)" />
-          <span style={{ color: "rgba(255,251,224,0.45)", fontSize: "10px", letterSpacing: "0.15em", textTransform: "uppercase" }}>
+          <span style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "10px", letterSpacing: "0.15em", textTransform: "uppercase" }}>Admin</span>
+          <ChevronRight size={10} color="rgba(var(--admin-fg-rgb),0.15)" />
+          <span style={{ color: "rgba(var(--admin-fg-rgb),0.45)", fontSize: "10px", letterSpacing: "0.15em", textTransform: "uppercase" }}>
             {currentLabel}
           </span>
-          <div style={{ marginLeft: "auto" }}>
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "8px" }}>
+            <ThemeToggle />
             <button
               onClick={() => navigate("/admin/reminders")}
-              style={{ background: "none", border: "1px solid rgba(255,251,224,0.1)", color: "rgba(255,251,224,0.5)", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.2s ease" }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,251,224,0.3)"; e.currentTarget.style.color = "#fffbe0"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,251,224,0.1)"; e.currentTarget.style.color = "rgba(255,251,224,0.5)"; }}
+              style={{ background: "none", border: "1px solid rgba(var(--admin-fg-rgb),0.1)", color: "rgba(var(--admin-fg-rgb),0.5)", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.2s ease" }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.3)"; e.currentTarget.style.color = "var(--admin-fg-solid)"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.1)"; e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.5)"; }}
               title="Actiepunten"
             >
               <Bell size={16} />
@@ -327,4 +363,3 @@ export function AdminLayout() {
     </div>
   );
 }
-

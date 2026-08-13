@@ -38,7 +38,7 @@ type Worker = {
 };
 
 const labelStyle: React.CSSProperties = {
-  color: "rgba(255,251,224,0.6)",
+  color: "rgba(var(--admin-fg-rgb),0.6)",
   fontSize: "11px",
   fontWeight: 600,
   letterSpacing: "0.1em",
@@ -48,9 +48,9 @@ const labelStyle: React.CSSProperties = {
 };
 const inputStyle: React.CSSProperties = {
   width: "100%",
-  backgroundColor: "rgba(13,7,3,0.8)",
-  border: "1px solid rgba(255,251,224,0.15)",
-  color: "#fffbe0",
+  backgroundColor: "rgba(var(--admin-bg-card-rgb),0.8)",
+  border: "1px solid rgba(var(--admin-fg-rgb),0.15)",
+  color: "var(--admin-fg-solid)",
   padding: "12px",
   fontSize: "14px",
   fontFamily: "'Inter', sans-serif",
@@ -226,16 +226,16 @@ export function AdminTeamPage() {
   }
 
   if (loading) {
-    return <div style={{ padding: "40px", color: "rgba(255,251,224,0.4)" }}>Team laden...</div>;
+    return <div style={{ padding: "40px", color: "rgba(var(--admin-fg-rgb),0.4)" }}>Team laden...</div>;
   }
 
   if (!canManage) {
     return (
       <div style={{ padding: "40px", fontFamily: "'Inter', sans-serif" }}>
-        <h1 style={{ color: "#fffbe0", fontSize: "24px", fontWeight: 800, textTransform: "uppercase", margin: "0 0 12px" }}>
+        <h1 style={{ color: "var(--admin-fg-solid)", fontSize: "24px", fontWeight: 800, textTransform: "uppercase", margin: "0 0 12px" }}>
           Team &amp; Rollen
         </h1>
-        <p style={{ color: "rgba(255,251,224,0.4)", fontSize: "14px" }}>
+        <p style={{ color: "rgba(var(--admin-fg-rgb),0.4)", fontSize: "14px" }}>
           Je hebt geen rechten om het team te beheren. Vraag de eigenaar om je rol de rechten &quot;Team &amp; rollen beheren&quot; te geven.
         </p>
       </div>
@@ -245,10 +245,10 @@ export function AdminTeamPage() {
   return (
     <div style={{ padding: "40px", fontFamily: "'Inter', sans-serif" }}>
       <div style={{ marginBottom: "40px" }}>
-        <h1 style={{ color: "#fffbe0", fontSize: "28px", fontWeight: 800, letterSpacing: "-0.02em", textTransform: "uppercase", margin: 0 }}>
+        <h1 style={{ color: "var(--admin-fg-solid)", fontSize: "28px", fontWeight: 800, letterSpacing: "-0.02em", textTransform: "uppercase", margin: 0 }}>
           Team &amp; Rollen
         </h1>
-        <p style={{ color: "rgba(255,251,224,0.4)", fontSize: "13px", marginTop: "8px" }}>
+        <p style={{ color: "rgba(var(--admin-fg-rgb),0.4)", fontSize: "13px", marginTop: "8px" }}>
           {workers.length} admin{workers.length !== 1 ? "s" : ""} • {roles.length} rol{roles.length !== 1 ? "len" : ""}
         </p>
       </div>
@@ -270,7 +270,7 @@ export function AdminTeamPage() {
 
       {/* ── Admins ── */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-        <h2 style={{ color: "#fffbe0", fontSize: "16px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", margin: 0 }}>
+        <h2 style={{ color: "var(--admin-fg-solid)", fontSize: "16px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", margin: 0 }}>
           Admins
         </h2>
         <button
@@ -290,8 +290,8 @@ export function AdminTeamPage() {
           <div
             key={w.id}
             style={{
-              backgroundColor: "rgba(13,7,3,0.6)",
-              border: "1px solid rgba(255,251,224,0.1)",
+              backgroundColor: "rgba(var(--admin-bg-card-rgb),0.6)",
+              border: "1px solid rgba(var(--admin-fg-rgb),0.1)",
               padding: "16px 20px",
               display: "flex",
               alignItems: "center",
@@ -300,17 +300,17 @@ export function AdminTeamPage() {
           >
             <div style={{
               width: "36px", height: "36px", flexShrink: 0,
-              backgroundColor: w.isOwner ? "rgba(200,144,90,0.2)" : "rgba(255,251,224,0.06)",
-              border: `1px solid ${w.isOwner ? "rgba(200,144,90,0.35)" : "rgba(255,251,224,0.12)"}`,
+              backgroundColor: w.isOwner ? "rgba(200,144,90,0.2)" : "rgba(var(--admin-fg-rgb),0.06)",
+              border: `1px solid ${w.isOwner ? "rgba(200,144,90,0.35)" : "rgba(var(--admin-fg-rgb),0.12)"}`,
               display: "flex", alignItems: "center", justifyContent: "center",
-              color: w.isOwner ? "#c8905a" : "rgba(255,251,224,0.6)", fontSize: "12px", fontWeight: 700,
+              color: w.isOwner ? "#c8905a" : "rgba(var(--admin-fg-rgb),0.6)", fontSize: "12px", fontWeight: 700,
             }}>
               {w.isOwner ? <Crown size={16} /> : w.name.split(" ").map((p) => p[0]).join("").toUpperCase().slice(0, 2)}
             </div>
 
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ color: "#fffbe0", fontSize: "14px", fontWeight: 600 }}>{w.name}</div>
-              <div style={{ color: "rgba(255,251,224,0.35)", fontSize: "12px" }}>{w.email}</div>
+              <div style={{ color: "var(--admin-fg-solid)", fontSize: "14px", fontWeight: 600 }}>{w.name}</div>
+              <div style={{ color: "rgba(var(--admin-fg-rgb),0.35)", fontSize: "12px" }}>{w.email}</div>
             </div>
 
             {w.isOwner ? (
@@ -326,9 +326,9 @@ export function AdminTeamPage() {
                 value={w.roleId || ""}
                 onChange={(e) => handleRoleChange(w.id, e.target.value)}
                 style={{
-                  backgroundColor: "rgba(255,251,224,0.05)",
-                  border: "1px solid rgba(255,251,224,0.15)",
-                  color: "#fffbe0", fontSize: "12px", padding: "8px 10px",
+                  backgroundColor: "rgba(var(--admin-fg-rgb),0.05)",
+                  border: "1px solid rgba(var(--admin-fg-rgb),0.15)",
+                  color: "var(--admin-fg-solid)", fontSize: "12px", padding: "8px 10px",
                   fontFamily: "'Inter', sans-serif", cursor: "pointer",
                 }}
               >
@@ -354,13 +354,13 @@ export function AdminTeamPage() {
 
       {/* ── Rollen ── */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-        <h2 style={{ color: "#fffbe0", fontSize: "16px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", margin: 0 }}>
+        <h2 style={{ color: "var(--admin-fg-solid)", fontSize: "16px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", margin: 0 }}>
           Rollen
         </h2>
         <button
           onClick={openNewRole}
           style={{
-            backgroundColor: "transparent", color: "#fffbe0", border: "1px solid rgba(255,251,224,0.2)",
+            backgroundColor: "transparent", color: "var(--admin-fg-solid)", border: "1px solid rgba(var(--admin-fg-rgb),0.2)",
             padding: "10px 18px", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
             cursor: "pointer", display: "flex", alignItems: "center", gap: "8px",
           }}
@@ -373,14 +373,14 @@ export function AdminTeamPage() {
         {roles.map((role) => {
           const activePerms = PERMISSION_KEYS.filter((k) => role.permissions?.[k]);
           return (
-            <div key={role.id} style={{ backgroundColor: "rgba(13,7,3,0.6)", border: "1px solid rgba(255,251,224,0.1)", padding: "20px" }}>
+            <div key={role.id} style={{ backgroundColor: "rgba(var(--admin-bg-card-rgb),0.6)", border: "1px solid rgba(var(--admin-fg-rgb),0.1)", padding: "20px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <Shield size={14} color="#c8905a" />
-                  <span style={{ color: "#fffbe0", fontSize: "15px", fontWeight: 700 }}>{role.name}</span>
+                  <span style={{ color: "var(--admin-fg-solid)", fontSize: "15px", fontWeight: 700 }}>{role.name}</span>
                 </div>
                 <div style={{ display: "flex", gap: "4px" }}>
-                  <button onClick={() => openEditRole(role)} style={{ background: "none", border: "none", color: "rgba(255,251,224,0.4)", cursor: "pointer", fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", padding: "4px 6px" }}>
+                  <button onClick={() => openEditRole(role)} style={{ background: "none", border: "none", color: "rgba(var(--admin-fg-rgb),0.4)", cursor: "pointer", fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", padding: "4px 6px" }}>
                     Bewerken
                   </button>
                   <button onClick={() => setDeleteRoleTarget(role)} style={{ background: "none", border: "none", color: "rgba(224,112,96,0.5)", cursor: "pointer", padding: "4px 6px" }}>
@@ -389,11 +389,11 @@ export function AdminTeamPage() {
                 </div>
               </div>
               {activePerms.length === 0 ? (
-                <div style={{ color: "rgba(255,251,224,0.25)", fontSize: "12px" }}>Geen rechten toegekend</div>
+                <div style={{ color: "rgba(var(--admin-fg-rgb),0.25)", fontSize: "12px" }}>Geen rechten toegekend</div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
                   {activePerms.map((k) => (
-                    <div key={k} style={{ color: "rgba(255,251,224,0.55)", fontSize: "11.5px", display: "flex", gap: "6px", alignItems: "center" }}>
+                    <div key={k} style={{ color: "rgba(var(--admin-fg-rgb),0.55)", fontSize: "11.5px", display: "flex", gap: "6px", alignItems: "center" }}>
                       <Check size={11} color="#7ab87a" />
                       {PERMISSION_LABELS[k]}
                     </div>
@@ -410,10 +410,10 @@ export function AdminTeamPage() {
         <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.75)", zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
           onClick={(e) => { if (e.target === e.currentTarget) setShowAddAdmin(false); }}
         >
-          <div style={{ backgroundColor: "#0d0703", border: "1px solid rgba(255,251,224,0.15)", padding: "32px", maxWidth: "440px", width: "100%" }}>
+          <div style={{ backgroundColor: "var(--admin-bg-card)", border: "1px solid rgba(var(--admin-fg-rgb),0.15)", padding: "32px", maxWidth: "440px", width: "100%" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-              <h3 style={{ color: "#fffbe0", fontSize: "18px", fontWeight: 700, margin: 0 }}>Nieuwe admin</h3>
-              <button onClick={() => setShowAddAdmin(false)} style={{ background: "none", border: "none", color: "rgba(255,251,224,0.4)", cursor: "pointer" }}><X size={20} /></button>
+              <h3 style={{ color: "var(--admin-fg-solid)", fontSize: "18px", fontWeight: 700, margin: 0 }}>Nieuwe admin</h3>
+              <button onClick={() => setShowAddAdmin(false)} style={{ background: "none", border: "none", color: "rgba(var(--admin-fg-rgb),0.4)", cursor: "pointer" }}><X size={20} /></button>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               <div>
@@ -461,16 +461,16 @@ export function AdminTeamPage() {
         <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.75)", zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
           onClick={(e) => { if (e.target === e.currentTarget) setRemoveTarget(null); }}
         >
-          <div style={{ backgroundColor: "#0d0703", border: "1px solid rgba(255,251,224,0.15)", padding: "32px", maxWidth: "420px", width: "100%" }}>
-            <h3 style={{ color: "#fffbe0", fontSize: "18px", fontWeight: 700, margin: "0 0 12px" }}>Adminrechten intrekken</h3>
-            <p style={{ color: "rgba(255,251,224,0.5)", fontSize: "14px", margin: "0 0 24px", lineHeight: 1.6 }}>
-              <strong style={{ color: "#fffbe0" }}>{removeTarget.name}</strong> verliest toegang tot het adminpaneel. Het account zelf blijft bestaan.
+          <div style={{ backgroundColor: "var(--admin-bg-card)", border: "1px solid rgba(var(--admin-fg-rgb),0.15)", padding: "32px", maxWidth: "420px", width: "100%" }}>
+            <h3 style={{ color: "var(--admin-fg-solid)", fontSize: "18px", fontWeight: 700, margin: "0 0 12px" }}>Adminrechten intrekken</h3>
+            <p style={{ color: "rgba(var(--admin-fg-rgb),0.5)", fontSize: "14px", margin: "0 0 24px", lineHeight: 1.6 }}>
+              <strong style={{ color: "var(--admin-fg-solid)" }}>{removeTarget.name}</strong> verliest toegang tot het adminpaneel. Het account zelf blijft bestaan.
             </p>
             <div style={{ display: "flex", gap: "10px" }}>
               <button onClick={confirmRemove} disabled={removing} style={{ flex: 1, backgroundColor: "rgba(224,112,96,0.15)", border: "1px solid rgba(224,112,96,0.4)", color: "#e07060", padding: "12px", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", cursor: removing ? "not-allowed" : "pointer" }}>
                 {removing ? "Bezig…" : "Intrekken"}
               </button>
-              <button onClick={() => setRemoveTarget(null)} style={{ flex: 1, backgroundColor: "transparent", border: "1px solid rgba(255,251,224,0.15)", color: "rgba(255,251,224,0.5)", padding: "12px", fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer" }}>
+              <button onClick={() => setRemoveTarget(null)} style={{ flex: 1, backgroundColor: "transparent", border: "1px solid rgba(var(--admin-fg-rgb),0.15)", color: "rgba(var(--admin-fg-rgb),0.5)", padding: "12px", fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer" }}>
                 Annuleren
               </button>
             </div>
@@ -483,10 +483,10 @@ export function AdminTeamPage() {
         <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(4,2,0,0.92)", backdropFilter: "blur(4px)", zIndex: 9999, overflow: "auto", padding: "40px" }}>
           <div style={{ maxWidth: "560px", margin: "0 auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "28px" }}>
-              <h2 style={{ color: "#fffbe0", fontSize: "22px", fontWeight: 800, textTransform: "uppercase", margin: 0 }}>
+              <h2 style={{ color: "var(--admin-fg-solid)", fontSize: "22px", fontWeight: 800, textTransform: "uppercase", margin: 0 }}>
                 {editingRole ? "Rol bewerken" : "Nieuwe rol"}
               </h2>
-              <button onClick={() => setShowRoleForm(false)} style={{ background: "none", border: "none", color: "rgba(255,251,224,0.4)", cursor: "pointer" }}><X size={22} /></button>
+              <button onClick={() => setShowRoleForm(false)} style={{ background: "none", border: "none", color: "rgba(var(--admin-fg-rgb),0.4)", cursor: "pointer" }}><X size={22} /></button>
             </div>
 
             <div style={{ marginBottom: "24px" }}>
@@ -499,8 +499,8 @@ export function AdminTeamPage() {
               {PERMISSION_KEYS.map((key) => (
                 <label key={key} style={{
                   display: "flex", alignItems: "center", gap: "12px",
-                  padding: "12px 14px", backgroundColor: "rgba(255,251,224,0.02)",
-                  border: "1px solid rgba(255,251,224,0.06)", cursor: "pointer",
+                  padding: "12px 14px", backgroundColor: "rgba(var(--admin-fg-rgb),0.02)",
+                  border: "1px solid rgba(var(--admin-fg-rgb),0.06)", cursor: "pointer",
                 }}>
                   <input
                     type="checkbox"
@@ -508,7 +508,7 @@ export function AdminTeamPage() {
                     onChange={(e) => setRoleForm({ ...roleForm, permissions: { ...roleForm.permissions, [key]: e.target.checked } })}
                     style={{ width: "16px", height: "16px", accentColor: "#c8905a", cursor: "pointer" }}
                   />
-                  <span style={{ color: "rgba(255,251,224,0.75)", fontSize: "13px" }}>{PERMISSION_LABELS[key]}</span>
+                  <span style={{ color: "rgba(var(--admin-fg-rgb),0.75)", fontSize: "13px" }}>{PERMISSION_LABELS[key]}</span>
                 </label>
               ))}
             </div>
@@ -538,16 +538,16 @@ export function AdminTeamPage() {
         <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.75)", zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
           onClick={(e) => { if (e.target === e.currentTarget) setDeleteRoleTarget(null); }}
         >
-          <div style={{ backgroundColor: "#0d0703", border: "1px solid rgba(255,251,224,0.15)", padding: "32px", maxWidth: "420px", width: "100%" }}>
-            <h3 style={{ color: "#fffbe0", fontSize: "18px", fontWeight: 700, margin: "0 0 12px" }}>Rol verwijderen</h3>
-            <p style={{ color: "rgba(255,251,224,0.5)", fontSize: "14px", margin: "0 0 24px", lineHeight: 1.6 }}>
-              Verwijder de rol <strong style={{ color: "#fffbe0" }}>{deleteRoleTarget.name}</strong>? Dit kan alleen als geen enkele admin deze rol meer heeft.
+          <div style={{ backgroundColor: "var(--admin-bg-card)", border: "1px solid rgba(var(--admin-fg-rgb),0.15)", padding: "32px", maxWidth: "420px", width: "100%" }}>
+            <h3 style={{ color: "var(--admin-fg-solid)", fontSize: "18px", fontWeight: 700, margin: "0 0 12px" }}>Rol verwijderen</h3>
+            <p style={{ color: "rgba(var(--admin-fg-rgb),0.5)", fontSize: "14px", margin: "0 0 24px", lineHeight: 1.6 }}>
+              Verwijder de rol <strong style={{ color: "var(--admin-fg-solid)" }}>{deleteRoleTarget.name}</strong>? Dit kan alleen als geen enkele admin deze rol meer heeft.
             </p>
             <div style={{ display: "flex", gap: "10px" }}>
               <button onClick={confirmDeleteRole} style={{ flex: 1, backgroundColor: "rgba(224,112,96,0.15)", border: "1px solid rgba(224,112,96,0.4)", color: "#e07060", padding: "12px", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer" }}>
                 Verwijderen
               </button>
-              <button onClick={() => setDeleteRoleTarget(null)} style={{ flex: 1, backgroundColor: "transparent", border: "1px solid rgba(255,251,224,0.15)", color: "rgba(255,251,224,0.5)", padding: "12px", fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer" }}>
+              <button onClick={() => setDeleteRoleTarget(null)} style={{ flex: 1, backgroundColor: "transparent", border: "1px solid rgba(var(--admin-fg-rgb),0.15)", color: "rgba(var(--admin-fg-rgb),0.5)", padding: "12px", fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer" }}>
                 Annuleren
               </button>
             </div>

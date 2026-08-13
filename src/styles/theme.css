@@ -78,6 +78,33 @@
   --sidebar-ring: oklch(0.439 0 0);
 }
 
+/* ── Admin panel dark/light theme tokens ──────────────────────────────────
+   The admin panel is styled entirely with inline styles (not Tailwind
+   classes), so these are referenced as var(--admin-*) inside those inline
+   style values rather than through the @theme/utility system above. The
+   *-rgb tokens hold bare "r, g, b" triplets so call sites can do
+   rgba(var(--admin-fg-rgb), 0.3) and keep their existing opacity scale —
+   only the base color swaps between themes, the opacity hierarchy doesn't. */
+[data-admin-theme="dark"] {
+  --admin-bg-page: #080401;
+  --admin-bg-card: #0d0703;
+  --admin-bg-card-rgb: 13, 7, 3;
+  --admin-bg-sidebar: #0a0603;
+  --admin-bg-header: #060301;
+  --admin-fg-rgb: 255, 251, 224;
+  --admin-fg-solid: #fffbe0;
+}
+
+[data-admin-theme="light"] {
+  --admin-bg-page: #f7f1e3;
+  --admin-bg-card: #fffaf0;
+  --admin-bg-card-rgb: 255, 250, 240;
+  --admin-bg-sidebar: #f0e8d5;
+  --admin-bg-header: #ebe0c8;
+  --admin-fg-rgb: 26, 12, 4;
+  --admin-fg-solid: #1a0c04;
+}
+
 /* Global focus-visible styles — ensures keyboard users always get a visible indicator */
 :focus-visible {
   outline: 2px solid #c8905a;

@@ -133,9 +133,9 @@ export function AdminClientsPage() {
 
   const inputStyle: React.CSSProperties = {
     width: "100%",
-    backgroundColor: "rgba(255,251,224,0.03)",
-    border: "1px solid rgba(255,251,224,0.08)",
-    color: "#fffbe0",
+    backgroundColor: "rgba(var(--admin-fg-rgb),0.03)",
+    border: "1px solid rgba(var(--admin-fg-rgb),0.08)",
+    color: "var(--admin-fg-solid)",
     fontSize: "13px",
     fontFamily: "'Inter', sans-serif",
     fontWeight: 300,
@@ -150,15 +150,15 @@ export function AdminClientsPage() {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "32px", flexWrap: "wrap", gap: "12px" }}>
         <div>
-          <div style={{ color: "rgba(255,251,224,0.2)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: "10px" }}>
+          <div style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: "10px" }}>
             All Clients
           </div>
-          <h1 style={{ color: "#fffbe0", fontSize: "clamp(22px, 3vw, 38px)", fontWeight: 800, letterSpacing: "-0.02em", margin: 0, lineHeight: 1.1 }}>
+          <h1 style={{ color: "var(--admin-fg-solid)", fontSize: "clamp(22px, 3vw, 38px)", fontWeight: 800, letterSpacing: "-0.02em", margin: 0, lineHeight: 1.1 }}>
             Client Directory
           </h1>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ color: "rgba(255,251,224,0.2)", fontSize: "11px", marginRight: "4px" }}>
+          <span style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "11px", marginRight: "4px" }}>
             {clients.length} client{clients.length !== 1 ? "s" : ""}
           </span>
           <button
@@ -166,14 +166,14 @@ export function AdminClientsPage() {
             title="Export as CSV"
             style={{
               display: "flex", alignItems: "center", gap: "5px",
-              background: "none", border: "1px solid rgba(255,251,224,0.1)",
-              color: "rgba(255,251,224,0.35)", fontSize: "9px", fontWeight: 600,
+              background: "none", border: "1px solid rgba(var(--admin-fg-rgb),0.1)",
+              color: "rgba(var(--admin-fg-rgb),0.35)", fontSize: "9px", fontWeight: 600,
               letterSpacing: "0.15em", textTransform: "uppercase",
               cursor: "pointer", padding: "7px 11px",
               fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = "#fffbe0"; e.currentTarget.style.borderColor = "rgba(255,251,224,0.25)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,251,224,0.35)"; e.currentTarget.style.borderColor = "rgba(255,251,224,0.1)"; }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = "#fffbe0"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.25)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.35)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.1)"; }}
           >
             <Download size={11} />
             {!isMobile && "Export"}
@@ -199,7 +199,7 @@ export function AdminClientsPage() {
 
       {/* Search */}
       <div style={{ position: "relative", marginBottom: "24px" }}>
-        <Search size={13} color="rgba(255,251,224,0.2)" style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)" }} />
+        <Search size={13} color="rgba(var(--admin-fg-rgb),0.2)" style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)" }} />
         <input
           type="text"
           placeholder="Search by name, email or company…"
@@ -207,15 +207,15 @@ export function AdminClientsPage() {
           onChange={(e) => setSearch(e.target.value)}
           style={{
             width: "100%",
-            backgroundColor: "rgba(255,251,224,0.03)",
-            border: "1px solid rgba(255,251,224,0.07)",
-            color: "#fffbe0", fontSize: "12px",
+            backgroundColor: "rgba(var(--admin-fg-rgb),0.03)",
+            border: "1px solid rgba(var(--admin-fg-rgb),0.07)",
+            color: "var(--admin-fg-solid)", fontSize: "12px",
             fontFamily: "'Inter', sans-serif", fontWeight: 300,
             padding: "11px 14px 11px 38px", outline: "none",
             boxSizing: "border-box", transition: "border-color 0.2s ease",
           }}
           onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.3)")}
-          onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,251,224,0.07)")}
+          onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.07)")}
         />
       </div>
 
@@ -237,12 +237,12 @@ export function AdminClientsPage() {
         </div>
       )}
       {loading && (
-        <div style={{ textAlign: "center", padding: "64px 0", color: "rgba(255,251,224,0.2)", fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase" }}>
+        <div style={{ textAlign: "center", padding: "64px 0", color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase" }}>
           Loading clients…
         </div>
       )}
       {!loading && filtered.length === 0 && !error && (
-        <div style={{ textAlign: "center", padding: "64px 0", color: "rgba(255,251,224,0.2)", fontSize: "13px" }}>
+        <div style={{ textAlign: "center", padding: "64px 0", color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "13px" }}>
           {search ? "No clients match your search." : "No clients yet. They sign up via the Client Portal."}
         </div>
       )}
@@ -258,8 +258,8 @@ export function AdminClientsPage() {
                 style={{
                   display: "flex", alignItems: "center", gap: isMobile ? "10px" : "16px",
                   padding: isMobile ? "14px" : "20px 24px",
-                  backgroundColor: isRecent ? "rgba(200,144,90,0.08)" : "rgba(255,251,224,0.015)",
-                  border: `1px solid ${isRecent ? "rgba(200,144,90,0.2)" : "rgba(255,251,224,0.05)"}`,
+                  backgroundColor: isRecent ? "rgba(200,144,90,0.08)" : "rgba(var(--admin-fg-rgb),0.015)",
+                  border: `1px solid ${isRecent ? "rgba(200,144,90,0.2)" : "rgba(var(--admin-fg-rgb),0.05)"}`,
                   transition: "all 0.2s ease",
                 }}
               >
@@ -275,17 +275,17 @@ export function AdminClientsPage() {
                 >
                   <div style={{
                     width: isMobile ? "34px" : "40px", height: isMobile ? "34px" : "40px", flexShrink: 0,
-                    backgroundColor: isRecent ? "rgba(200,144,90,0.15)" : "rgba(255,251,224,0.05)",
-                    border: `1px solid ${isRecent ? "rgba(200,144,90,0.25)" : "rgba(255,251,224,0.07)"}`,
+                    backgroundColor: isRecent ? "rgba(200,144,90,0.15)" : "rgba(var(--admin-fg-rgb),0.05)",
+                    border: `1px solid ${isRecent ? "rgba(200,144,90,0.25)" : "rgba(var(--admin-fg-rgb),0.07)"}`,
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    color: isRecent ? "#c8905a" : "rgba(255,251,224,0.4)", fontSize: "11px", fontWeight: 600,
+                    color: isRecent ? "#c8905a" : "rgba(var(--admin-fg-rgb),0.4)", fontSize: "11px", fontWeight: 600,
                   }}>
                     {getInitials(client.name)}
                   </div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span style={{ color: "#fffbe0", fontSize: isMobile ? "13px" : "14px", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{client.name}</span>
+                      <span style={{ color: "var(--admin-fg-solid)", fontSize: isMobile ? "13px" : "14px", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{client.name}</span>
                       {isRecent && (
                         <span style={{
                           backgroundColor: "rgba(200,144,90,0.2)", color: "#c8905a",
@@ -296,15 +296,15 @@ export function AdminClientsPage() {
                         </span>
                       )}
                     </div>
-                    <div style={{ color: "rgba(255,251,224,0.3)", fontSize: "11px", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <div style={{ color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "11px", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {isMobile ? client.email : (client.company || client.email)}
                     </div>
                   </div>
 
                   {!isMobile && (
                     <div style={{ display: "flex", alignItems: "center", gap: "5px", flex: "0 0 90px" }}>
-                      <FolderOpen size={12} color="rgba(255,251,224,0.2)" />
-                      <span style={{ color: "rgba(255,251,224,0.5)", fontSize: "12px" }}>
+                      <FolderOpen size={12} color="rgba(var(--admin-fg-rgb),0.2)" />
+                      <span style={{ color: "rgba(var(--admin-fg-rgb),0.5)", fontSize: "12px" }}>
                         {client.projectCount} project{client.projectCount !== 1 ? "s" : ""}
                       </span>
                     </div>
@@ -312,19 +312,19 @@ export function AdminClientsPage() {
 
                   {!isMobile && (
                     <div style={{ flex: "0 0 110px", textAlign: "right" }}>
-                      <div style={{ color: "rgba(255,251,224,0.2)", fontSize: "10px", marginBottom: "2px" }}>Joined</div>
-                      <div style={{ color: "rgba(255,251,224,0.4)", fontSize: "11px" }}>{formatDate(client.createdAt)}</div>
+                      <div style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "10px", marginBottom: "2px" }}>Joined</div>
+                      <div style={{ color: "rgba(var(--admin-fg-rgb),0.4)", fontSize: "11px" }}>{formatDate(client.createdAt)}</div>
                     </div>
                   )}
 
                   {!isMobile && (
                     <div style={{ flex: "0 0 90px", textAlign: "right" }}>
-                      <div style={{ color: "rgba(255,251,224,0.2)", fontSize: "10px", marginBottom: "2px" }}>Last active</div>
-                      <div style={{ color: "rgba(255,251,224,0.4)", fontSize: "11px" }}>{timeAgo(client.lastSignIn)}</div>
+                      <div style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "10px", marginBottom: "2px" }}>Last active</div>
+                      <div style={{ color: "rgba(var(--admin-fg-rgb),0.4)", fontSize: "11px" }}>{timeAgo(client.lastSignIn)}</div>
                     </div>
                   )}
 
-                  <ArrowRight size={13} color="rgba(255,251,224,0.2)" style={{ flexShrink: 0 }} />
+                  <ArrowRight size={13} color="rgba(var(--admin-fg-rgb),0.2)" style={{ flexShrink: 0 }} />
                 </button>
 
                 {/* Delete button — opens modal */}
@@ -334,13 +334,13 @@ export function AdminClientsPage() {
                   style={{
                     display: "flex", alignItems: "center", gap: "4px", flexShrink: 0,
                     background: "none", border: "1px solid transparent",
-                    color: "rgba(255,251,224,0.15)", fontSize: "9px", fontWeight: 600,
+                    color: "rgba(var(--admin-fg-rgb),0.15)", fontSize: "9px", fontWeight: 600,
                     letterSpacing: "0.12em", textTransform: "uppercase",
                     cursor: "pointer", padding: isMobile ? "6px 8px" : "6px 10px",
                     fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.color = "#e07060"; e.currentTarget.style.borderColor = "rgba(224,112,96,0.3)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,251,224,0.15)"; e.currentTarget.style.borderColor = "transparent"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.15)"; e.currentTarget.style.borderColor = "transparent"; }}
                 >
                   <Trash2 size={11} />
                 </button>
@@ -361,7 +361,7 @@ export function AdminClientsPage() {
           onClick={(e) => { if (e.target === e.currentTarget) setDeleteTarget(null); }}
         >
           <div style={{
-            backgroundColor: "#0d0804", border: "1px solid rgba(224,112,96,0.2)",
+            backgroundColor: "var(--admin-bg-card)", border: "1px solid rgba(224,112,96,0.2)",
             padding: isMobile ? "24px 20px" : "36px", maxWidth: "420px", width: "100%",
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
@@ -370,10 +370,10 @@ export function AdminClientsPage() {
                 Delete Client
               </span>
             </div>
-            <p style={{ color: "#fffbe0", fontSize: "15px", fontWeight: 600, margin: "0 0 8px", lineHeight: 1.4 }}>
+            <p style={{ color: "var(--admin-fg-solid)", fontSize: "15px", fontWeight: 600, margin: "0 0 8px", lineHeight: 1.4 }}>
               Delete {deleteTarget.name}?
             </p>
-            <p style={{ color: "rgba(255,251,224,0.4)", fontSize: "13px", fontWeight: 300, margin: "0 0 28px", lineHeight: 1.6 }}>
+            <p style={{ color: "rgba(var(--admin-fg-rgb),0.4)", fontSize: "13px", fontWeight: 300, margin: "0 0 28px", lineHeight: 1.6 }}>
               This will permanently delete this client account and all associated projects. This action cannot be undone.
             </p>
             {deleteError && (
@@ -387,13 +387,13 @@ export function AdminClientsPage() {
                 disabled={deleting}
                 style={{
                   flex: 1, padding: "12px", background: "none",
-                  border: "1px solid rgba(255,251,224,0.1)",
-                  color: "rgba(255,251,224,0.4)", fontSize: "10px", fontWeight: 600,
+                  border: "1px solid rgba(var(--admin-fg-rgb),0.1)",
+                  color: "rgba(var(--admin-fg-rgb),0.4)", fontSize: "10px", fontWeight: 600,
                   letterSpacing: "0.2em", textTransform: "uppercase",
                   cursor: "pointer", fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(255,251,224,0.2)"; e.currentTarget.style.color = "#fffbe0"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,251,224,0.1)"; e.currentTarget.style.color = "rgba(255,251,224,0.4)"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.2)"; e.currentTarget.style.color = "#fffbe0"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.1)"; e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.4)"; }}
               >
                 Cancel
               </button>
@@ -430,7 +430,7 @@ export function AdminClientsPage() {
           onClick={(e) => { if (e.target === e.currentTarget) { setShowInvite(false); setInviteSuccess(""); } }}
         >
           <div style={{
-            backgroundColor: "#0d0804", border: "1px solid rgba(200,144,90,0.2)",
+            backgroundColor: "var(--admin-bg-card)", border: "1px solid rgba(200,144,90,0.2)",
             padding: isMobile ? "24px 20px" : "36px", maxWidth: "420px", width: "100%",
           }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px" }}>
@@ -442,7 +442,7 @@ export function AdminClientsPage() {
               </div>
               <button
                 onClick={() => { setShowInvite(false); setInviteSuccess(""); }}
-                style={{ background: "none", border: "none", color: "rgba(255,251,224,0.3)", cursor: "pointer", padding: "2px" }}
+                style={{ background: "none", border: "none", color: "rgba(var(--admin-fg-rgb),0.3)", cursor: "pointer", padding: "2px" }}
               >
                 <X size={16} />
               </button>
@@ -454,8 +454,8 @@ export function AdminClientsPage() {
                 <button
                   onClick={() => { setInviteSuccess(""); setInviteEmail(""); setInviteName(""); }}
                   style={{
-                    background: "none", border: "1px solid rgba(255,251,224,0.15)",
-                    color: "rgba(255,251,224,0.5)", fontSize: "10px", fontWeight: 600,
+                    background: "none", border: "1px solid rgba(var(--admin-fg-rgb),0.15)",
+                    color: "rgba(var(--admin-fg-rgb),0.5)", fontSize: "10px", fontWeight: 600,
                     letterSpacing: "0.15em", textTransform: "uppercase",
                     cursor: "pointer", padding: "10px 20px", fontFamily: "'Inter', sans-serif",
                   }}
@@ -466,7 +466,7 @@ export function AdminClientsPage() {
             ) : (
               <form onSubmit={handleInvite} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 <div>
-                  <label style={{ color: "rgba(255,251,224,0.25)", fontSize: "8px", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase", display: "block", marginBottom: "7px" }}>
+                  <label style={{ color: "rgba(var(--admin-fg-rgb),0.25)", fontSize: "8px", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase", display: "block", marginBottom: "7px" }}>
                     Client Name (optional)
                   </label>
                   <input
@@ -476,11 +476,11 @@ export function AdminClientsPage() {
                     placeholder="e.g. Roffa Motion"
                     style={inputStyle}
                     onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,251,224,0.08)")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)")}
                   />
                 </div>
                 <div>
-                  <label style={{ color: "rgba(255,251,224,0.25)", fontSize: "8px", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase", display: "block", marginBottom: "7px" }}>
+                  <label style={{ color: "rgba(var(--admin-fg-rgb),0.25)", fontSize: "8px", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase", display: "block", marginBottom: "7px" }}>
                     Email Address *
                   </label>
                   <input
@@ -492,7 +492,7 @@ export function AdminClientsPage() {
                     placeholder="client@example.com"
                     style={inputStyle}
                     onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,251,224,0.08)")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)")}
                   />
                 </div>
                 {inviteError && (
@@ -506,8 +506,8 @@ export function AdminClientsPage() {
                     onClick={() => setShowInvite(false)}
                     style={{
                       flex: 1, padding: "12px", background: "none",
-                      border: "1px solid rgba(255,251,224,0.1)",
-                      color: "rgba(255,251,224,0.4)", fontSize: "10px", fontWeight: 600,
+                      border: "1px solid rgba(var(--admin-fg-rgb),0.1)",
+                      color: "rgba(var(--admin-fg-rgb),0.4)", fontSize: "10px", fontWeight: 600,
                       letterSpacing: "0.2em", textTransform: "uppercase",
                       cursor: "pointer", fontFamily: "'Inter', sans-serif",
                     }}

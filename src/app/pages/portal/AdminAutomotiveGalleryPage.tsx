@@ -144,7 +144,7 @@ export function AdminAutomotiveGalleryPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: "40px", color: "rgba(255,251,224,0.4)", fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ padding: "40px", color: "rgba(var(--admin-fg-rgb),0.4)", fontFamily: "'Inter', sans-serif" }}>
         Loading…
       </div>
     );
@@ -167,11 +167,11 @@ export function AdminAutomotiveGalleryPage() {
 
       {/* Header */}
       <div style={{ marginBottom: "40px" }}>
-        <div style={{ color: "rgba(255,251,224,0.2)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: "10px" }}>
+        <div style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: "10px" }}>
           Services › Automotive
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "8px", flexWrap: "wrap" }}>
-          <h1 style={{ color: "#fffbe0", fontSize: "clamp(22px, 3vw, 36px)", fontWeight: 800, letterSpacing: "-0.02em", margin: 0, lineHeight: 1.1, textTransform: "uppercase" }}>
+          <h1 style={{ color: "var(--admin-fg-solid)", fontSize: "clamp(22px, 3vw, 36px)", fontWeight: 800, letterSpacing: "-0.02em", margin: 0, lineHeight: 1.1, textTransform: "uppercase" }}>
             Manage Gallery
           </h1>
           {isDirty && (
@@ -184,18 +184,18 @@ export function AdminAutomotiveGalleryPage() {
             </span>
           )}
         </div>
-        <p style={{ color: "rgba(255,251,224,0.35)", fontSize: "13px", fontWeight: 300, margin: 0 }}>
+        <p style={{ color: "rgba(var(--admin-fg-rgb),0.35)", fontSize: "13px", fontWeight: 300, margin: 0 }}>
           Photos uploaded here appear on the automotive page of the website. Use ▲/▼ to reorder.
         </p>
       </div>
 
       {/* Current gallery */}
       <div style={{ marginBottom: "8px" }}>
-        <div style={{ color: "rgba(255,251,224,0.3)", fontSize: "10px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: "6px" }}>
+        <div style={{ color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "10px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: "6px" }}>
           Current photos ({galleryUrls.length})
         </div>
         {/* Photo count hint */}
-        <div style={{ color: "rgba(255,251,224,0.2)", fontSize: "11px", marginBottom: "16px" }}>
+        <div style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "11px", marginBottom: "16px" }}>
           Recommended: 12–20 photos. More than 30 may slow the page.
           {galleryUrls.length > 30 && (
             <span style={{ color: "#e07060", marginLeft: "8px" }}>⚠ {galleryUrls.length} photos — consider reducing.</span>
@@ -204,10 +204,10 @@ export function AdminAutomotiveGalleryPage() {
 
         {galleryUrls.length === 0 ? (
           <div style={{
-            border: "1px dashed rgba(255,251,224,0.1)",
+            border: "1px dashed rgba(var(--admin-fg-rgb),0.1)",
             padding: "48px",
             textAlign: "center",
-            color: "rgba(255,251,224,0.2)",
+            color: "rgba(var(--admin-fg-rgb),0.2)",
             fontSize: "13px",
           }}>
             No photos uploaded yet
@@ -229,7 +229,7 @@ export function AdminAutomotiveGalleryPage() {
                 <div style={{
                   position: "absolute", top: "8px", left: "8px",
                   backgroundColor: "rgba(8,4,1,0.8)",
-                  color: "rgba(255,251,224,0.5)",
+                  color: "rgba(var(--admin-fg-rgb),0.5)",
                   fontSize: "10px", fontWeight: 600,
                   fontFamily: "'Courier New', monospace",
                   letterSpacing: "0.1em",
@@ -242,14 +242,14 @@ export function AdminAutomotiveGalleryPage() {
                   <button
                     onClick={() => moveImage(i, -1)}
                     disabled={i === 0}
-                    style={{ backgroundColor: "rgba(8,4,1,0.75)", border: "none", color: i === 0 ? "rgba(255,251,224,0.2)" : "#fffbe0", width: "22px", height: "22px", display: "flex", alignItems: "center", justifyContent: "center", cursor: i === 0 ? "default" : "pointer", padding: 0 }}
+                    style={{ backgroundColor: "rgba(8,4,1,0.75)", border: "none", color: i === 0 ? "rgba(var(--admin-fg-rgb),0.2)" : "#fffbe0", width: "22px", height: "22px", display: "flex", alignItems: "center", justifyContent: "center", cursor: i === 0 ? "default" : "pointer", padding: 0 }}
                   >
                     <ChevronUp size={13} />
                   </button>
                   <button
                     onClick={() => moveImage(i, 1)}
                     disabled={i === galleryUrls.length - 1}
-                    style={{ backgroundColor: "rgba(8,4,1,0.75)", border: "none", color: i === galleryUrls.length - 1 ? "rgba(255,251,224,0.2)" : "#fffbe0", width: "22px", height: "22px", display: "flex", alignItems: "center", justifyContent: "center", cursor: i === galleryUrls.length - 1 ? "default" : "pointer", padding: 0 }}
+                    style={{ backgroundColor: "rgba(8,4,1,0.75)", border: "none", color: i === galleryUrls.length - 1 ? "rgba(var(--admin-fg-rgb),0.2)" : "#fffbe0", width: "22px", height: "22px", display: "flex", alignItems: "center", justifyContent: "center", cursor: i === galleryUrls.length - 1 ? "default" : "pointer", padding: 0 }}
                   >
                     <ChevronDown size={13} />
                   </button>
@@ -282,9 +282,9 @@ export function AdminAutomotiveGalleryPage() {
             alignItems: "center",
             justifyContent: "center",
             gap: "10px",
-            backgroundColor: "rgba(13,7,3,0.8)",
-            border: `2px dashed ${uploading ? "rgba(200,144,90,0.4)" : "rgba(255,251,224,0.15)"}`,
-            color: uploading ? "#c8905a" : "rgba(255,251,224,0.4)",
+            backgroundColor: "rgba(var(--admin-bg-card-rgb),0.8)",
+            border: `2px dashed ${uploading ? "rgba(200,144,90,0.4)" : "rgba(var(--admin-fg-rgb),0.15)"}`,
+            color: uploading ? "#c8905a" : "rgba(var(--admin-fg-rgb),0.4)",
             padding: "36px",
             cursor: uploading ? "not-allowed" : "pointer",
             fontSize: "13px",
@@ -293,10 +293,10 @@ export function AdminAutomotiveGalleryPage() {
             transition: "all 0.2s ease",
           }}
           onMouseEnter={(e) => {
-            if (!uploading) e.currentTarget.style.borderColor = "rgba(255,251,224,0.3)";
+            if (!uploading) e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.3)";
           }}
           onMouseLeave={(e) => {
-            if (!uploading) e.currentTarget.style.borderColor = "rgba(255,251,224,0.15)";
+            if (!uploading) e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.15)";
           }}
         >
           <Upload size={18} />
@@ -318,8 +318,8 @@ export function AdminAutomotiveGalleryPage() {
           onClick={saveGallery}
           disabled={saving || uploading}
           style={{
-            backgroundColor: saving ? "rgba(255,251,224,0.1)" : isDirty ? "#c8905a" : "#fffbe0",
-            color: saving ? "rgba(255,251,224,0.4)" : isDirty ? "#fffbe0" : "#1a0c04",
+            backgroundColor: saving ? "rgba(var(--admin-fg-rgb),0.1)" : isDirty ? "#c8905a" : "#fffbe0",
+            color: saving ? "rgba(var(--admin-fg-rgb),0.4)" : isDirty ? "#fffbe0" : "#1a0c04",
             border: "none",
             padding: "14px 32px",
             fontSize: "11px",
@@ -349,7 +349,7 @@ export function AdminAutomotiveGalleryPage() {
           <Save size={14} />
           {saving ? "Saving…" : "Save & publish"}
         </button>
-        <p style={{ color: "rgba(255,251,224,0.2)", fontSize: "11px", margin: 0 }}>
+        <p style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "11px", margin: 0 }}>
           Changes are visible on the website immediately after saving.
         </p>
       </div>
