@@ -174,6 +174,15 @@ function computeQuarter(isoDate: string): string {
   return `${d.getUTCFullYear()}-Q${q}`;
 }
 
+// Declaration amounts are stored BTW-inclusive (the total on the receipt/
+// factuur), matching how Dutch business expenses are normally logged. The
+// reclaimable input VAT is the BTW portion of that total: for a 21% rate,
+// a €121 receipt contains €21 BTW (121 / 1.21 * 0.21), not €121 * 0.21.
+function computeVatAmount(amount: number, vatRate: number): number {
+  if (!vatRate) return 0;
+  return Math.round(((amount * vatRate) / (100 + vatRate)) * 100) / 100;
+}
+
 const EMAIL_LOGO_ROW = `
   <tr>
     <td style="padding:28px 36px 24px;border-bottom:1px solid rgba(255,251,224,0.08);">
@@ -2385,13 +2394,24 @@ app.get("/make-server-0951c59e/admin/declarations", async (c) => {
 
     declarations.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+    declarations = declarations.map((d) => ({
+      ...d,
+      vatRate: d.vatRate ?? 21,
+      vatAmount: computeVatAmount(Number(d.amount) || 0, d.vatRate ?? 21),
+    }));
+
     const totalAmount = declarations.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+    const totalVat = declarations.reduce((sum, d) => sum + d.vatAmount, 0);
     const byCategory: Record<string, number> = {};
     for (const d of declarations) {
       byCategory[d.category] = (byCategory[d.category] || 0) + (Number(d.amount) || 0);
     }
 
-    return c.json({ declarations, canViewAll, totals: { amount: totalAmount, count: declarations.length, byCategory } });
+    return c.json({
+      declarations,
+      canViewAll,
+      totals: { amount: totalAmount, vatAmount: Math.round(totalVat * 100) / 100, count: declarations.length, byCategory },
+    });
   } catch (err) {
     console.log("Get declarations error:", err);
     return c.json({ error: `Failed to fetch declarations: ${err}` }, 500);
@@ -2406,7 +2426,7 @@ app.post("/make-server-0951c59e/admin/declarations", async (c) => {
 
     const canViewAll = await hasPermission(admin, "viewAllDeclarations");
     const body = await c.req.json();
-    const { amount, date, category, description, receiptUrl } = body;
+    const { amount, date, category, description, receiptUrl, vatRate } = body;
 
     if (!amount || !date || !category) {
       return c.json({ error: "Bedrag, datum en categorie zijn verplicht" }, 400);
@@ -2434,6 +2454,7 @@ app.post("/make-server-0951c59e/admin/declarations", async (c) => {
       category,
       description: description?.trim() || "",
       receiptUrl: receiptUrl || "",
+      vatRate: vatRate === undefined || vatRate === null || vatRate === "" ? 21 : Number(vatRate),
       submittedBy: { id: admin.id, name: admin.user_metadata?.name || admin.email },
       createdAt: now,
       updatedAt: now,
@@ -2479,6 +2500,7 @@ app.put("/make-server-0951c59e/admin/declarations/:id", async (c) => {
       updatedAt: new Date().toISOString(),
     };
     if (updates.amount !== undefined) updated.amount = Number(updates.amount);
+    if (updates.vatRate !== undefined) updated.vatRate = Number(updates.vatRate);
     await kv.set(`declarations:declaration:${id}`, JSON.stringify(updated));
 
     return c.json({ declaration: updated });

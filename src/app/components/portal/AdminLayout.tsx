@@ -5,18 +5,40 @@ import { LayoutDashboard, Users, LogOut, ChevronRight, Menu, X, Mail, Images, Be
 import { useState } from "react";
 import { useMobile } from "../../hooks/useMobile";
 
-const NAV_ITEMS = [
-  { label: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
-  { label: "Clients", path: "/admin/clients", icon: Users },
-  { label: "Inquiries", path: "/admin/inquiries", icon: Mail },
-  { label: "Portfolio", path: "/admin/portfolio", icon: Images },
-  { label: "Automotive", path: "/admin/services/automotive", icon: Car },
-  { label: "Ads", path: "/admin/ads", icon: Megaphone },
-  { label: "Actiepunten", path: "/admin/reminders", icon: Bell },
-  { label: "Declaraties", path: "/admin/declarations", icon: Receipt },
-  { label: "Team & Rollen", path: "/admin/team", icon: Shield },
-  { label: "Settings", path: "/admin/settings", icon: Settings },
+const NAV_GROUPS = [
+  {
+    label: null as string | null,
+    items: [
+      { label: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
+    ],
+  },
+  {
+    label: "Klanten",
+    items: [
+      { label: "Clients", path: "/admin/clients", icon: Users },
+      { label: "Inquiries", path: "/admin/inquiries", icon: Mail },
+    ],
+  },
+  {
+    label: "Content",
+    items: [
+      { label: "Portfolio", path: "/admin/portfolio", icon: Images },
+      { label: "Automotive", path: "/admin/services/automotive", icon: Car },
+      { label: "Ads", path: "/admin/ads", icon: Megaphone },
+    ],
+  },
+  {
+    label: "Beheer",
+    items: [
+      { label: "Actiepunten", path: "/admin/reminders", icon: Bell },
+      { label: "Declaraties", path: "/admin/declarations", icon: Receipt },
+      { label: "Team & Rollen", path: "/admin/team", icon: Shield },
+      { label: "Settings", path: "/admin/settings", icon: Settings },
+    ],
+  },
 ];
+
+const NAV_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
 
 export function AdminLayout() {
   const { session, user, loading, signOut } = useAuth();
@@ -100,34 +122,48 @@ export function AdminLayout() {
       </div>
 
       {/* Nav */}
-      <nav style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: "2px" }}>
-        {NAV_ITEMS.map(({ label, path, icon: Icon }) => {
-          const active = location.pathname === path || (path !== "/admin/dashboard" && location.pathname.startsWith(path));
-          return (
-            <button
-              key={path}
-              onClick={() => handleNav(path)}
-              style={{
-                display: "flex", alignItems: "center", gap: "10px",
-                padding: "11px 12px",
-                background: active ? "rgba(255,251,224,0.06)" : "none",
-                border: "none",
-                color: active ? "#fffbe0" : "rgba(255,251,224,0.35)",
-                fontSize: "11px", fontWeight: active ? 600 : 400,
-                letterSpacing: "0.08em", textTransform: "uppercase",
-                cursor: "pointer", fontFamily: "'Inter', sans-serif",
-                width: "100%", textAlign: "left",
-                transition: "all 0.2s ease",
-                borderLeft: active ? "2px solid #c8905a" : "2px solid transparent",
-              }}
-              onMouseEnter={(e) => { if (!active) e.currentTarget.style.color = "rgba(255,251,224,0.65)"; }}
-              onMouseLeave={(e) => { if (!active) e.currentTarget.style.color = "rgba(255,251,224,0.35)"; }}
-            >
-              <Icon size={14} />
-              {label}
-            </button>
-          );
-        })}
+      <nav style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: "2px", overflowY: "auto" }}>
+        {NAV_GROUPS.map((group, groupIndex) => (
+          <div key={group.label || "root"} style={{ marginTop: groupIndex === 0 ? 0 : "18px" }}>
+            {group.label && (
+              <div style={{
+                padding: "0 12px 8px",
+                color: "rgba(255,251,224,0.2)",
+                fontSize: "9px", fontWeight: 700,
+                letterSpacing: "0.2em", textTransform: "uppercase",
+              }}>
+                {group.label}
+              </div>
+            )}
+            {group.items.map(({ label, path, icon: Icon }) => {
+              const active = location.pathname === path || (path !== "/admin/dashboard" && location.pathname.startsWith(path));
+              return (
+                <button
+                  key={path}
+                  onClick={() => handleNav(path)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "10px",
+                    padding: "11px 12px",
+                    background: active ? "rgba(255,251,224,0.06)" : "none",
+                    border: "none",
+                    color: active ? "#fffbe0" : "rgba(255,251,224,0.35)",
+                    fontSize: "11px", fontWeight: active ? 600 : 400,
+                    letterSpacing: "0.08em", textTransform: "uppercase",
+                    cursor: "pointer", fontFamily: "'Inter', sans-serif",
+                    width: "100%", textAlign: "left",
+                    transition: "all 0.2s ease",
+                    borderLeft: active ? "2px solid #c8905a" : "2px solid transparent",
+                  }}
+                  onMouseEnter={(e) => { if (!active) e.currentTarget.style.color = "rgba(255,251,224,0.65)"; }}
+                  onMouseLeave={(e) => { if (!active) e.currentTarget.style.color = "rgba(255,251,224,0.35)"; }}
+                >
+                  <Icon size={14} />
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       {/* Footer — user + sign out */}

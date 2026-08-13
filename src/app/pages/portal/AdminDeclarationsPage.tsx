@@ -51,6 +51,8 @@ type Declaration = {
   adminId: string;
   adminName: string;
   amount: number;
+  vatRate: number;
+  vatAmount: number;
   date: string;
   category: string;
   description: string;
@@ -58,6 +60,12 @@ type Declaration = {
   submittedBy: { id: string; name: string };
   createdAt: string;
 };
+
+const VAT_RATES = [
+  { value: "21", label: "21% (algemeen tarief)" },
+  { value: "9", label: "9% (verlaagd tarief)" },
+  { value: "0", label: "0% / vrijgesteld" },
+];
 
 type Worker = { id: string; name: string; email: string };
 
@@ -81,12 +89,12 @@ const inputStyle: React.CSSProperties = {
   boxSizing: "border-box",
 };
 
-const emptyForm = { amount: "", date: new Date().toISOString().slice(0, 10), category: "", description: "", receiptUrl: "", adminId: "" };
+const emptyForm = { amount: "", vatRate: "21", date: new Date().toISOString().slice(0, 10), category: "", description: "", receiptUrl: "", adminId: "" };
 
 export function AdminDeclarationsPage() {
   const { session, user } = useAuth();
   const [declarations, setDeclarations] = useState<Declaration[]>([]);
-  const [totals, setTotals] = useState<{ amount: number; count: number; byCategory: Record<string, number> }>({ amount: 0, count: 0, byCategory: {} });
+  const [totals, setTotals] = useState<{ amount: number; vatAmount: number; count: number; byCategory: Record<string, number> }>({ amount: 0, vatAmount: 0, count: 0, byCategory: {} });
   const [canViewAll, setCanViewAll] = useState(false);
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [loading, setLoading] = useState(true);
@@ -159,7 +167,7 @@ export function AdminDeclarationsPage() {
       });
       const data = await res.json();
       setDeclarations(data.declarations || []);
-      setTotals(data.totals || { amount: 0, count: 0, byCategory: {} });
+      setTotals(data.totals || { amount: 0, vatAmount: 0, count: 0, byCategory: {} });
       setCanViewAll(!!data.canViewAll);
     } catch (err) {
       console.error("Failed to fetch declarations:", err);
@@ -203,6 +211,7 @@ export function AdminDeclarationsPage() {
     setEditingId(d.id);
     setForm({
       amount: String(d.amount),
+      vatRate: String(d.vatRate ?? 21),
       date: d.date.slice(0, 10),
       category: d.category,
       description: d.description,
@@ -333,6 +342,10 @@ export function AdminDeclarationsPage() {
           <div style={{ color: "rgba(255,251,224,0.3)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "8px" }}>Totaal dit kwartaal</div>
           <div style={{ color: "#fffbe0", fontSize: "26px", fontWeight: 800 }}>{formatEUR(totals.amount)}</div>
         </div>
+        <div style={{ backgroundColor: "rgba(200,144,90,0.08)", border: "1px solid rgba(200,144,90,0.25)", padding: "18px 20px" }}>
+          <div style={{ color: "#c8905a", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "8px" }}>BTW terug te vragen</div>
+          <div style={{ color: "#c8905a", fontSize: "26px", fontWeight: 800 }}>{formatEUR(totals.vatAmount)}</div>
+        </div>
         <div style={{ backgroundColor: "rgba(13,7,3,0.6)", border: "1px solid rgba(255,251,224,0.1)", padding: "18px 20px" }}>
           <div style={{ color: "rgba(255,251,224,0.3)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "8px" }}>Aantal declaraties</div>
           <div style={{ color: "#fffbe0", fontSize: "26px", fontWeight: 800 }}>{totals.count}</div>
@@ -366,8 +379,13 @@ export function AdminDeclarationsPage() {
               {canViewAll && (
                 <div style={{ color: "rgba(255,251,224,0.35)", fontSize: "11px" }}>{d.adminName}</div>
               )}
-              <div style={{ color: "#fffbe0", fontSize: "15px", fontWeight: 700, minWidth: "80px", textAlign: "right" }}>
-                {formatEUR(d.amount)}
+              <div style={{ textAlign: "right", minWidth: "90px" }}>
+                <div style={{ color: "#fffbe0", fontSize: "15px", fontWeight: 700 }}>
+                  {formatEUR(d.amount)}
+                </div>
+                <div style={{ color: "#c8905a", fontSize: "10px" }}>
+                  BTW {formatEUR(d.vatAmount)}
+                </div>
               </div>
               {d.receiptUrl && (
                 <a href={d.receiptUrl} target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,251,224,0.4)", display: "flex", alignItems: "center" }} title="Bonnetje bekijken">
@@ -408,13 +426,25 @@ export function AdminDeclarationsPage() {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                 <div>
-                  <label style={labelStyle}>Bedrag (€) *</label>
+                  <label style={labelStyle}>Bedrag incl. BTW (€) *</label>
                   <input style={inputStyle} type="number" step="0.01" min="0" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="0.00" />
                 </div>
                 <div>
                   <label style={labelStyle}>Datum *</label>
                   <input style={inputStyle} type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
                 </div>
+              </div>
+
+              <div>
+                <label style={labelStyle}>BTW-tarief</label>
+                <select style={{ ...inputStyle, cursor: "pointer" }} value={form.vatRate} onChange={(e) => setForm({ ...form, vatRate: e.target.value })}>
+                  {VAT_RATES.map((r) => <option key={r.value} value={r.value} style={{ backgroundColor: "#1a0c04" }}>{r.label}</option>)}
+                </select>
+                {Number(form.amount) > 0 && (
+                  <p style={{ color: "rgba(255,251,224,0.35)", fontSize: "11px", margin: "8px 0 0" }}>
+                    Terug te vragen BTW: <strong style={{ color: "#c8905a" }}>{formatEUR((Number(form.amount) * Number(form.vatRate)) / (100 + Number(form.vatRate)))}</strong>
+                  </p>
+                )}
               </div>
 
               <div>
