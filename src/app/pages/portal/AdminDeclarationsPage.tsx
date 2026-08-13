@@ -70,7 +70,7 @@ const VAT_RATES = [
 type Worker = { id: string; name: string; email: string };
 
 const labelStyle: React.CSSProperties = {
-  color: "rgba(var(--admin-fg-rgb),0.6)",
+  color: "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))",
   fontSize: "11px",
   fontWeight: 600,
   letterSpacing: "0.1em",
@@ -81,7 +81,7 @@ const labelStyle: React.CSSProperties = {
 const inputStyle: React.CSSProperties = {
   width: "100%",
   backgroundColor: "rgba(var(--admin-bg-card-rgb),0.8)",
-  border: "1px solid rgba(var(--admin-fg-rgb),0.15)",
+  border: "1px solid rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))",
   color: "var(--admin-fg-solid)",
   padding: "12px",
   fontSize: "14px",
@@ -285,14 +285,14 @@ export function AdminDeclarationsPage() {
           <h1 style={{ color: "var(--admin-fg-solid)", fontSize: "28px", fontWeight: 800, letterSpacing: "-0.02em", textTransform: "uppercase", margin: 0 }}>
             Declaraties
           </h1>
-          <p style={{ color: "rgba(var(--admin-fg-rgb),0.4)", fontSize: "13px", marginTop: "8px" }}>
+          <p style={{ color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "13px", marginTop: "8px" }}>
             {canViewAll ? "Alle declaraties" : "Jouw declaraties"} • {quarterKey}
           </p>
         </div>
         <button
           onClick={openNew}
           style={{
-            backgroundColor: "#fffbe0", color: "#1a0c04", border: "none",
+            backgroundColor: "var(--admin-cta-bg)", color: "var(--admin-cta-fg)", border: "none",
             padding: "12px 24px", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
             cursor: "pointer", display: "flex", alignItems: "center", gap: "8px",
           }}
@@ -319,65 +319,65 @@ export function AdminDeclarationsPage() {
       {/* Filters */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "24px" }}>
         <select value={q} onChange={(e) => setQ(Number(e.target.value))} style={{ ...inputStyle, width: "auto", cursor: "pointer" }}>
-          {[1, 2, 3, 4].map((n) => <option key={n} value={n} style={{ backgroundColor: "#1a0c04" }}>Q{n}</option>)}
+          {[1, 2, 3, 4].map((n) => <option key={n} value={n} style={{ backgroundColor: "#1a0c04", color: "#fffbe0" }}>Q{n}</option>)}
         </select>
         <select value={year} onChange={(e) => setYear(Number(e.target.value))} style={{ ...inputStyle, width: "auto", cursor: "pointer" }}>
-          {years.map((y) => <option key={y} value={y} style={{ backgroundColor: "#1a0c04" }}>{y}</option>)}
+          {years.map((y) => <option key={y} value={y} style={{ backgroundColor: "#1a0c04", color: "#fffbe0" }}>{y}</option>)}
         </select>
         <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} style={{ ...inputStyle, width: "auto", cursor: "pointer" }}>
           <option value="">Alle categorieën</option>
-          {CATEGORIES.map((c) => <option key={c} value={c} style={{ backgroundColor: "#1a0c04" }}>{c}</option>)}
+          {CATEGORIES.map((c) => <option key={c} value={c} style={{ backgroundColor: "#1a0c04", color: "#fffbe0" }}>{c}</option>)}
         </select>
         {canViewAll && (
           <select value={adminFilter} onChange={(e) => setAdminFilter(e.target.value)} style={{ ...inputStyle, width: "auto", cursor: "pointer" }}>
             <option value="">Alle admins</option>
-            {workers.map((w) => <option key={w.id} value={w.id} style={{ backgroundColor: "#1a0c04" }}>{w.name}</option>)}
+            {workers.map((w) => <option key={w.id} value={w.id} style={{ backgroundColor: "#1a0c04", color: "#fffbe0" }}>{w.name}</option>)}
           </select>
         )}
       </div>
 
       {/* Totals */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "12px", marginBottom: "32px" }}>
-        <div style={{ backgroundColor: "rgba(var(--admin-bg-card-rgb),0.6)", border: "1px solid rgba(var(--admin-fg-rgb),0.1)", padding: "18px 20px" }}>
-          <div style={{ color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "8px" }}>Totaal dit kwartaal</div>
+        <div style={{ backgroundColor: "rgba(var(--admin-bg-card-rgb),0.6)", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))", padding: "18px 20px" }}>
+          <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "8px" }}>Totaal dit kwartaal</div>
           <div style={{ color: "var(--admin-fg-solid)", fontSize: "26px", fontWeight: 800 }}>{formatEUR(totals.amount)}</div>
         </div>
         <div style={{ backgroundColor: "rgba(200,144,90,0.08)", border: "1px solid rgba(200,144,90,0.25)", padding: "18px 20px" }}>
           <div style={{ color: "#c8905a", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "8px" }}>BTW terug te vragen</div>
           <div style={{ color: "#c8905a", fontSize: "26px", fontWeight: 800 }}>{formatEUR(totals.vatAmount)}</div>
         </div>
-        <div style={{ backgroundColor: "rgba(var(--admin-bg-card-rgb),0.6)", border: "1px solid rgba(var(--admin-fg-rgb),0.1)", padding: "18px 20px" }}>
-          <div style={{ color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "8px" }}>Aantal declaraties</div>
+        <div style={{ backgroundColor: "rgba(var(--admin-bg-card-rgb),0.6)", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))", padding: "18px 20px" }}>
+          <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "8px" }}>Aantal declaraties</div>
           <div style={{ color: "var(--admin-fg-solid)", fontSize: "26px", fontWeight: 800 }}>{totals.count}</div>
         </div>
-        <div style={{ backgroundColor: "rgba(var(--admin-bg-card-rgb),0.6)", border: "1px solid rgba(var(--admin-fg-rgb),0.1)", padding: "18px 20px" }}>
-          <div style={{ color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "8px" }}>Grootste categorie</div>
+        <div style={{ backgroundColor: "rgba(var(--admin-bg-card-rgb),0.6)", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))", padding: "18px 20px" }}>
+          <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "8px" }}>Grootste categorie</div>
           <div style={{ color: "#c8905a", fontSize: "16px", fontWeight: 700, marginTop: "6px" }}>{topCategory}</div>
         </div>
       </div>
 
       {/* List */}
       {loading ? (
-        <div style={{ color: "rgba(var(--admin-fg-rgb),0.4)", fontSize: "13px" }}>Laden...</div>
+        <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "13px" }}>Laden...</div>
       ) : declarations.length === 0 ? (
-        <div style={{ padding: "60px 20px", textAlign: "center", color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "13px", letterSpacing: "0.1em", textTransform: "uppercase", border: "1px dashed rgba(var(--admin-fg-rgb),0.1)" }}>
+        <div style={{ padding: "60px 20px", textAlign: "center", color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "13px", letterSpacing: "0.1em", textTransform: "uppercase", border: "1px dashed rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))" }}>
           Geen declaraties in {quarterKey}
         </div>
       ) : (
         <div style={{ display: "grid", gap: "10px" }}>
           {declarations.map((d) => (
-            <div key={d.id} style={{ backgroundColor: "rgba(var(--admin-bg-card-rgb),0.6)", border: "1px solid rgba(var(--admin-fg-rgb),0.1)", padding: "16px 20px", display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
-              <div style={{ minWidth: "90px", color: "rgba(var(--admin-fg-rgb),0.4)", fontSize: "12px" }}>
+            <div key={d.id} style={{ backgroundColor: "rgba(var(--admin-bg-card-rgb),0.6)", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))", padding: "16px 20px", display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+              <div style={{ minWidth: "90px", color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "12px" }}>
                 {new Date(d.date).toLocaleDateString("nl-NL", { day: "2-digit", month: "short", year: "numeric" })}
               </div>
               <span style={{ backgroundColor: "rgba(200,144,90,0.12)", color: "#c8905a", fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", padding: "5px 10px" }}>
                 {d.category}
               </span>
-              <div style={{ flex: 1, minWidth: "160px", color: "rgba(var(--admin-fg-rgb),0.65)", fontSize: "13px" }}>
-                {d.description || <span style={{ color: "rgba(var(--admin-fg-rgb),0.25)" }}>Geen omschrijving</span>}
+              <div style={{ flex: 1, minWidth: "160px", color: "rgba(var(--admin-fg-rgb),calc(0.65 * var(--admin-fg-boost)))", fontSize: "13px" }}>
+                {d.description || <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))" }}>Geen omschrijving</span>}
               </div>
               {canViewAll && (
-                <div style={{ color: "rgba(var(--admin-fg-rgb),0.35)", fontSize: "11px" }}>{d.adminName}</div>
+                <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))", fontSize: "11px" }}>{d.adminName}</div>
               )}
               <div style={{ textAlign: "right", minWidth: "90px" }}>
                 <div style={{ color: "var(--admin-fg-solid)", fontSize: "15px", fontWeight: 700 }}>
@@ -388,11 +388,11 @@ export function AdminDeclarationsPage() {
                 </div>
               </div>
               {d.receiptUrl && (
-                <a href={d.receiptUrl} target="_blank" rel="noopener noreferrer" style={{ color: "rgba(var(--admin-fg-rgb),0.4)", display: "flex", alignItems: "center" }} title="Bonnetje bekijken">
+                <a href={d.receiptUrl} target="_blank" rel="noopener noreferrer" style={{ color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", display: "flex", alignItems: "center" }} title="Bonnetje bekijken">
                   <Paperclip size={15} />
                 </a>
               )}
-              <button onClick={() => openEdit(d)} style={{ background: "none", border: "none", color: "rgba(var(--admin-fg-rgb),0.35)", cursor: "pointer", padding: "4px" }}>
+              <button onClick={() => openEdit(d)} style={{ background: "none", border: "none", color: "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))", cursor: "pointer", padding: "4px" }}>
                 <Edit2 size={14} />
               </button>
               <button onClick={() => setDeleteTarget(d)} style={{ background: "none", border: "none", color: "rgba(224,112,96,0.5)", cursor: "pointer", padding: "4px" }}>
@@ -411,7 +411,7 @@ export function AdminDeclarationsPage() {
               <h2 style={{ color: "var(--admin-fg-solid)", fontSize: "22px", fontWeight: 800, textTransform: "uppercase", margin: 0 }}>
                 {editingId ? "Declaratie bewerken" : "Nieuwe declaratie"}
               </h2>
-              <button onClick={() => setShowForm(false)} style={{ background: "none", border: "none", color: "rgba(var(--admin-fg-rgb),0.4)", cursor: "pointer" }}><X size={22} /></button>
+              <button onClick={() => setShowForm(false)} style={{ background: "none", border: "none", color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", cursor: "pointer" }}><X size={22} /></button>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
@@ -419,7 +419,7 @@ export function AdminDeclarationsPage() {
                 <div>
                   <label style={labelStyle}>Voor wie</label>
                   <select style={{ ...inputStyle, cursor: "pointer" }} value={form.adminId} onChange={(e) => setForm({ ...form, adminId: e.target.value })}>
-                    {workers.map((w) => <option key={w.id} value={w.id} style={{ backgroundColor: "#1a0c04" }}>{w.name}</option>)}
+                    {workers.map((w) => <option key={w.id} value={w.id} style={{ backgroundColor: "#1a0c04", color: "#fffbe0" }}>{w.name}</option>)}
                   </select>
                 </div>
               )}
@@ -438,10 +438,10 @@ export function AdminDeclarationsPage() {
               <div>
                 <label style={labelStyle}>BTW-tarief</label>
                 <select style={{ ...inputStyle, cursor: "pointer" }} value={form.vatRate} onChange={(e) => setForm({ ...form, vatRate: e.target.value })}>
-                  {VAT_RATES.map((r) => <option key={r.value} value={r.value} style={{ backgroundColor: "#1a0c04" }}>{r.label}</option>)}
+                  {VAT_RATES.map((r) => <option key={r.value} value={r.value} style={{ backgroundColor: "#1a0c04", color: "#fffbe0" }}>{r.label}</option>)}
                 </select>
                 {Number(form.amount) > 0 && (
-                  <p style={{ color: "rgba(var(--admin-fg-rgb),0.35)", fontSize: "11px", margin: "8px 0 0" }}>
+                  <p style={{ color: "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))", fontSize: "11px", margin: "8px 0 0" }}>
                     Terug te vragen BTW: <strong style={{ color: "#c8905a" }}>{formatEUR((Number(form.amount) * Number(form.vatRate)) / (100 + Number(form.vatRate)))}</strong>
                   </p>
                 )}
@@ -460,27 +460,27 @@ export function AdminDeclarationsPage() {
                   onChange={(e) => { setCategoryTouched(true); setForm({ ...form, category: e.target.value }); }}
                 >
                   <option value="">Kies een categorie</option>
-                  {CATEGORIES.map((c) => <option key={c} value={c} style={{ backgroundColor: "#1a0c04" }}>{c}</option>)}
+                  {CATEGORIES.map((c) => <option key={c} value={c} style={{ backgroundColor: "#1a0c04", color: "#fffbe0" }}>{c}</option>)}
                 </select>
               </div>
 
               <div>
                 <label style={labelStyle}>Bonnetje / factuur</label>
                 {form.receiptUrl ? (
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px", backgroundColor: "rgba(var(--admin-fg-rgb),0.03)", border: "1px solid rgba(var(--admin-fg-rgb),0.1)", padding: "10px 14px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.03 * var(--admin-fg-boost)))", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))", padding: "10px 14px" }}>
                     <Paperclip size={14} color="#c8905a" />
                     <a href={form.receiptUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#c8905a", fontSize: "12px", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       Bekijk geüpload bestand
                     </a>
-                    <button onClick={() => setForm({ ...form, receiptUrl: "" })} style={{ background: "none", border: "none", color: "rgba(var(--admin-fg-rgb),0.4)", cursor: "pointer" }}>
+                    <button onClick={() => setForm({ ...form, receiptUrl: "" })} style={{ background: "none", border: "none", color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", cursor: "pointer" }}>
                       <X size={14} />
                     </button>
                   </div>
                 ) : (
                   <label style={{
                     display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-                    border: "1px dashed rgba(var(--admin-fg-rgb),0.2)", padding: "18px",
-                    color: "rgba(var(--admin-fg-rgb),0.4)", fontSize: "12px", cursor: uploading ? "not-allowed" : "pointer",
+                    border: "1px dashed rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", padding: "18px",
+                    color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "12px", cursor: uploading ? "not-allowed" : "pointer",
                   }}>
                     <Paperclip size={14} />
                     {uploading ? "Bezig met uploaden…" : "Foto of PDF uploaden"}
@@ -499,7 +499,7 @@ export function AdminDeclarationsPage() {
                 onClick={handleSave}
                 disabled={saving || !form.amount || !form.date || !form.category}
                 style={{
-                  backgroundColor: "#fffbe0", color: "#1a0c04", border: "none", padding: "14px",
+                  backgroundColor: "var(--admin-cta-bg)", color: "var(--admin-cta-fg)", border: "none", padding: "14px",
                   fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
                   cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.6 : 1,
                 }}
@@ -516,16 +516,16 @@ export function AdminDeclarationsPage() {
         <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.75)", zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
           onClick={(e) => { if (e.target === e.currentTarget) setDeleteTarget(null); }}
         >
-          <div style={{ backgroundColor: "var(--admin-bg-card)", border: "1px solid rgba(var(--admin-fg-rgb),0.15)", padding: "32px", maxWidth: "420px", width: "100%" }}>
+          <div style={{ backgroundColor: "var(--admin-bg-card)", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))", padding: "32px", maxWidth: "420px", width: "100%" }}>
             <h3 style={{ color: "var(--admin-fg-solid)", fontSize: "18px", fontWeight: 700, margin: "0 0 12px" }}>Declaratie verwijderen</h3>
-            <p style={{ color: "rgba(var(--admin-fg-rgb),0.5)", fontSize: "14px", margin: "0 0 24px", lineHeight: 1.6 }}>
+            <p style={{ color: "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))", fontSize: "14px", margin: "0 0 24px", lineHeight: 1.6 }}>
               Verwijder de declaratie van <strong style={{ color: "var(--admin-fg-solid)" }}>{formatEUR(deleteTarget.amount)}</strong>? Dit kan niet ongedaan worden gemaakt.
             </p>
             <div style={{ display: "flex", gap: "10px" }}>
               <button onClick={confirmDelete} style={{ flex: 1, backgroundColor: "rgba(224,112,96,0.15)", border: "1px solid rgba(224,112,96,0.4)", color: "#e07060", padding: "12px", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer" }}>
                 Verwijderen
               </button>
-              <button onClick={() => setDeleteTarget(null)} style={{ flex: 1, backgroundColor: "transparent", border: "1px solid rgba(var(--admin-fg-rgb),0.15)", color: "rgba(var(--admin-fg-rgb),0.5)", padding: "12px", fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer" }}>
+              <button onClick={() => setDeleteTarget(null)} style={{ flex: 1, backgroundColor: "transparent", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))", color: "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))", padding: "12px", fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer" }}>
                 Annuleren
               </button>
             </div>

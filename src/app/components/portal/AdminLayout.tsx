@@ -58,15 +58,15 @@ function ThemeToggle({ compact }: { compact?: boolean }) {
       title={isDark ? "Schakel naar licht thema" : "Schakel naar donker thema"}
       style={{
         background: "none",
-        border: "1px solid rgba(var(--admin-fg-rgb),0.1)",
-        color: "rgba(var(--admin-fg-rgb),0.5)",
+        border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
+        color: "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))",
         width: compact ? "32px" : "32px",
         height: "32px",
         display: "flex", alignItems: "center", justifyContent: "center",
         cursor: "pointer", transition: "all 0.2s ease", flexShrink: 0,
       }}
-      onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.3)"; e.currentTarget.style.color = "var(--admin-fg-solid)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.1)"; e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.5)"; }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))"; e.currentTarget.style.color = "var(--admin-fg-solid)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))"; e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))"; }}
     >
       {isDark ? <Sun size={15} /> : <Moon size={15} />}
     </button>
@@ -91,7 +91,7 @@ function AdminLayoutInner() {
       }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
           <div style={{ width: "32px", height: "2px", backgroundColor: "#c8905a" }} />
-          <span style={{ color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase" }}>
+          <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase" }}>
             Loading
           </span>
         </div>
@@ -126,7 +126,7 @@ function AdminLayoutInner() {
       {/* Logo */}
       <div style={{
         padding: isMobile ? "20px 20px 16px" : "24px 20px 20px",
-        borderBottom: "1px solid rgba(var(--admin-fg-rgb),0.04)",
+        borderBottom: "1px solid rgba(var(--admin-fg-rgb),calc(0.04 * var(--admin-fg-boost)))",
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
         <div>
@@ -137,7 +137,7 @@ function AdminLayoutInner() {
           />
           <div style={{
             marginTop: "6px",
-            color: "rgba(var(--admin-fg-rgb),0.2)",
+            color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))",
             fontSize: "8px", fontWeight: 600,
             letterSpacing: "0.3em", textTransform: "uppercase",
           }}>
@@ -147,7 +147,7 @@ function AdminLayoutInner() {
         {isMobile && (
           <button
             onClick={() => setSidebarOpen(false)}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(var(--admin-fg-rgb),0.4)", padding: "4px" }}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", padding: "4px" }}
           >
             <X size={18} />
           </button>
@@ -161,7 +161,7 @@ function AdminLayoutInner() {
             {group.label && (
               <div style={{
                 padding: "0 12px 8px",
-                color: "rgba(var(--admin-fg-rgb),0.2)",
+                color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))",
                 fontSize: "9px", fontWeight: 700,
                 letterSpacing: "0.2em", textTransform: "uppercase",
               }}>
@@ -177,9 +177,9 @@ function AdminLayoutInner() {
                   style={{
                     display: "flex", alignItems: "center", gap: "10px",
                     padding: "11px 12px",
-                    background: active ? "rgba(var(--admin-fg-rgb),0.06)" : "none",
+                    background: active ? "rgba(var(--admin-fg-rgb),calc(0.06 * var(--admin-fg-boost)))" : "none",
                     border: "none",
-                    color: active ? "var(--admin-fg-solid)" : "rgba(var(--admin-fg-rgb),0.35)",
+                    color: active ? "var(--admin-fg-solid)" : "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))",
                     fontSize: "11px", fontWeight: active ? 600 : 400,
                     letterSpacing: "0.08em", textTransform: "uppercase",
                     cursor: "pointer", fontFamily: "'Inter', sans-serif",
@@ -187,8 +187,8 @@ function AdminLayoutInner() {
                     transition: "all 0.2s ease",
                     borderLeft: active ? "2px solid #c8905a" : "2px solid transparent",
                   }}
-                  onMouseEnter={(e) => { if (!active) e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.65)"; }}
-                  onMouseLeave={(e) => { if (!active) e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.35)"; }}
+                  onMouseEnter={(e) => { if (!active) e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.65 * var(--admin-fg-boost)))"; }}
+                  onMouseLeave={(e) => { if (!active) e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))"; }}
                 >
                   <Icon size={14} />
                   {label}
@@ -202,7 +202,7 @@ function AdminLayoutInner() {
       {/* Footer — user + sign out */}
       <div style={{
         padding: "16px 12px",
-        borderTop: "1px solid rgba(var(--admin-fg-rgb),0.04)",
+        borderTop: "1px solid rgba(var(--admin-fg-rgb),calc(0.04 * var(--admin-fg-boost)))",
         display: "flex", flexDirection: "column", gap: "12px",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -219,7 +219,7 @@ function AdminLayoutInner() {
             <div style={{ color: "var(--admin-fg-solid)", fontSize: "11px", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {adminName}
             </div>
-            <div style={{ color: "rgba(var(--admin-fg-rgb),0.25)", fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase" }}>Admin</div>
+            <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase" }}>Admin</div>
           </div>
           <ThemeToggle />
         </div>
@@ -228,15 +228,15 @@ function AdminLayoutInner() {
           disabled={signingOut}
           style={{
             display: "flex", alignItems: "center", gap: "8px",
-            background: "none", border: "1px solid rgba(var(--admin-fg-rgb),0.07)",
-            color: "rgba(var(--admin-fg-rgb),0.3)",
+            background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.07 * var(--admin-fg-boost)))",
+            color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))",
             fontSize: "10px", fontWeight: 500, letterSpacing: "0.15em", textTransform: "uppercase",
             cursor: "pointer", padding: "8px 12px",
             fontFamily: "'Inter', sans-serif",
             width: "100%", transition: "all 0.2s ease",
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.6)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.15)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.3)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.07)"; }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.07 * var(--admin-fg-boost)))"; }}
         >
           <LogOut size={12} />
           {signingOut ? "Signing out…" : "Sign Out"}
@@ -252,7 +252,7 @@ function AdminLayoutInner() {
         <header style={{
           height: "56px",
           backgroundColor: "var(--admin-bg-sidebar)",
-          borderBottom: "1px solid rgba(var(--admin-fg-rgb),0.05)",
+          borderBottom: "1px solid rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))",
           display: "flex", alignItems: "center",
           padding: "0 16px", gap: "12px",
           position: "sticky", top: 0, zIndex: 60,
@@ -260,23 +260,23 @@ function AdminLayoutInner() {
         }}>
           <button
             onClick={() => setSidebarOpen(true)}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(var(--admin-fg-rgb),0.6)", padding: "4px", display: "flex" }}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))", padding: "4px", display: "flex" }}
           >
             <Menu size={20} />
           </button>
           <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ color: "rgba(var(--admin-fg-rgb),0.25)", fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase" }}>Admin</span>
+            <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase" }}>Admin</span>
             {currentLabel && (
               <>
-                <ChevronRight size={10} color="rgba(var(--admin-fg-rgb),0.15)" />
-                <span style={{ color: "rgba(var(--admin-fg-rgb),0.55)", fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase" }}>{currentLabel}</span>
+                <ChevronRight size={10} color="rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))" />
+                <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.55 * var(--admin-fg-boost)))", fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase" }}>{currentLabel}</span>
               </>
             )}
           </div>
           <ThemeToggle compact />
           <button
             onClick={() => { navigate("/admin/reminders"); setSidebarOpen(false); }}
-            style={{ background: "none", border: "1px solid rgba(var(--admin-fg-rgb),0.1)", color: "rgba(var(--admin-fg-rgb),0.5)", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+            style={{ background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))", color: "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
           >
             <Bell size={16} />
           </button>
@@ -302,7 +302,7 @@ function AdminLayoutInner() {
               position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 80,
               width: "260px",
               backgroundColor: "var(--admin-bg-sidebar)",
-              borderRight: "1px solid rgba(var(--admin-fg-rgb),0.05)",
+              borderRight: "1px solid rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))",
               overflowY: "auto",
             }}>
               <SidebarContent />
@@ -324,7 +324,7 @@ function AdminLayoutInner() {
       <aside style={{
         width: "220px", minWidth: "220px",
         backgroundColor: "var(--admin-bg-sidebar)",
-        borderRight: "1px solid rgba(var(--admin-fg-rgb),0.05)",
+        borderRight: "1px solid rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))",
         position: "sticky", top: 0, height: "100vh",
         overflow: "hidden",
       }}>
@@ -336,22 +336,22 @@ function AdminLayoutInner() {
         {/* Top breadcrumb bar */}
         <div style={{
           height: "48px",
-          borderBottom: "1px solid rgba(var(--admin-fg-rgb),0.04)",
+          borderBottom: "1px solid rgba(var(--admin-fg-rgb),calc(0.04 * var(--admin-fg-boost)))",
           display: "flex", alignItems: "center",
           padding: "0 32px", gap: "6px",
         }}>
-          <span style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "10px", letterSpacing: "0.15em", textTransform: "uppercase" }}>Admin</span>
-          <ChevronRight size={10} color="rgba(var(--admin-fg-rgb),0.15)" />
-          <span style={{ color: "rgba(var(--admin-fg-rgb),0.45)", fontSize: "10px", letterSpacing: "0.15em", textTransform: "uppercase" }}>
+          <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "10px", letterSpacing: "0.15em", textTransform: "uppercase" }}>Admin</span>
+          <ChevronRight size={10} color="rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))" />
+          <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.45 * var(--admin-fg-boost)))", fontSize: "10px", letterSpacing: "0.15em", textTransform: "uppercase" }}>
             {currentLabel}
           </span>
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "8px" }}>
             <ThemeToggle />
             <button
               onClick={() => navigate("/admin/reminders")}
-              style={{ background: "none", border: "1px solid rgba(var(--admin-fg-rgb),0.1)", color: "rgba(var(--admin-fg-rgb),0.5)", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.2s ease" }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.3)"; e.currentTarget.style.color = "var(--admin-fg-solid)"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.1)"; e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.5)"; }}
+              style={{ background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))", color: "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.2s ease" }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))"; e.currentTarget.style.color = "var(--admin-fg-solid)"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))"; e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))"; }}
               title="Actiepunten"
             >
               <Bell size={16} />

@@ -49,7 +49,7 @@ export function AdminGalleryPreviewPage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: "rgba(var(--admin-fg-rgb),0.2)",
+          color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))",
           fontSize: "10px",
           letterSpacing: "0.3em",
           textTransform: "uppercase",

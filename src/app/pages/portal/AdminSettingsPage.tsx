@@ -269,7 +269,7 @@ export function AdminSettingsPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: isMobile ? "24px 16px" : "40px", color: "rgba(var(--admin-fg-rgb),0.4)" }}>
+      <div style={{ padding: isMobile ? "24px 16px" : "40px", color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))" }}>
         Loading settings...
       </div>
     );
@@ -291,7 +291,7 @@ export function AdminSettingsPage() {
         <div>
           <div
             style={{
-              color: "rgba(var(--admin-fg-rgb),0.2)",
+              color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))",
               fontSize: "9px",
               fontWeight: 500,
               letterSpacing: "0.35em",
@@ -322,8 +322,8 @@ export function AdminSettingsPage() {
           onClick={handleSave}
           disabled={saving}
           style={{
-            backgroundColor: saving ? "rgba(var(--admin-fg-rgb),0.3)" : "#fffbe0",
-            color: "#1a0c04",
+            backgroundColor: saving ? "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))" : "var(--admin-cta-bg)",
+            color: "var(--admin-cta-fg)",
             border: "none",
             padding: isMobile ? "10px 20px" : "12px 24px",
             fontSize: "11px",
@@ -344,8 +344,8 @@ export function AdminSettingsPage() {
           }}
           onMouseLeave={(e) => {
             if (!saving) {
-              e.currentTarget.style.backgroundColor = "#fffbe0";
-              e.currentTarget.style.color = "#1a0c04";
+              e.currentTarget.style.backgroundColor = "var(--admin-cta-bg)";
+              e.currentTarget.style.color = "var(--admin-cta-fg)";
             }
           }}
         >
@@ -392,7 +392,7 @@ export function AdminSettingsPage() {
       <div
         style={{
           backgroundColor: "rgba(var(--admin-bg-card-rgb),0.6)",
-          border: "1px solid rgba(var(--admin-fg-rgb),0.1)",
+          border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
           padding: isMobile ? "20px" : "32px",
           marginBottom: "24px",
         }}
@@ -410,7 +410,7 @@ export function AdminSettingsPage() {
         </h2>
         <p
           style={{
-            color: "rgba(var(--admin-fg-rgb),0.4)",
+            color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))",
             fontSize: "13px",
             margin: "0 0 24px 0",
             lineHeight: 1.6,
@@ -430,7 +430,7 @@ export function AdminSettingsPage() {
           <div>
             <label
               style={{
-                color: "rgba(var(--admin-fg-rgb),0.5)",
+                color: "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))",
                 fontSize: "11px",
                 fontWeight: 600,
                 letterSpacing: "0.1em",
@@ -451,7 +451,7 @@ export function AdminSettingsPage() {
                     height: "200px",
                     objectFit: "cover",
                     display: "block",
-                    border: "1px solid rgba(var(--admin-fg-rgb),0.1)",
+                    border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
                   }}
                 />
                 <button
@@ -479,11 +479,11 @@ export function AdminSettingsPage() {
                 style={{
                   width: "100%",
                   height: "200px",
-                  border: "2px dashed rgba(var(--admin-fg-rgb),0.2)",
+                  border: "2px dashed rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: "rgba(var(--admin-fg-rgb),0.3)",
+                  color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))",
                   fontSize: "13px",
                 }}
               >
@@ -495,9 +495,9 @@ export function AdminSettingsPage() {
                 onClick={() => setShowImagePicker("desktop")}
                 style={{
                   flex: 1,
-                  backgroundColor: "rgba(var(--admin-fg-rgb),0.05)",
-                  border: "1px solid rgba(var(--admin-fg-rgb),0.15)",
-                  color: "rgba(var(--admin-fg-rgb),0.6)",
+                  backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))",
+                  border: "1px solid rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))",
+                  color: "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))",
                   padding: "10px",
                   fontSize: "11px",
                   fontWeight: 600,
@@ -516,9 +516,9 @@ export function AdminSettingsPage() {
               <label
                 style={{
                   flex: 1,
-                  backgroundColor: "rgba(var(--admin-fg-rgb),0.05)",
-                  border: "1px solid rgba(var(--admin-fg-rgb),0.15)",
-                  color: "rgba(var(--admin-fg-rgb),0.6)",
+                  backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))",
+                  border: "1px solid rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))",
+                  color: "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))",
                   padding: "10px",
                   fontSize: "11px",
                   fontWeight: 600,
@@ -548,7 +548,7 @@ export function AdminSettingsPage() {
           <div>
             <label
               style={{
-                color: "rgba(var(--admin-fg-rgb),0.5)",
+                color: "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))",
                 fontSize: "11px",
                 fontWeight: 600,
                 letterSpacing: "0.1em",
@@ -569,7 +569,7 @@ export function AdminSettingsPage() {
                     height: "200px",
                     objectFit: "cover",
                     display: "block",
-                    border: "1px solid rgba(var(--admin-fg-rgb),0.1)",
+                    border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
                   }}
                 />
                 <button
@@ -597,11 +597,11 @@ export function AdminSettingsPage() {
                 style={{
                   width: "100%",
                   height: "200px",
-                  border: "2px dashed rgba(var(--admin-fg-rgb),0.2)",
+                  border: "2px dashed rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: "rgba(var(--admin-fg-rgb),0.3)",
+                  color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))",
                   fontSize: "13px",
                 }}
               >
@@ -613,9 +613,9 @@ export function AdminSettingsPage() {
                 onClick={() => setShowImagePicker("mobile")}
                 style={{
                   flex: 1,
-                  backgroundColor: "rgba(var(--admin-fg-rgb),0.05)",
-                  border: "1px solid rgba(var(--admin-fg-rgb),0.15)",
-                  color: "rgba(var(--admin-fg-rgb),0.6)",
+                  backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))",
+                  border: "1px solid rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))",
+                  color: "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))",
                   padding: "10px",
                   fontSize: "11px",
                   fontWeight: 600,
@@ -634,9 +634,9 @@ export function AdminSettingsPage() {
               <label
                 style={{
                   flex: 1,
-                  backgroundColor: "rgba(var(--admin-fg-rgb),0.05)",
-                  border: "1px solid rgba(var(--admin-fg-rgb),0.15)",
-                  color: "rgba(var(--admin-fg-rgb),0.6)",
+                  backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))",
+                  border: "1px solid rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))",
+                  color: "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))",
                   padding: "10px",
                   fontSize: "11px",
                   fontWeight: 600,
@@ -664,19 +664,19 @@ export function AdminSettingsPage() {
         </div>
 
         {/* Frame Image */}
-        <div style={{ marginTop: "24px", borderTop: "1px solid rgba(var(--admin-fg-rgb),0.06)", paddingTop: "24px" }}>
+        <div style={{ marginTop: "24px", borderTop: "1px solid rgba(var(--admin-fg-rgb),calc(0.06 * var(--admin-fg-boost)))", paddingTop: "24px" }}>
           <label style={{
-            color: "rgba(var(--admin-fg-rgb),0.5)", fontSize: "11px", fontWeight: 600,
+            color: "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))", fontSize: "11px", fontWeight: 600,
             letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "12px",
           }}>
             Portret foto (filmstrip frame)
           </label>
-          <p style={{ color: "rgba(var(--admin-fg-rgb),0.25)", fontSize: "12px", margin: "0 0 16px 0", lineHeight: 1.5 }}>
+          <p style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "12px", margin: "0 0 16px 0", lineHeight: 1.5 }}>
             De staande foto in het filmstrip-kader naast de tekst op de homepage.
           </p>
           {settings.frameImageUrl ? (
             <div style={{ position: "relative", display: "inline-block" }}>
-              <img src={settings.frameImageUrl} alt="Frame" style={{ width: "160px", height: "213px", objectFit: "cover", display: "block", border: "1px solid rgba(var(--admin-fg-rgb),0.1)" }} />
+              <img src={settings.frameImageUrl} alt="Frame" style={{ width: "160px", height: "213px", objectFit: "cover", display: "block", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))" }} />
               <button
                 onClick={() => removeImage("frameImageUrl")}
                 style={{ position: "absolute", top: "8px", right: "8px", backgroundColor: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,100,100,0.5)", color: "#ff6464", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
@@ -685,19 +685,19 @@ export function AdminSettingsPage() {
               </button>
             </div>
           ) : (
-            <div style={{ width: "160px", height: "213px", border: "2px dashed rgba(var(--admin-fg-rgb),0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "12px" }}>
+            <div style={{ width: "160px", height: "213px", border: "2px dashed rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "12px" }}>
               Geen foto
             </div>
           )}
           <div style={{ display: "flex", gap: "8px", marginTop: "12px", maxWidth: "360px" }}>
             <button
               onClick={() => setShowImagePicker("frame")}
-              style={{ flex: 1, backgroundColor: "rgba(var(--admin-fg-rgb),0.05)", border: "1px solid rgba(var(--admin-fg-rgb),0.15)", color: "rgba(var(--admin-fg-rgb),0.6)", padding: "10px", fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+              style={{ flex: 1, backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))", color: "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))", padding: "10px", fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
             >
               <ImageIcon size={14} />
               Portfolio
             </button>
-            <label style={{ flex: 1, backgroundColor: "rgba(var(--admin-fg-rgb),0.05)", border: "1px solid rgba(var(--admin-fg-rgb),0.15)", color: "rgba(var(--admin-fg-rgb),0.6)", padding: "10px", fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", cursor: uploading === "frame" ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+            <label style={{ flex: 1, backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))", color: "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))", padding: "10px", fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", cursor: uploading === "frame" ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
               <Upload size={14} />
               {uploading === "frame" ? "Uploaden…" : "Upload"}
               <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, "frame")} style={{ display: "none" }} disabled={uploading !== null} />
@@ -709,14 +709,14 @@ export function AdminSettingsPage() {
       {/* Section Visibility */}
       <div style={{
         backgroundColor: "rgba(var(--admin-bg-card-rgb),0.6)",
-        border: "1px solid rgba(var(--admin-fg-rgb),0.1)",
+        border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
         padding: isMobile ? "20px" : "32px",
         marginBottom: "24px",
       }}>
         <h2 style={{ color: "var(--admin-fg-solid)", fontSize: "18px", fontWeight: 700, margin: "0 0 8px 0", textTransform: "uppercase" }}>
           Secties Homepage
         </h2>
-        <p style={{ color: "rgba(var(--admin-fg-rgb),0.4)", fontSize: "13px", margin: "0 0 24px 0", lineHeight: 1.6 }}>
+        <p style={{ color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "13px", margin: "0 0 24px 0", lineHeight: 1.6 }}>
           Zet secties aan of uit op de homepage. Wijzigingen worden opgeslagen via "Save Changes".
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -728,13 +728,13 @@ export function AdminSettingsPage() {
             socialProof: "Reviews / Social Proof",
             customCTA: "Call to Action (CTA)",
           }) as [keyof Sections, string][]).map(([key, label]) => (
-            <div key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", backgroundColor: "rgba(var(--admin-fg-rgb),0.03)", border: "1px solid rgba(var(--admin-fg-rgb),0.07)" }}>
-              <span style={{ color: "rgba(var(--admin-fg-rgb),0.7)", fontSize: "13px", fontWeight: 500 }}>{label}</span>
+            <div key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.03 * var(--admin-fg-boost)))", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.07 * var(--admin-fg-boost)))" }}>
+              <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.7 * var(--admin-fg-boost)))", fontSize: "13px", fontWeight: 500 }}>{label}</span>
               <button
                 onClick={() => setSettings(prev => ({ ...prev, sections: { ...prev.sections, [key]: !prev.sections[key] } }))}
                 style={{
                   width: "44px", height: "24px",
-                  backgroundColor: settings.sections[key] ? "#c8905a" : "rgba(var(--admin-fg-rgb),0.1)",
+                  backgroundColor: settings.sections[key] ? "#c8905a" : "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
                   border: "none", borderRadius: "12px", cursor: "pointer",
                   position: "relative", transition: "background-color 0.2s ease", flexShrink: 0,
                 }}
@@ -743,7 +743,7 @@ export function AdminSettingsPage() {
                   position: "absolute", top: "2px",
                   left: settings.sections[key] ? "22px" : "2px",
                   width: "20px", height: "20px", borderRadius: "50%",
-                  backgroundColor: "#fffbe0", transition: "left 0.2s ease",
+                  backgroundColor: "var(--admin-cta-bg)", transition: "left 0.2s ease",
                   display: "block",
                 }} />
               </button>
@@ -755,19 +755,19 @@ export function AdminSettingsPage() {
       {/* Studio Info */}
       <div style={{
         backgroundColor: "rgba(var(--admin-bg-card-rgb),0.6)",
-        border: "1px solid rgba(var(--admin-fg-rgb),0.1)",
+        border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
         padding: isMobile ? "20px" : "32px",
         marginBottom: "24px",
       }}>
         <h2 style={{ color: "var(--admin-fg-solid)", fontSize: "18px", fontWeight: 700, margin: "0 0 8px 0", textTransform: "uppercase" }}>
           Studio Info
         </h2>
-        <p style={{ color: "rgba(var(--admin-fg-rgb),0.4)", fontSize: "13px", margin: "0 0 24px 0", lineHeight: 1.6 }}>
+        <p style={{ color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "13px", margin: "0 0 24px 0", lineHeight: 1.6 }}>
           Basic studio information shown on the site. Save via "Save Changes" above.
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div>
-            <label style={{ color: "rgba(var(--admin-fg-rgb),0.5)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "8px" }}>
+            <label style={{ color: "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))", fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "8px" }}>
               Studio Name
             </label>
             <input
@@ -775,11 +775,11 @@ export function AdminSettingsPage() {
               value={settings.studioName}
               onChange={(e) => setSettings(prev => ({ ...prev, studioName: e.target.value }))}
               placeholder="e.g. Photo De Caffeine"
-              style={{ width: "100%", backgroundColor: "rgba(var(--admin-fg-rgb),0.04)", border: "1px solid rgba(var(--admin-fg-rgb),0.12)", color: "var(--admin-fg-solid)", padding: "12px 14px", fontSize: "14px", fontFamily: "'Inter', sans-serif", boxSizing: "border-box" }}
+              style={{ width: "100%", backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.04 * var(--admin-fg-boost)))", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.12 * var(--admin-fg-boost)))", color: "var(--admin-fg-solid)", padding: "12px 14px", fontSize: "14px", fontFamily: "'Inter', sans-serif", boxSizing: "border-box" }}
             />
           </div>
           <div>
-            <label style={{ color: "rgba(var(--admin-fg-rgb),0.5)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "8px" }}>
+            <label style={{ color: "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))", fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "8px" }}>
               Contact Email
             </label>
             <input
@@ -787,7 +787,7 @@ export function AdminSettingsPage() {
               value={settings.contactEmail}
               onChange={(e) => setSettings(prev => ({ ...prev, contactEmail: e.target.value }))}
               placeholder="e.g. hello@photodecaffeine.nl"
-              style={{ width: "100%", backgroundColor: "rgba(var(--admin-fg-rgb),0.04)", border: "1px solid rgba(var(--admin-fg-rgb),0.12)", color: "var(--admin-fg-solid)", padding: "12px 14px", fontSize: "14px", fontFamily: "'Inter', sans-serif", boxSizing: "border-box" }}
+              style={{ width: "100%", backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.04 * var(--admin-fg-boost)))", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.12 * var(--admin-fg-boost)))", color: "var(--admin-fg-solid)", padding: "12px 14px", fontSize: "14px", fontFamily: "'Inter', sans-serif", boxSizing: "border-box" }}
             />
           </div>
         </div>
@@ -797,7 +797,7 @@ export function AdminSettingsPage() {
       {(settings.heroImageUrl || settings.heroImageMobileUrl) && (
         <div style={{
           backgroundColor: "rgba(var(--admin-bg-card-rgb),0.6)",
-          border: "1px solid rgba(var(--admin-fg-rgb),0.1)",
+          border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
           padding: isMobile ? "20px" : "32px",
           marginBottom: "24px",
         }}>
@@ -810,7 +810,7 @@ export function AdminSettingsPage() {
             )}
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, transparent 40%, rgba(8,4,1,0.9) 100%)" }} />
             <div style={{ position: "absolute", bottom: "24px", left: "24px" }}>
-              <div style={{ color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "8px", letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: "6px" }}>
+              <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "8px", letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: "6px" }}>
                 {settings.studioName || "Studio Name"}
               </div>
               <div style={{ color: "var(--admin-fg-solid)", fontSize: "clamp(18px, 3vw, 28px)", fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
@@ -818,7 +818,7 @@ export function AdminSettingsPage() {
               </div>
             </div>
           </div>
-          <p style={{ color: "rgba(var(--admin-fg-rgb),0.25)", fontSize: "11px", margin: "8px 0 0 0" }}>
+          <p style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "11px", margin: "8px 0 0 0" }}>
             Approximate desktop hero rendering — actual overlay and typography may differ.
           </p>
         </div>
@@ -844,7 +844,7 @@ export function AdminSettingsPage() {
           <div
             style={{
               backgroundColor: "var(--admin-bg-card)",
-              border: "1px solid rgba(var(--admin-fg-rgb),0.2)",
+              border: "1px solid rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))",
               padding: isMobile ? "24px" : "32px",
               maxWidth: "900px",
               width: "100%",
@@ -876,7 +876,7 @@ export function AdminSettingsPage() {
                 style={{
                   backgroundColor: "transparent",
                   border: "none",
-                  color: "rgba(var(--admin-fg-rgb),0.4)",
+                  color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))",
                   cursor: "pointer",
                   padding: "4px",
                 }}
@@ -900,7 +900,7 @@ export function AdminSettingsPage() {
                     onClick={() => selectPortfolioImage(article.coverUrl)}
                     style={{
                       cursor: "pointer",
-                      border: "2px solid rgba(var(--admin-fg-rgb),0.1)",
+                      border: "2px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
                       overflow: "hidden",
                       transition: "all 0.2s ease",
                     }}
@@ -908,7 +908,7 @@ export function AdminSettingsPage() {
                       e.currentTarget.style.borderColor = "#c8905a";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.1)";
+                      e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))";
                     }}
                   >
                     <img
@@ -949,7 +949,7 @@ export function AdminSettingsPage() {
                 style={{
                   textAlign: "center",
                   padding: "48px 20px",
-                  color: "rgba(var(--admin-fg-rgb),0.3)",
+                  color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))",
                   fontSize: "13px",
                 }}
               >

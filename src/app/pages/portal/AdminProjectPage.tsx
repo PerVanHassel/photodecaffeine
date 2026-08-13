@@ -76,8 +76,8 @@ function formatTime(str: string) {
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
-  backgroundColor: "rgba(var(--admin-fg-rgb),0.03)",
-  border: "1px solid rgba(var(--admin-fg-rgb),0.08)",
+  backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.03 * var(--admin-fg-boost)))",
+  border: "1px solid rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))",
   color: "var(--admin-fg-solid)",
   fontSize: "13px",
   fontFamily: "'Inter', sans-serif",
@@ -89,7 +89,7 @@ const inputStyle: React.CSSProperties = {
 };
 
 const labelStyle: React.CSSProperties = {
-  color: "rgba(var(--admin-fg-rgb),0.25)",
+  color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))",
   fontSize: "8px",
   fontWeight: 600,
   letterSpacing: "0.25em",
@@ -354,7 +354,7 @@ export function AdminProjectPage() {
   }
 
   const sectionDivider = (
-    <div style={{ height: "1px", backgroundColor: "rgba(var(--admin-fg-rgb),0.04)", margin: "40px 0" }} />
+    <div style={{ height: "1px", backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.04 * var(--admin-fg-boost)))", margin: "40px 0" }} />
   );
 
   return (
@@ -365,19 +365,19 @@ export function AdminProjectPage() {
         style={{
           display: "flex", alignItems: "center", gap: "7px",
           background: "none", border: "none", cursor: "pointer",
-          color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "10px", fontWeight: 500,
+          color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "10px", fontWeight: 500,
           letterSpacing: "0.2em", textTransform: "uppercase",
           fontFamily: "'Inter', sans-serif", padding: 0, marginBottom: "36px",
           transition: "color 0.2s ease",
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.color = "#fffbe0")}
-        onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.3)")}
+        onMouseEnter={(e) => (e.currentTarget.style.color = "var(--admin-fg-solid)")}
+        onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))")}
       >
         <ArrowLeft size={13} /> Back to Client
       </button>
 
       {loading && (
-        <div style={{ textAlign: "center", padding: "64px 0", color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase" }}>
+        <div style={{ textAlign: "center", padding: "64px 0", color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase" }}>
           Loading project…
         </div>
       )}
@@ -390,7 +390,7 @@ export function AdminProjectPage() {
           {/* ── Project Details ── */}
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "28px" }}>
             <div>
-              <div style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: "10px" }}>
+              <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 500, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: "10px" }}>
                 Project Management
               </div>
               <h1 style={{ color: "var(--admin-fg-solid)", fontSize: "clamp(20px, 2.5vw, 30px)", fontWeight: 800, letterSpacing: "-0.01em", margin: 0, lineHeight: 1.2 }}>
@@ -402,9 +402,9 @@ export function AdminProjectPage() {
               disabled={saving}
               style={{
                 display: "flex", alignItems: "center", gap: "7px",
-                backgroundColor: saveSuccess ? "rgba(120,190,140,0.15)" : saving ? "rgba(var(--admin-fg-rgb),0.05)" : "#fffbe0",
+                backgroundColor: saveSuccess ? "rgba(120,190,140,0.15)" : saving ? "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))" : "var(--admin-cta-bg)",
                 border: saveSuccess ? "1px solid rgba(120,190,140,0.3)" : "none",
-                color: saveSuccess ? "rgba(120,190,140,0.9)" : saving ? "rgba(var(--admin-fg-rgb),0.3)" : "var(--admin-bg-page)",
+                color: saveSuccess ? "rgba(120,190,140,0.9)" : saving ? "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))" : "var(--admin-cta-fg)",
                 fontSize: "10px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase",
                 cursor: saving ? "not-allowed" : "pointer", padding: "11px 20px",
                 fontFamily: "'Inter', sans-serif", transition: "all 0.25s ease", flexShrink: 0,
@@ -419,7 +419,7 @@ export function AdminProjectPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             <div>
               <label style={labelStyle}>Project Title</label>
-              <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} style={inputStyle} onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")} onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)")} />
+              <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} style={inputStyle} onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")} onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")} />
             </div>
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: "12px" }}>
               <div>
@@ -430,16 +430,16 @@ export function AdminProjectPage() {
               </div>
               <div>
                 <label style={labelStyle}>Phase</label>
-                <input type="text" value={form.phase} onChange={(e) => setForm({ ...form, phase: e.target.value })} style={inputStyle} onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")} onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)")} />
+                <input type="text" value={form.phase} onChange={(e) => setForm({ ...form, phase: e.target.value })} style={inputStyle} onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")} onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")} />
               </div>
               <div>
                 <label style={labelStyle}>Due Date</label>
-                <input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} style={{ ...inputStyle, colorScheme: "dark" }} onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")} onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)")} />
+                <input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} style={{ ...inputStyle, colorScheme: "dark" }} onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")} onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")} />
               </div>
             </div>
             <div>
               <label style={labelStyle}>Description</label>
-              <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={4} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.65 }} onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")} onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)")} />
+              <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={4} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.65 }} onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")} onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")} />
             </div>
           </div>
 
@@ -448,7 +448,7 @@ export function AdminProjectPage() {
           {/* ── Meeting ── */}
           <div>
             <div style={{ marginBottom: "16px" }}>
-              <span style={{ color: "rgba(var(--admin-fg-rgb),0.25)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase" }}>
+              <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase" }}>
                 Meeting
               </span>
             </div>
@@ -462,7 +462,7 @@ export function AdminProjectPage() {
                     onChange={(e) => setMeetingForm({ ...meetingForm, date: e.target.value })}
                     style={{ ...inputStyle, colorScheme: "dark" }}
                     onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")}
                   />
                 </div>
                 <div>
@@ -474,7 +474,7 @@ export function AdminProjectPage() {
                     placeholder="Studio, Online, etc."
                     style={inputStyle}
                     onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")}
                   />
                 </div>
               </div>
@@ -487,7 +487,7 @@ export function AdminProjectPage() {
                   placeholder="https://meet.google.com/..."
                   style={inputStyle}
                   onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)")}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")}
                 />
               </div>
               <div>
@@ -499,7 +499,7 @@ export function AdminProjectPage() {
                   placeholder="Agenda, preparation, etc."
                   style={{ ...inputStyle, resize: "vertical", lineHeight: 1.65 }}
                   onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)")}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")}
                 />
               </div>
               {meetingForm.date && (
@@ -507,7 +507,7 @@ export function AdminProjectPage() {
                   onClick={() => setMeetingForm({ date: "", location: "", link: "", notes: "" })}
                   style={{
                     background: "none",
-                    border: "1px solid rgba(var(--admin-fg-rgb),0.08)",
+                    border: "1px solid rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))",
                     color: "rgba(255,100,100,0.6)",
                     fontSize: "9px",
                     fontWeight: 600,
@@ -525,7 +525,7 @@ export function AdminProjectPage() {
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.color = "rgba(255,100,100,0.6)";
-                    e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)";
+                    e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))";
                   }}
                 >
                   Remove Meeting
@@ -539,7 +539,7 @@ export function AdminProjectPage() {
           {/* ── Deliverables ── */}
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-              <span style={{ color: "rgba(var(--admin-fg-rgb),0.25)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase" }}>
+              <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase" }}>
                 Deliverables ({deliverables.filter((d) => d.done).length}/{deliverables.length})
               {delSaveFlash && (
                 <span style={{ color: "rgba(120,190,140,0.8)", fontSize: "9px", letterSpacing: "0.15em", marginLeft: "10px", display: "inline-flex", alignItems: "center", gap: "4px" }}>
@@ -552,13 +552,13 @@ export function AdminProjectPage() {
                   onClick={() => setAddingDel(true)}
                   style={{
                     display: "flex", alignItems: "center", gap: "6px",
-                    background: "none", border: "1px solid rgba(var(--admin-fg-rgb),0.08)",
-                    color: "rgba(var(--admin-fg-rgb),0.4)", fontSize: "9px", fontWeight: 600,
+                    background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))",
+                    color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600,
                     letterSpacing: "0.2em", textTransform: "uppercase", cursor: "pointer",
                     padding: "7px 12px", fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.color = "#fffbe0"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.15)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.4)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = "var(--admin-fg-solid)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))"; }}
                 >
                   <Plus size={11} /> Add
                 </button>
@@ -575,7 +575,7 @@ export function AdminProjectPage() {
                     placeholder="e.g. Hero images (40)"
                     style={{ ...inputStyle, fontSize: "12px" }}
                     onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")}
                     onKeyDown={(e) => e.key === "Enter" && addDeliverable()}
                     autoFocus
                   />
@@ -586,16 +586,16 @@ export function AdminProjectPage() {
                     type="number" value={newDelCount} onChange={(e) => setNewDelCount(e.target.value)} min="1"
                     style={{ ...inputStyle, fontSize: "12px" }}
                     onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")}
                   />
                 </div>
-                <button onClick={addDeliverable} style={{ backgroundColor: "#fffbe0", border: "none", color: "var(--admin-bg-page)", fontSize: "10px", fontWeight: 700, padding: "10px 16px", cursor: "pointer", fontFamily: "'Inter', sans-serif", letterSpacing: "0.1em", marginBottom: "0" }}>Add</button>
-                <button onClick={() => { setAddingDel(false); setNewDelName(""); setNewDelCount("1"); }} style={{ backgroundColor: "transparent", border: "1px solid rgba(var(--admin-fg-rgb),0.08)", color: "rgba(var(--admin-fg-rgb),0.4)", fontSize: "10px", padding: "10px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>Cancel</button>
+                <button onClick={addDeliverable} style={{ backgroundColor: "var(--admin-cta-bg)", border: "none", color: "var(--admin-bg-page)", fontSize: "10px", fontWeight: 700, padding: "10px 16px", cursor: "pointer", fontFamily: "'Inter', sans-serif", letterSpacing: "0.1em", marginBottom: "0" }}>Add</button>
+                <button onClick={() => { setAddingDel(false); setNewDelName(""); setNewDelCount("1"); }} style={{ backgroundColor: "transparent", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))", color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "10px", padding: "10px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>Cancel</button>
               </div>
             )}
 
             {deliverables.length === 0 && !addingDel && (
-              <div style={{ textAlign: "center", padding: "28px 0", color: "rgba(var(--admin-fg-rgb),0.15)", fontSize: "12px" }}>
+              <div style={{ textAlign: "center", padding: "28px 0", color: "rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))", fontSize: "12px" }}>
                 No deliverables yet. Add the first one.
               </div>
             )}
@@ -607,8 +607,8 @@ export function AdminProjectPage() {
                   style={{
                     display: "flex", alignItems: "center", gap: "12px",
                     padding: "12px 16px",
-                    backgroundColor: d.done ? "rgba(120,190,140,0.04)" : "rgba(var(--admin-fg-rgb),0.015)",
-                    border: `1px solid ${d.done ? "rgba(120,190,140,0.1)" : "rgba(var(--admin-fg-rgb),0.04)"}`,
+                    backgroundColor: d.done ? "rgba(120,190,140,0.04)" : "rgba(var(--admin-fg-rgb),calc(0.015 * var(--admin-fg-boost)))",
+                    border: `1px solid ${d.done ? "rgba(120,190,140,0.1)" : "rgba(var(--admin-fg-rgb),calc(0.04 * var(--admin-fg-boost)))"}`,
                     transition: "all 0.2s ease",
                   }}
                 >
@@ -617,22 +617,22 @@ export function AdminProjectPage() {
                     style={{
                       width: "18px", height: "18px", flexShrink: 0,
                       backgroundColor: d.done ? "rgba(120,190,140,0.2)" : "transparent",
-                      border: `1px solid ${d.done ? "rgba(120,190,140,0.4)" : "rgba(var(--admin-fg-rgb),0.15)"}`,
+                      border: `1px solid ${d.done ? "rgba(120,190,140,0.4)" : "rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))"}`,
                       cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                       padding: 0, transition: "all 0.2s ease",
                     }}
                   >
                     {d.done && <Check size={10} color="rgba(120,190,140,0.9)" />}
                   </button>
-                  <span style={{ flex: 1, color: d.done ? "rgba(var(--admin-fg-rgb),0.35)" : "#fffbe0", fontSize: "13px", fontWeight: 400, textDecoration: d.done ? "line-through" : "none" }}>
+                  <span style={{ flex: 1, color: d.done ? "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))" : "var(--admin-fg-solid)", fontSize: "13px", fontWeight: 400, textDecoration: d.done ? "line-through" : "none" }}>
                     {d.name}
                   </span>
-                  <span style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "10px" }}>×{d.count}</span>
+                  <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "10px" }}>×{d.count}</span>
                   <button
                     onClick={() => removeDeliverable(d.id)}
-                    style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(var(--admin-fg-rgb),0.15)", padding: "2px", display: "flex", transition: "color 0.15s ease" }}
+                    style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))", padding: "2px", display: "flex", transition: "color 0.15s ease" }}
                     onMouseEnter={(e) => (e.currentTarget.style.color = "#e07060")}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.15)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))")}
                   >
                     <Trash2 size={12} />
                   </button>
@@ -647,8 +647,8 @@ export function AdminProjectPage() {
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <Images size={13} color="rgba(var(--admin-fg-rgb),0.25)" />
-                <span style={{ color: "rgba(var(--admin-fg-rgb),0.25)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase" }}>
+                <Images size={13} color="rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))" />
+                <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase" }}>
                   Photo Gallery ({galleryUrls.length})
                 </span>
               </div>
@@ -675,8 +675,8 @@ export function AdminProjectPage() {
                 <label
                   style={{
                     display: "flex", alignItems: "center", gap: "6px",
-                    border: "1px solid rgba(var(--admin-fg-rgb),0.08)",
-                    color: uploading ? "#c8905a" : "rgba(var(--admin-fg-rgb),0.4)",
+                    border: "1px solid rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))",
+                    color: uploading ? "#c8905a" : "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))",
                     fontSize: "9px", fontWeight: 600,
                     letterSpacing: "0.2em", textTransform: "uppercase",
                     cursor: uploading ? "not-allowed" : "pointer",
@@ -684,8 +684,8 @@ export function AdminProjectPage() {
                     transition: "all 0.2s ease",
                     backgroundColor: uploading ? "rgba(200,144,90,0.05)" : "transparent",
                   }}
-                  onMouseEnter={(e) => { if (!uploading) { e.currentTarget.style.color = "#fffbe0"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.15)"; } }}
-                  onMouseLeave={(e) => { if (!uploading) { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.4)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)"; } }}
+                  onMouseEnter={(e) => { if (!uploading) { e.currentTarget.style.color = "var(--admin-fg-solid)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))"; } }}
+                  onMouseLeave={(e) => { if (!uploading) { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))"; } }}
                 >
                   <Upload size={11} />
                   {uploading ? "Uploading…" : "Upload Foto's"}
@@ -695,7 +695,7 @@ export function AdminProjectPage() {
             </div>
 
             {/* Gallery identity — customized per client, shown on the dedicated gallery page */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "20px", padding: "16px", border: "1px solid rgba(var(--admin-fg-rgb),0.05)", backgroundColor: "rgba(var(--admin-fg-rgb),0.01)" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "20px", padding: "16px", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))", backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.01 * var(--admin-fg-boost)))" }}>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "12px" }}>
                 <div>
                   <label style={labelStyle}>Gallery Title</label>
@@ -706,7 +706,7 @@ export function AdminProjectPage() {
                     placeholder={form.title || "Defaults to project title"}
                     style={{ ...inputStyle, fontSize: "12px" }}
                     onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")}
                   />
                 </div>
                 <div>
@@ -718,7 +718,7 @@ export function AdminProjectPage() {
                     placeholder="e.g. Autumn Campaign 2026"
                     style={{ ...inputStyle, fontSize: "12px" }}
                     onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")}
                   />
                 </div>
               </div>
@@ -748,24 +748,24 @@ export function AdminProjectPage() {
                     value={gallerySettings.accentColor || "#c8905a"}
                     onChange={(e) => setGallerySettings({ ...gallerySettings, accentColor: e.target.value })}
                     title="Custom color"
-                    style={{ width: "26px", height: "26px", padding: 0, border: "1px solid rgba(var(--admin-fg-rgb),0.15)", backgroundColor: "transparent", cursor: "pointer" }}
+                    style={{ width: "26px", height: "26px", padding: 0, border: "1px solid rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))", backgroundColor: "transparent", cursor: "pointer" }}
                   />
-                  <span style={{ color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "11px", fontFamily: "'Courier New', monospace" }}>
+                  <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "11px", fontFamily: "'Courier New', monospace" }}>
                     {gallerySettings.accentColor || "#c8905a"}
                   </span>
                 </div>
               </div>
-              <p style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "10px", margin: 0, lineHeight: 1.6 }}>
+              <p style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "10px", margin: 0, lineHeight: 1.6 }}>
                 Saved with "Save Changes" above. Click the star on a photo below to set it as the gallery cover.
               </p>
             </div>
 
             {galleryUrls.length === 0 ? (
               <div style={{
-                border: "1px dashed rgba(var(--admin-fg-rgb),0.06)",
+                border: "1px dashed rgba(var(--admin-fg-rgb),calc(0.06 * var(--admin-fg-boost)))",
                 padding: "36px",
                 textAlign: "center",
-                color: "rgba(var(--admin-fg-rgb),0.15)",
+                color: "rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))",
                 fontSize: "12px",
               }}>
                 No photos uploaded yet. Photos added here are visible in the client portal.
@@ -787,7 +787,7 @@ export function AdminProjectPage() {
                     />
                     <div style={{
                       position: "absolute", top: "6px", left: "6px",
-                      backgroundColor: "rgba(8,4,1,0.75)", color: "rgba(var(--admin-fg-rgb),0.4)",
+                      backgroundColor: "rgba(8,4,1,0.75)", color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))",
                       fontSize: "9px", fontWeight: 600, fontFamily: "'Courier New', monospace",
                       padding: "2px 6px",
                     }}>
@@ -799,7 +799,7 @@ export function AdminProjectPage() {
                       style={{
                         position: "absolute", top: "6px", right: "34px",
                         backgroundColor: isCover ? "rgba(200,144,90,0.85)" : "rgba(8,4,1,0.75)",
-                        border: "none", color: isCover ? "var(--admin-bg-page)" : "rgba(var(--admin-fg-rgb),0.6)",
+                        border: "none", color: isCover ? "var(--admin-bg-page)" : "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))",
                         width: "24px", height: "24px", display: "flex", alignItems: "center", justifyContent: "center",
                         cursor: "pointer", padding: 0,
                       }}
@@ -811,14 +811,14 @@ export function AdminProjectPage() {
                       <button
                         onClick={() => moveGalleryImage(i, -1)}
                         disabled={i === 0}
-                        style={{ backgroundColor: "rgba(8,4,1,0.75)", border: "none", color: i === 0 ? "rgba(var(--admin-fg-rgb),0.2)" : "#fffbe0", width: "22px", height: "22px", display: "flex", alignItems: "center", justifyContent: "center", cursor: i === 0 ? "not-allowed" : "pointer", padding: 0 }}
+                        style={{ backgroundColor: "rgba(8,4,1,0.75)", border: "none", color: i === 0 ? "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))" : "#fffbe0", width: "22px", height: "22px", display: "flex", alignItems: "center", justifyContent: "center", cursor: i === 0 ? "not-allowed" : "pointer", padding: 0 }}
                       >
                         <ChevronUp size={12} />
                       </button>
                       <button
                         onClick={() => moveGalleryImage(i, 1)}
                         disabled={i === galleryUrls.length - 1}
-                        style={{ backgroundColor: "rgba(8,4,1,0.75)", border: "none", color: i === galleryUrls.length - 1 ? "rgba(var(--admin-fg-rgb),0.2)" : "#fffbe0", width: "22px", height: "22px", display: "flex", alignItems: "center", justifyContent: "center", cursor: i === galleryUrls.length - 1 ? "not-allowed" : "pointer", padding: 0 }}
+                        style={{ backgroundColor: "rgba(8,4,1,0.75)", border: "none", color: i === galleryUrls.length - 1 ? "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))" : "#fffbe0", width: "22px", height: "22px", display: "flex", alignItems: "center", justifyContent: "center", cursor: i === galleryUrls.length - 1 ? "not-allowed" : "pointer", padding: 0 }}
                       >
                         <ChevronDown size={12} />
                       </button>
@@ -841,7 +841,7 @@ export function AdminProjectPage() {
           {/* ── Messages ── */}
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
-              <span style={{ color: "rgba(var(--admin-fg-rgb),0.25)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase" }}>
+              <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase" }}>
                 Client Messages ({messages.length})
               </span>
               <button
@@ -872,7 +872,7 @@ export function AdminProjectPage() {
               padding: "4px 0",
             }}>
               {messages.length === 0 && (
-                <div style={{ textAlign: "center", padding: "32px 0", color: "rgba(var(--admin-fg-rgb),0.15)", fontSize: "12px" }}>
+                <div style={{ textAlign: "center", padding: "32px 0", color: "rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))", fontSize: "12px" }}>
                   No messages yet. Send the first one as PDC Studio.
                 </div>
               )}
@@ -891,29 +891,29 @@ export function AdminProjectPage() {
                     {/* Avatar */}
                     <div style={{
                       width: "28px", height: "28px", flexShrink: 0,
-                      backgroundColor: isPDC ? "rgba(200,144,90,0.15)" : "rgba(var(--admin-fg-rgb),0.06)",
-                      border: `1px solid ${isPDC ? "rgba(200,144,90,0.25)" : "rgba(var(--admin-fg-rgb),0.08)"}`,
+                      backgroundColor: isPDC ? "rgba(200,144,90,0.15)" : "rgba(var(--admin-fg-rgb),calc(0.06 * var(--admin-fg-boost)))",
+                      border: `1px solid ${isPDC ? "rgba(200,144,90,0.25)" : "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))"}`,
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      color: isPDC ? "#c8905a" : "rgba(var(--admin-fg-rgb),0.4)",
+                      color: isPDC ? "#c8905a" : "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))",
                       fontSize: "9px", fontWeight: 700,
                     }}>
                       {isPDC ? "P" : msg.senderName.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2)}
                     </div>
                     <div style={{ maxWidth: "70%" }}>
                       <div style={{
-                        backgroundColor: isPDC ? "rgba(200,144,90,0.08)" : "rgba(var(--admin-fg-rgb),0.04)",
-                        border: `1px solid ${isPDC ? "rgba(200,144,90,0.12)" : "rgba(var(--admin-fg-rgb),0.06)"}`,
+                        backgroundColor: isPDC ? "rgba(200,144,90,0.08)" : "rgba(var(--admin-fg-rgb),calc(0.04 * var(--admin-fg-boost)))",
+                        border: `1px solid ${isPDC ? "rgba(200,144,90,0.12)" : "rgba(var(--admin-fg-rgb),calc(0.06 * var(--admin-fg-boost)))"}`,
                         padding: "12px 16px",
                       }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-                          <span style={{ color: isPDC ? "#c8905a" : "rgba(var(--admin-fg-rgb),0.55)", fontSize: "10px", fontWeight: 600 }}>
+                          <span style={{ color: isPDC ? "#c8905a" : "rgba(var(--admin-fg-rgb),calc(0.55 * var(--admin-fg-boost)))", fontSize: "10px", fontWeight: 600 }}>
                             {isPDC ? "PDC Studio" : msg.senderName}
                           </span>
-                          <span style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px" }}>
+                          <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px" }}>
                             {formatTime(msg.createdAt)}
                           </span>
                         </div>
-                        <p style={{ color: "rgba(var(--admin-fg-rgb),0.75)", fontSize: "13px", fontWeight: 300, lineHeight: 1.6, margin: 0 }}>
+                        <p style={{ color: "rgba(var(--admin-fg-rgb),calc(0.75 * var(--admin-fg-boost)))", fontSize: "13px", fontWeight: 300, lineHeight: 1.6, margin: 0 }}>
                           {msg.content}
                         </p>
                       </div>
@@ -943,9 +943,9 @@ export function AdminProjectPage() {
                 type="submit"
                 disabled={sendingMsg || !reply.trim()}
                 style={{
-                  backgroundColor: reply.trim() ? "#c8905a" : "rgba(var(--admin-fg-rgb),0.05)",
+                  backgroundColor: reply.trim() ? "#c8905a" : "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))",
                   border: "none",
-                  color: reply.trim() ? "var(--admin-bg-page)" : "rgba(var(--admin-fg-rgb),0.2)",
+                  color: reply.trim() ? "var(--admin-bg-page)" : "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))",
                   padding: "12px 18px",
                   cursor: reply.trim() ? "pointer" : "not-allowed",
                   display: "flex", alignItems: "center", gap: "6px",
@@ -990,7 +990,7 @@ export function AdminProjectPage() {
                 border: "1px solid rgba(224,112,96,0.15)",
               }}>
                 <AlertTriangle size={14} color="rgba(224,112,96,0.6)" />
-                <span style={{ flex: 1, color: "rgba(var(--admin-fg-rgb),0.5)", fontSize: "12px" }}>
+                <span style={{ flex: 1, color: "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))", fontSize: "12px" }}>
                   This will permanently delete the project and all messages. Are you sure?
                 </span>
                 <button
@@ -1007,7 +1007,7 @@ export function AdminProjectPage() {
                 <button
                   onClick={() => setShowDelete(false)}
                   style={{
-                    background: "none", border: "1px solid rgba(var(--admin-fg-rgb),0.1)", color: "rgba(var(--admin-fg-rgb),0.4)",
+                    background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))", color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))",
                     fontSize: "10px", padding: "9px 14px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
                   }}
                 >
@@ -1031,11 +1031,11 @@ export function AdminProjectPage() {
                 <Bell size={15} color="#c8905a" />
                 <span style={{ color: "#c8905a", fontSize: "10px", fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase" }}>Notify Client</span>
               </div>
-              <button onClick={() => setShowNotify(false)} style={{ background: "none", border: "none", color: "rgba(var(--admin-fg-rgb),0.3)", cursor: "pointer", padding: "2px" }}>
+              <button onClick={() => setShowNotify(false)} style={{ background: "none", border: "none", color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", cursor: "pointer", padding: "2px" }}>
                 <X size={15} />
               </button>
             </div>
-            <p style={{ color: "rgba(var(--admin-fg-rgb),0.4)", fontSize: "12px", margin: "0 0 16px", lineHeight: 1.6 }}>
+            <p style={{ color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "12px", margin: "0 0 16px", lineHeight: 1.6 }}>
               Send a message to the client. It will appear in their portal chat.
             </p>
             <div style={{ display: "flex", gap: "8px", marginBottom: "12px", flexWrap: "wrap" }}>
@@ -1044,14 +1044,14 @@ export function AdminProjectPage() {
                   key={t}
                   onClick={() => setNotifyMsg(t)}
                   style={{
-                    background: "none", border: "1px solid rgba(var(--admin-fg-rgb),0.1)",
-                    color: "rgba(var(--admin-fg-rgb),0.35)", fontSize: "9px", fontWeight: 500,
+                    background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
+                    color: "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 500,
                     letterSpacing: "0.05em", cursor: "pointer", padding: "5px 9px",
                     fontFamily: "'Inter', sans-serif", transition: "all 0.15s ease",
                     textAlign: "left",
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.color = "#fffbe0"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.2)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.35)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.1)"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = "var(--admin-fg-solid)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))"; }}
                 >
                   {t}
                 </button>
@@ -1066,13 +1066,13 @@ export function AdminProjectPage() {
                 autoFocus
                 style={{ ...inputStyle, resize: "vertical", lineHeight: 1.65 }}
                 onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)")}
+                onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")}
               />
               <div style={{ display: "flex", gap: "10px" }}>
-                <button type="button" onClick={() => setShowNotify(false)} style={{ flex: 1, padding: "11px", background: "none", border: "1px solid rgba(var(--admin-fg-rgb),0.1)", color: "rgba(var(--admin-fg-rgb),0.4)", fontSize: "10px", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>
+                <button type="button" onClick={() => setShowNotify(false)} style={{ flex: 1, padding: "11px", background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))", color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "10px", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>
                   Cancel
                 </button>
-                <button type="submit" disabled={notifying || !notifyMsg.trim()} style={{ flex: 1, padding: "11px", backgroundColor: notifyMsg.trim() ? "#c8905a" : "rgba(var(--admin-fg-rgb),0.05)", border: "none", color: notifyMsg.trim() ? "var(--admin-bg-page)" : "rgba(var(--admin-fg-rgb),0.2)", fontSize: "10px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", cursor: notifyMsg.trim() ? "pointer" : "not-allowed", fontFamily: "'Inter', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                <button type="submit" disabled={notifying || !notifyMsg.trim()} style={{ flex: 1, padding: "11px", backgroundColor: notifyMsg.trim() ? "#c8905a" : "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))", border: "none", color: notifyMsg.trim() ? "var(--admin-bg-page)" : "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "10px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", cursor: notifyMsg.trim() ? "pointer" : "not-allowed", fontFamily: "'Inter', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
                   <Send size={11} />
                   {notifying ? "Sending…" : "Send Message"}
                 </button>

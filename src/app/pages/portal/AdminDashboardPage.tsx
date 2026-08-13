@@ -72,7 +72,7 @@ export function AdminDashboardPage() {
     <div style={{ padding: isMobile ? "28px 16px 60px" : "48px 40px 80px", maxWidth: "1000px" }}>
       {/* Header */}
       <div style={{ marginBottom: "48px" }}>
-        <div style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: "12px" }}>
+        <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 500, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: "12px" }}>
           Photo De Caffeine — Admin
         </div>
         <h1 style={{ color: "var(--admin-fg-solid)", fontSize: "clamp(28px, 3.5vw, 44px)", fontWeight: 800, letterSpacing: "-0.02em", margin: 0, lineHeight: 1.1 }}>
@@ -89,14 +89,14 @@ export function AdminDashboardPage() {
             onClick={action}
             style={{
               display: "flex", alignItems: "center", gap: "6px",
-              background: "none", border: "1px solid rgba(var(--admin-fg-rgb),0.1)",
-              color: "rgba(var(--admin-fg-rgb),0.5)", fontSize: "9px", fontWeight: 700,
+              background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
+              color: "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 700,
               letterSpacing: "0.2em", textTransform: "uppercase",
               cursor: "pointer", padding: "8px 14px",
               fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = "#fffbe0"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.25)"; e.currentTarget.style.backgroundColor = "rgba(var(--admin-fg-rgb),0.04)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.5)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.1)"; e.currentTarget.style.backgroundColor = "transparent"; }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = "var(--admin-fg-solid)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))"; e.currentTarget.style.backgroundColor = "rgba(var(--admin-fg-rgb),calc(0.04 * var(--admin-fg-boost)))"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))"; e.currentTarget.style.backgroundColor = "transparent"; }}
           >
             <Icon size={11} />
             {label}
@@ -118,8 +118,8 @@ export function AdminDashboardPage() {
               key={label}
               onClick={route ? () => navigate(route) : undefined}
               style={{
-                backgroundColor: "rgba(var(--admin-fg-rgb),0.02)",
-                border: "1px solid rgba(var(--admin-fg-rgb),0.05)",
+                backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.02 * var(--admin-fg-boost)))",
+                border: "1px solid rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))",
                 padding: "28px 24px",
                 display: "flex",
                 flexDirection: "column",
@@ -130,11 +130,11 @@ export function AdminDashboardPage() {
                 transition: route ? "all 0.2s ease" : undefined,
                 width: "100%",
               }}
-              onMouseEnter={route ? (e: React.MouseEvent<HTMLElement>) => { e.currentTarget.style.backgroundColor = "rgba(var(--admin-fg-rgb),0.04)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.1)"; } : undefined}
-              onMouseLeave={route ? (e: React.MouseEvent<HTMLElement>) => { e.currentTarget.style.backgroundColor = "rgba(var(--admin-fg-rgb),0.02)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.05)"; } : undefined}
+              onMouseEnter={route ? (e: React.MouseEvent<HTMLElement>) => { e.currentTarget.style.backgroundColor = "rgba(var(--admin-fg-rgb),calc(0.04 * var(--admin-fg-boost)))"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))"; } : undefined}
+              onMouseLeave={route ? (e: React.MouseEvent<HTMLElement>) => { e.currentTarget.style.backgroundColor = "rgba(var(--admin-fg-rgb),calc(0.02 * var(--admin-fg-boost)))"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))"; } : undefined}
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span style={{ color: "rgba(var(--admin-fg-rgb),0.25)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.25em", textTransform: "uppercase" }}>
+                <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 500, letterSpacing: "0.25em", textTransform: "uppercase" }}>
                   {label}
                 </span>
                 <Icon size={14} color={color} />
@@ -143,7 +143,7 @@ export function AdminDashboardPage() {
                 {loading ? "—" : value}
               </div>
               {route && !loading && (
-                <div style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px", letterSpacing: "0.15em", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "4px" }}>
+                <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", letterSpacing: "0.15em", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "4px" }}>
                   View all <ArrowRight size={9} />
                 </div>
               )}
@@ -166,10 +166,10 @@ export function AdminDashboardPage() {
 
       {/* Recent clients */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-        <span style={{ color: "rgba(var(--admin-fg-rgb),0.25)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase" }}>
+        <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase" }}>
           Recent Clients
           {!loading && clients.length > 0 && (
-            <span style={{ color: "rgba(var(--admin-fg-rgb),0.15)", marginLeft: "8px" }}>
+            <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))", marginLeft: "8px" }}>
               {recentClients.length} of {clients.length}
             </span>
           )}
@@ -178,27 +178,27 @@ export function AdminDashboardPage() {
           onClick={() => navigate("/admin/clients")}
           style={{
             background: "none", border: "none", cursor: "pointer",
-            color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "9px", fontWeight: 600,
+            color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600,
             letterSpacing: "0.2em", textTransform: "uppercase",
             fontFamily: "'Inter', sans-serif",
             display: "flex", alignItems: "center", gap: "5px",
             transition: "color 0.2s ease",
           }}
           onMouseEnter={(e) => (e.currentTarget.style.color = "#c8905a")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.3)")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))")}
         >
           View All <ArrowRight size={10} />
         </button>
       </div>
 
       {loading && (
-        <div style={{ textAlign: "center", padding: "48px 0", color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase" }}>
+        <div style={{ textAlign: "center", padding: "48px 0", color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase" }}>
           Loading…
         </div>
       )}
 
       {!loading && clients.length === 0 && !error && (
-        <div style={{ textAlign: "center", padding: "48px 0", color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "13px" }}>
+        <div style={{ textAlign: "center", padding: "48px 0", color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "13px" }}>
           No clients yet. They will appear here after signing up via the Client Portal.
         </div>
       )}
@@ -216,27 +216,27 @@ export function AdminDashboardPage() {
                   alignItems: "center",
                   gap: isMobile ? "12px" : "20px",
                   padding: isMobile ? "14px 16px" : "18px 24px",
-                  backgroundColor: isRecent ? "rgba(200,144,90,0.08)" : "rgba(var(--admin-fg-rgb),0.015)",
-                  border: `1px solid ${isRecent ? "rgba(200,144,90,0.2)" : "rgba(var(--admin-fg-rgb),0.05)"}`,
+                  backgroundColor: isRecent ? "rgba(200,144,90,0.08)" : "rgba(var(--admin-fg-rgb),calc(0.015 * var(--admin-fg-boost)))",
+                  border: `1px solid ${isRecent ? "rgba(200,144,90,0.2)" : "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))"}`,
                   cursor: "pointer", textAlign: "left",
                   fontFamily: "'Inter', sans-serif",
                   transition: "all 0.2s ease", width: "100%",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = isRecent ? "rgba(200,144,90,0.12)" : "rgba(var(--admin-fg-rgb),0.03)";
-                  e.currentTarget.style.borderColor = isRecent ? "rgba(200,144,90,0.3)" : "rgba(var(--admin-fg-rgb),0.1)";
+                  e.currentTarget.style.backgroundColor = isRecent ? "rgba(200,144,90,0.12)" : "rgba(var(--admin-fg-rgb),calc(0.03 * var(--admin-fg-boost)))";
+                  e.currentTarget.style.borderColor = isRecent ? "rgba(200,144,90,0.3)" : "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = isRecent ? "rgba(200,144,90,0.08)" : "rgba(var(--admin-fg-rgb),0.015)";
-                  e.currentTarget.style.borderColor = isRecent ? "rgba(200,144,90,0.2)" : "rgba(var(--admin-fg-rgb),0.05)";
+                  e.currentTarget.style.backgroundColor = isRecent ? "rgba(200,144,90,0.08)" : "rgba(var(--admin-fg-rgb),calc(0.015 * var(--admin-fg-boost)))";
+                  e.currentTarget.style.borderColor = isRecent ? "rgba(200,144,90,0.2)" : "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))";
                 }}
               >
                 <div style={{
                   width: "34px", height: "34px", flexShrink: 0,
-                  backgroundColor: isRecent ? "rgba(200,144,90,0.15)" : "rgba(var(--admin-fg-rgb),0.05)",
-                  border: `1px solid ${isRecent ? "rgba(200,144,90,0.25)" : "rgba(var(--admin-fg-rgb),0.07)"}`,
+                  backgroundColor: isRecent ? "rgba(200,144,90,0.15)" : "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))",
+                  border: `1px solid ${isRecent ? "rgba(200,144,90,0.25)" : "rgba(var(--admin-fg-rgb),calc(0.07 * var(--admin-fg-boost)))"}`,
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  color: isRecent ? "#c8905a" : "rgba(var(--admin-fg-rgb),0.4)", fontSize: "11px", fontWeight: 600,
+                  color: isRecent ? "#c8905a" : "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "11px", fontWeight: 600,
                 }}>
                   {client.name.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2)}
                 </div>
@@ -253,21 +253,21 @@ export function AdminDashboardPage() {
                       </span>
                     )}
                   </div>
-                  <div style={{ color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "11px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "11px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {isMobile ? client.email : (client.company || client.email)}
                   </div>
                 </div>
                 {!isMobile && (
-                  <div style={{ color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "11px", flexShrink: 0 }}>
+                  <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "11px", flexShrink: 0 }}>
                     {client.projectCount} project{client.projectCount !== 1 ? "s" : ""}
                   </div>
                 )}
                 {!isMobile && (
-                  <div style={{ color: "rgba(var(--admin-fg-rgb),0.25)", fontSize: "11px", flexShrink: 0 }}>
+                  <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "11px", flexShrink: 0 }}>
                     {timeAgo(client.lastSignIn)}
                   </div>
                 )}
-                <ArrowRight size={13} color="rgba(var(--admin-fg-rgb),0.2)" style={{ flexShrink: 0 }} />
+                <ArrowRight size={13} color="rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))" style={{ flexShrink: 0 }} />
               </button>
             );
           })}

@@ -346,7 +346,7 @@ export function AdminRemindersPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: isMobile ? "24px 16px" : "40px", color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "13px" }}>
+      <div style={{ padding: isMobile ? "24px 16px" : "40px", color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "13px" }}>
         Actiepunten laden…
       </div>
     );
@@ -356,7 +356,7 @@ export function AdminRemindersPage() {
     <div style={{ padding: isMobile ? "24px 16px 60px" : "40px", fontFamily: "'Inter', sans-serif", maxWidth: "800px" }}>
       {/* Header */}
       <div style={{ marginBottom: "32px" }}>
-        <div style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: "10px" }}>
+        <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 500, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: "10px" }}>
           Studio Intelligence
         </div>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "16px", flexWrap: "wrap" }}>
@@ -364,7 +364,7 @@ export function AdminRemindersPage() {
             <h1 style={{ color: "var(--admin-fg-solid)", fontSize: "clamp(22px, 3vw, 36px)", fontWeight: 800, letterSpacing: "-0.02em", margin: "0 0 8px 0", lineHeight: 1.1 }}>
               Actiepunten
             </h1>
-            <div style={{ color: "rgba(var(--admin-fg-rgb),0.35)", fontSize: "13px" }}>
+            <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))", fontSize: "13px" }}>
               {urgentCount > 0
                 ? <span style={{ color: "#e07060" }}>{urgentCount} urgent{urgentCount === 1 ? "" : "e"} item{urgentCount === 1 ? "" : "s"}</span>
                 : <span style={{ color: "#5a9a6a" }}>Alles op orde</span>
@@ -374,9 +374,9 @@ export function AdminRemindersPage() {
           </div>
           <button
             onClick={load}
-            style={{ display: "flex", alignItems: "center", gap: "6px", background: "none", border: "1px solid rgba(var(--admin-fg-rgb),0.1)", color: "rgba(var(--admin-fg-rgb),0.4)", padding: "8px 14px", fontSize: "10px", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase", cursor: "pointer", fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease" }}
-            onMouseEnter={e => { e.currentTarget.style.color = "#fffbe0"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.25)"; }}
-            onMouseLeave={e => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.4)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.1)"; }}
+            style={{ display: "flex", alignItems: "center", gap: "6px", background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))", color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", padding: "8px 14px", fontSize: "10px", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase", cursor: "pointer", fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease" }}
+            onMouseEnter={e => { e.currentTarget.style.color = "var(--admin-fg-solid)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))"; }}
           >
             <RefreshCw size={12} />
             Vernieuwen
@@ -393,7 +393,7 @@ export function AdminRemindersPage() {
 
       {/* All groups */}
       {grouped.length === 0 && (
-        <div style={{ textAlign: "center", padding: "80px 20px", color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "13px" }}>
+        <div style={{ textAlign: "center", padding: "80px 20px", color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "13px" }}>
           <CheckCircle size={32} style={{ margin: "0 auto 16px", display: "block", color: "#5a9a6a" }} />
           Geen actiepunten — alles ziet er goed uit.
         </div>
@@ -409,7 +409,7 @@ export function AdminRemindersPage() {
               <span style={{ color: cfg.color, fontSize: "9px", fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase" }}>
                 {cfg.label}
               </span>
-              <span style={{ color: "rgba(var(--admin-fg-rgb),0.15)", fontSize: "11px" }}>
+              <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))", fontSize: "11px" }}>
                 {groupItems.length} item{groupItems.length === 1 ? "" : "s"}
               </span>
             </div>
@@ -435,7 +435,7 @@ export function AdminRemindersPage() {
                     <div style={{ color: "var(--admin-fg-solid)", fontSize: "14px", fontWeight: 600, marginBottom: "4px" }}>
                       {item.title}
                     </div>
-                    <div style={{ color: "rgba(var(--admin-fg-rgb),0.45)", fontSize: "12px", lineHeight: 1.6 }}>
+                    <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.45 * var(--admin-fg-boost)))", fontSize: "12px", lineHeight: 1.6 }}>
                       {item.description}
                     </div>
                   </div>

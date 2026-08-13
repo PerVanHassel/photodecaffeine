@@ -83,8 +83,21 @@
    classes), so these are referenced as var(--admin-*) inside those inline
    style values rather than through the @theme/utility system above. The
    *-rgb tokens hold bare "r, g, b" triplets so call sites can do
-   rgba(var(--admin-fg-rgb), 0.3) and keep their existing opacity scale —
-   only the base color swaps between themes, the opacity hierarchy doesn't. */
+   rgba(var(--admin-fg-rgb), calc(0.3 * var(--admin-fg-boost))).
+
+   --admin-fg-boost exists because low-alpha text reads very differently
+   depending on which direction you're blending: rgba(cream, 0.35) over a
+   near-black page still pops (little brightness to dilute into), but
+   rgba(near-black, 0.35) over a near-white page nets out as pale gray —
+   alpha blending isn't symmetric across a light/dark flip. Boosting the
+   alpha in light mode (values >1 clamp to fully opaque, which is fine)
+   restores comparable contrast instead of just mirroring the raw numbers.
+
+   --admin-cta-bg/fg exist because a handful of primary buttons hardcode a
+   bright chip (cream bg + dark text) that's meant to pop against the dark
+   page — swapping to a dark chip + light text in light mode keeps that same
+   "opposite of the page" contrast instead of the button vanishing into a
+   now-equally-light page. */
 [data-admin-theme="dark"] {
   --admin-bg-page: #080401;
   --admin-bg-card: #0d0703;
@@ -93,16 +106,22 @@
   --admin-bg-header: #060301;
   --admin-fg-rgb: 255, 251, 224;
   --admin-fg-solid: #fffbe0;
+  --admin-fg-boost: 1;
+  --admin-cta-bg: #fffbe0;
+  --admin-cta-fg: #1a0c04;
 }
 
 [data-admin-theme="light"] {
-  --admin-bg-page: #f7f1e3;
-  --admin-bg-card: #fffaf0;
-  --admin-bg-card-rgb: 255, 250, 240;
-  --admin-bg-sidebar: #f0e8d5;
-  --admin-bg-header: #ebe0c8;
+  --admin-bg-page: #ece3cd;
+  --admin-bg-card: #fffdf8;
+  --admin-bg-card-rgb: 255, 253, 248;
+  --admin-bg-sidebar: #e2d6b8;
+  --admin-bg-header: #d8c9a3;
   --admin-fg-rgb: 26, 12, 4;
   --admin-fg-solid: #1a0c04;
+  --admin-fg-boost: 2.1;
+  --admin-cta-bg: #1a0c04;
+  --admin-cta-fg: #fffbe0;
 }
 
 /* Global focus-visible styles — ensures keyboard users always get a visible indicator */

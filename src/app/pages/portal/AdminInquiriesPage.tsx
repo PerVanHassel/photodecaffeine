@@ -143,9 +143,9 @@ export function AdminInquiriesPage() {
   const hasActiveFilter = filterPackage !== "all" || filterStatus !== "all" || filterPeriod !== "all";
 
   const selectStyle: React.CSSProperties = {
-    backgroundColor: "rgba(var(--admin-fg-rgb),0.04)",
-    border: "1px solid rgba(var(--admin-fg-rgb),0.1)",
-    color: "rgba(var(--admin-fg-rgb),0.6)",
+    backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.04 * var(--admin-fg-boost)))",
+    border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
+    color: "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))",
     fontSize: "10px",
     fontFamily: "'Inter', sans-serif",
     fontWeight: 500,
@@ -165,7 +165,7 @@ export function AdminInquiriesPage() {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "24px", flexWrap: "wrap", gap: "12px" }}>
         <div>
-          <div style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: "10px" }}>
+          <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 500, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: "10px" }}>
             Homepage Contact Form
           </div>
           <h1 style={{ color: "var(--admin-fg-solid)", fontSize: "clamp(22px, 3vw, 38px)", fontWeight: 800, letterSpacing: "-0.02em", margin: 0, lineHeight: 1.1 }}>
@@ -173,7 +173,7 @@ export function AdminInquiriesPage() {
           </h1>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "11px" }}>
+          <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "11px" }}>
             {filtered.length}{filtered.length !== inquiries.length ? ` of ${inquiries.length}` : ""} message{inquiries.length !== 1 ? "s" : ""}
           </span>
           <button
@@ -181,8 +181,8 @@ export function AdminInquiriesPage() {
             style={{
               display: "flex", alignItems: "center", gap: "5px",
               background: "none",
-              border: `1px solid ${hasActiveFilter ? "rgba(200,144,90,0.4)" : "rgba(var(--admin-fg-rgb),0.1)"}`,
-              color: hasActiveFilter ? "#c8905a" : "rgba(var(--admin-fg-rgb),0.35)",
+              border: `1px solid ${hasActiveFilter ? "rgba(200,144,90,0.4)" : "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))"}`,
+              color: hasActiveFilter ? "#c8905a" : "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))",
               fontSize: "9px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase",
               cursor: "pointer", padding: "7px 11px",
               fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
@@ -199,11 +199,11 @@ export function AdminInquiriesPage() {
         <div style={{
           display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center",
           padding: "14px 16px",
-          backgroundColor: "rgba(var(--admin-fg-rgb),0.02)",
-          border: "1px solid rgba(var(--admin-fg-rgb),0.07)",
+          backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.02 * var(--admin-fg-boost)))",
+          border: "1px solid rgba(var(--admin-fg-rgb),calc(0.07 * var(--admin-fg-boost)))",
           marginBottom: "20px",
         }}>
-          <span style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginRight: "4px" }}>
+          <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginRight: "4px" }}>
             Filter:
           </span>
           <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)} style={selectStyle}>
@@ -227,7 +227,7 @@ export function AdminInquiriesPage() {
               onClick={() => { setFilterPackage("all"); setFilterStatus("all"); setFilterPeriod("all"); }}
               style={{
                 background: "none", border: "none",
-                color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "9px", fontWeight: 600,
+                color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600,
                 letterSpacing: "0.15em", textTransform: "uppercase",
                 cursor: "pointer", padding: "4px 8px",
                 fontFamily: "'Inter', sans-serif",
@@ -246,12 +246,12 @@ export function AdminInquiriesPage() {
         </div>
       )}
       {loading && (
-        <div style={{ textAlign: "center", padding: "64px 0", color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase" }}>
+        <div style={{ textAlign: "center", padding: "64px 0", color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase" }}>
           Loading…
         </div>
       )}
       {!loading && filtered.length === 0 && !error && (
-        <div style={{ textAlign: "center", padding: "64px 0", border: "1px solid rgba(var(--admin-fg-rgb),0.04)", color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "13px" }}>
+        <div style={{ textAlign: "center", padding: "64px 0", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.04 * var(--admin-fg-boost)))", color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "13px" }}>
           {hasActiveFilter ? "No inquiries match your filters." : "No inquiries yet. They'll appear here when someone submits the contact form."}
         </div>
       )}
@@ -269,8 +269,8 @@ export function AdminInquiriesPage() {
               <div
                 key={inq.id}
                 style={{
-                  border: `1px solid ${isOpen ? "rgba(200,144,90,0.2)" : isHandled ? "rgba(var(--admin-fg-rgb),0.04)" : "rgba(var(--admin-fg-rgb),0.08)"}`,
-                  backgroundColor: isOpen ? "rgba(200,144,90,0.03)" : isHandled ? "rgba(var(--admin-fg-rgb),0.008)" : "rgba(var(--admin-fg-rgb),0.015)",
+                  border: `1px solid ${isOpen ? "rgba(200,144,90,0.2)" : isHandled ? "rgba(var(--admin-fg-rgb),calc(0.04 * var(--admin-fg-boost)))" : "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))"}`,
+                  backgroundColor: isOpen ? "rgba(200,144,90,0.03)" : isHandled ? "rgba(var(--admin-fg-rgb),calc(0.008 * var(--admin-fg-boost)))" : "rgba(var(--admin-fg-rgb),calc(0.015 * var(--admin-fg-boost)))",
                   transition: "all 0.2s ease",
                   opacity: isDeleting ? 0.4 : 1,
                   position: "relative",
@@ -305,10 +305,10 @@ export function AdminInquiriesPage() {
                     {/* Avatar */}
                     <div style={{
                       width: "34px", height: "34px", flexShrink: 0,
-                      backgroundColor: isHandled ? "rgba(var(--admin-fg-rgb),0.04)" : "rgba(200,144,90,0.1)",
-                      border: `1px solid ${isHandled ? "rgba(var(--admin-fg-rgb),0.07)" : "rgba(200,144,90,0.15)"}`,
+                      backgroundColor: isHandled ? "rgba(var(--admin-fg-rgb),calc(0.04 * var(--admin-fg-boost)))" : "rgba(200,144,90,0.1)",
+                      border: `1px solid ${isHandled ? "rgba(var(--admin-fg-rgb),calc(0.07 * var(--admin-fg-boost)))" : "rgba(200,144,90,0.15)"}`,
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      color: isHandled ? "rgba(var(--admin-fg-rgb),0.3)" : "#c8905a",
+                      color: isHandled ? "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))" : "#c8905a",
                       fontSize: "11px", fontWeight: 600,
                     }}>
                       {inq.name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)}
@@ -317,15 +317,15 @@ export function AdminInquiriesPage() {
                     {/* Name + email */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{
-                        color: isHandled ? "rgba(var(--admin-fg-rgb),0.4)" : "#fffbe0",
+                        color: isHandled ? "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))" : "var(--admin-fg-solid)",
                         fontSize: isMobile ? "13px" : "14px", fontWeight: 500,
                         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                         textDecoration: isHandled ? "line-through" : "none",
-                        textDecorationColor: "rgba(var(--admin-fg-rgb),0.2)",
+                        textDecorationColor: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))",
                       }}>
                         {inq.name}
                       </div>
-                      <div style={{ color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "11px", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "11px", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {inq.email}
                       </div>
                     </div>
@@ -348,7 +348,7 @@ export function AdminInquiriesPage() {
 
                     {/* Time — hide on mobile */}
                     {!isMobile && (
-                      <div style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "11px", flexShrink: 0, display: "flex", alignItems: "center", gap: "5px" }}>
+                      <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "11px", flexShrink: 0, display: "flex", alignItems: "center", gap: "5px" }}>
                         <Clock size={10} />
                         {timeAgo(inq.createdAt)}
                       </div>
@@ -356,7 +356,7 @@ export function AdminInquiriesPage() {
 
                     {/* Chevron */}
                     <div style={{
-                      color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "14px", flexShrink: 0,
+                      color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "14px", flexShrink: 0,
                       transition: "transform 0.2s ease",
                       transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
                     }}>
@@ -373,7 +373,7 @@ export function AdminInquiriesPage() {
                       display: "flex", alignItems: "center", gap: "4px", flexShrink: 0,
                       background: "none",
                       border: isConfirmingDelete ? "1px solid rgba(224,112,96,0.4)" : "1px solid transparent",
-                      color: isConfirmingDelete ? "#e07060" : "rgba(var(--admin-fg-rgb),0.15)",
+                      color: isConfirmingDelete ? "#e07060" : "rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))",
                       fontSize: "9px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase",
                       cursor: isDeleting ? "not-allowed" : "pointer",
                       padding: isMobile ? "6px 8px" : "6px 10px",
@@ -382,7 +382,7 @@ export function AdminInquiriesPage() {
                       marginRight: "8px",
                     }}
                     onMouseEnter={(e) => { if (!isDeleting) { e.currentTarget.style.color = "#e07060"; e.currentTarget.style.borderColor = "rgba(224,112,96,0.3)"; } }}
-                    onMouseLeave={(e) => { if (!isConfirmingDelete) { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.15)"; e.currentTarget.style.borderColor = "transparent"; } }}
+                    onMouseLeave={(e) => { if (!isConfirmingDelete) { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))"; e.currentTarget.style.borderColor = "transparent"; } }}
                   >
                     <Trash2 size={11} />
                     {!isMobile && (isConfirmingDelete ? "Confirm?" : "")}
@@ -393,7 +393,7 @@ export function AdminInquiriesPage() {
                 {isOpen && (
                   <div style={{
                     padding: isMobile ? "0 14px 20px 18px" : "0 24px 24px 28px",
-                    borderTop: "1px solid rgba(var(--admin-fg-rgb),0.04)",
+                    borderTop: "1px solid rgba(var(--admin-fg-rgb),calc(0.04 * var(--admin-fg-boost)))",
                     display: "flex", flexDirection: "column", gap: "20px",
                     paddingTop: "20px",
                   }}>
@@ -404,8 +404,8 @@ export function AdminInquiriesPage() {
                         style={{
                           display: "flex", alignItems: "center", gap: "6px",
                           background: "none",
-                          border: `1px solid ${isHandled ? "rgba(120,190,140,0.4)" : "rgba(var(--admin-fg-rgb),0.15)"}`,
-                          color: isHandled ? "rgba(120,190,140,0.9)" : "rgba(var(--admin-fg-rgb),0.4)",
+                          border: `1px solid ${isHandled ? "rgba(120,190,140,0.4)" : "rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))"}`,
+                          color: isHandled ? "rgba(120,190,140,0.9)" : "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))",
                           fontSize: "9px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase",
                           cursor: "pointer", padding: "6px 12px",
                           fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
@@ -423,30 +423,30 @@ export function AdminInquiriesPage() {
                       gap: "16px",
                     }}>
                       <div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "5px", color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "6px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "5px", color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "6px" }}>
                           <Mail size={9} /> Email
                         </div>
-                        <div style={{ color: "rgba(var(--admin-fg-rgb),0.7)", fontSize: "12px" }}>{inq.email}</div>
+                        <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.7 * var(--admin-fg-boost)))", fontSize: "12px" }}>{inq.email}</div>
                       </div>
                       {inq.phone && (
                         <div>
-                          <div style={{ display: "flex", alignItems: "center", gap: "5px", color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "6px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "5px", color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "6px" }}>
                             <Phone size={9} /> Phone
                           </div>
-                          <div style={{ color: "rgba(var(--admin-fg-rgb),0.7)", fontSize: "12px" }}>{inq.phone}</div>
+                          <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.7 * var(--admin-fg-boost)))", fontSize: "12px" }}>{inq.phone}</div>
                         </div>
                       )}
                       {inq.brand && (
                         <div>
-                          <div style={{ display: "flex", alignItems: "center", gap: "5px", color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "6px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "5px", color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "6px" }}>
                             <Building2 size={9} /> Brand
                           </div>
-                          <div style={{ color: "rgba(var(--admin-fg-rgb),0.7)", fontSize: "12px" }}>{inq.brand}</div>
+                          <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.7 * var(--admin-fg-boost)))", fontSize: "12px" }}>{inq.brand}</div>
                         </div>
                       )}
                       {inq.package && (
                         <div>
-                          <div style={{ display: "flex", alignItems: "center", gap: "5px", color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "6px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "5px", color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "6px" }}>
                             <Package size={9} /> Package
                           </div>
                           <div style={{ color: "#c8905a", fontSize: "12px" }}>{PACKAGE_LABELS[inq.package] || inq.package}</div>
@@ -456,11 +456,11 @@ export function AdminInquiriesPage() {
 
                     {/* Message */}
                     <div>
-                      <div style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "10px" }}>
+                      <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "10px" }}>
                         Message
                       </div>
                       <div style={{
-                        color: "rgba(var(--admin-fg-rgb),0.65)", fontSize: "13px", fontWeight: 300,
+                        color: "rgba(var(--admin-fg-rgb),calc(0.65 * var(--admin-fg-boost)))", fontSize: "13px", fontWeight: 300,
                         lineHeight: 1.8, whiteSpace: "pre-wrap",
                         borderLeft: "2px solid rgba(200,144,90,0.2)", paddingLeft: "16px",
                       }}>
@@ -470,7 +470,7 @@ export function AdminInquiriesPage() {
 
                     {/* Actions */}
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
-                      <div style={{ color: "rgba(var(--admin-fg-rgb),0.15)", fontSize: "10px" }}>
+                      <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))", fontSize: "10px" }}>
                         Received {formatDate(inq.createdAt)}
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
@@ -480,16 +480,16 @@ export function AdminInquiriesPage() {
                           style={{
                             display: "inline-flex", alignItems: "center", gap: "6px",
                             background: "none",
-                            border: "1px solid rgba(var(--admin-fg-rgb),0.12)",
-                            color: isCopied ? "rgba(120,190,140,0.9)" : "rgba(var(--admin-fg-rgb),0.4)",
+                            border: "1px solid rgba(var(--admin-fg-rgb),calc(0.12 * var(--admin-fg-boost)))",
+                            color: isCopied ? "rgba(120,190,140,0.9)" : "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))",
                             padding: "8px 14px",
                             fontSize: "9px", fontWeight: 700,
                             letterSpacing: "0.18em", textTransform: "uppercase",
                             cursor: "pointer",
                             fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
                           }}
-                          onMouseEnter={(e) => { if (!isCopied) { e.currentTarget.style.color = "#fffbe0"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.25)"; } }}
-                          onMouseLeave={(e) => { if (!isCopied) { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.4)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.12)"; } }}
+                          onMouseEnter={(e) => { if (!isCopied) { e.currentTarget.style.color = "var(--admin-fg-solid)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))"; } }}
+                          onMouseLeave={(e) => { if (!isCopied) { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.12 * var(--admin-fg-boost)))"; } }}
                         >
                           {isCopied ? <Check size={10} /> : <Copy size={10} />}
                           {isCopied ? "Copied!" : "Copy Email"}
@@ -520,7 +520,7 @@ export function AdminInquiriesPage() {
                           href={`mailto:${inq.email}?subject=Re: Your PDC Inquiry`}
                           style={{
                             display: "inline-flex", alignItems: "center", gap: "6px",
-                            backgroundColor: "#fffbe0", color: "#1a0c04",
+                            backgroundColor: "var(--admin-cta-bg)", color: "var(--admin-cta-fg)",
                             padding: "9px 20px",
                             fontSize: "9px", fontWeight: 800,
                             letterSpacing: "0.2em", textTransform: "uppercase",
@@ -528,7 +528,7 @@ export function AdminInquiriesPage() {
                             fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
                           }}
                           onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "#c8905a"; (e.currentTarget as HTMLElement).style.color = "#fffbe0"; }}
-                          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "#fffbe0"; (e.currentTarget as HTMLElement).style.color = "#1a0c04"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--admin-cta-bg)"; (e.currentTarget as HTMLElement).style.color = "var(--admin-cta-fg)"; }}
                         >
                           <Mail size={10} /> Reply
                         </a>

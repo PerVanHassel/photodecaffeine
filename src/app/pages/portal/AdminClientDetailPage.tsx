@@ -34,9 +34,9 @@ interface ClientInfo {
 
 const STATUS_CONFIG = {
   in_review: { label: "In Review", color: "#c8905a", bg: "rgba(200,144,90,0.08)", icon: Clock },
-  in_progress: { label: "In Progress", color: "rgba(var(--admin-fg-rgb),0.7)", bg: "rgba(var(--admin-fg-rgb),0.05)", icon: Circle },
+  in_progress: { label: "In Progress", color: "rgba(var(--admin-fg-rgb),calc(0.7 * var(--admin-fg-boost)))", bg: "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))", icon: Circle },
   delivered: { label: "Delivered", color: "rgba(120,190,140,0.9)", bg: "rgba(120,190,140,0.07)", icon: CheckCircle },
-  on_hold: { label: "On Hold", color: "rgba(var(--admin-fg-rgb),0.3)", bg: "rgba(var(--admin-fg-rgb),0.03)", icon: AlertCircle },
+  on_hold: { label: "On Hold", color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", bg: "rgba(var(--admin-fg-rgb),calc(0.03 * var(--admin-fg-boost)))", icon: AlertCircle },
 };
 
 function formatDate(str: string) {
@@ -148,8 +148,8 @@ export function AdminClientDetailPage() {
 
   const inputStyle: React.CSSProperties = {
     width: "100%",
-    backgroundColor: "rgba(var(--admin-fg-rgb),0.03)",
-    border: "1px solid rgba(var(--admin-fg-rgb),0.08)",
+    backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.03 * var(--admin-fg-boost)))",
+    border: "1px solid rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))",
     color: "var(--admin-fg-solid)",
     fontSize: "13px",
     fontFamily: "'Inter', sans-serif",
@@ -161,7 +161,7 @@ export function AdminClientDetailPage() {
   };
 
   const labelStyle: React.CSSProperties = {
-    color: "rgba(var(--admin-fg-rgb),0.25)",
+    color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))",
     fontSize: "8px",
     fontWeight: 600,
     letterSpacing: "0.25em",
@@ -178,19 +178,19 @@ export function AdminClientDetailPage() {
         style={{
           display: "flex", alignItems: "center", gap: "7px",
           background: "none", border: "none", cursor: "pointer",
-          color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "10px", fontWeight: 500,
+          color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "10px", fontWeight: 500,
           letterSpacing: "0.2em", textTransform: "uppercase",
           fontFamily: "'Inter', sans-serif", padding: 0, marginBottom: "28px",
           transition: "color 0.2s ease",
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.color = "#fffbe0")}
-        onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.3)")}
+        onMouseEnter={(e) => (e.currentTarget.style.color = "var(--admin-fg-solid)")}
+        onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))")}
       >
         <ArrowLeft size={13} /> All Clients
       </button>
 
       {loading && (
-        <div style={{ textAlign: "center", padding: "64px 0", color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase" }}>
+        <div style={{ textAlign: "center", padding: "64px 0", color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase" }}>
           Loading…
         </div>
       )}
@@ -207,8 +207,8 @@ export function AdminClientDetailPage() {
           <div style={{
             display: "flex", alignItems: "flex-start", gap: "16px",
             padding: isMobile ? "20px 16px" : "28px 28px",
-            backgroundColor: "rgba(var(--admin-fg-rgb),0.02)",
-            border: "1px solid rgba(var(--admin-fg-rgb),0.05)",
+            backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.02 * var(--admin-fg-boost)))",
+            border: "1px solid rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))",
             marginBottom: "32px",
             flexWrap: isMobile ? "wrap" : "nowrap",
           }}>
@@ -232,7 +232,7 @@ export function AdminClientDetailPage() {
                   placeholder="Client name"
                   style={{ ...inputStyle, fontSize: "18px", fontWeight: 700 }}
                   onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)")}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")}
                 />
                 <input
                   type="text"
@@ -241,9 +241,9 @@ export function AdminClientDetailPage() {
                   placeholder="Company (optional)"
                   style={inputStyle}
                   onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)")}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")}
                 />
-                <div style={{ color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "12px" }}>{client.email}</div>
+                <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "12px" }}>{client.email}</div>
                 {editError && <p style={{ color: "#e07060", fontSize: "12px", margin: 0 }}>{editError}</p>}
                 <div style={{ display: "flex", gap: "8px" }}>
                   <button type="submit" disabled={editSaving} style={{
@@ -258,8 +258,8 @@ export function AdminClientDetailPage() {
                   </button>
                   <button type="button" onClick={() => setEditingProfile(false)} style={{
                     display: "flex", alignItems: "center", gap: "5px",
-                    background: "none", border: "1px solid rgba(var(--admin-fg-rgb),0.1)",
-                    color: "rgba(var(--admin-fg-rgb),0.4)", fontSize: "9px", fontWeight: 600,
+                    background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
+                    color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600,
                     letterSpacing: "0.15em", textTransform: "uppercase",
                     cursor: "pointer", padding: "6px 12px",
                     fontFamily: "'Inter', sans-serif",
@@ -274,30 +274,30 @@ export function AdminClientDetailPage() {
                   {client.name}
                 </h1>
                 {client.company && (
-                  <div style={{ color: "rgba(var(--admin-fg-rgb),0.4)", fontSize: "13px", marginBottom: "6px" }}>{client.company}</div>
+                  <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "13px", marginBottom: "6px" }}>{client.company}</div>
                 )}
-                <div style={{ color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "12px" }}>{client.email}</div>
+                <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "12px" }}>{client.email}</div>
               </div>
             )}
 
             <div style={{ display: "flex", flexDirection: "column", alignItems: isMobile ? "flex-start" : "flex-end", gap: "12px", flexShrink: 0 }}>
               <div style={{ textAlign: isMobile ? "left" : "right" }}>
-                <div style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "4px" }}>Client since</div>
-                <div style={{ color: "rgba(var(--admin-fg-rgb),0.5)", fontSize: "12px" }}>{formatDate(client.createdAt)}</div>
+                <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "4px" }}>Client since</div>
+                <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))", fontSize: "12px" }}>{formatDate(client.createdAt)}</div>
               </div>
               {!editingProfile && (
                 <button
                   onClick={() => { setEditForm({ name: client.name, company: client.company || "" }); setEditError(""); setEditingProfile(true); }}
                   style={{
                     display: "flex", alignItems: "center", gap: "6px",
-                    background: "none", border: "1px solid rgba(var(--admin-fg-rgb),0.1)",
-                    color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "9px", fontWeight: 600,
+                    background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
+                    color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600,
                     letterSpacing: "0.2em", textTransform: "uppercase",
                     cursor: "pointer", padding: "7px 12px",
                     fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.color = "#fffbe0"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.25)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.3)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.1)"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = "var(--admin-fg-solid)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))"; }}
                 >
                   <Pencil size={10} /> Edit
                 </button>
@@ -346,7 +346,7 @@ export function AdminClientDetailPage() {
                 <p style={{ color: "var(--admin-fg-solid)", fontSize: "15px", fontWeight: 600, margin: "0 0 8px", lineHeight: 1.4 }}>
                   Delete {client.name}?
                 </p>
-                <p style={{ color: "rgba(var(--admin-fg-rgb),0.4)", fontSize: "13px", fontWeight: 300, margin: "0 0 28px", lineHeight: 1.6 }}>
+                <p style={{ color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "13px", fontWeight: 300, margin: "0 0 28px", lineHeight: 1.6 }}>
                   This will permanently delete this client account and all {projects.length} associated project{projects.length !== 1 ? "s" : ""}. This action cannot be undone.
                 </p>
                 {deleteError && (
@@ -360,13 +360,13 @@ export function AdminClientDetailPage() {
                     disabled={deleting}
                     style={{
                       flex: 1, padding: "12px", background: "none",
-                      border: "1px solid rgba(var(--admin-fg-rgb),0.1)",
-                      color: "rgba(var(--admin-fg-rgb),0.4)", fontSize: "10px", fontWeight: 600,
+                      border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
+                      color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "10px", fontWeight: 600,
                       letterSpacing: "0.2em", textTransform: "uppercase",
                       cursor: "pointer", fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
                     }}
-                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.2)"; e.currentTarget.style.color = "#fffbe0"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.1)"; e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.4)"; }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))"; e.currentTarget.style.color = "var(--admin-fg-solid)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))"; e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))"; }}
                   >
                     Cancel
                   </button>
@@ -395,21 +395,21 @@ export function AdminClientDetailPage() {
 
           {/* Projects section */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-            <span style={{ color: "rgba(var(--admin-fg-rgb),0.25)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase" }}>
+            <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase" }}>
               Projects ({projects.length})
             </span>
             <button
               onClick={() => setShowForm(!showForm)}
               style={{
                 display: "flex", alignItems: "center", gap: "6px",
-                backgroundColor: showForm ? "transparent" : "rgba(var(--admin-fg-rgb),0.06)",
-                border: "1px solid rgba(var(--admin-fg-rgb),0.1)",
+                backgroundColor: showForm ? "transparent" : "rgba(var(--admin-fg-rgb),calc(0.06 * var(--admin-fg-boost)))",
+                border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
                 color: "var(--admin-fg-solid)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em",
                 textTransform: "uppercase", cursor: "pointer", padding: "8px 14px",
                 fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(var(--admin-fg-rgb),0.08)")}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = showForm ? "transparent" : "rgba(var(--admin-fg-rgb),0.06)")}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = showForm ? "transparent" : "rgba(var(--admin-fg-rgb),calc(0.06 * var(--admin-fg-boost)))")}
             >
               {showForm ? <X size={11} /> : <Plus size={11} />}
               {showForm ? "Cancel" : "New Project"}
@@ -430,7 +430,7 @@ export function AdminClientDetailPage() {
               </div>
               <div>
                 <label style={labelStyle}>Project Title *</label>
-                <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required placeholder="e.g. Brand Campaign — Summer Drop" style={inputStyle} onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")} onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)")} />
+                <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required placeholder="e.g. Brand Campaign — Summer Drop" style={inputStyle} onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")} onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")} />
               </div>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr", gap: "12px" }}>
                 <div>
@@ -444,22 +444,22 @@ export function AdminClientDetailPage() {
                 </div>
                 <div>
                   <label style={labelStyle}>Phase</label>
-                  <input type="text" value={form.phase} onChange={(e) => setForm({ ...form, phase: e.target.value })} placeholder="Pre-Production" style={inputStyle} onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")} onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)")} />
+                  <input type="text" value={form.phase} onChange={(e) => setForm({ ...form, phase: e.target.value })} placeholder="Pre-Production" style={inputStyle} onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")} onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")} />
                 </div>
                 <div style={{ gridColumn: isMobile ? "1 / -1" : "auto" }}>
                   <label style={labelStyle}>Due Date</label>
-                  <input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} style={{ ...inputStyle, colorScheme: "dark" }} onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")} onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)")} />
+                  <input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} style={{ ...inputStyle, colorScheme: "dark" }} onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")} onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")} />
                 </div>
               </div>
               <div>
                 <label style={labelStyle}>Description</label>
-                <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Brief project overview…" rows={3} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")} onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)")} />
+                <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Brief project overview…" rows={3} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")} onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")} />
               </div>
               {formError && <p style={{ color: "#e07060", fontSize: "12px", margin: 0 }}>{formError}</p>}
               <div>
                 <button type="submit" disabled={formLoading} style={{
-                  backgroundColor: formLoading ? "rgba(var(--admin-fg-rgb),0.05)" : "#fffbe0",
-                  color: formLoading ? "rgba(var(--admin-fg-rgb),0.3)" : "var(--admin-bg-page)",
+                  backgroundColor: formLoading ? "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))" : "var(--admin-cta-bg)",
+                  color: formLoading ? "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))" : "var(--admin-cta-fg)",
                   border: "none", padding: "12px 24px", fontSize: "10px", fontWeight: 700,
                   letterSpacing: "0.2em", textTransform: "uppercase", cursor: formLoading ? "not-allowed" : "pointer",
                   fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
@@ -473,7 +473,7 @@ export function AdminClientDetailPage() {
 
           {/* Projects grid */}
           {projects.length === 0 && !showForm && (
-            <div style={{ textAlign: "center", padding: "48px 0", color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "13px" }}>
+            <div style={{ textAlign: "center", padding: "48px 0", color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "13px" }}>
               No projects yet. Create the first one.
             </div>
           )}
@@ -491,15 +491,15 @@ export function AdminClientDetailPage() {
                   style={{
                     display: "flex", alignItems: "center", gap: isMobile ? "12px" : "20px",
                     padding: isMobile ? "16px" : "20px 24px",
-                    backgroundColor: "rgba(var(--admin-fg-rgb),0.015)",
-                    border: "1px solid rgba(var(--admin-fg-rgb),0.05)",
+                    backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.015 * var(--admin-fg-boost)))",
+                    border: "1px solid rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))",
                     cursor: "pointer", textAlign: "left",
                     fontFamily: "'Inter', sans-serif",
                     transition: "all 0.2s ease", width: "100%",
                     flexWrap: isMobile ? "wrap" : "nowrap",
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(var(--admin-fg-rgb),0.03)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.1)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "rgba(var(--admin-fg-rgb),0.015)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.05)"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(var(--admin-fg-rgb),calc(0.03 * var(--admin-fg-boost)))"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "rgba(var(--admin-fg-rgb),calc(0.015 * var(--admin-fg-boost)))"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))"; }}
                 >
                   {/* Status badge */}
                   <div style={{
@@ -513,24 +513,24 @@ export function AdminClientDetailPage() {
                   {/* Title */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ color: "var(--admin-fg-solid)", fontSize: "14px", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.title}</div>
-                    <div style={{ color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "11px", marginTop: "2px" }}>{p.phase}</div>
+                    <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "11px", marginTop: "2px" }}>{p.phase}</div>
                   </div>
                   {/* Progress */}
                   {total > 0 && !isMobile && (
                     <div style={{ flex: "0 0 100px", textAlign: "right" }}>
-                      <div style={{ color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "10px", marginBottom: "4px" }}>{done}/{total} done</div>
-                      <div style={{ height: "2px", backgroundColor: "rgba(var(--admin-fg-rgb),0.06)" }}>
+                      <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "10px", marginBottom: "4px" }}>{done}/{total} done</div>
+                      <div style={{ height: "2px", backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.06 * var(--admin-fg-boost)))" }}>
                         <div style={{ height: "100%", width: `${total > 0 ? (done / total) * 100 : 0}%`, backgroundColor: "#c8905a" }} />
                       </div>
                     </div>
                   )}
                   {/* Due */}
                   {p.dueDate && !isMobile && (
-                    <div style={{ flex: "0 0 90px", textAlign: "right", color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "11px" }}>
+                    <div style={{ flex: "0 0 90px", textAlign: "right", color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "11px" }}>
                       Due {formatDate(p.dueDate)}
                     </div>
                   )}
-                  <div style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px", letterSpacing: "0.15em", textTransform: "uppercase", flexShrink: 0 }}>
+                  <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", letterSpacing: "0.15em", textTransform: "uppercase", flexShrink: 0 }}>
                     Manage →
                   </div>
                 </button>

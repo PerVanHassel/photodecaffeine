@@ -343,7 +343,7 @@ export function AdminPortfolioPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: "40px", color: "rgba(var(--admin-fg-rgb),0.4)" }}>Loading portfolio...</div>
+      <div style={{ padding: "40px", color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))" }}>Loading portfolio...</div>
     );
   }
 
@@ -370,15 +370,15 @@ export function AdminPortfolioPage() {
           >
             Portfolio Management
           </h1>
-          <p style={{ color: "rgba(var(--admin-fg-rgb),0.4)", fontSize: "13px", marginTop: "8px" }}>
+          <p style={{ color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "13px", marginTop: "8px" }}>
             {articles.length} article{articles.length !== 1 ? "s" : ""} • {articles.filter(a => a.featured).length} featured on homepage (max 6 shown)
           </p>
         </div>
         <button
           onClick={() => setShowForm(true)}
           style={{
-            backgroundColor: "#fffbe0",
-            color: "#1a0c04",
+            backgroundColor: "var(--admin-cta-bg)",
+            color: "var(--admin-cta-fg)",
             border: "none",
             padding: "12px 24px",
             fontSize: "11px",
@@ -396,8 +396,8 @@ export function AdminPortfolioPage() {
             e.currentTarget.style.color = "#fffbe0";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = "#fffbe0";
-            e.currentTarget.style.color = "#1a0c04";
+            e.currentTarget.style.backgroundColor = "var(--admin-cta-bg)";
+            e.currentTarget.style.color = "var(--admin-cta-fg)";
           }}
         >
           <Plus size={16} />
@@ -429,7 +429,7 @@ export function AdminPortfolioPage() {
             key={article.id}
             style={{
               backgroundColor: "rgba(var(--admin-bg-card-rgb),0.6)",
-              border: "1px solid rgba(var(--admin-fg-rgb),0.1)",
+              border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
               padding: "20px",
               display: "flex",
               gap: "20px",
@@ -491,8 +491,8 @@ export function AdminPortfolioPage() {
                 ) : (
                   <span
                     style={{
-                      backgroundColor: "rgba(var(--admin-fg-rgb),0.05)",
-                      color: "rgba(var(--admin-fg-rgb),0.3)",
+                      backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))",
+                      color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))",
                       fontSize: "9px",
                       fontWeight: 600,
                       letterSpacing: "0.1em",
@@ -506,7 +506,7 @@ export function AdminPortfolioPage() {
                 {article.featured && (
                   <span
                     style={{
-                      backgroundColor: "rgba(var(--admin-fg-rgb),0.1)",
+                      backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
                       color: "var(--admin-fg-solid)",
                       fontSize: "9px",
                       fontWeight: 600,
@@ -525,7 +525,7 @@ export function AdminPortfolioPage() {
               </div>
               <div
                 style={{
-                  color: "rgba(var(--admin-fg-rgb),0.35)",
+                  color: "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))",
                   fontSize: "11px",
                   marginBottom: "4px",
                 }}
@@ -536,7 +536,7 @@ export function AdminPortfolioPage() {
               {article.createdBy && (
                 <div
                   style={{
-                    color: "rgba(var(--admin-fg-rgb),0.25)",
+                    color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))",
                     fontSize: "10px",
                     marginBottom: "8px",
                   }}
@@ -550,7 +550,7 @@ export function AdminPortfolioPage() {
               {article.description && (
                 <p
                   style={{
-                    color: "rgba(var(--admin-fg-rgb),0.25)",
+                    color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))",
                     fontSize: "12px",
                     margin: 0,
                     lineHeight: 1.5,
@@ -566,9 +566,9 @@ export function AdminPortfolioPage() {
               <button
                 onClick={() => navigate(`/portfolio/${article.id}`)}
                 style={{
-                  backgroundColor: "rgba(var(--admin-fg-rgb),0.05)",
-                  border: "1px solid rgba(var(--admin-fg-rgb),0.1)",
-                  color: "rgba(var(--admin-fg-rgb),0.6)",
+                  backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))",
+                  border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
+                  color: "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))",
                   width: "36px",
                   height: "36px",
                   display: "flex",
@@ -578,12 +578,12 @@ export function AdminPortfolioPage() {
                   transition: "all 0.2s ease",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.3)";
-                  e.currentTarget.style.color = "#fffbe0";
+                  e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))";
+                  e.currentTarget.style.color = "var(--admin-fg-solid)";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.1)";
-                  e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.6)";
+                  e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))";
+                  e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))";
                 }}
                 title="View"
               >
@@ -592,9 +592,9 @@ export function AdminPortfolioPage() {
               <button
                 onClick={() => toggleFeatured(article)}
                 style={{
-                  backgroundColor: article.featured ? "rgba(var(--admin-fg-rgb),0.1)" : "rgba(var(--admin-fg-rgb),0.05)",
-                  border: `1px solid ${article.featured ? "rgba(var(--admin-fg-rgb),0.3)" : "rgba(var(--admin-fg-rgb),0.1)"}`,
-                  color: article.featured ? "#fffbe0" : "rgba(var(--admin-fg-rgb),0.6)",
+                  backgroundColor: article.featured ? "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))" : "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))",
+                  border: `1px solid ${article.featured ? "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))" : "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))"}`,
+                  color: article.featured ? "var(--admin-fg-solid)" : "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))",
                   width: "36px",
                   height: "36px",
                   display: "flex",
@@ -604,12 +604,12 @@ export function AdminPortfolioPage() {
                   transition: "all 0.2s ease",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.3)";
-                  e.currentTarget.style.color = "#fffbe0";
+                  e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))";
+                  e.currentTarget.style.color = "var(--admin-fg-solid)";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = article.featured ? "rgba(var(--admin-fg-rgb),0.3)" : "rgba(var(--admin-fg-rgb),0.1)";
-                  e.currentTarget.style.color = article.featured ? "#fffbe0" : "rgba(var(--admin-fg-rgb),0.6)";
+                  e.currentTarget.style.borderColor = article.featured ? "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))" : "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))";
+                  e.currentTarget.style.color = article.featured ? "var(--admin-fg-solid)" : "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))";
                 }}
                 title={article.featured ? "Remove from homepage" : "Feature on homepage"}
               >
@@ -618,9 +618,9 @@ export function AdminPortfolioPage() {
               <button
                 onClick={() => startEdit(article)}
                 style={{
-                  backgroundColor: "rgba(var(--admin-fg-rgb),0.05)",
-                  border: "1px solid rgba(var(--admin-fg-rgb),0.1)",
-                  color: "rgba(var(--admin-fg-rgb),0.6)",
+                  backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))",
+                  border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
+                  color: "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))",
                   width: "36px",
                   height: "36px",
                   display: "flex",
@@ -630,12 +630,12 @@ export function AdminPortfolioPage() {
                   transition: "all 0.2s ease",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.3)";
+                  e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))";
                   e.currentTarget.style.color = "#fffbe0";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.1)";
-                  e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.6)";
+                  e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))";
+                  e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))";
                 }}
                 title="Edit"
               >
@@ -644,8 +644,8 @@ export function AdminPortfolioPage() {
               <button
                 onClick={() => { setDeleteTarget({ id: article.id, title: article.title }); setDeleteError(null); }}
                 style={{
-                  backgroundColor: "rgba(var(--admin-fg-rgb),0.05)",
-                  border: "1px solid rgba(var(--admin-fg-rgb),0.1)",
+                  backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))",
+                  border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
                   color: "rgba(255,100,100,0.6)",
                   width: "36px",
                   height: "36px",
@@ -660,7 +660,7 @@ export function AdminPortfolioPage() {
                   e.currentTarget.style.color = "rgba(255,100,100,1)";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.1)";
+                  e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))";
                   e.currentTarget.style.color = "rgba(255,100,100,0.6)";
                 }}
                 title="Delete"
@@ -676,7 +676,7 @@ export function AdminPortfolioPage() {
             style={{
               textAlign: "center",
               padding: "80px 20px",
-              color: "rgba(var(--admin-fg-rgb),0.2)",
+              color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))",
               fontSize: "13px",
               letterSpacing: "0.1em",
               textTransform: "uppercase",
@@ -692,9 +692,9 @@ export function AdminPortfolioPage() {
         <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.75)", zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
           onClick={(e) => { if (e.target === e.currentTarget) { setDeleteTarget(null); setDeleteError(null); } }}
         >
-          <div style={{ backgroundColor: "var(--admin-bg-card)", border: "1px solid rgba(var(--admin-fg-rgb),0.15)", padding: "32px", maxWidth: "440px", width: "100%" }}>
+          <div style={{ backgroundColor: "var(--admin-bg-card)", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))", padding: "32px", maxWidth: "440px", width: "100%" }}>
             <h3 style={{ color: "var(--admin-fg-solid)", fontSize: "18px", fontWeight: 700, margin: "0 0 12px 0" }}>Delete Article</h3>
-            <p style={{ color: "rgba(var(--admin-fg-rgb),0.5)", fontSize: "14px", margin: "0 0 24px 0", lineHeight: 1.6 }}>
+            <p style={{ color: "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))", fontSize: "14px", margin: "0 0 24px 0", lineHeight: 1.6 }}>
               Delete <strong style={{ color: "var(--admin-fg-solid)" }}>{deleteTarget.title}</strong>? This cannot be undone.
             </p>
             {deleteError && (
@@ -714,7 +714,7 @@ export function AdminPortfolioPage() {
               </button>
               <button
                 onClick={() => { setDeleteTarget(null); setDeleteError(null); }}
-                style={{ flex: 1, backgroundColor: "transparent", border: "1px solid rgba(var(--admin-fg-rgb),0.15)", color: "rgba(var(--admin-fg-rgb),0.5)", padding: "12px", fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer" }}
+                style={{ flex: 1, backgroundColor: "transparent", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))", color: "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))", padding: "12px", fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer" }}
               >
                 Cancel
               </button>
@@ -761,7 +761,7 @@ export function AdminPortfolioPage() {
                 style={{
                   background: "none",
                   border: "none",
-                  color: "rgba(var(--admin-fg-rgb),0.4)",
+                  color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))",
                   cursor: "pointer",
                   padding: 0,
                 }}
@@ -775,7 +775,7 @@ export function AdminPortfolioPage() {
               <div>
                 <label
                   style={{
-                    color: "rgba(var(--admin-fg-rgb),0.6)",
+                    color: "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))",
                     fontSize: "11px",
                     fontWeight: 600,
                     letterSpacing: "0.1em",
@@ -793,7 +793,7 @@ export function AdminPortfolioPage() {
                   style={{
                     width: "100%",
                     backgroundColor: "rgba(var(--admin-bg-card-rgb),0.8)",
-                    border: "1px solid rgba(var(--admin-fg-rgb),0.15)",
+                    border: "1px solid rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))",
                     color: "var(--admin-fg-solid)",
                     padding: "12px",
                     fontSize: "14px",
@@ -807,7 +807,7 @@ export function AdminPortfolioPage() {
               <div>
                 <label
                   style={{
-                    color: "rgba(var(--admin-fg-rgb),0.6)",
+                    color: "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))",
                     fontSize: "11px",
                     fontWeight: 600,
                     letterSpacing: "0.1em",
@@ -825,7 +825,7 @@ export function AdminPortfolioPage() {
                   style={{
                     width: "100%",
                     backgroundColor: "rgba(var(--admin-bg-card-rgb),0.8)",
-                    border: "1px solid rgba(var(--admin-fg-rgb),0.15)",
+                    border: "1px solid rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))",
                     color: "var(--admin-fg-solid)",
                     padding: "12px",
                     fontSize: "14px",
@@ -840,7 +840,7 @@ export function AdminPortfolioPage() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
                   <label
                     style={{
-                      color: "rgba(var(--admin-fg-rgb),0.6)",
+                      color: "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))",
                       fontSize: "11px",
                       fontWeight: 600,
                       letterSpacing: "0.1em",
@@ -889,7 +889,7 @@ export function AdminPortfolioPage() {
                   style={{
                     width: "100%",
                     backgroundColor: "rgba(var(--admin-bg-card-rgb),0.8)",
-                    border: "1px solid rgba(var(--admin-fg-rgb),0.15)",
+                    border: "1px solid rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))",
                     color: "var(--admin-fg-solid)",
                     padding: "12px",
                     fontSize: "14px",
@@ -904,7 +904,7 @@ export function AdminPortfolioPage() {
               <div>
                 <label
                   style={{
-                    color: "rgba(var(--admin-fg-rgb),0.6)",
+                    color: "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))",
                     fontSize: "11px",
                     fontWeight: 600,
                     letterSpacing: "0.1em",
@@ -954,17 +954,17 @@ export function AdminPortfolioPage() {
                       justifyContent: "center",
                       gap: "8px",
                       backgroundColor: "rgba(var(--admin-bg-card-rgb),0.8)",
-                      border: "2px dashed rgba(var(--admin-fg-rgb),0.2)",
-                      color: "rgba(var(--admin-fg-rgb),0.4)",
+                      border: "2px dashed rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))",
+                      color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))",
                       padding: "40px",
                       cursor: uploading ? "not-allowed" : "pointer",
                       transition: "all 0.2s ease",
                     }}
                     onMouseEnter={(e) => {
-                      if (!uploading) e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.4)";
+                      if (!uploading) e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.2)";
+                      e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))";
                     }}
                   >
                     <Upload size={20} />
@@ -984,7 +984,7 @@ export function AdminPortfolioPage() {
               <div>
                 <label
                   style={{
-                    color: "rgba(var(--admin-fg-rgb),0.6)",
+                    color: "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))",
                     fontSize: "11px",
                     fontWeight: 600,
                     letterSpacing: "0.1em",
@@ -1020,14 +1020,14 @@ export function AdminPortfolioPage() {
                         <button
                           onClick={() => moveGalleryImage(idx, -1)}
                           disabled={idx === 0}
-                          style={{ backgroundColor: "rgba(0,0,0,0.7)", border: "1px solid rgba(var(--admin-fg-rgb),0.2)", color: idx === 0 ? "rgba(var(--admin-fg-rgb),0.2)" : "rgba(var(--admin-fg-rgb),0.8)", width: "20px", height: "20px", display: "flex", alignItems: "center", justifyContent: "center", cursor: idx === 0 ? "not-allowed" : "pointer", padding: 0 }}
+                          style={{ backgroundColor: "rgba(0,0,0,0.7)", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", color: idx === 0 ? "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))" : "rgba(var(--admin-fg-rgb),calc(0.8 * var(--admin-fg-boost)))", width: "20px", height: "20px", display: "flex", alignItems: "center", justifyContent: "center", cursor: idx === 0 ? "not-allowed" : "pointer", padding: 0 }}
                         >
                           <ChevronUp size={12} />
                         </button>
                         <button
                           onClick={() => moveGalleryImage(idx, 1)}
                           disabled={idx === formData.galleryUrls.length - 1}
-                          style={{ backgroundColor: "rgba(0,0,0,0.7)", border: "1px solid rgba(var(--admin-fg-rgb),0.2)", color: idx === formData.galleryUrls.length - 1 ? "rgba(var(--admin-fg-rgb),0.2)" : "rgba(var(--admin-fg-rgb),0.8)", width: "20px", height: "20px", display: "flex", alignItems: "center", justifyContent: "center", cursor: idx === formData.galleryUrls.length - 1 ? "not-allowed" : "pointer", padding: 0 }}
+                          style={{ backgroundColor: "rgba(0,0,0,0.7)", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", color: idx === formData.galleryUrls.length - 1 ? "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))" : "rgba(var(--admin-fg-rgb),calc(0.8 * var(--admin-fg-boost)))", width: "20px", height: "20px", display: "flex", alignItems: "center", justifyContent: "center", cursor: idx === formData.galleryUrls.length - 1 ? "not-allowed" : "pointer", padding: 0 }}
                         >
                           <ChevronDown size={12} />
                         </button>
@@ -1042,18 +1042,18 @@ export function AdminPortfolioPage() {
                     justifyContent: "center",
                     gap: "8px",
                     backgroundColor: "rgba(var(--admin-bg-card-rgb),0.8)",
-                    border: "2px dashed rgba(var(--admin-fg-rgb),0.2)",
-                    color: "rgba(var(--admin-fg-rgb),0.4)",
+                    border: "2px dashed rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))",
+                    color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))",
                     padding: "24px",
                     cursor: uploading ? "not-allowed" : "pointer",
                     fontSize: "13px",
                     transition: "all 0.2s ease",
                   }}
                   onMouseEnter={(e) => {
-                    if (!uploading) e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.4)";
+                    if (!uploading) e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.2)";
+                    e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))";
                   }}
                 >
                   <Upload size={18} />
@@ -1086,7 +1086,7 @@ export function AdminPortfolioPage() {
                 />
                 <span
                   style={{
-                    color: "rgba(var(--admin-fg-rgb),0.6)",
+                    color: "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))",
                     fontSize: "13px",
                     fontWeight: 500,
                   }}
@@ -1114,7 +1114,7 @@ export function AdminPortfolioPage() {
                   />
                   <span
                     style={{
-                      color: "rgba(var(--admin-fg-rgb),0.6)",
+                      color: "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))",
                       fontSize: "13px",
                       fontWeight: 500,
                     }}
@@ -1148,8 +1148,8 @@ export function AdminPortfolioPage() {
                   disabled={uploading}
                   style={{
                     flex: 1,
-                    backgroundColor: uploading ? "rgba(var(--admin-fg-rgb),0.3)" : "#fffbe0",
-                    color: "#1a0c04",
+                    backgroundColor: uploading ? "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))" : "var(--admin-cta-bg)",
+                    color: "var(--admin-cta-fg)",
                     border: "none",
                     padding: "14px 24px",
                     fontSize: "11px",
@@ -1171,8 +1171,8 @@ export function AdminPortfolioPage() {
                   }}
                   onMouseLeave={(e) => {
                     if (!uploading) {
-                      e.currentTarget.style.backgroundColor = "#fffbe0";
-                      e.currentTarget.style.color = "#1a0c04";
+                      e.currentTarget.style.backgroundColor = "var(--admin-cta-bg)";
+                      e.currentTarget.style.color = "var(--admin-cta-fg)";
                     }
                   }}
                 >
@@ -1183,8 +1183,8 @@ export function AdminPortfolioPage() {
                   onClick={resetForm}
                   style={{
                     backgroundColor: "transparent",
-                    color: "rgba(var(--admin-fg-rgb),0.4)",
-                    border: "1px solid rgba(var(--admin-fg-rgb),0.2)",
+                    color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))",
+                    border: "1px solid rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))",
                     padding: "14px 24px",
                     fontSize: "11px",
                     fontWeight: 600,
@@ -1194,12 +1194,12 @@ export function AdminPortfolioPage() {
                     transition: "all 0.2s ease",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.4)";
-                    e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.7)";
+                    e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))";
+                    e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.7 * var(--admin-fg-boost)))";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.2)";
-                    e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.4)";
+                    e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))";
+                    e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))";
                   }}
                 >
                   Cancel

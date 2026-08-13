@@ -78,7 +78,7 @@ function formatDate(str: string) {
 }
 
 const metaLabelStyle: React.CSSProperties = {
-  color: "rgba(var(--admin-fg-rgb),0.2)",
+  color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))",
   fontSize: "9px",
   fontWeight: 600,
   letterSpacing: "0.25em",
@@ -90,8 +90,8 @@ const metaLabelStyle: React.CSSProperties = {
 function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
     <div style={{
-      border: "1px solid rgba(var(--admin-fg-rgb),0.06)",
-      backgroundColor: "rgba(var(--admin-fg-rgb),0.015)",
+      border: "1px solid rgba(var(--admin-fg-rgb),calc(0.06 * var(--admin-fg-boost)))",
+      backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.015 * var(--admin-fg-boost)))",
       padding: "24px",
       flex: 1,
       minWidth: "140px",
@@ -100,7 +100,7 @@ function StatCard({ label, value, sub }: { label: string; value: string | number
       <div style={{ color: "var(--admin-fg-solid)", fontSize: "28px", fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1 }}>
         {value}
       </div>
-      {sub && <div style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "10px", marginTop: "6px" }}>{sub}</div>}
+      {sub && <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "10px", marginTop: "6px" }}>{sub}</div>}
     </div>
   );
 }
@@ -113,10 +113,10 @@ function CopyUrl({ campaign, page }: { campaign: string; page: string }) {
   }
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "6px" }}>
-      <span style={{ color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "11px", fontFamily: "'Courier New', monospace", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+      <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "11px", fontFamily: "'Courier New', monospace", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
         {url}
       </span>
-      <button onClick={copy} style={{ background: "none", border: "1px solid rgba(var(--admin-fg-rgb),0.08)", color: copied ? "#80c880" : "rgba(var(--admin-fg-rgb),0.35)", cursor: "pointer", padding: "4px 8px", display: "flex", alignItems: "center", gap: "4px", fontSize: "9px", fontFamily: "'Inter', sans-serif", letterSpacing: "0.1em", transition: "all 0.2s ease", flexShrink: 0 }}>
+      <button onClick={copy} style={{ background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))", color: copied ? "#80c880" : "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))", cursor: "pointer", padding: "4px 8px", display: "flex", alignItems: "center", gap: "4px", fontSize: "9px", fontFamily: "'Inter', sans-serif", letterSpacing: "0.1em", transition: "all 0.2s ease", flexShrink: 0 }}>
         {copied ? <><Check size={10} /> Copied</> : <><Copy size={10} /> Copy</>}
       </button>
     </div>
@@ -158,7 +158,7 @@ function LabelEditor({ value, onChange }: { value: string; onChange: (v: string)
           onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") { setEditing(false); setDraft(value); } }}
           onBlur={() => { setEditing(false); if (draft.trim() !== value) onChange(draft.trim()); }}
           style={{
-            backgroundColor: "rgba(var(--admin-fg-rgb),0.05)",
+            backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))",
             border: "1px solid rgba(200,144,90,0.3)",
             color: "var(--admin-fg-solid)",
             fontSize: "13px",
@@ -172,7 +172,7 @@ function LabelEditor({ value, onChange }: { value: string; onChange: (v: string)
         <button onClick={commit} style={{ background: "none", border: "none", color: "#c8905a", cursor: "pointer", padding: "2px", display: "flex" }}>
           <Check size={13} />
         </button>
-        <button onClick={cancel} style={{ background: "none", border: "none", color: "rgba(var(--admin-fg-rgb),0.3)", cursor: "pointer", padding: "2px", display: "flex" }}>
+        <button onClick={cancel} style={{ background: "none", border: "none", color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", cursor: "pointer", padding: "2px", display: "flex" }}>
           <X size={13} />
         </button>
       </div>
@@ -184,14 +184,14 @@ function LabelEditor({ value, onChange }: { value: string; onChange: (v: string)
       {value ? (
         <span style={{ color: "var(--admin-fg-solid)", fontSize: "13px", fontWeight: 600 }}>{value}</span>
       ) : (
-        <span style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "12px", fontStyle: "italic" }}>Add label…</span>
+        <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "12px", fontStyle: "italic" }}>Add label…</span>
       )}
       <button
         onClick={startEdit}
         title="Edit label"
-        style={{ background: "none", border: "none", color: "rgba(var(--admin-fg-rgb),0.2)", cursor: "pointer", padding: "2px", display: "flex", transition: "color 0.15s ease" }}
-        onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.6)")}
-        onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.2)")}
+        style={{ background: "none", border: "none", color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", cursor: "pointer", padding: "2px", display: "flex", transition: "color 0.15s ease" }}
+        onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))")}
+        onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))")}
       >
         <Pencil size={11} />
       </button>
@@ -209,9 +209,9 @@ function ActiveToggle({ active, onChange }: { active: boolean; onChange: (v: boo
         display: "flex",
         alignItems: "center",
         gap: "6px",
-        backgroundColor: active ? "rgba(120,190,140,0.1)" : "rgba(var(--admin-fg-rgb),0.05)",
-        border: `1px solid ${active ? "rgba(120,190,140,0.25)" : "rgba(var(--admin-fg-rgb),0.1)"}`,
-        color: active ? "rgba(120,190,140,0.9)" : "rgba(var(--admin-fg-rgb),0.25)",
+        backgroundColor: active ? "rgba(120,190,140,0.1)" : "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))",
+        border: `1px solid ${active ? "rgba(120,190,140,0.25)" : "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))"}`,
+        color: active ? "rgba(120,190,140,0.9)" : "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))",
         fontSize: "9px",
         fontWeight: 600,
         letterSpacing: "0.15em",
@@ -229,7 +229,7 @@ function ActiveToggle({ active, onChange }: { active: boolean; onChange: (v: boo
       <span style={{
         width: "5px", height: "5px",
         borderRadius: "50%",
-        backgroundColor: active ? "rgba(120,190,140,0.9)" : "rgba(var(--admin-fg-rgb),0.25)",
+        backgroundColor: active ? "rgba(120,190,140,0.9)" : "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))",
         flexShrink: 0,
       }} />
       {active ? "Active" : "Inactive"}
@@ -347,7 +347,7 @@ export function AdminAdsPage() {
     background: "none",
     border: "none",
     borderBottom: filter === t ? "2px solid #c8905a" : "2px solid transparent",
-    color: filter === t ? "#fffbe0" : "rgba(var(--admin-fg-rgb),0.3)",
+    color: filter === t ? "var(--admin-fg-solid)" : "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))",
     fontSize: "10px",
     fontWeight: filter === t ? 600 : 400,
     letterSpacing: "0.2em",
@@ -378,14 +378,14 @@ export function AdminAdsPage() {
     <div style={{ padding: isMobile ? "24px 16px 60px" : "48px 40px 80px", maxWidth: "1100px" }}>
       {/* Header */}
       <div style={{ marginBottom: "40px" }}>
-        <div style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: "10px" }}>Marketing</div>
+        <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 500, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: "10px" }}>Marketing</div>
         <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-          <Megaphone size={20} color="rgba(var(--admin-fg-rgb),0.6)" />
+          <Megaphone size={20} color="rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))" />
           <h1 style={{ color: "var(--admin-fg-solid)", fontSize: "clamp(22px, 3vw, 38px)", fontWeight: 800, letterSpacing: "-0.02em", margin: 0, lineHeight: 1.1 }}>
             Ad Campaigns
           </h1>
         </div>
-        <p style={{ color: "rgba(var(--admin-fg-rgb),0.3)", fontSize: "13px", fontWeight: 300, margin: 0 }}>
+        <p style={{ color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "13px", fontWeight: 300, margin: 0 }}>
           Track which ads bring visitors and leads. Add <code style={{ color: "#c8905a", fontFamily: "'Courier New', monospace" }}>?ref=campaign-name</code> to every ad URL.
         </p>
       </div>
@@ -393,20 +393,20 @@ export function AdminAdsPage() {
       {/* localStorage warning */}
       <div style={{ display: "flex", alignItems: "flex-start", gap: "10px", border: "1px solid rgba(200,160,48,0.2)", backgroundColor: "rgba(200,160,48,0.05)", padding: "14px 16px", marginBottom: "24px" }}>
         <AlertCircle size={14} color="#c8a030" style={{ flexShrink: 0, marginTop: "2px" }} />
-        <p style={{ color: "rgba(var(--admin-fg-rgb),0.4)", fontSize: "12px", fontWeight: 300, lineHeight: 1.6, margin: 0 }}>
-          <strong style={{ color: "rgba(var(--admin-fg-rgb),0.6)", fontWeight: 600 }}>Labels and active/inactive status</strong> are stored in this browser only. They won't appear on other devices or after clearing browser data. Visit data is always loaded from the server.
+        <p style={{ color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "12px", fontWeight: 300, lineHeight: 1.6, margin: 0 }}>
+          <strong style={{ color: "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))", fontWeight: 600 }}>Labels and active/inactive status</strong> are stored in this browser only. They won't appear on other devices or after clearing browser data. Visit data is always loaded from the server.
         </p>
       </div>
 
       {/* How-to banner */}
       <div style={{ border: "1px solid rgba(200,144,90,0.15)", backgroundColor: "rgba(200,144,90,0.04)", padding: "20px 24px", marginBottom: "32px" }}>
         <div style={{ color: "#c8905a", fontSize: "9px", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase", marginBottom: "10px" }}>How does it work?</div>
-        <p style={{ color: "rgba(var(--admin-fg-rgb),0.45)", fontSize: "13px", fontWeight: 300, lineHeight: 1.7, margin: "0 0 14px" }}>
-          Add <strong style={{ color: "rgba(var(--admin-fg-rgb),0.7)", fontWeight: 500 }}>?ref=your-campaign</strong> to every ad link. Every visit and lead are automatically attributed.
+        <p style={{ color: "rgba(var(--admin-fg-rgb),calc(0.45 * var(--admin-fg-boost)))", fontSize: "13px", fontWeight: 300, lineHeight: 1.7, margin: "0 0 14px" }}>
+          Add <strong style={{ color: "rgba(var(--admin-fg-rgb),calc(0.7 * var(--admin-fg-boost)))", fontWeight: 500 }}>?ref=your-campaign</strong> to every ad link. Every visit and lead are automatically attributed.
         </p>
         {/* Page selector */}
         <div style={{ marginBottom: "12px", display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-          <span style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase" }}>Target page</span>
+          <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase" }}>Target page</span>
           <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
             {PAGE_OPTIONS.map(opt => (
               <button
@@ -414,8 +414,8 @@ export function AdminAdsPage() {
                 onClick={() => setTargetPage(opt.value)}
                 style={{
                   background: targetPage === opt.value ? "rgba(200,144,90,0.12)" : "none",
-                  border: `1px solid ${targetPage === opt.value ? "rgba(200,144,90,0.3)" : "rgba(var(--admin-fg-rgb),0.08)"}`,
-                  color: targetPage === opt.value ? "#c8905a" : "rgba(var(--admin-fg-rgb),0.3)",
+                  border: `1px solid ${targetPage === opt.value ? "rgba(200,144,90,0.3)" : "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))"}`,
+                  color: targetPage === opt.value ? "#c8905a" : "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))",
                   fontSize: "9px", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase",
                   fontFamily: "'Inter', sans-serif", cursor: "pointer", padding: "5px 10px", transition: "all 0.15s ease",
                 }}
@@ -426,7 +426,7 @@ export function AdminAdsPage() {
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-          <div style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "2px" }}>Example links</div>
+          <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "2px" }}>Example links</div>
           {["fb-campaign-jul25", "ig-video-ad", "google-search"].map((ex) => (
             <CopyUrl key={ex} campaign={ex} page={targetPage} />
           ))}
@@ -446,9 +446,9 @@ export function AdminAdsPage() {
         <div style={{ display: "flex", gap: "4px" }}>
           {(["all", "7d", "30d", "90d"] as Period[]).map((p) => (
             <button key={p} onClick={() => setPeriod(p)} style={{
-              background: period === p ? "rgba(var(--admin-fg-rgb),0.06)" : "none",
-              border: `1px solid ${period === p ? "rgba(var(--admin-fg-rgb),0.15)" : "rgba(var(--admin-fg-rgb),0.06)"}`,
-              color: period === p ? "#fffbe0" : "rgba(var(--admin-fg-rgb),0.3)",
+              background: period === p ? "rgba(var(--admin-fg-rgb),calc(0.06 * var(--admin-fg-boost)))" : "none",
+              border: `1px solid ${period === p ? "rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))" : "rgba(var(--admin-fg-rgb),calc(0.06 * var(--admin-fg-boost)))"}`,
+              color: period === p ? "var(--admin-fg-solid)" : "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))",
               fontSize: "9px", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase",
               fontFamily: "'Inter', sans-serif", cursor: "pointer", padding: "6px 12px", transition: "all 0.15s ease",
             }}>
@@ -459,12 +459,12 @@ export function AdminAdsPage() {
         {filtered.length > 0 && (
           <button onClick={exportCsv} style={{
             display: "flex", alignItems: "center", gap: "6px",
-            background: "none", border: "1px solid rgba(var(--admin-fg-rgb),0.08)",
-            color: "rgba(var(--admin-fg-rgb),0.35)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase",
+            background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))",
+            color: "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase",
             fontFamily: "'Inter', sans-serif", cursor: "pointer", padding: "6px 12px", transition: "all 0.2s ease",
           }}
-            onMouseEnter={e => { e.currentTarget.style.color = "#fffbe0"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.2)"; }}
-            onMouseLeave={e => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.35)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)"; }}
+            onMouseEnter={e => { e.currentTarget.style.color = "var(--admin-fg-solid)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))"; }}
           >
             <Download size={10} /> Export CSV
           </button>
@@ -472,7 +472,7 @@ export function AdminAdsPage() {
       </div>
 
       {/* Filter tabs */}
-      <div style={{ display: "flex", borderBottom: "1px solid rgba(var(--admin-fg-rgb),0.05)", marginBottom: "16px" }}>
+      <div style={{ display: "flex", borderBottom: "1px solid rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))", marginBottom: "16px" }}>
         {(["all", "active", "inactive"] as FilterTab[]).map((t) => (
           <button key={t} style={tabStyle(t)} onClick={() => setFilter(t)}>
             {t === "all" ? `All (${visible.length})` : t === "active" ? `Active (${activeCampaigns.length})` : `Inactive (${visible.length - activeCampaigns.length})`}
@@ -481,12 +481,12 @@ export function AdminAdsPage() {
       </div>
 
       {error && <div style={{ padding: "16px", border: "1px solid rgba(224,112,96,0.2)", color: "#e07060", fontSize: "13px", marginBottom: "16px" }}>{error}</div>}
-      {loading && <div style={{ textAlign: "center", padding: "64px 0", color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase" }}>Loading…</div>}
+      {loading && <div style={{ textAlign: "center", padding: "64px 0", color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase" }}>Loading…</div>}
 
       {!loading && visible.length === 0 && !error && (
-        <div style={{ textAlign: "center", padding: "64px 0", border: "1px solid rgba(var(--admin-fg-rgb),0.04)", color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "13px", lineHeight: 1.8 }}>
+        <div style={{ textAlign: "center", padding: "64px 0", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.04 * var(--admin-fg-boost)))", color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "13px", lineHeight: 1.8 }}>
           No data yet.<br />
-          <span style={{ fontSize: "12px" }}>Launch your first ad with a <code style={{ color: "rgba(var(--admin-fg-rgb),0.4)", fontFamily: "'Courier New', monospace" }}>?ref=</code> parameter.</span>
+          <span style={{ fontSize: "12px" }}>Launch your first ad with a <code style={{ color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontFamily: "'Courier New', monospace" }}>?ref=</code> parameter.</span>
         </div>
       )}
 
@@ -495,9 +495,9 @@ export function AdminAdsPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
           {/* Column headers */}
           {!isMobile && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr auto 90px 90px 90px 150px 110px", gap: "0", padding: "8px 20px", borderBottom: "1px solid rgba(var(--admin-fg-rgb),0.05)" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr auto 90px 90px 90px 150px 110px", gap: "0", padding: "8px 20px", borderBottom: "1px solid rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))" }}>
               {["Campaign / Label", "", "Visits", "Leads", "CVR", "Last activity", "Status"].map((h, i) => (
-                <span key={i} style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase" }}>{h}</span>
+                <span key={i} style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase" }}>{h}</span>
               ))}
             </div>
           )}
@@ -511,10 +511,10 @@ export function AdminAdsPage() {
 
             return (
               <div key={c.ref} style={{
-                border: `1px solid ${isOpen ? "rgba(200,144,90,0.2)" : "rgba(var(--admin-fg-rgb),0.05)"}`,
+                border: `1px solid ${isOpen ? "rgba(200,144,90,0.2)" : "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))"}`,
                 backgroundColor: isActive
-                  ? (isOpen ? "rgba(200,144,90,0.03)" : "rgba(var(--admin-fg-rgb),0.015)")
-                  : "rgba(var(--admin-fg-rgb),0.005)",
+                  ? (isOpen ? "rgba(200,144,90,0.03)" : "rgba(var(--admin-fg-rgb),calc(0.015 * var(--admin-fg-boost)))")
+                  : "rgba(var(--admin-fg-rgb),calc(0.005 * var(--admin-fg-boost)))",
                 opacity: isActive ? 1 : 0.6,
                 transition: "all 0.2s ease",
               }}>
@@ -529,8 +529,8 @@ export function AdminAdsPage() {
                   {/* Campaign ref + label */}
                   <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
-                      <Megaphone size={11} color={isActive ? "#c8905a" : "rgba(var(--admin-fg-rgb),0.2)"} />
-                      <span style={{ color: isActive ? "rgba(var(--admin-fg-rgb),0.45)" : "rgba(var(--admin-fg-rgb),0.2)", fontSize: "10px", fontFamily: "'Courier New', monospace" }}>
+                      <Megaphone size={11} color={isActive ? "#c8905a" : "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))"} />
+                      <span style={{ color: isActive ? "rgba(var(--admin-fg-rgb),calc(0.45 * var(--admin-fg-boost)))" : "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "10px", fontFamily: "'Courier New', monospace" }}>
                         {c.ref}
                       </span>
                     </div>
@@ -546,8 +546,8 @@ export function AdminAdsPage() {
                         onClick={() => setExpanded(isOpen ? null : c.ref)}
                         style={{
                           background: "none",
-                          border: "1px solid rgba(var(--admin-fg-rgb),0.08)",
-                          color: "rgba(var(--admin-fg-rgb),0.35)",
+                          border: "1px solid rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))",
+                          color: "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))",
                           cursor: "pointer",
                           padding: "5px 10px",
                           fontSize: "9px",
@@ -561,8 +561,8 @@ export function AdminAdsPage() {
                           transition: "all 0.15s ease",
                           marginRight: "12px",
                         }}
-                        onMouseEnter={(e) => { e.currentTarget.style.color = "#fffbe0"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.2)"; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.35)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),0.08)"; }}
+                        onMouseEnter={(e) => { e.currentTarget.style.color = "var(--admin-fg-solid)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))"; }}
                       >
                         <Users size={10} />
                         {c.leads.length} lead{c.leads.length !== 1 ? "s" : ""}
@@ -573,40 +573,40 @@ export function AdminAdsPage() {
 
                   {/* Visits */}
                   <div>
-                    {isMobile && <span style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "2px" }}>Visits</span>}
+                    {isMobile && <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "2px" }}>Visits</span>}
                     <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                      <MousePointerClick size={11} color="rgba(var(--admin-fg-rgb),0.3)" />
-                      <span style={{ color: "rgba(var(--admin-fg-rgb),0.6)", fontSize: "14px", fontWeight: 600 }}>{c.visits}</span>
+                      <MousePointerClick size={11} color="rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))" />
+                      <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))", fontSize: "14px", fontWeight: 600 }}>{c.visits}</span>
                     </div>
                   </div>
 
                   {/* Leads */}
                   <div>
-                    {isMobile && <span style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "2px" }}>Leads</span>}
+                    {isMobile && <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "2px" }}>Leads</span>}
                     <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                      <Users size={11} color={hasLeads ? "#c8905a" : "rgba(var(--admin-fg-rgb),0.3)"} />
-                      <span style={{ color: hasLeads ? "#c8905a" : "rgba(var(--admin-fg-rgb),0.3)", fontSize: "14px", fontWeight: 600 }}>{c.leads.length}</span>
+                      <Users size={11} color={hasLeads ? "#c8905a" : "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))"} />
+                      <span style={{ color: hasLeads ? "#c8905a" : "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "14px", fontWeight: 600 }}>{c.leads.length}</span>
                     </div>
                   </div>
 
                   {/* CVR */}
                   <div>
-                    {isMobile && <span style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "2px" }}>CVR</span>}
+                    {isMobile && <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "2px" }}>CVR</span>}
                     <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                      <TrendingUp size={11} color={hasLeads ? "rgba(120,190,140,0.8)" : "rgba(var(--admin-fg-rgb),0.2)"} />
-                      <span style={{ color: hasLeads ? "rgba(120,190,140,0.9)" : "rgba(var(--admin-fg-rgb),0.2)", fontSize: "13px", fontWeight: 600 }}>{convRate}</span>
+                      <TrendingUp size={11} color={hasLeads ? "rgba(120,190,140,0.8)" : "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))"} />
+                      <span style={{ color: hasLeads ? "rgba(120,190,140,0.9)" : "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "13px", fontWeight: 600 }}>{convRate}</span>
                     </div>
                   </div>
 
                   {/* Last activity */}
-                  <div style={{ color: "rgba(var(--admin-fg-rgb),0.25)", fontSize: "11px" }}>
-                    {isMobile && <span style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "2px" }}>Last activity</span>}
+                  <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "11px" }}>
+                    {isMobile && <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "2px" }}>Last activity</span>}
                     {c.lastActivity ? timeAgo(c.lastActivity) : "—"}
                   </div>
 
                   {/* Active toggle + delete */}
                   <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "flex-start" }}>
-                    {isMobile && <span style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px", letterSpacing: "0.1em", textTransform: "uppercase" }}>Status</span>}
+                    {isMobile && <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", letterSpacing: "0.1em", textTransform: "uppercase" }}>Status</span>}
 
                     <ActiveToggle active={isActive} onChange={(v) => updateMeta(c.ref, { active: v })} />
                     {confirmDelete === c.ref ? (
@@ -627,7 +627,7 @@ export function AdminAdsPage() {
                         </button>
                         <button
                           onClick={() => setConfirmDelete(null)}
-                          style={{ background: "none", border: "none", color: "rgba(var(--admin-fg-rgb),0.25)", cursor: "pointer", padding: "4px", display: "flex" }}
+                          style={{ background: "none", border: "none", color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", cursor: "pointer", padding: "4px", display: "flex" }}
                         >
                           <X size={12} />
                         </button>
@@ -638,7 +638,7 @@ export function AdminAdsPage() {
                         title="Remove campaign"
                         style={{
                           background: "none", border: "none",
-                          color: "rgba(var(--admin-fg-rgb),0.15)",
+                          color: "rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))",
                           cursor: "pointer", padding: "2px",
                           display: "flex", alignItems: "center", gap: "5px",
                           fontSize: "9px", fontFamily: "'Inter', sans-serif",
@@ -646,7 +646,7 @@ export function AdminAdsPage() {
                           transition: "color 0.15s ease",
                         }}
                         onMouseEnter={(e) => (e.currentTarget.style.color = "#e07060")}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),0.15)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))")}
                       >
                         <Trash2 size={11} /> Remove
                       </button>
@@ -656,17 +656,17 @@ export function AdminAdsPage() {
 
                 {/* Expanded leads */}
                 {isOpen && c.leads.length > 0 && (
-                  <div style={{ borderTop: "1px solid rgba(var(--admin-fg-rgb),0.05)", padding: "0 20px 20px" }}>
-                    <div style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase", padding: "16px 0 12px" }}>
+                  <div style={{ borderTop: "1px solid rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))", padding: "0 20px 20px" }}>
+                    <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase", padding: "16px 0 12px" }}>
                       Leads from this campaign ({c.leads.length})
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                       {c.leads.map((lead) => (
-                        <div key={lead.id} style={{ padding: "16px", border: "1px solid rgba(var(--admin-fg-rgb),0.04)", backgroundColor: "rgba(var(--admin-fg-rgb),0.01)" }}>
+                        <div key={lead.id} style={{ padding: "16px", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.04 * var(--admin-fg-boost)))", backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.01 * var(--admin-fg-boost)))" }}>
                           <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "8px", marginBottom: "10px" }}>
                             <div>
                               <span style={{ color: "var(--admin-fg-solid)", fontSize: "13px", fontWeight: 500 }}>{lead.name}</span>
-                              <span style={{ color: "rgba(var(--admin-fg-rgb),0.25)", fontSize: "11px", marginLeft: "10px" }}>{lead.email || lead.phone}</span>
+                              <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "11px", marginLeft: "10px" }}>{lead.email || lead.phone}</span>
                             </div>
                             <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                               {lead.package && lead.package !== "__visit__" && (
@@ -674,18 +674,18 @@ export function AdminAdsPage() {
                                   {lead.package}
                                 </span>
                               )}
-                              <span style={{ color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "10px" }}>{formatDate(lead.createdAt)}</span>
+                              <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "10px" }}>{formatDate(lead.createdAt)}</span>
                             </div>
                           </div>
                           {lead.message && (
-                            <div style={{ color: "rgba(var(--admin-fg-rgb),0.4)", fontSize: "12px", fontWeight: 300, lineHeight: 1.6, borderLeft: "2px solid rgba(200,144,90,0.15)", paddingLeft: "12px", whiteSpace: "pre-wrap" }}>
+                            <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "12px", fontWeight: 300, lineHeight: 1.6, borderLeft: "2px solid rgba(200,144,90,0.15)", paddingLeft: "12px", whiteSpace: "pre-wrap" }}>
                               {lead.message.replace(/\[ref:[^\]]*\]/g, "").trim()}
                             </div>
                           )}
                           <a
                             href={`mailto:${lead.email}?subject=Re: Your inquiry via PDC`}
                             style={{ display: "inline-flex", alignItems: "center", gap: "6px", marginTop: "12px", color: "#c8905a", fontSize: "10px", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", textDecoration: "none" }}
-                            onMouseEnter={(e) => (e.currentTarget.style.color = "#fffbe0")}
+                            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--admin-fg-solid)")}
                             onMouseLeave={(e) => (e.currentTarget.style.color = "#c8905a")}
                           >
                             Reply via email →
@@ -702,7 +702,7 @@ export function AdminAdsPage() {
       )}
 
       {!loading && filtered.length === 0 && visible.length > 0 && (
-        <div style={{ textAlign: "center", padding: "48px 0", color: "rgba(var(--admin-fg-rgb),0.2)", fontSize: "13px" }}>
+        <div style={{ textAlign: "center", padding: "48px 0", color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "13px" }}>
           No campaigns match this filter.
         </div>
       )}
