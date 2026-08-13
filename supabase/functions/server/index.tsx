@@ -23,6 +23,59 @@ const EMAIL_FROM = "PhotoDeCaffeine <noreply@photodecaffeine.com>";
 const EMAIL_ADMIN_NOTIFY = "contact@photodecaffeine.com";
 const SITE_URL = "https://www.photodecaffeine.com";
 
+// The site owner — always has every permission regardless of what's stored in
+// the roles table, and can never be demoted, reassigned, or removed by anyone
+// (including themselves via the team-management UI). Checked by email rather
+// than a DB flag so it can't be tampered with by editing role data.
+const OWNER_EMAIL = "pervanhassel@gmail.com";
+
+// Default roles seeded the first time /admin/roles is requested and none
+// exist yet. All fully editable afterwards — this is just a starting point.
+const DEFAULT_ROLES: { name: string; permissions: Record<string, boolean> }[] = [
+  {
+    name: "CEO",
+    permissions: {
+      manageAdmins: false,
+      manageClients: true,
+      managePortfolio: true,
+      manageInquiries: true,
+      manageReminders: true,
+      manageAds: true,
+      manageSettings: true,
+      manageDeclarations: true,
+      viewAllDeclarations: false,
+    },
+  },
+  {
+    name: "CFO",
+    permissions: {
+      manageAdmins: false,
+      manageClients: true,
+      managePortfolio: false,
+      manageInquiries: true,
+      manageReminders: false,
+      manageAds: false,
+      manageSettings: false,
+      manageDeclarations: true,
+      viewAllDeclarations: true,
+    },
+  },
+  {
+    name: "COO",
+    permissions: {
+      manageAdmins: false,
+      manageClients: true,
+      managePortfolio: true,
+      manageInquiries: true,
+      manageReminders: true,
+      manageAds: true,
+      manageSettings: true,
+      manageDeclarations: true,
+      viewAllDeclarations: false,
+    },
+  },
+];
+
 async function sendEmail(opts: {
   to: string | string[];
   subject: string;
@@ -75,6 +128,50 @@ async function getPortalUser(userId: string): Promise<{ email: string; name: str
   } catch {
     return null;
   }
+}
+
+// Ensures the seeded CEO/CFO/COO roles exist, returning the full role list.
+// Runs once (idempotent — only seeds when the roles collection is empty), so
+// roles created/edited by the owner afterwards are never overwritten.
+async function ensureDefaultRoles(): Promise<any[]> {
+  const idsStr = await kv.get("roles:roleIds");
+  const ids: string[] = idsStr ? JSON.parse(idsStr) : [];
+  if (ids.length > 0) {
+    const values = await Promise.all(ids.map((id) => kv.get(`roles:role:${id}`)));
+    return values.filter(Boolean).map((v) => JSON.parse(v as string));
+  }
+
+  const now = new Date().toISOString();
+  const seeded = DEFAULT_ROLES.map((r) => ({
+    id: crypto.randomUUID(),
+    name: r.name,
+    permissions: r.permissions,
+    createdAt: now,
+    updatedAt: now,
+  }));
+  await Promise.all(seeded.map((r) => kv.set(`roles:role:${r.id}`, JSON.stringify(r))));
+  await kv.set("roles:roleIds", JSON.stringify(seeded.map((r) => r.id)));
+  return seeded;
+}
+
+async function getRole(roleId: string | undefined | null): Promise<any | null> {
+  if (!roleId) return null;
+  const s = await kv.get(`roles:role:${roleId}`);
+  return s ? JSON.parse(s) : null;
+}
+
+// Owner bypasses the roles table entirely and always has every permission.
+// Everyone else needs a roleId pointing at a role that grants it.
+async function hasPermission(user: any, permission: string): Promise<boolean> {
+  if (user.email === OWNER_EMAIL) return true;
+  const role = await getRole(user.user_metadata?.roleId);
+  return !!role?.permissions?.[permission];
+}
+
+function computeQuarter(isoDate: string): string {
+  const d = new Date(isoDate);
+  const q = Math.floor(d.getUTCMonth() / 3) + 1;
+  return `${d.getUTCFullYear()}-Q${q}`;
 }
 
 const EMAIL_LOGO_ROW = `
@@ -229,7 +326,7 @@ async function verifyAdmin(authHeader: string | null) {
   }
   const userRole = user.user_metadata?.role;
   console.log("verifyAdmin: checking role, found:", userRole, "expected: admin");
-  if (userRole !== "admin") {
+  if (userRole !== "admin" && user.email !== OWNER_EMAIL) {
     console.log("verifyAdmin: FAILED - user is not admin");
     return null;
   }
@@ -272,7 +369,7 @@ app.post("/make-server-0951c59e/admin/storage/ensure-bucket", async (c) => {
           name: bucketName,
           public: true,
           file_size_limit: 52428800, // 50MB
-          allowed_mime_types: ["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4", "video/quicktime"],
+          allowed_mime_types: ["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4", "video/quicktime", "application/pdf"],
         }),
       });
 
@@ -1940,7 +2037,7 @@ app.post("/make-server-0951c59e/admin/ai/generate-description", async (c) => {
 // WORKERS / ADMIN USERS MANAGEMENT
 // ============================================================================
 
-// --- GET /admin/workers — get all admin users ---
+// --- GET /admin/workers — get all admin users, with their role + permissions ---
 app.get("/make-server-0951c59e/admin/workers", async (c) => {
   try {
     const admin = await verifyAdmin(c.req.header("Authorization"));
@@ -1964,22 +2061,460 @@ app.get("/make-server-0951c59e/admin/workers", async (c) => {
 
     const data = await res.json();
     const users = data.users || [];
+    const roles = await ensureDefaultRoles();
+    const roleById = new Map(roles.map((r) => [r.id, r]));
 
-    // Filter only admin users
+    // Filter only admin users (owner included even if their metadata role tag ever drifts)
     const workers = users
-      .filter((u: any) => u.user_metadata?.role === "admin")
-      .map((u: any) => ({
-        id: u.id,
-        email: u.email,
-        name: u.user_metadata?.name || u.email,
-        createdAt: u.created_at,
-        lastSignIn: u.last_sign_in_at,
-      }));
+      .filter((u: any) => u.user_metadata?.role === "admin" || u.email === OWNER_EMAIL)
+      .map((u: any) => {
+        const isOwner = u.email === OWNER_EMAIL;
+        const role = isOwner ? null : roleById.get(u.user_metadata?.roleId);
+        return {
+          id: u.id,
+          email: u.email,
+          name: u.user_metadata?.name || u.email,
+          createdAt: u.created_at,
+          lastSignIn: u.last_sign_in_at,
+          isOwner,
+          roleId: isOwner ? null : (u.user_metadata?.roleId || null),
+          roleName: isOwner ? "Eigenaar" : (role?.name || "Geen rol"),
+          permissions: isOwner ? null : (role?.permissions || {}),
+        };
+      });
 
-    return c.json({ workers });
+    return c.json({ workers, roles });
   } catch (err) {
     console.log("Get workers error:", err);
     return c.json({ error: `Failed to fetch workers: ${err}` }, 500);
+  }
+});
+
+// --- POST /admin/workers — create a new admin account (requires manageAdmins permission) ---
+app.post("/make-server-0951c59e/admin/workers", async (c) => {
+  try {
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
+    if (!(await hasPermission(admin, "manageAdmins"))) {
+      return c.json({ error: "Je hebt geen rechten om admins toe te voegen" }, 403);
+    }
+
+    const { email, password, name, roleId } = await c.req.json();
+    if (!email?.trim() || !password || !roleId) {
+      return c.json({ error: "E-mail, wachtwoord en rol zijn verplicht" }, 400);
+    }
+    const role = await getRole(roleId);
+    if (!role) return c.json({ error: "Onbekende rol" }, 400);
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const createRes = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${serviceKey}`,
+        apikey: serviceKey,
+      },
+      body: JSON.stringify({
+        email: email.trim(),
+        password,
+        user_metadata: { name: name?.trim() || email.trim(), role: "admin", roleId },
+        email_confirm: true,
+      }),
+    });
+
+    const createData = await createRes.json();
+    if (!createRes.ok) {
+      console.log("Create admin error:", JSON.stringify(createData));
+      return c.json({ error: createData.message || createData.msg || "Aanmaken admin mislukt" }, 400);
+    }
+
+    return c.json({ success: true, userId: createData.id });
+  } catch (err) {
+    console.log("Create admin unexpected error:", err);
+    return c.json({ error: `Failed to create admin: ${err}` }, 500);
+  }
+});
+
+// --- PUT /admin/workers/:id/role — assign a role to an admin (requires manageAdmins permission) ---
+app.put("/make-server-0951c59e/admin/workers/:id/role", async (c) => {
+  try {
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
+    if (!(await hasPermission(admin, "manageAdmins"))) {
+      return c.json({ error: "Je hebt geen rechten om rollen te wijzigen" }, 403);
+    }
+
+    const targetId = c.req.param("id");
+    const { roleId } = await c.req.json();
+    if (!roleId) return c.json({ error: "roleId is verplicht" }, 400);
+
+    const role = await getRole(roleId);
+    if (!role) return c.json({ error: "Onbekende rol" }, 400);
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const { data: { user: target }, error: lookupError } = await createClient(supabaseUrl, serviceKey).auth.admin.getUserById(targetId);
+    if (lookupError || !target) return c.json({ error: "Admin niet gevonden" }, 404);
+    if (target.email === OWNER_EMAIL) {
+      return c.json({ error: "De rol van de eigenaar kan niet worden gewijzigd" }, 403);
+    }
+
+    const updateRes = await fetch(`${supabaseUrl}/auth/v1/admin/users/${targetId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${serviceKey}`,
+        apikey: serviceKey,
+      },
+      body: JSON.stringify({
+        user_metadata: { ...target.user_metadata, role: "admin", roleId },
+      }),
+    });
+    const updateData = await updateRes.json();
+    if (!updateRes.ok) {
+      return c.json({ error: updateData.message || "Rol wijzigen mislukt" }, 400);
+    }
+
+    return c.json({ success: true });
+  } catch (err) {
+    console.log("Assign role error:", err);
+    return c.json({ error: `Failed to assign role: ${err}` }, 500);
+  }
+});
+
+// --- DELETE /admin/workers/:id — revoke admin access (requires manageAdmins permission) ---
+app.delete("/make-server-0951c59e/admin/workers/:id", async (c) => {
+  try {
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
+    if (!(await hasPermission(admin, "manageAdmins"))) {
+      return c.json({ error: "Je hebt geen rechten om admins te verwijderen" }, 403);
+    }
+
+    const targetId = c.req.param("id");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const { data: { user: target }, error: lookupError } = await createClient(supabaseUrl, serviceKey).auth.admin.getUserById(targetId);
+    if (lookupError || !target) return c.json({ error: "Admin niet gevonden" }, 404);
+    if (target.email === OWNER_EMAIL) {
+      return c.json({ error: "De eigenaar kan niet worden verwijderd" }, 403);
+    }
+
+    // Revoke admin access by dropping the role/roleId tags — keeps the auth
+    // account intact (they simply become a regular, non-admin user) rather
+    // than destructively deleting it.
+    const { role: _role, roleId: _roleId, ...rest } = target.user_metadata || {};
+    const updateRes = await fetch(`${supabaseUrl}/auth/v1/admin/users/${targetId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${serviceKey}`,
+        apikey: serviceKey,
+      },
+      body: JSON.stringify({ user_metadata: rest }),
+    });
+    if (!updateRes.ok) {
+      const errData = await updateRes.json();
+      return c.json({ error: errData.message || "Verwijderen mislukt" }, 400);
+    }
+
+    return c.json({ success: true });
+  } catch (err) {
+    console.log("Remove admin error:", err);
+    return c.json({ error: `Failed to remove admin: ${err}` }, 500);
+  }
+});
+
+// ============================================================================
+// ROLES ENDPOINTS
+// ============================================================================
+
+// --- GET /admin/roles — list roles (any admin — needed to render role badges) ---
+app.get("/make-server-0951c59e/admin/roles", async (c) => {
+  try {
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
+
+    const roles = await ensureDefaultRoles();
+    return c.json({ roles });
+  } catch (err) {
+    console.log("Get roles error:", err);
+    return c.json({ error: `Failed to fetch roles: ${err}` }, 500);
+  }
+});
+
+// --- POST /admin/roles — create a role (requires manageAdmins permission) ---
+app.post("/make-server-0951c59e/admin/roles", async (c) => {
+  try {
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
+    if (!(await hasPermission(admin, "manageAdmins"))) {
+      return c.json({ error: "Je hebt geen rechten om rollen te beheren" }, 403);
+    }
+
+    const { name, permissions } = await c.req.json();
+    if (!name?.trim()) return c.json({ error: "Naam is verplicht" }, 400);
+
+    const now = new Date().toISOString();
+    const role = {
+      id: crypto.randomUUID(),
+      name: name.trim(),
+      permissions: permissions || {},
+      createdAt: now,
+      updatedAt: now,
+    };
+    await kv.set(`roles:role:${role.id}`, JSON.stringify(role));
+
+    const idsStr = await kv.get("roles:roleIds");
+    const ids = idsStr ? JSON.parse(idsStr) : [];
+    ids.push(role.id);
+    await kv.set("roles:roleIds", JSON.stringify(ids));
+
+    return c.json({ role });
+  } catch (err) {
+    console.log("Create role error:", err);
+    return c.json({ error: `Failed to create role: ${err}` }, 500);
+  }
+});
+
+// --- PUT /admin/roles/:id — update a role's name/permissions (requires manageAdmins permission) ---
+app.put("/make-server-0951c59e/admin/roles/:id", async (c) => {
+  try {
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
+    if (!(await hasPermission(admin, "manageAdmins"))) {
+      return c.json({ error: "Je hebt geen rechten om rollen te beheren" }, 403);
+    }
+
+    const id = c.req.param("id");
+    const existing = await getRole(id);
+    if (!existing) return c.json({ error: "Rol niet gevonden" }, 404);
+
+    const updates = await c.req.json();
+    const updated = {
+      ...existing,
+      ...updates,
+      id: existing.id,
+      createdAt: existing.createdAt,
+      updatedAt: new Date().toISOString(),
+    };
+    await kv.set(`roles:role:${id}`, JSON.stringify(updated));
+
+    return c.json({ role: updated });
+  } catch (err) {
+    console.log("Update role error:", err);
+    return c.json({ error: `Failed to update role: ${err}` }, 500);
+  }
+});
+
+// --- DELETE /admin/roles/:id — delete a role (requires manageAdmins permission) ---
+app.delete("/make-server-0951c59e/admin/roles/:id", async (c) => {
+  try {
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
+    if (!(await hasPermission(admin, "manageAdmins"))) {
+      return c.json({ error: "Je hebt geen rechten om rollen te beheren" }, 403);
+    }
+
+    const id = c.req.param("id");
+
+    // Block deletion while any admin still has this role — force a
+    // reassignment first so nobody silently ends up with no permissions.
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const listRes = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
+      headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey },
+    });
+    const listData = await listRes.json();
+    const inUse = (listData.users || []).some((u: any) => u.user_metadata?.roleId === id);
+    if (inUse) {
+      return c.json({ error: "Deze rol is nog toegewezen aan een admin. Wijs eerst een andere rol toe." }, 400);
+    }
+
+    await kv.del(`roles:role:${id}`);
+    const idsStr = await kv.get("roles:roleIds");
+    if (idsStr) {
+      const ids = JSON.parse(idsStr).filter((rid: string) => rid !== id);
+      await kv.set("roles:roleIds", JSON.stringify(ids));
+    }
+
+    return c.json({ success: true });
+  } catch (err) {
+    console.log("Delete role error:", err);
+    return c.json({ error: `Failed to delete role: ${err}` }, 500);
+  }
+});
+
+// ============================================================================
+// DECLARATIONS ENDPOINTS
+// ============================================================================
+
+// --- GET /admin/declarations — list declarations (own only, unless viewAllDeclarations) ---
+app.get("/make-server-0951c59e/admin/declarations", async (c) => {
+  try {
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
+
+    const canViewAll = await hasPermission(admin, "viewAllDeclarations");
+
+    const allIdsStr = await kv.get("declarations:declarationIds");
+    const allIds: string[] = allIdsStr ? JSON.parse(allIdsStr) : [];
+    const values = await Promise.all(allIds.map((id) => kv.get(`declarations:declaration:${id}`)));
+    let declarations = values.filter(Boolean).map((v) => JSON.parse(v as string));
+
+    if (!canViewAll) {
+      declarations = declarations.filter((d) => d.adminId === admin.id);
+    }
+
+    const quarter = c.req.query("quarter");
+    if (quarter) {
+      declarations = declarations.filter((d) => computeQuarter(d.date) === quarter);
+    }
+    const category = c.req.query("category");
+    if (category) {
+      declarations = declarations.filter((d) => d.category === category);
+    }
+    const adminIdFilter = canViewAll ? c.req.query("adminId") : null;
+    if (adminIdFilter) {
+      declarations = declarations.filter((d) => d.adminId === adminIdFilter);
+    }
+
+    declarations.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    const totalAmount = declarations.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+    const byCategory: Record<string, number> = {};
+    for (const d of declarations) {
+      byCategory[d.category] = (byCategory[d.category] || 0) + (Number(d.amount) || 0);
+    }
+
+    return c.json({ declarations, canViewAll, totals: { amount: totalAmount, count: declarations.length, byCategory } });
+  } catch (err) {
+    console.log("Get declarations error:", err);
+    return c.json({ error: `Failed to fetch declarations: ${err}` }, 500);
+  }
+});
+
+// --- POST /admin/declarations — submit a declaration ---
+app.post("/make-server-0951c59e/admin/declarations", async (c) => {
+  try {
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
+
+    const canViewAll = await hasPermission(admin, "viewAllDeclarations");
+    const body = await c.req.json();
+    const { amount, date, category, description, receiptUrl } = body;
+
+    if (!amount || !date || !category) {
+      return c.json({ error: "Bedrag, datum en categorie zijn verplicht" }, 400);
+    }
+
+    // Only CFO-type roles (viewAllDeclarations) may submit on behalf of someone else.
+    let adminId = admin.id;
+    let adminName = admin.user_metadata?.name || admin.email;
+    if (canViewAll && body.adminId && body.adminId !== admin.id) {
+      const target = await getPortalUser(body.adminId);
+      if (target) {
+        adminId = body.adminId;
+        adminName = target.name;
+      }
+    }
+
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const declaration = {
+      id,
+      adminId,
+      adminName,
+      amount: Number(amount),
+      date,
+      category,
+      description: description?.trim() || "",
+      receiptUrl: receiptUrl || "",
+      submittedBy: { id: admin.id, name: admin.user_metadata?.name || admin.email },
+      createdAt: now,
+      updatedAt: now,
+    };
+    await kv.set(`declarations:declaration:${id}`, JSON.stringify(declaration));
+
+    const idsStr = await kv.get("declarations:declarationIds");
+    const ids = idsStr ? JSON.parse(idsStr) : [];
+    ids.push(id);
+    await kv.set("declarations:declarationIds", JSON.stringify(ids));
+
+    return c.json({ declaration });
+  } catch (err) {
+    console.log("Create declaration error:", err);
+    return c.json({ error: `Failed to create declaration: ${err}` }, 500);
+  }
+});
+
+// --- PUT /admin/declarations/:id — edit a declaration (own, or any with viewAllDeclarations) ---
+app.put("/make-server-0951c59e/admin/declarations/:id", async (c) => {
+  try {
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
+
+    const id = c.req.param("id");
+    const existingStr = await kv.get(`declarations:declaration:${id}`);
+    if (!existingStr) return c.json({ error: "Declaratie niet gevonden" }, 404);
+    const existing = JSON.parse(existingStr);
+
+    const canViewAll = await hasPermission(admin, "viewAllDeclarations");
+    if (existing.adminId !== admin.id && !canViewAll) {
+      return c.json({ error: "Unauthorized" }, 403);
+    }
+
+    const updates = await c.req.json();
+    const updated = {
+      ...existing,
+      ...updates,
+      id: existing.id,
+      adminId: existing.adminId,
+      submittedBy: existing.submittedBy,
+      createdAt: existing.createdAt,
+      updatedAt: new Date().toISOString(),
+    };
+    if (updates.amount !== undefined) updated.amount = Number(updates.amount);
+    await kv.set(`declarations:declaration:${id}`, JSON.stringify(updated));
+
+    return c.json({ declaration: updated });
+  } catch (err) {
+    console.log("Update declaration error:", err);
+    return c.json({ error: `Failed to update declaration: ${err}` }, 500);
+  }
+});
+
+// --- DELETE /admin/declarations/:id — delete a declaration (own, or any with viewAllDeclarations) ---
+app.delete("/make-server-0951c59e/admin/declarations/:id", async (c) => {
+  try {
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
+
+    const id = c.req.param("id");
+    const existingStr = await kv.get(`declarations:declaration:${id}`);
+    if (!existingStr) return c.json({ error: "Declaratie niet gevonden" }, 404);
+    const existing = JSON.parse(existingStr);
+
+    const canViewAll = await hasPermission(admin, "viewAllDeclarations");
+    if (existing.adminId !== admin.id && !canViewAll) {
+      return c.json({ error: "Unauthorized" }, 403);
+    }
+
+    await kv.del(`declarations:declaration:${id}`);
+    const idsStr = await kv.get("declarations:declarationIds");
+    if (idsStr) {
+      const ids = JSON.parse(idsStr).filter((did: string) => did !== id);
+      await kv.set("declarations:declarationIds", JSON.stringify(ids));
+    }
+
+    return c.json({ success: true });
+  } catch (err) {
+    console.log("Delete declaration error:", err);
+    return c.json({ error: `Failed to delete declaration: ${err}` }, 500);
   }
 });
 

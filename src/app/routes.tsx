@@ -36,6 +36,8 @@ const AdminRemindersPage = lazy(() => import("./pages/portal/AdminRemindersPage"
 const AdminSettingsPage = lazy(() => import("./pages/portal/AdminSettingsPage").then(m => ({ default: m.AdminSettingsPage })));
 const AdminAutomotiveGalleryPage = lazy(() => import("./pages/portal/AdminAutomotiveGalleryPage").then(m => ({ default: m.AdminAutomotiveGalleryPage })));
 const AdminAdsPage = lazy(() => import("./pages/portal/AdminAdsPage").then(m => ({ default: m.AdminAdsPage })));
+const AdminTeamPage = lazy(() => import("./pages/portal/AdminTeamPage").then(m => ({ default: m.AdminTeamPage })));
+const AdminDeclarationsPage = lazy(() => import("./pages/portal/AdminDeclarationsPage").then(m => ({ default: m.AdminDeclarationsPage })));
 
 function PageLoader() {
   return (
@@ -85,6 +87,8 @@ const LazyAdminRemindersPage = wrap(AdminRemindersPage);
 const LazyAdminSettingsPage = wrap(AdminSettingsPage);
 const LazyAdminAutomotiveGalleryPage = wrap(AdminAutomotiveGalleryPage);
 const LazyAdminAdsPage = wrap(AdminAdsPage);
+const LazyAdminTeamPage = wrap(AdminTeamPage);
+const LazyAdminDeclarationsPage = wrap(AdminDeclarationsPage);
 
 export const router = createBrowserRouter([
   {
@@ -133,6 +137,8 @@ export const router = createBrowserRouter([
           { path: "portfolio", Component: LazyAdminPortfolioPage },
           { path: "services/automotive", Component: LazyAdminAutomotiveGalleryPage },
           { path: "ads", Component: LazyAdminAdsPage },
+          { path: "team", Component: LazyAdminTeamPage },
+          { path: "declarations", Component: LazyAdminDeclarationsPage },
           { path: "reminders", Component: LazyAdminRemindersPage },
           { path: "settings", Component: LazyAdminSettingsPage },
         ],

@@ -1,7 +1,7 @@
 import image_PDClogo2_0_12_1 from '@/imports/PDClogo2.0-12-1.png';
 import { Outlet, Navigate, useNavigate, useLocation } from "react-router";
 import { useAuth } from "../../context/AuthContext";
-import { LayoutDashboard, Users, LogOut, ChevronRight, Menu, X, Mail, Images, Bell, Settings, Car, Megaphone } from "lucide-react";
+import { LayoutDashboard, Users, LogOut, ChevronRight, Menu, X, Mail, Images, Bell, Settings, Car, Megaphone, Receipt, Shield } from "lucide-react";
 import { useState } from "react";
 import { useMobile } from "../../hooks/useMobile";
 
@@ -13,6 +13,8 @@ const NAV_ITEMS = [
   { label: "Automotive", path: "/admin/services/automotive", icon: Car },
   { label: "Ads", path: "/admin/ads", icon: Megaphone },
   { label: "Actiepunten", path: "/admin/reminders", icon: Bell },
+  { label: "Declaraties", path: "/admin/declarations", icon: Receipt },
+  { label: "Team & Rollen", path: "/admin/team", icon: Shield },
   { label: "Settings", path: "/admin/settings", icon: Settings },
 ];
 
