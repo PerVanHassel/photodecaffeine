@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, Navigate } from "react-router";
 import { Root } from "./Root";
 import { Home } from "./pages/Home";
 
@@ -106,6 +106,7 @@ export const router = createBrowserRouter([
   {
     path: "/portal",
     children: [
+      { index: true, element: <Navigate to="/portal/login" replace /> },
       { path: "login", Component: LazyPortalLoginPage },
       {
         Component: LazyPortalLayout,

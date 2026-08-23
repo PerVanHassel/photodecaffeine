@@ -76,16 +76,20 @@ const DEFAULT_ROLES: { name: string; permissions: Record<string, boolean> }[] = 
   },
 ];
 
+// Returns whether the message actually left the building. Notification callers
+// fire-and-forget it (a failed notification must never fail the request that
+// triggered it), but callers whose whole purpose IS the email — the client
+// invite — check the result so the admin is never told "sent" when it wasn't.
 async function sendEmail(opts: {
   to: string | string[];
   subject: string;
   html: string;
   replyTo?: string;
-}) {
+}): Promise<{ ok: boolean; error?: string }> {
   const apiKey = Deno.env.get("RESEND_API_KEY");
   if (!apiKey) {
     console.log("sendEmail: RESEND_API_KEY not set, skipping email send");
-    return;
+    return { ok: false, error: "E-mailversturen is niet geconfigureerd (RESEND_API_KEY ontbreekt)." };
   }
   try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -105,10 +109,26 @@ async function sendEmail(opts: {
     if (!res.ok) {
       const errBody = await res.text();
       console.log("sendEmail: Resend API error", res.status, errBody);
+      return { ok: false, error: `De mailprovider gaf een fout (${res.status}).` };
     }
+    return { ok: true };
   } catch (err) {
     console.log("sendEmail: failed to send", err);
+    return { ok: false, error: "De mailprovider was niet bereikbaar." };
   }
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+// Escapes values interpolated into email HTML so a stray quote or angle
+// bracket in a name or address can't break out of the surrounding markup.
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 // Looks up a Supabase Auth user's email + display name by id. Used to notify
@@ -775,6 +795,90 @@ app.get("/make-server-0951c59e/admin/clients", async (c) => {
   } catch (err) {
     console.log("Admin get clients error:", err);
     return c.json({ error: `Failed to fetch clients: ${err}` }, 500);
+  }
+});
+
+// --- POST /admin/clients/invite — email a portal invitation to a new client ---
+// Only the address is required. The invite links to the portal with the email
+// prefilled on the sign-up tab, so the client picks their own password; no
+// account is created here.
+app.post("/make-server-0951c59e/admin/clients/invite", async (c) => {
+  try {
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
+
+    const body = await c.req.json().catch(() => ({}));
+    const email = String(body.email || "").trim().toLowerCase();
+    const name = String(body.name || "").trim();
+
+    if (!EMAIL_RE.test(email)) {
+      return c.json({ error: "Vul een geldig e-mailadres in." }, 400);
+    }
+
+    // An invite to someone who already has an account only causes confusion —
+    // the sign-up form would reject them.
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const lookupRes = await fetch(
+      `${supabaseUrl}/auth/v1/admin/users?page=1&per_page=50&filter=${encodeURIComponent(email)}`,
+      { headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey } }
+    );
+    if (lookupRes.ok) {
+      const lookupData = await lookupRes.json().catch(() => ({}));
+      const exists = (lookupData.users || []).some(
+        (u: any) => String(u.email || "").toLowerCase() === email
+      );
+      if (exists) {
+        return c.json({ error: "Er bestaat al een account met dit e-mailadres." }, 409);
+      }
+    }
+
+    const inviteLink = `${SITE_URL}/portal/login?invite=${encodeURIComponent(email)}`;
+    const greeting = name ? `Hallo ${escapeHtml(name.split(" ")[0])},` : "Hallo,";
+
+    const sent = await sendEmail({
+      to: email,
+      subject: "Je bent uitgenodigd voor het PhotoDeCaffeine klantenportaal",
+      replyTo: EMAIL_ADMIN_NOTIFY,
+      html: emailWrap(`
+        <tr>
+          <td style="padding:32px 36px 0;">
+            <span style="color:#c8905a;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;">Uitnodiging</span>
+            <div style="height:10px;line-height:10px;font-size:0;">&nbsp;</div>
+            <span style="display:block;color:#fffbe0;font-size:22px;font-weight:800;letter-spacing:-0.01em;">Je klantenportaal staat klaar</span>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:22px 36px 0;">
+            <span style="color:rgba(255,251,224,0.55);font-size:14px;font-weight:300;line-height:1.75;">${greeting} we hebben een plek voor je klaargezet in het PhotoDeCaffeine klantenportaal. Daar volg je je projecten, bekijk je je galerijen en download je je foto&#39;s.</span>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:14px 36px 0;">
+            <span style="color:rgba(255,251,224,0.55);font-size:14px;font-weight:300;line-height:1.75;">Maak je account aan met dit e-mailadres &mdash; <span style="color:#fffbe0;">${escapeHtml(email)}</span> &mdash; en kies zelf een wachtwoord.</span>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:26px 36px 40px;">
+            <a href="${inviteLink}" style="display:inline-block;background-color:#c8905a;color:#0d0703;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 30px;">Account aanmaken</a>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:18px 36px 28px;border-top:1px solid rgba(255,251,224,0.06);">
+            <span style="color:rgba(255,251,224,0.2);font-size:11px;">Werkt de knop niet? Ga naar ${SITE_URL}/portal/login en meld je aan met dit e-mailadres. Vragen? Antwoord gerust op deze mail.</span>
+          </td>
+        </tr>
+      `),
+    });
+
+    if (!sent.ok) {
+      return c.json({ error: sent.error || "De uitnodiging kon niet verstuurd worden." }, 502);
+    }
+
+    return c.json({ success: true, email });
+  } catch (err) {
+    console.log("Admin invite client error:", err);
+    return c.json({ error: `Uitnodiging versturen mislukt: ${err}` }, 500);
   }
 });
 
