@@ -1,6 +1,6 @@
 import image_PDClogo2_0_12_1 from '@/imports/PDClogo2.0-12-1.png'
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { portalFetch } from "../../../lib/supabase";
 import { Eye, EyeOff } from "lucide-react";
@@ -10,7 +10,11 @@ type Tab = "signin" | "signup";
 export function PortalLoginPage() {
   const { signIn, session } = useAuth();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>("signin");
+  const [searchParams] = useSearchParams();
+  // Set by the invitation email (/portal?invite=<address>): open on the sign-up
+  // tab with the invited address filled in, so the client only picks a password.
+  const invitedEmail = searchParams.get("invite")?.trim() || "";
+  const [tab, setTab] = useState<Tab>(invitedEmail ? "signup" : "signin");
 
   // Sign in form
   const [email, setEmail] = useState("");
@@ -22,7 +26,7 @@ export function PortalLoginPage() {
   // Sign up form
   const [suName, setSuName] = useState("");
   const [suCompany, setSuCompany] = useState("");
-  const [suEmail, setSuEmail] = useState("");
+  const [suEmail, setSuEmail] = useState(invitedEmail);
   const [suPassword, setSuPassword] = useState("");
   const [showSuPass, setShowSuPass] = useState(false);
   const [signupError, setSignupError] = useState("");
@@ -31,6 +35,15 @@ export function PortalLoginPage() {
   useEffect(() => {
     if (session) navigate("/portal/dashboard", { replace: true });
   }, [session, navigate]);
+
+  // The link may be opened while the component is already mounted (or the param
+  // may arrive after hydration), so keep the form in sync with it.
+  useEffect(() => {
+    if (invitedEmail) {
+      setTab("signup");
+      setSuEmail(invitedEmail);
+    }
+  }, [invitedEmail]);
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
@@ -174,6 +187,35 @@ export function PortalLoginPage() {
             </button>
           ))}
         </div>
+
+        {/* Invitation notice — shown when arriving from an invite email */}
+        {invitedEmail && tab === "signup" && (
+          <div
+            style={{
+              border: "1px solid rgba(200,144,90,0.25)",
+              backgroundColor: "rgba(200,144,90,0.07)",
+              padding: "14px 16px",
+              marginBottom: "28px",
+            }}
+          >
+            <div
+              style={{
+                color: "#c8905a",
+                fontSize: "9px",
+                fontWeight: 700,
+                letterSpacing: "0.25em",
+                textTransform: "uppercase",
+                marginBottom: "7px",
+              }}
+            >
+              You&rsquo;re Invited
+            </div>
+            <div style={{ color: "rgba(255,251,224,0.5)", fontSize: "12px", lineHeight: 1.6 }}>
+              Complete your details below to activate the portal for{" "}
+              <span style={{ color: "#fffbe0" }}>{invitedEmail}</span>.
+            </div>
+          </div>
+        )}
 
         {/* Sign In Form */}
         {tab === "signin" && (
@@ -361,7 +403,7 @@ export function PortalLoginPage() {
                 marginTop: "4px",
               }}
             >
-              {signupLoading ? "Creating Account…" : "Request Access"}
+              {signupLoading ? "Creating Account…" : invitedEmail ? "Activate Account" : "Request Access"}
             </button>
           </form>
         )}

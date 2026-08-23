@@ -71,8 +71,9 @@ export function AdminClientsPage() {
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteName, setInviteName] = useState("");
-  const [inviteError] = useState("");
+  const [inviteError, setInviteError] = useState("");
   const [inviteSuccess, setInviteSuccess] = useState("");
+  const [inviteSending, setInviteSending] = useState(false);
   const inviteEmailRef = useRef<HTMLInputElement>(null);
 
   function loadClients() {
@@ -102,19 +103,28 @@ export function AdminClientsPage() {
     }
   }
 
-  function handleInvite(e: React.FormEvent) {
+  // The server composes and sends the branded invitation itself — nothing here
+  // depends on a local mail client being configured.
+  async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
-    if (!inviteEmail.trim()) return;
-    const name = inviteName.trim();
-    const greeting = name ? `Hi ${name},` : "Hi,";
-    const subject = encodeURIComponent("Your Photo De Caffeine Client Portal access");
-    const body = encodeURIComponent(
-      `${greeting}\n\nYou've been invited to the Photo De Caffeine client portal.\n\nYou can sign up and access your projects here:\nhttps://photodecaffeine.com/portal\n\nBest regards,\nPhoto De Caffeine`
-    );
-    window.open(`mailto:${inviteEmail.trim()}?subject=${subject}&body=${body}`, "_blank");
-    setInviteSuccess(`Email client opened for ${inviteEmail.trim()}`);
-    setInviteEmail("");
-    setInviteName("");
+    const email = inviteEmail.trim();
+    if (!email || !session || inviteSending) return;
+    setInviteSending(true);
+    setInviteError("");
+    try {
+      await portalFetch(
+        "/admin/clients/invite",
+        { method: "POST", body: JSON.stringify({ email, name: inviteName.trim() }) },
+        session.access_token
+      );
+      setInviteSuccess(`Invitation sent to ${email}`);
+      setInviteEmail("");
+      setInviteName("");
+    } catch (err) {
+      setInviteError(err instanceof Error ? err.message : "Failed to send the invitation.");
+    } finally {
+      setInviteSending(false);
+    }
   }
 
   const filtered = clients.filter((c) => {
@@ -452,7 +462,7 @@ export function AdminClientsPage() {
               <div style={{ textAlign: "center", padding: "16px 0" }}>
                 <div style={{ color: "rgba(120,190,140,0.9)", fontSize: "13px", marginBottom: "20px" }}>{inviteSuccess}</div>
                 <button
-                  onClick={() => { setInviteSuccess(""); setInviteEmail(""); setInviteName(""); }}
+                  onClick={() => { setInviteSuccess(""); setInviteError(""); setInviteEmail(""); setInviteName(""); setTimeout(() => inviteEmailRef.current?.focus(), 50); }}
                   style={{
                     background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))",
                     color: "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))", fontSize: "10px", fontWeight: 600,
@@ -467,21 +477,7 @@ export function AdminClientsPage() {
               <form onSubmit={handleInvite} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 <div>
                   <label style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "8px", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase", display: "block", marginBottom: "7px" }}>
-                    Client Name (optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={inviteName}
-                    onChange={(e) => setInviteName(e.target.value)}
-                    placeholder="e.g. Roffa Motion"
-                    style={inputStyle}
-                    onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")}
-                  />
-                </div>
-                <div>
-                  <label style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "8px", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase", display: "block", marginBottom: "7px" }}>
-                    Email Address *
+                    Email Address
                   </label>
                   <input
                     ref={inviteEmailRef}
@@ -495,6 +491,23 @@ export function AdminClientsPage() {
                     onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")}
                   />
                 </div>
+                <div>
+                  <label style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "8px", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase", display: "block", marginBottom: "7px" }}>
+                    Client Name (optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={inviteName}
+                    onChange={(e) => setInviteName(e.target.value)}
+                    placeholder="e.g. Roffa Motion"
+                    style={inputStyle}
+                    onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")}
+                  />
+                  <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "10px", marginTop: "7px", lineHeight: 1.5 }}>
+                    Only used to address the invitation personally. Leave it blank and the email opens with a plain greeting.
+                  </div>
+                </div>
                 {inviteError && (
                   <div style={{ padding: "10px 14px", border: "1px solid rgba(224,112,96,0.2)", color: "#e07060", fontSize: "12px" }}>
                     {inviteError}
@@ -504,6 +517,7 @@ export function AdminClientsPage() {
                   <button
                     type="button"
                     onClick={() => setShowInvite(false)}
+                    disabled={inviteSending}
                     style={{
                       flex: 1, padding: "12px", background: "none",
                       border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
@@ -516,20 +530,20 @@ export function AdminClientsPage() {
                   </button>
                   <button
                     type="submit"
-                    disabled={!inviteEmail.trim()}
+                    disabled={!inviteEmail.trim() || inviteSending}
                     style={{
                       flex: 1, padding: "12px",
                       backgroundColor: "rgba(200,144,90,0.15)",
                       border: "1px solid rgba(200,144,90,0.3)",
-                      color: "#c8905a",
+                      color: inviteSending ? "rgba(200,144,90,0.5)" : "#c8905a",
                       fontSize: "10px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase",
-                      cursor: "pointer",
+                      cursor: inviteSending || !inviteEmail.trim() ? "not-allowed" : "pointer",
                       fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
                     }}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(200,144,90,0.25)"; }}
+                    onMouseEnter={(e) => { if (!inviteSending) { e.currentTarget.style.backgroundColor = "rgba(200,144,90,0.25)"; } }}
                     onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "rgba(200,144,90,0.15)"; }}
                   >
-                    Open Email Client
+                    {inviteSending ? "Sending…" : "Send Invite"}
                   </button>
                 </div>
               </form>
