@@ -371,7 +371,10 @@ export function AdminTeamPage() {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "12px" }}>
         {roles.map((role) => {
-          const activePerms = PERMISSION_KEYS.filter((k) => role.permissions?.[k]);
+          // Every permission is listed, granted or not — a role's limits are as
+          // much a part of what it is as its rights, and only showing the
+          // granted ones left "what can't they do?" unanswerable at a glance.
+          const grantedCount = PERMISSION_KEYS.filter((k) => role.permissions?.[k]).length;
           return (
             <div key={role.id} style={{ backgroundColor: "rgba(var(--admin-bg-card-rgb),0.6)", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))", padding: "20px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
@@ -388,18 +391,39 @@ export function AdminTeamPage() {
                   </button>
                 </div>
               </div>
-              {activePerms.length === 0 ? (
-                <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "12px" }}>Geen rechten toegekend</div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-                  {activePerms.map((k) => (
-                    <div key={k} style={{ color: "rgba(var(--admin-fg-rgb),calc(0.55 * var(--admin-fg-boost)))", fontSize: "11.5px", display: "flex", gap: "6px", alignItems: "center" }}>
-                      <Check size={11} color="#7ab87a" />
-                      {PERMISSION_LABELS[k]}
+              <div style={{
+                color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))",
+                fontSize: "10px", fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase",
+                paddingBottom: "10px", marginBottom: "10px",
+                borderBottom: "1px solid rgba(var(--admin-fg-rgb),calc(0.07 * var(--admin-fg-boost)))",
+              }}>
+                {grantedCount} van {PERMISSION_KEYS.length} rechten
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                {PERMISSION_KEYS.map((k) => {
+                  const granted = !!role.permissions?.[k];
+                  return (
+                    <div
+                      key={k}
+                      style={{
+                        color: granted
+                          ? "rgba(var(--admin-fg-rgb),calc(0.7 * var(--admin-fg-boost)))"
+                          : "rgba(var(--admin-fg-rgb),calc(0.28 * var(--admin-fg-boost)))",
+                        fontSize: "11.5px", display: "flex", gap: "7px", alignItems: "flex-start", lineHeight: 1.45,
+                      }}
+                    >
+                      <span style={{ flexShrink: 0, display: "flex", alignItems: "center", height: "17px" }}>
+                        {granted
+                          ? <Check size={11} color="#7ab87a" />
+                          : <X size={11} color="rgba(224,112,96,0.55)" />}
+                      </span>
+                      <span style={{ textDecoration: granted ? "none" : "line-through", textDecorationColor: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))" }}>
+                        {PERMISSION_LABELS[k]}
+                      </span>
                     </div>
-                  ))}
-                </div>
-              )}
+                  );
+                })}
+              </div>
             </div>
           );
         })}
