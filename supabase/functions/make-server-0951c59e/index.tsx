@@ -1668,6 +1668,28 @@ app.get("/make-server-0951c59e/admin/inquiries", async (c) => {
   }
 });
 
+// --- DELETE /admin/inquiry/:id — delete a contact form submission ---
+app.delete("/make-server-0951c59e/admin/inquiry/:id", async (c) => {
+  try {
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
+
+    const id = c.req.param("id");
+    await kv.del(`contact:inquiry:${id}`);
+
+    const allIdsStr = await kv.get("contact:inquiryIds");
+    if (allIdsStr) {
+      const allIds = JSON.parse(allIdsStr).filter((iid: string) => iid !== id);
+      await kv.set("contact:inquiryIds", JSON.stringify(allIds));
+    }
+
+    return c.json({ success: true });
+  } catch (err) {
+    console.log("Delete inquiry error:", err);
+    return c.json({ error: `Failed to delete inquiry: ${err}` }, 500);
+  }
+});
+
 // --- POST /contact — public contact form submission ---
 app.post("/make-server-0951c59e/contact", async (c) => {
   try {
