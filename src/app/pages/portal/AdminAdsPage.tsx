@@ -312,7 +312,9 @@ export function AdminAdsPage() {
 
   function updateMeta(ref: string, patch: Partial<CampaignMeta>) {
     setMeta((prev) => {
-      const next = { ...prev, [ref]: { label: "", active: true, ...prev[ref], ...patch } };
+      // A ref with no stored meta yet starts from the defaults.
+      const existing: CampaignMeta = prev[ref] ?? { label: "", active: true };
+      const next = { ...prev, [ref]: { ...existing, ...patch } };
       saveMeta(next);
       return next;
     });

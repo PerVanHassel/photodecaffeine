@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { portalFetch } from "../../../lib/supabase";
-import { ArrowLeft, ArrowRight, Send, CheckCircle2, Circle, Images } from "lucide-react";
+import { ArrowLeft, ArrowRight, Send, CheckCircle2, Circle, Images, Star, MessageSquare } from "lucide-react";
 import { useMobile } from "../../hooks/useMobile";
 
 interface Deliverable {
@@ -36,6 +36,21 @@ interface Project {
   };
   galleryUrls?: string[];
   gallerySettings?: GallerySettings;
+}
+
+interface Review {
+  id: string;
+  rating: number;
+  text: string;
+  published: boolean;
+  updatedAt: string;
+}
+
+interface Engagement {
+  reviewRequested: boolean;
+  feedbackRequested: boolean;
+  review: Review | null;
+  feedbackCount: number;
 }
 
 interface Message {
@@ -93,6 +108,15 @@ export function PortalProjectPage() {
   const [sending, setSending] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [error, setError] = useState("");
+
+  // Review + feedback requests
+  const [engagement, setEngagement] = useState<Engagement | null>(null);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [reviewText, setReviewText] = useState("");
+  const [savingReview, setSavingReview] = useState(false);
+  const [reviewError, setReviewError] = useState("");
+  const [editingReview, setEditingReview] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -124,6 +148,20 @@ export function PortalProjectPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // What the studio has asked this client for, and what they already answered.
+  useEffect(() => {
+    if (!session || !id) return;
+    portalFetch(`/portal/project/${id}/engagement`, {}, session.access_token)
+      .then((data: Engagement) => {
+        setEngagement(data);
+        if (data.review) {
+          setReviewRating(data.review.rating);
+          setReviewText(data.review.text);
+        }
+      })
+      .catch(() => {});
+  }, [session, id]);
+
   // Poll for new messages every 30 seconds
   useEffect(() => {
     if (!session || !id) return;
@@ -137,6 +175,26 @@ export function PortalProjectPage() {
 
   const galleryUrls = project?.galleryUrls ?? [];
   const gallerySettings = project?.gallerySettings;
+
+  async function handleSubmitReview(e: React.FormEvent) {
+    e.preventDefault();
+    if (!session || !id || reviewRating < 1 || !reviewText.trim() || savingReview) return;
+    setSavingReview(true);
+    setReviewError("");
+    try {
+      const data = await portalFetch(
+        `/portal/project/${id}/review`,
+        { method: "POST", body: JSON.stringify({ rating: reviewRating, text: reviewText.trim() }) },
+        session.access_token
+      );
+      setEngagement((prev) => (prev ? { ...prev, review: data.review } : prev));
+      setEditingReview(false);
+    } catch (err) {
+      setReviewError(err instanceof Error ? err.message : "Review opslaan mislukt.");
+    } finally {
+      setSavingReview(false);
+    }
+  }
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
@@ -497,6 +555,171 @@ export function PortalProjectPage() {
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Review request — shown only once the studio has asked for one */}
+          {engagement?.reviewRequested && (
+            <div
+              style={{
+                border: "1px solid rgba(200,144,90,0.28)",
+                backgroundColor: "rgba(200,144,90,0.05)",
+                padding: isMobile ? "22px 18px" : "28px",
+                marginBottom: "24px",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#c8905a", fontSize: "9px", fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: "14px" }}>
+                <Star size={12} />
+                {engagement.review && !editingReview ? "Je review" : "Review achterlaten"}
+              </div>
+
+              {engagement.review && !editingReview ? (
+                <>
+                  <div style={{ display: "flex", gap: "3px", marginBottom: "14px" }}>
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <Star key={n} size={18} color="#c8905a" fill={n <= engagement.review!.rating ? "#c8905a" : "none"} strokeWidth={2} />
+                    ))}
+                  </div>
+                  <p style={{ color: "rgba(255,251,224,0.65)", fontSize: "14px", lineHeight: 1.75, margin: "0 0 18px", whiteSpace: "pre-wrap" }}>
+                    {engagement.review.text}
+                  </p>
+                  <div style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
+                    <button
+                      onClick={() => setEditingReview(true)}
+                      style={{
+                        background: "none", border: "1px solid rgba(255,251,224,0.15)",
+                        color: "rgba(255,251,224,0.5)", fontSize: "10px", fontWeight: 600,
+                        letterSpacing: "0.15em", textTransform: "uppercase",
+                        padding: "10px 18px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+                      }}
+                    >
+                      Aanpassen
+                    </button>
+                    <span style={{ color: "rgba(255,251,224,0.25)", fontSize: "11.5px", lineHeight: 1.6 }}>
+                      Bedankt! {engagement.review.published
+                        ? "Je review staat op onze site."
+                        : "PDC bekijkt hem voordat hij op de site komt."}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <form onSubmit={handleSubmitReview}>
+                  <p style={{ color: "rgba(255,251,224,0.4)", fontSize: "13.5px", lineHeight: 1.7, margin: "0 0 18px", maxWidth: "560px" }}>
+                    We zijn benieuwd hoe je de samenwerking hebt ervaren. Met jouw goedkeuring plaatsen we je review op onze site.
+                  </p>
+
+                  <div
+                    style={{ display: "flex", gap: "4px", marginBottom: "18px" }}
+                    onMouseLeave={() => setHoverRating(0)}
+                  >
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => setReviewRating(n)}
+                        onMouseEnter={() => setHoverRating(n)}
+                        aria-label={`${n} van 5 sterren`}
+                        style={{ background: "none", border: "none", padding: "2px", cursor: "pointer", lineHeight: 0 }}
+                      >
+                        <Star
+                          size={28}
+                          color="#c8905a"
+                          fill={n <= (hoverRating || reviewRating) ? "#c8905a" : "none"}
+                          strokeWidth={1.8}
+                        />
+                      </button>
+                    ))}
+                  </div>
+
+                  <textarea
+                    value={reviewText}
+                    onChange={(e) => setReviewText(e.target.value)}
+                    rows={4}
+                    placeholder="Wat wil je anderen over PDC vertellen?"
+                    style={{
+                      width: "100%", backgroundColor: "rgba(255,251,224,0.03)",
+                      border: "1px solid rgba(255,251,224,0.1)", color: "#fffbe0",
+                      fontSize: "14px", fontFamily: "'Inter', sans-serif", fontWeight: 300,
+                      padding: "13px 16px", outline: "none", boxSizing: "border-box", resize: "vertical",
+                    }}
+                  />
+
+                  {reviewError && (
+                    <p style={{ color: "#e07060", fontSize: "12.5px", margin: "12px 0 0" }}>{reviewError}</p>
+                  )}
+
+                  <div style={{ display: "flex", gap: "10px", marginTop: "18px", flexWrap: "wrap" }}>
+                    <button
+                      type="submit"
+                      disabled={reviewRating < 1 || !reviewText.trim() || savingReview}
+                      style={{
+                        backgroundColor: reviewRating < 1 || !reviewText.trim() || savingReview ? "rgba(255,251,224,0.08)" : "#fffbe0",
+                        color: reviewRating < 1 || !reviewText.trim() || savingReview ? "rgba(255,251,224,0.3)" : "#080401",
+                        border: "none", padding: "13px 26px",
+                        fontSize: "11px", fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase",
+                        cursor: reviewRating < 1 || !reviewText.trim() || savingReview ? "not-allowed" : "pointer",
+                        fontFamily: "'Inter', sans-serif",
+                      }}
+                    >
+                      {savingReview ? "Versturen…" : engagement.review ? "Review bijwerken" : "Review versturen"}
+                    </button>
+                    {engagement.review && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingReview(false);
+                          setReviewRating(engagement.review!.rating);
+                          setReviewText(engagement.review!.text);
+                          setReviewError("");
+                        }}
+                        style={{
+                          background: "none", border: "1px solid rgba(255,251,224,0.12)",
+                          color: "rgba(255,251,224,0.4)", fontSize: "10px", fontWeight: 600,
+                          letterSpacing: "0.15em", textTransform: "uppercase",
+                          padding: "13px 22px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+                        }}
+                      >
+                        Annuleren
+                      </button>
+                    )}
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
+
+          {/* Feedback request */}
+          {engagement?.feedbackRequested && (
+            <div
+              style={{
+                border: "1px solid rgba(255,251,224,0.1)",
+                padding: isMobile ? "22px 18px" : "26px 28px",
+                marginBottom: "24px",
+                display: "flex", gap: "18px", alignItems: "flex-start", flexWrap: "wrap",
+              }}
+            >
+              <div style={{ flex: 1, minWidth: "220px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#c8905a", fontSize: "9px", fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: "12px" }}>
+                  <MessageSquare size={12} />
+                  Feedback gevraagd
+                </div>
+                <p style={{ color: "rgba(255,251,224,0.4)", fontSize: "13.5px", lineHeight: 1.7, margin: 0 }}>
+                  Laat opmerkingen achter bij losse foto&rsquo;s, bij meerdere tegelijk, of over de samenwerking in het algemeen.
+                  {engagement.feedbackCount > 0 && ` Je hebt al ${engagement.feedbackCount} keer feedback gestuurd — aanvullen mag altijd.`}
+                </p>
+              </div>
+              <button
+                onClick={() => navigate(`/portal/project/${id}/feedback`)}
+                style={{
+                  display: "flex", alignItems: "center", gap: "8px",
+                  backgroundColor: "rgba(200,144,90,0.12)", border: "1px solid rgba(200,144,90,0.3)",
+                  color: "#c8905a", fontSize: "10px", fontWeight: 700,
+                  letterSpacing: "0.15em", textTransform: "uppercase",
+                  padding: "13px 22px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+                }}
+              >
+                Feedback geven <ArrowRight size={12} />
+              </button>
             </div>
           )}
 

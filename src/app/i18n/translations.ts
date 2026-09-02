@@ -616,7 +616,7 @@ export const translations = {
     },
     socialProof: {
       label: "Klantwoorden",
-      testimonialsLabel: "Getuigenissen",
+      testimonialsLabel: "Reviews",
       testimonials: [
         {
           id: 1,
@@ -851,4 +851,21 @@ export const translations = {
   },
 } as const;
 
-export type Translations = typeof translations.en;
+// `as const` keeps the tables literal, which is what makes a missing or
+// misspelled key an error. But it also pins every value to its exact English
+// string, which the Dutch table can never satisfy. Widening the leaves back to
+// their base types keeps the shape check while allowing different words —
+// readonly is preserved so the const arrays stay assignable.
+type DeepWiden<T> = T extends (...args: never[]) => unknown
+  ? T
+  : T extends string
+  ? string
+  : T extends number
+  ? number
+  : T extends boolean
+  ? boolean
+  : T extends readonly (infer U)[]
+  ? readonly DeepWiden<U>[]
+  : { [K in keyof T]: DeepWiden<T[K]> };
+
+export type Translations = DeepWiden<typeof translations.en>;

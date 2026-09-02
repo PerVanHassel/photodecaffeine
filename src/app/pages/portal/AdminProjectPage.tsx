@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { portalFetch } from "../../../lib/supabase";
 import { useMobile } from "../../hooks/useMobile";
-import { ArrowLeft, Save, Plus, Trash2, Check, Send, AlertTriangle, Upload, Images, X, Bell, ChevronUp, ChevronDown, Star, ExternalLink } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, Check, Send, AlertTriangle, Upload, Images, X, Bell, ChevronUp, ChevronDown, Star, ExternalLink, MessageSquare } from "lucide-react";
 import { projectId as supabaseProjectId } from "/utils/supabase/info";
 
 const BUCKET = "portfolio-images-0951c59e";
@@ -138,6 +138,12 @@ export function AdminProjectPage() {
 
   // Delete
   const [showDelete, setShowDelete] = useState(false);
+
+  // Review + feedback requests
+  const [engagement, setEngagement] = useState<any>(null);
+  const [requesting, setRequesting] = useState<"review" | "feedback" | null>(null);
+  const [engagementError, setEngagementError] = useState("");
+  const [engagementNotice, setEngagementNotice] = useState("");
   const [deleting, setDeleting] = useState(false);
 
   const isMobile = useMobile();
@@ -166,6 +172,38 @@ export function AdminProjectPage() {
       })
       .catch((err) => { console.error("Failed to load project:", err); setError("Failed to load project."); setLoading(false); });
   }, [session, projectId]);
+
+  // Review + feedback: what has been asked of the client, and what came back.
+  function loadEngagement() {
+    if (!session || !projectId) return;
+    portalFetch(`/admin/project/${projectId}/engagement`, {}, session.access_token)
+      .then(setEngagement)
+      .catch(() => {});
+  }
+
+  useEffect(loadEngagement, [session, projectId]);
+
+  async function requestFromClient(kind: "review" | "feedback") {
+    if (!session || !projectId || requesting) return;
+    setRequesting(kind);
+    setEngagementError("");
+    setEngagementNotice("");
+    try {
+      const data = await portalFetch(
+        `/admin/project/${projectId}/request-${kind}`,
+        { method: "POST" },
+        session.access_token
+      );
+      setEngagementNotice(
+        `${kind === "review" ? "Reviewverzoek" : "Feedbackverzoek"} gemaild naar ${data.sentTo}.`
+      );
+      loadEngagement();
+    } catch (err) {
+      setEngagementError(err instanceof Error ? err.message : "Versturen mislukt.");
+    } finally {
+      setRequesting(null);
+    }
+  }
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -958,6 +996,137 @@ export function AdminProjectPage() {
                 {sendingMsg ? "Sending…" : "Send"}
               </button>
             </form>
+          </div>
+
+          {sectionDivider}
+
+          {/* ── Review & Feedback ── */}
+          <div>
+            <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: "16px" }}>
+              Review &amp; Feedback
+            </div>
+
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "16px" }}>
+              {([
+                ["review", "Vraag review", engagement?.reviewRequest, Star],
+                ["feedback", "Vraag feedback", engagement?.feedbackRequest, MessageSquare],
+              ] as const).map(([kind, label, request, Icon]) => (
+                <button
+                  key={kind}
+                  onClick={() => requestFromClient(kind)}
+                  disabled={!!requesting}
+                  title={request ? `Eerder gevraagd op ${new Date(request.requestedAt).toLocaleDateString("nl-NL")}` : undefined}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "7px",
+                    background: "none", border: "1px solid rgba(200,144,90,0.25)",
+                    color: "#c8905a", fontSize: "9px", fontWeight: 700,
+                    letterSpacing: "0.15em", textTransform: "uppercase",
+                    cursor: requesting ? "not-allowed" : "pointer", padding: "9px 14px",
+                    opacity: requesting && requesting !== kind ? 0.5 : 1,
+                    fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => { if (!requesting) e.currentTarget.style.backgroundColor = "rgba(200,144,90,0.1)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                >
+                  <Icon size={11} />
+                  {requesting === kind ? "Versturen…" : request ? `${label} opnieuw` : label}
+                </button>
+              ))}
+            </div>
+
+            {(engagement?.reviewRequest || engagement?.feedbackRequest) && (
+              <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "11px", lineHeight: 1.6, marginBottom: "16px" }}>
+                {engagement?.reviewRequest && (
+                  <div>
+                    Review gevraagd op {new Date(engagement.reviewRequest.requestedAt).toLocaleDateString("nl-NL", { day: "numeric", month: "short", year: "numeric" })}
+                    {engagement.reviewRequest.status === "submitted" ? " · beantwoord" : " · nog geen antwoord"}
+                  </div>
+                )}
+                {engagement?.feedbackRequest && (
+                  <div>
+                    Feedback gevraagd op {new Date(engagement.feedbackRequest.requestedAt).toLocaleDateString("nl-NL", { day: "numeric", month: "short", year: "numeric" })}
+                    {engagement.feedbackRequest.status === "submitted" ? " · beantwoord" : " · nog geen antwoord"}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {engagementNotice && (
+              <div style={{ padding: "10px 14px", border: "1px solid rgba(120,190,140,0.25)", color: "rgba(120,190,140,0.9)", fontSize: "12px", marginBottom: "16px" }}>
+                {engagementNotice}
+              </div>
+            )}
+            {engagementError && (
+              <div style={{ padding: "10px 14px", border: "1px solid rgba(224,112,96,0.25)", color: "#e07060", fontSize: "12px", marginBottom: "16px" }}>
+                {engagementError}
+              </div>
+            )}
+
+            {engagement?.review && (
+              <div style={{ border: "1px solid rgba(200,144,90,0.2)", backgroundColor: "rgba(200,144,90,0.04)", padding: "18px", marginBottom: "12px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", marginBottom: "12px" }}>
+                  <span style={{ display: "inline-flex", gap: "2px" }}>
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <Star key={n} size={14} color="#c8905a" fill={n <= engagement.review.rating ? "#c8905a" : "none"} strokeWidth={2} />
+                    ))}
+                  </span>
+                  <span style={{
+                    color: engagement.review.published ? "rgba(120,190,140,0.9)" : "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))",
+                    fontSize: "9px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
+                  }}>
+                    {engagement.review.published ? "Op de site" : "Niet gepubliceerd"}
+                  </span>
+                </div>
+                <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.7 * var(--admin-fg-boost)))", fontSize: "13.5px", lineHeight: 1.7, whiteSpace: "pre-wrap", marginBottom: "14px" }}>
+                  {engagement.review.text}
+                </div>
+                <button
+                  onClick={() => navigate("/admin/reviews")}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "6px",
+                    background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))",
+                    color: "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 700,
+                    letterSpacing: "0.15em", textTransform: "uppercase",
+                    cursor: "pointer", padding: "8px 13px", fontFamily: "'Inter', sans-serif",
+                  }}
+                >
+                  Publiceren &amp; koppelen <ExternalLink size={10} />
+                </button>
+              </div>
+            )}
+
+            {engagement?.feedback?.length > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                {engagement.feedback.map((entry: any) => (
+                  <div key={entry.id} style={{ border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))", padding: "18px" }}>
+                    <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "14px" }}>
+                      Feedback · {new Date(entry.createdAt).toLocaleDateString("nl-NL", { day: "numeric", month: "short", year: "numeric" })}
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "13px" }}>
+                      {entry.items.map((item: any) => (
+                        <div key={item.id}>
+                          <div style={{ color: "#c8905a", fontSize: "9px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "7px" }}>
+                            {item.scope === "photos"
+                              ? `${item.photoUrls.length} foto${item.photoUrls.length === 1 ? "" : "'s"}`
+                              : item.category || "Algemeen"}
+                          </div>
+                          {item.photoUrls.length > 0 && (
+                            <div style={{ display: "flex", gap: "5px", flexWrap: "wrap", marginBottom: "8px" }}>
+                              {item.photoUrls.map((url: string) => (
+                                <img key={url} src={url} alt="" style={{ width: "52px", height: "52px", objectFit: "cover", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.12 * var(--admin-fg-boost)))" }} />
+                              ))}
+                            </div>
+                          )}
+                          <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.65 * var(--admin-fg-boost)))", fontSize: "13px", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+                            {item.text}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {sectionDivider}

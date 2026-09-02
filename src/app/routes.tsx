@@ -17,6 +17,7 @@ const PortalLoginPage = lazy(() => import("./pages/portal/PortalLoginPage").then
 const PortalDashboardPage = lazy(() => import("./pages/portal/PortalDashboardPage").then(m => ({ default: m.PortalDashboardPage })));
 const PortalProjectPage = lazy(() => import("./pages/portal/PortalProjectPage").then(m => ({ default: m.PortalProjectPage })));
 const PortalGalleryPage = lazy(() => import("./pages/portal/PortalGalleryPage").then(m => ({ default: m.PortalGalleryPage })));
+const PortalFeedbackPage = lazy(() => import("./pages/portal/PortalFeedbackPage").then(m => ({ default: m.PortalFeedbackPage })));
 
 // Admin pages — never needed by regular visitors
 const AdminLayout = lazy(() => import("./components/portal/AdminLayout").then(m => ({ default: m.AdminLayout })));
@@ -31,6 +32,7 @@ const AdminClientDetailPage = lazy(() => import("./pages/portal/AdminClientDetai
 const AdminProjectPage = lazy(() => import("./pages/portal/AdminProjectPage").then(m => ({ default: m.AdminProjectPage })));
 const AdminGalleryPreviewPage = lazy(() => import("./pages/portal/AdminGalleryPreviewPage").then(m => ({ default: m.AdminGalleryPreviewPage })));
 const AdminInquiriesPage = lazy(() => import("./pages/portal/AdminInquiriesPage").then(m => ({ default: m.AdminInquiriesPage })));
+const AdminReviewsPage = lazy(() => import("./pages/portal/AdminReviewsPage").then(m => ({ default: m.AdminReviewsPage })));
 const AdminPortfolioPage = lazy(() => import("./pages/portal/AdminPortfolioPage").then(m => ({ default: m.AdminPortfolioPage })));
 const AdminRemindersPage = lazy(() => import("./pages/portal/AdminRemindersPage").then(m => ({ default: m.AdminRemindersPage })));
 const AdminSettingsPage = lazy(() => import("./pages/portal/AdminSettingsPage").then(m => ({ default: m.AdminSettingsPage })));
@@ -70,6 +72,7 @@ const LazyPortalLoginPage = wrap(PortalLoginPage);
 const LazyPortalDashboardPage = wrap(PortalDashboardPage);
 const LazyPortalProjectPage = wrap(PortalProjectPage);
 const LazyPortalGalleryPage = wrap(PortalGalleryPage);
+const LazyPortalFeedbackPage = wrap(PortalFeedbackPage);
 const LazyAdminLayout = wrap(AdminLayout);
 const LazyAdminLoginPage = wrap(AdminLoginPage);
 const LazyAdminSelfFixPage = wrap(AdminSelfFixPage);
@@ -82,6 +85,7 @@ const LazyAdminClientDetailPage = wrap(AdminClientDetailPage);
 const LazyAdminProjectPage = wrap(AdminProjectPage);
 const LazyAdminGalleryPreviewPage = wrap(AdminGalleryPreviewPage);
 const LazyAdminInquiriesPage = wrap(AdminInquiriesPage);
+const LazyAdminReviewsPage = wrap(AdminReviewsPage);
 const LazyAdminPortfolioPage = wrap(AdminPortfolioPage);
 const LazyAdminRemindersPage = wrap(AdminRemindersPage);
 const LazyAdminSettingsPage = wrap(AdminSettingsPage);
@@ -114,6 +118,7 @@ export const router = createBrowserRouter([
           { path: "dashboard", Component: LazyPortalDashboardPage },
           { path: "project/:id", Component: LazyPortalProjectPage },
           { path: "project/:id/gallery", Component: LazyPortalGalleryPage },
+          { path: "project/:id/feedback", Component: LazyPortalFeedbackPage },
         ],
       },
     ],
@@ -135,6 +140,7 @@ export const router = createBrowserRouter([
           { path: "project/:id", Component: LazyAdminProjectPage },
           { path: "project/:id/gallery", Component: LazyAdminGalleryPreviewPage },
           { path: "inquiries", Component: LazyAdminInquiriesPage },
+          { path: "reviews", Component: LazyAdminReviewsPage },
           { path: "portfolio", Component: LazyAdminPortfolioPage },
           { path: "services/automotive", Component: LazyAdminAutomotiveGalleryPage },
           { path: "ads", Component: LazyAdminAdsPage },
