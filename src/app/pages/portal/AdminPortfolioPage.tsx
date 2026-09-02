@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { Plus, Edit2, Trash2, X, Upload, Check, Eye, Sparkles, ChevronUp, ChevronDown, AlertCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { projectId } from "/utils/supabase/info";
+import { CategoryCombobox } from "../../components/portal/CategoryCombobox";
 
 const BUCKET = "portfolio-images-0951c59e";
 
@@ -818,20 +819,11 @@ export function AdminPortfolioPage() {
                 >
                   Category
                 </label>
-                <input
-                  type="text"
+                <CategoryCombobox
                   value={formData.category}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
-                  style={{
-                    width: "100%",
-                    backgroundColor: "rgba(var(--admin-bg-card-rgb),0.8)",
-                    border: "1px solid rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))",
-                    color: "var(--admin-fg-solid)",
-                    padding: "12px",
-                    fontSize: "14px",
-                    fontFamily: "'Inter', sans-serif",
-                  }}
-                  placeholder="e.g. Brand Identity, Product, Editorial"
+                  onChange={(category) => setFormData((prev) => ({ ...prev, category }))}
+                  existing={articles.map((a) => a.category)}
+                  placeholder="Pick one or type a new category"
                 />
               </div>
 
