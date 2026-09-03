@@ -7,7 +7,9 @@ on:
   push:
     branches: [main]
     paths:
-      - "supabase/functions/**"
+      # config.toml sits beside functions/, not inside it, and the deploy
+      # depends on it — a narrower filter silently skipped changes to it.
+      - "supabase/**"
       - ".github/workflows/deploy-edge-function.yml"
   workflow_dispatch:
 
