@@ -36,17 +36,19 @@ API-aanroepen te onderscheppen.
 
 ## Edge function deployen
 
-De mapnaam is gelijk aan de functienaam, dus dit werkt direct:
+Gebeurt vanzelf. Elke push naar `main` die `supabase/` raakt, start
+`.github/workflows/deploy-edge-function.yml` en die deployt de functie.
 
-```
-npx supabase functions deploy make-server-0951c59e --project-ref uunwhesmymkwmkgqkmxy
-```
+Deploy niet met de hand. De Supabase MCP-tool vereist dat de volledige
+broncode meegestuurd wordt; die is inmiddels te groot om in één keer te
+versturen, en een half afgemaakte upload heeft de API een keer platgelegd.
 
-Deployen via de Supabase MCP-tool kan ook, maar die vereist dat de volledige
-broncode (ruim 130 KB) meegestuurd wordt. Dat is een keer misgegaan en heeft de
-API korte tijd platgelegd. Gebruik bij voorkeur de CLI. Als het toch via de tool
-moet: daarna de gedeployde broncode ophalen en byte-voor-byte vergelijken met de
-repo voordat je zegt dat het gelukt is.
+Na een push die de functie raakt: controleer via de MCP-tool of het
+versienummer is opgehoogd, en vergelijk de gedeployde broncode byte-voor-byte
+met de repo voordat je zegt dat het gelukt is.
+
+De entrypoint is `index.tsx`, niet `index.ts`. `supabase/config.toml` wijst
+de CLI daarheen; zonder dat bestand faalt de bundel.
 
 ## Taal
 
