@@ -1,0 +1,6 @@
+# Minimal config so the CLI can find the function. Without the explicit
+# entrypoint it looks for index.ts and gives up on our index.tsx.
+project_id = "photodecaffeine"
+
+[functions.make-server-0951c59e]
+entrypoint = "./functions/make-server-0951c59e/index.tsx"
