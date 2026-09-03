@@ -57,6 +57,15 @@ export interface Project {
   };
 }
 
+/**
+ * A project update. Same as Partial<Project> except `meeting` may be null,
+ * which is how the server is told to drop an existing appointment. An
+ * intersection would keep the narrower original type, so the key is replaced.
+ */
+export type ProjectPatch = Omit<Partial<Project>, "meeting"> & {
+  meeting?: Project["meeting"] | null;
+};
+
 export interface Message {
   id: string;
   projectId: string;
@@ -225,7 +234,7 @@ export function createApi(token: string) {
     project: (id: string) => get<{ project: Project }>(`/admin/project/${id}`).then((r) => r.project),
     createProject: (body: Partial<Project> & { clientId: string; title: string }) =>
       send<{ project: Project }>("/admin/project", "POST", body).then((r) => r.project),
-    updateProject: (id: string, body: Partial<Project>) =>
+    updateProject: (id: string, body: ProjectPatch) =>
       send<{ project: Project }>(`/admin/project/${id}`, "PUT", body).then((r) => r.project),
     deleteProject: (id: string) => send<unknown>(`/admin/project/${id}`, "DELETE"),
 

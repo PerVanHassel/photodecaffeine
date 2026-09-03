@@ -14,7 +14,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { useApi, useQuery } from "../useApi";
-import { BUCKETS, type Deliverable, type Message, type Project } from "../api";
+import { BUCKETS, type Deliverable, type Message, type Project, type ProjectPatch } from "../api";
 import { c, dateFull, GUTTER, radius, spring, timeAgo } from "../theme";
 import { haptic } from "../haptics";
 import { Card, Chip, Divider, Ellipsis, Press, Row, SectionLabel, Stack } from "../ui/base";
@@ -43,7 +43,7 @@ export function ProjectScreen() {
   const [deleting, setDeleting] = useState(false);
 
   /** Single write path for every mutation on this screen. */
-  async function patch(updates: Partial<Project>, successMessage?: string) {
+  async function patch(updates: ProjectPatch, successMessage?: string) {
     if (!project) return;
     const before = project;
     query.set({ ...project, ...updates } as Project);
@@ -160,7 +160,7 @@ function OverviewTab({
   onEdit,
 }: {
   project: Project;
-  onPatch: (u: Partial<Project>, msg?: string) => Promise<void>;
+  onPatch: (u: ProjectPatch, msg?: string) => Promise<void>;
   onEdit: () => void;
 }) {
   const [addingDeliverable, setAddingDeliverable] = useState(false);
@@ -472,7 +472,8 @@ function MeetingSheet({
   onSave,
 }: {
   open: boolean;
-  meeting: Project["meeting"];
+  // A cleared meeting comes through as null, same as onSave hands back.
+  meeting: Project["meeting"] | null;
   onClose: () => void;
   onSave: (m: Project["meeting"] | null) => Promise<void>;
 }) {
@@ -622,7 +623,7 @@ function GalleryTab({
   onPatch,
 }: {
   project: Project;
-  onPatch: (u: Partial<Project>, msg?: string) => Promise<void>;
+  onPatch: (u: ProjectPatch, msg?: string) => Promise<void>;
 }) {
   const api = useApi();
   const toast = useToast();
