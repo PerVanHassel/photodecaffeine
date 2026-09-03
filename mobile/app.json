@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "PDC Admin",
+    "slug": "pdc-admin",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "pdcadmin",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#070301"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.photodecaffeine.admin",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "PDC Admin gebruikt je fotobibliotheek om foto's aan projectgalerijen, portfolio en declaratiebonnen toe te voegen.",
+        "NSCameraUsageDescription": "PDC Admin gebruikt de camera om een bon of foto direct vast te leggen."
+      }
+    },
+    "android": {
+      "package": "com.photodecaffeine.admin",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#070301"
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "PDC Admin gebruikt je fotobibliotheek om foto's aan projectgalerijen, portfolio en declaratiebonnen toe te voegen.",
+          "cameraPermission": "PDC Admin gebruikt de camera om een bon of foto direct vast te leggen."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
