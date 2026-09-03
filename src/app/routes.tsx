@@ -34,6 +34,7 @@ const AdminProjectPage = lazy(() => import("./pages/portal/AdminProjectPage").th
 const AdminGalleryPreviewPage = lazy(() => import("./pages/portal/AdminGalleryPreviewPage").then(m => ({ default: m.AdminGalleryPreviewPage })));
 const AdminInquiriesPage = lazy(() => import("./pages/portal/AdminInquiriesPage").then(m => ({ default: m.AdminInquiriesPage })));
 const AdminReviewsPage = lazy(() => import("./pages/portal/AdminReviewsPage").then(m => ({ default: m.AdminReviewsPage })));
+const AdminDemosPage = lazy(() => import("./pages/portal/AdminDemosPage").then(m => ({ default: m.AdminDemosPage })));
 const AdminPortfolioPage = lazy(() => import("./pages/portal/AdminPortfolioPage").then(m => ({ default: m.AdminPortfolioPage })));
 const AdminRemindersPage = lazy(() => import("./pages/portal/AdminRemindersPage").then(m => ({ default: m.AdminRemindersPage })));
 const AdminSettingsPage = lazy(() => import("./pages/portal/AdminSettingsPage").then(m => ({ default: m.AdminSettingsPage })));
@@ -87,6 +88,7 @@ const LazyAdminProjectPage = wrap(AdminProjectPage);
 const LazyAdminGalleryPreviewPage = wrap(AdminGalleryPreviewPage);
 const LazyAdminInquiriesPage = wrap(AdminInquiriesPage);
 const LazyAdminReviewsPage = wrap(AdminReviewsPage);
+const LazyAdminDemosPage = wrap(AdminDemosPage);
 const LazyAdminPortfolioPage = wrap(AdminPortfolioPage);
 const LazyAdminRemindersPage = wrap(AdminRemindersPage);
 const LazyAdminSettingsPage = wrap(AdminSettingsPage);
@@ -142,6 +144,7 @@ export const router = createBrowserRouter([
           { path: "project/:id/gallery", Component: LazyAdminGalleryPreviewPage },
           { path: "inquiries", Component: LazyAdminInquiriesPage },
           { path: "reviews", Component: LazyAdminReviewsPage },
+          { path: "demos", Component: LazyAdminDemosPage },
           { path: "portfolio", Component: LazyAdminPortfolioPage },
           { path: "services/automotive", Component: LazyAdminAutomotiveGalleryPage },
           { path: "ads", Component: LazyAdminAdsPage },

@@ -131,6 +131,40 @@ function escapeHtml(str: string): string {
     .replace(/'/g, "&#39;");
 }
 
+// Every client attached to a project. Projects used to carry a single
+// `clientId`; they now carry a `clientIds` list and keep `clientId` as the
+// first entry, so records written before the change keep working untouched.
+function projectClientIds(project: any): string[] {
+  if (Array.isArray(project?.clientIds) && project.clientIds.length > 0) return project.clientIds;
+  return project?.clientId ? [project.clientId] : [];
+}
+
+function clientCanSeeProject(project: any, userId: string): boolean {
+  return projectClientIds(project).includes(userId);
+}
+
+// Adds or removes a project from each client's own project index, so the
+// portal dashboard lists it for everyone attached to it.
+async function syncClientIndexes(projectId: string, before: string[], after: string[]) {
+  const added = after.filter((id) => !before.includes(id));
+  const removed = before.filter((id) => !after.includes(id));
+
+  for (const clientId of added) {
+    const str = await kv.get(`portal:client:${clientId}:projectIds`);
+    const ids: string[] = str ? JSON.parse(str) : [];
+    if (!ids.includes(projectId)) {
+      ids.push(projectId);
+      await kv.set(`portal:client:${clientId}:projectIds`, JSON.stringify(ids));
+    }
+  }
+  for (const clientId of removed) {
+    const str = await kv.get(`portal:client:${clientId}:projectIds`);
+    if (!str) continue;
+    const ids: string[] = JSON.parse(str).filter((id: string) => id !== projectId);
+    await kv.set(`portal:client:${clientId}:projectIds`, JSON.stringify(ids));
+  }
+}
+
 // Looks up a Supabase Auth user's email + display name by id. Used to notify
 // clients by project.clientId, since project records only store the id.
 async function getPortalUser(userId: string): Promise<{ email: string; name: string } | null> {
@@ -601,7 +635,7 @@ app.get("/make-server-0951c59e/portal/project/:id", async (c) => {
     if (!projectStr) return c.json({ error: "Project not found" }, 404);
 
     const project = JSON.parse(projectStr);
-    if (project.clientId !== user.id)
+    if (!clientCanSeeProject(project, user.id))
       return c.json({ error: "Unauthorized" }, 403);
 
     return c.json({ project });
@@ -622,7 +656,7 @@ app.get("/make-server-0951c59e/portal/project/:id/messages", async (c) => {
     const projectStr = await kv.get(`portal:project:${projectId}`);
     if (!projectStr) return c.json({ error: "Project not found" }, 404);
     const project = JSON.parse(projectStr);
-    if (project.clientId !== user.id)
+    if (!clientCanSeeProject(project, user.id))
       return c.json({ error: "Unauthorized" }, 403);
 
     const messagesStr = await kv.get(`portal:project:${projectId}:messages`);
@@ -650,7 +684,7 @@ app.post("/make-server-0951c59e/portal/project/:id/messages", async (c) => {
     const projectStr = await kv.get(`portal:project:${projectId}`);
     if (!projectStr) return c.json({ error: "Project not found" }, 404);
     const project = JSON.parse(projectStr);
-    if (project.clientId !== user.id)
+    if (!clientCanSeeProject(project, user.id))
       return c.json({ error: "Unauthorized" }, 403);
 
     const messagesStr = await kv.get(`portal:project:${projectId}:messages`);
@@ -1306,14 +1340,67 @@ app.get("/make-server-0951c59e/admin/project/:id", async (c) => {
   }
 });
 
+// --- GET /admin/projects — every project, newest first ---
+// There is no global project index, so this reads the project prefix directly.
+// The same prefix also holds `:messages` arrays, which the shape check drops.
+app.get("/make-server-0951c59e/admin/projects", async (c) => {
+  try {
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
+
+    const values = await kv.getByPrefix("portal:project:");
+    const projects = values
+      .map((v) => {
+        try {
+          return typeof v === "string" ? JSON.parse(v) : v;
+        } catch {
+          return null;
+        }
+      })
+      .filter((p) => p && !Array.isArray(p) && typeof p.id === "string" && typeof p.title === "string")
+      .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+    const type = c.req.query("type");
+    const filtered = type ? projects.filter((p) => (p.type || "photo") === type) : projects;
+
+    // Attach client names so the caller doesn't have to look each one up.
+    const clientIds = [...new Set(filtered.flatMap((p) => projectClientIds(p)))];
+    const users = await Promise.all(clientIds.map((id) => getPortalUser(id)));
+    const nameById = new Map(clientIds.map((id, i) => [id, users[i]?.name || "Onbekende klant"]));
+
+    return c.json({
+      projects: filtered.map((p) => ({
+        ...p,
+        clientIds: projectClientIds(p),
+        clientNames: projectClientIds(p).map((id) => nameById.get(id) || "Onbekende klant"),
+      })),
+    });
+  } catch (err) {
+    console.log("Admin get projects error:", err);
+    return c.json({ error: `Failed to fetch projects: ${err}` }, 500);
+  }
+});
+
 // --- POST /admin/project — create project for a client ---
 app.post("/make-server-0951c59e/admin/project", async (c) => {
   try {
     const admin = await verifyAdmin(c.req.header("Authorization"));
     if (!admin) return c.json({ error: "Unauthorized" }, 401);
 
-    const { clientId, title, status, phase, description, dueDate } = await c.req.json();
-    if (!clientId || !title) return c.json({ error: "clientId and title are required" }, 400);
+    const body = await c.req.json();
+    const { title, status, phase, description, dueDate, type, demoUrl, demoNotes } = body;
+
+    // Accepts either the old single clientId or the new clientIds list.
+    const clientIds: string[] = [
+      ...new Set(
+        (Array.isArray(body.clientIds) ? body.clientIds : [body.clientId])
+          .filter((id: any) => typeof id === "string" && id)
+      ),
+    ] as string[];
+
+    if (clientIds.length === 0 || !title) {
+      return c.json({ error: "Kies minstens één klant en vul een titel in." }, 400);
+    }
 
     const projectId = crypto.randomUUID();
     const project = {
@@ -1323,17 +1410,18 @@ app.post("/make-server-0951c59e/admin/project", async (c) => {
       phase: phase || "Pre-Production",
       description: description || "",
       dueDate: dueDate || "",
-      clientId,
+      // "photo" covers the photo/video work; "web" is a website demo.
+      type: type === "web" ? "web" : "photo",
+      demoUrl: type === "web" ? String(demoUrl || "").trim() : "",
+      demoNotes: type === "web" ? String(demoNotes || "").trim() : "",
+      clientIds,
+      clientId: clientIds[0],
       createdAt: new Date().toISOString(),
       deliverables: [],
     };
 
-    const projectIdsStr = await kv.get(`portal:client:${clientId}:projectIds`);
-    const projectIds = projectIdsStr ? JSON.parse(projectIdsStr) : [];
-    projectIds.push(projectId);
-
     await kv.set(`portal:project:${projectId}`, JSON.stringify(project));
-    await kv.set(`portal:client:${clientId}:projectIds`, JSON.stringify(projectIds));
+    await syncClientIndexes(projectId, [], clientIds);
     await kv.set(`portal:project:${projectId}:messages`, JSON.stringify([]));
 
     return c.json({ project });
@@ -1363,14 +1451,31 @@ app.put("/make-server-0951c59e/admin/project/:id", async (c) => {
     const existing = JSON.parse(projectStr);
     console.log("Existing project meeting:", existing.meeting);
 
+    // The attached clients may be edited; everything else about identity is fixed.
+    const beforeClients = projectClientIds(existing);
+    const afterClients = Array.isArray(updates.clientIds)
+      ? ([...new Set(updates.clientIds.filter((id: any) => typeof id === "string" && id))] as string[])
+      : beforeClients;
+
+    if (Array.isArray(updates.clientIds) && afterClients.length === 0) {
+      return c.json({ error: "Een project moet aan minstens één klant gekoppeld blijven." }, 400);
+    }
+
     // Merge updates with existing data
     const updated = {
       ...existing,
       ...updates,
       id: existing.id,
-      clientId: existing.clientId,
+      clientIds: afterClients,
+      // Kept in step so anything still reading the old field sees a real client.
+      clientId: afterClients[0],
       createdAt: existing.createdAt,
     };
+
+    if (updated.type !== "web") {
+      updated.demoUrl = "";
+      updated.demoNotes = "";
+    }
 
     // If meeting is explicitly null, remove it from the project
     if (updates.meeting === null) {
@@ -1389,6 +1494,7 @@ app.put("/make-server-0951c59e/admin/project/:id", async (c) => {
     console.log("Full updated project:", JSON.stringify(updated, null, 2));
 
     await kv.set(`portal:project:${projectId}`, JSON.stringify(updated));
+    await syncClientIndexes(projectId, beforeClients, afterClients);
     console.log("✅ Project saved to KV store");
 
     // Client notifications for the changes that actually matter to them.
@@ -1399,8 +1505,9 @@ app.put("/make-server-0951c59e/admin/project/:id", async (c) => {
     const meetingChanged = !!updated.meeting?.date && existing.meeting?.date !== updated.meeting.date;
 
     if (galleryGrew || justDelivered || meetingChanged) {
-      const clientUser = await getPortalUser(existing.clientId);
-      if (clientUser) {
+      // Everyone on the project hears about it, not only the first client.
+      const clientUsers = (await Promise.all(afterClients.map((id) => getPortalUser(id)))).filter(Boolean);
+      for (const clientUser of clientUsers as { email: string; name: string }[]) {
         const firstName = clientUser.name.split(" ")[0];
         const gs = updated.gallerySettings || {};
         const galleryTitle = gs.title || updated.title;
@@ -1532,13 +1639,7 @@ app.delete("/make-server-0951c59e/admin/project/:id", async (c) => {
     if (!projectStr) return c.json({ error: "Project not found" }, 404);
 
     const project = JSON.parse(projectStr);
-    const clientId = project.clientId;
-
-    const projectIdsStr = await kv.get(`portal:client:${clientId}:projectIds`);
-    if (projectIdsStr) {
-      const projectIds = JSON.parse(projectIdsStr).filter((id: string) => id !== projectId);
-      await kv.set(`portal:client:${clientId}:projectIds`, JSON.stringify(projectIds));
-    }
+    await syncClientIndexes(projectId, projectClientIds(project), []);
 
     await kv.del(`portal:project:${projectId}`);
     await kv.del(`portal:project:${projectId}:messages`);
@@ -1597,10 +1698,12 @@ app.post("/make-server-0951c59e/admin/project/:id/messages", async (c) => {
     const projectStr = await kv.get(`portal:project:${projectId}`);
     if (projectStr) {
       const project = JSON.parse(projectStr);
-      const clientUser = await getPortalUser(project.clientId);
-      if (clientUser) {
+      const recipients = (await Promise.all(projectClientIds(project).map((id) => getPortalUser(id))))
+        .filter(Boolean)
+        .map((u) => (u as { email: string }).email);
+      if (recipients.length > 0) {
         await sendEmail({
-          to: clientUser.email,
+          to: recipients,
           subject: "Nieuw bericht van PDC Studio",
           html: emailWrap(`
             <tr>
@@ -2695,7 +2798,7 @@ async function loadProjectForClient(projectId: string, userId: string) {
   const projectStr = await kv.get(`portal:project:${projectId}`);
   if (!projectStr) return { error: "Project not found", status: 404 as const };
   const project = JSON.parse(projectStr);
-  if (project.clientId !== userId) return { error: "Unauthorized", status: 403 as const };
+  if (!clientCanSeeProject(project, userId)) return { error: "Unauthorized", status: 403 as const };
   return { project };
 }
 
@@ -2704,12 +2807,15 @@ async function createRequest(kind: "review" | "feedback", projectId: string, adm
   const projectStr = await kv.get(`portal:project:${projectId}`);
   if (!projectStr) return { error: "Project not found", status: 404 };
   const project = JSON.parse(projectStr);
-  const client = await getPortalUser(project.clientId);
-  if (!client) return { error: "Klant niet gevonden bij dit project.", status: 404 };
+  const clients = (await Promise.all(projectClientIds(project).map((id) => getPortalUser(id))))
+    .filter(Boolean) as { email: string; name: string }[];
+  if (clients.length === 0) return { error: "Klant niet gevonden bij dit project.", status: 404 };
+  const client = clients[0];
 
   const request = {
     projectId,
     clientId: project.clientId,
+    clientIds: projectClientIds(project),
     kind,
     status: "pending",
     requestedAt: new Date().toISOString(),
@@ -2722,7 +2828,7 @@ async function createRequest(kind: "review" | "feedback", projectId: string, adm
   const isReview = kind === "review";
 
   const sent = await sendEmail({
-    to: client.email,
+    to: clients.map((c2) => c2.email),
     replyTo: EMAIL_ADMIN_NOTIFY,
     subject: isReview
       ? `Wil je een review achterlaten? — ${project.title}`
@@ -2759,7 +2865,7 @@ async function createRequest(kind: "review" | "feedback", projectId: string, adm
   if (!sent.ok) {
     return { error: sent.error || "De uitnodiging kon niet verstuurd worden.", status: 502 };
   }
-  return { request, clientEmail: client.email };
+  return { request, clientEmail: clients.map((c2) => c2.email).join(", ") };
 }
 
 // --- POST /admin/project/:id/request-review ---

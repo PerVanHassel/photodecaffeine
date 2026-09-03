@@ -5,6 +5,7 @@ import { portalFetch } from "../../../lib/supabase";
 import { useMobile } from "../../hooks/useMobile";
 import { ArrowLeft, Save, Plus, Trash2, Check, Send, AlertTriangle, Upload, Images, X, Bell, ChevronUp, ChevronDown, Star, ExternalLink, MessageSquare } from "lucide-react";
 import { projectId as supabaseProjectId } from "/utils/supabase/info";
+import { ClientPicker, type PickableClient } from "../../components/portal/ClientPicker";
 
 const BUCKET = "portfolio-images-0951c59e";
 
@@ -30,6 +31,10 @@ interface Project {
   description: string;
   dueDate: string;
   clientId: string;
+  clientIds?: string[];
+  type?: "photo" | "web";
+  demoUrl?: string;
+  demoNotes?: string;
   createdAt: string;
   deliverables: Deliverable[];
   meeting?: {
@@ -139,6 +144,16 @@ export function AdminProjectPage() {
   // Delete
   const [showDelete, setShowDelete] = useState(false);
 
+  // Attached clients + web-demo link
+  const [allClients, setAllClients] = useState<PickableClient[]>([]);
+  const [clientIds, setClientIds] = useState<string[]>([]);
+  const [demoUrl, setDemoUrl] = useState("");
+  const [demoNotes, setDemoNotes] = useState("");
+  const [projectType, setProjectType] = useState<"photo" | "web">("photo");
+  const [linkSaving, setLinkSaving] = useState(false);
+  const [linkFlash, setLinkFlash] = useState(false);
+  const [linkError, setLinkError] = useState("");
+
   // Review + feedback requests
   const [engagement, setEngagement] = useState<any>(null);
   const [requesting, setRequesting] = useState<"review" | "feedback" | null>(null);
@@ -167,11 +182,50 @@ export function AdminProjectPage() {
         setDeliverables(p.deliverables || []);
         setGalleryUrls(p.galleryUrls || []);
         setGallerySettings(p.gallerySettings || {});
+        setClientIds(p.clientIds?.length ? p.clientIds : p.clientId ? [p.clientId] : []);
+        setProjectType(p.type === "web" ? "web" : "photo");
+        setDemoUrl(p.demoUrl || "");
+        setDemoNotes(p.demoNotes || "");
         setMessages(msgData.messages || []);
         setLoading(false);
       })
       .catch((err) => { console.error("Failed to load project:", err); setError("Failed to load project."); setLoading(false); });
   }, [session, projectId]);
+
+  useEffect(() => {
+    if (!session?.access_token) return;
+    portalFetch("/admin/clients", {}, session.access_token)
+      .then((data) => setAllClients(data.clients || []))
+      .catch(() => setAllClients([]));
+  }, [session]);
+
+  async function saveProjectLinks() {
+    if (!session || !projectId || linkSaving) return;
+    if (clientIds.length === 0) {
+      setLinkError("Koppel minstens één klant aan dit project.");
+      return;
+    }
+    setLinkSaving(true);
+    setLinkError("");
+    try {
+      const data = await portalFetch(`/admin/project/${projectId}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          clientIds,
+          type: projectType,
+          demoUrl: demoUrl.trim(),
+          demoNotes: demoNotes.trim(),
+        }),
+      }, session.access_token);
+      setProject(data.project);
+      setLinkFlash(true);
+      setTimeout(() => setLinkFlash(false), 1800);
+    } catch (err) {
+      setLinkError(err instanceof Error ? err.message : "Opslaan mislukt.");
+    } finally {
+      setLinkSaving(false);
+    }
+  }
 
   // Review + feedback: what has been asked of the client, and what came back.
   function loadEngagement() {
@@ -996,6 +1050,89 @@ export function AdminProjectPage() {
                 {sendingMsg ? "Sending…" : "Send"}
               </button>
             </form>
+          </div>
+
+          {sectionDivider}
+
+          {/* ── Clients & demo ── */}
+          <div>
+            <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase", marginBottom: "16px" }}>
+              Klanten &amp; soort
+            </div>
+
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "18px" }}>
+              {([["photo", "Foto / video"], ["web", "Webdemo"]] as const).map(([value, label]) => {
+                const active = projectType === value;
+                return (
+                  <button
+                    key={value}
+                    onClick={() => setProjectType(value)}
+                    style={{
+                      backgroundColor: active ? "rgba(200,144,90,0.12)" : "transparent",
+                      border: `1px solid ${active ? "rgba(200,144,90,0.45)" : "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))"}`,
+                      color: active ? "#c8905a" : "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))",
+                      fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase",
+                      padding: "9px 16px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div style={{ marginBottom: "18px" }}>
+              <label style={labelStyle}>Gekoppelde klanten</label>
+              <ClientPicker selected={clientIds} onChange={setClientIds} clients={allClients} />
+            </div>
+
+            {projectType === "web" && (
+              <>
+                <div style={{ marginBottom: "14px" }}>
+                  <label style={labelStyle}>Demo-URL</label>
+                  <input
+                    type="url"
+                    value={demoUrl}
+                    onChange={(e) => setDemoUrl(e.target.value)}
+                    placeholder="https://demo-klantnaam.vercel.app"
+                    style={inputStyle}
+                  />
+                </div>
+                <div style={{ marginBottom: "14px" }}>
+                  <label style={labelStyle}>Uitleg bij de demo</label>
+                  <textarea
+                    value={demoNotes}
+                    onChange={(e) => setDemoNotes(e.target.value)}
+                    rows={2}
+                    placeholder="Waar moet de klant op letten?"
+                    style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
+                  />
+                </div>
+              </>
+            )}
+
+            {linkError && (
+              <div style={{ padding: "10px 14px", border: "1px solid rgba(224,112,96,0.25)", color: "#e07060", fontSize: "12px", marginBottom: "14px" }}>
+                {linkError}
+              </div>
+            )}
+
+            <button
+              onClick={saveProjectLinks}
+              disabled={linkSaving}
+              style={{
+                display: "flex", alignItems: "center", gap: "7px",
+                backgroundColor: linkFlash ? "rgba(120,190,140,0.15)" : "rgba(200,144,90,0.12)",
+                border: `1px solid ${linkFlash ? "rgba(120,190,140,0.4)" : "rgba(200,144,90,0.3)"}`,
+                color: linkFlash ? "rgba(120,190,140,0.95)" : "#c8905a",
+                fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase",
+                padding: "10px 18px", cursor: linkSaving ? "not-allowed" : "pointer",
+                fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
+              }}
+            >
+              {linkFlash ? <Check size={12} /> : <Save size={12} />}
+              {linkSaving ? "Opslaan…" : linkFlash ? "Opgeslagen" : "Opslaan"}
+            </button>
           </div>
 
           {sectionDivider}

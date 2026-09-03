@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { portalFetch } from "../../../lib/supabase";
-import { ArrowLeft, ArrowRight, Send, CheckCircle2, Circle, Images, Star, MessageSquare } from "lucide-react";
+import { ArrowLeft, ArrowRight, Send, CheckCircle2, Circle, Images, Star, MessageSquare, Globe, ExternalLink } from "lucide-react";
 import { useMobile } from "../../hooks/useMobile";
 
 interface Deliverable {
@@ -36,6 +36,9 @@ interface Project {
   };
   galleryUrls?: string[];
   gallerySettings?: GallerySettings;
+  type?: "photo" | "web";
+  demoUrl?: string;
+  demoNotes?: string;
 }
 
 interface Review {
@@ -353,17 +356,20 @@ export function PortalProjectPage() {
         >
           {project.title}
         </h1>
-        <p
-          style={{
-            color: "rgba(255,251,224,0.35)",
-            fontSize: "11px",
-            fontWeight: 400,
-            letterSpacing: "0.08em",
-            margin: 0,
-          }}
-        >
-          Due {formatDate(project.dueDate)}
-        </p>
+        {/* Not every project has a deadline — a web demo often doesn't. */}
+        {project.dueDate && (
+          <p
+            style={{
+              color: "rgba(255,251,224,0.35)",
+              fontSize: "11px",
+              fontWeight: 400,
+              letterSpacing: "0.08em",
+              margin: 0,
+            }}
+          >
+            Due {formatDate(project.dueDate)}
+          </p>
+        )}
       </div>
 
       {/* Two-column layout */}
@@ -554,6 +560,53 @@ export function PortalProjectPage() {
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Web demo — only for web projects that actually have a link */}
+          {project.type === "web" && project.demoUrl && (
+            <div
+              style={{
+                border: "1px solid rgba(200,144,90,0.28)",
+                marginBottom: "24px",
+                overflow: "hidden",
+              }}
+            >
+              <div style={{ padding: isMobile ? "22px 18px" : "26px 28px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#c8905a", fontSize: "9px", fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: "12px" }}>
+                  <Globe size={12} />
+                  Website-demo
+                </div>
+                <p style={{ color: "rgba(255,251,224,0.4)", fontSize: "13.5px", lineHeight: 1.7, margin: "0 0 18px" }}>
+                  {project.demoNotes
+                    ? project.demoNotes
+                    : "Dit is een werkende demo — klik erdoorheen alsof het je eigen site is."}
+                </p>
+                <a
+                  href={project.demoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: "9px",
+                    backgroundColor: "#c8905a", color: "#0d0703",
+                    fontSize: "11px", fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase",
+                    padding: "13px 26px", textDecoration: "none",
+                  }}
+                >
+                  Demo openen <ExternalLink size={13} />
+                </a>
+              </div>
+
+              {/* A live preview, so the demo is usable without leaving the portal. */}
+              <div style={{ borderTop: "1px solid rgba(255,251,224,0.08)", backgroundColor: "rgba(255,251,224,0.02)" }}>
+                <iframe
+                  src={project.demoUrl}
+                  title={`Demo — ${project.title}`}
+                  loading="lazy"
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                  style={{ display: "block", width: "100%", height: isMobile ? "420px" : "560px", border: "none" }}
+                />
               </div>
             </div>
           )}

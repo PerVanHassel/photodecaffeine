@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { portalFetch } from "../../../lib/supabase";
+import { ClientPicker, type PickableClient } from "../../components/portal/ClientPicker";
 import { ArrowLeft, Plus, Clock, CheckCircle, Circle, AlertCircle, X, Trash2, Pencil, Check } from "lucide-react";
 import { useMobile } from "../../hooks/useMobile";
 
@@ -47,7 +48,21 @@ function getInitials(name: string) {
   return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
 }
 
-const BLANK_PROJECT = { title: "", status: "in_progress" as const, phase: "Pre-Production", description: "", dueDate: "" };
+const BLANK_PROJECT = {
+  title: "",
+  status: "in_progress" as const,
+  phase: "Pre-Production",
+  description: "",
+  dueDate: "",
+  type: "photo" as "photo" | "web",
+  demoUrl: "",
+  demoNotes: "",
+};
+
+const PROJECT_TYPES = [
+  { value: "photo" as const, label: "Foto / video", hint: "Galerij, deliverables, levering" },
+  { value: "web" as const, label: "Webdemo", hint: "Link naar een live demo-site" },
+];
 
 export function AdminClientDetailPage() {
   const { id: clientId } = useParams<{ id: string }>();
@@ -64,6 +79,9 @@ export function AdminClientDetailPage() {
   const [form, setForm] = useState(BLANK_PROJECT);
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState("");
+  // Extra clients on top of the one whose page this is.
+  const [formClientIds, setFormClientIds] = useState<string[]>([]);
+  const [allClients, setAllClients] = useState<PickableClient[]>([]);
 
   // Delete client
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -94,6 +112,14 @@ export function AdminClientDetailPage() {
     loadClient();
   }, [session, clientId]);
 
+  // Needed to attach further clients to a project.
+  useEffect(() => {
+    if (!session?.access_token) return;
+    portalFetch("/admin/clients", {}, session.access_token)
+      .then((data) => setAllClients(data.clients || []))
+      .catch(() => setAllClients([]));
+  }, [session]);
+
   async function handleEditProfile(e: React.FormEvent) {
     e.preventDefault();
     if (!session || !clientId || !client) return;
@@ -121,10 +147,12 @@ export function AdminClientDetailPage() {
     try {
       const data = await portalFetch("/admin/project", {
         method: "POST",
-        body: JSON.stringify({ clientId, ...form }),
+        // This client leads; any others picked come after.
+        body: JSON.stringify({ ...form, clientIds: [clientId, ...formClientIds.filter((id) => id !== clientId)] }),
       }, session.access_token);
       setProjects((prev) => [...prev, data.project]);
       setForm(BLANK_PROJECT);
+      setFormClientIds([]);
       setShowForm(false);
     } catch (err: unknown) {
       setFormError(err instanceof Error ? err.message : "Failed to create project");
@@ -429,6 +457,32 @@ export function AdminClientDetailPage() {
                 New Project
               </div>
               <div>
+                <label style={labelStyle}>Soort project</label>
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                  {PROJECT_TYPES.map((t) => {
+                    const active = form.type === t.value;
+                    return (
+                      <button
+                        key={t.value}
+                        type="button"
+                        onClick={() => setForm({ ...form, type: t.value })}
+                        style={{
+                          flex: "1 1 180px", textAlign: "left",
+                          backgroundColor: active ? "rgba(200,144,90,0.12)" : "transparent",
+                          border: `1px solid ${active ? "rgba(200,144,90,0.45)" : "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))"}`,
+                          color: active ? "#c8905a" : "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))",
+                          padding: "11px 14px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+                        }}
+                      >
+                        <div style={{ fontSize: "12.5px", fontWeight: 700 }}>{t.label}</div>
+                        <div style={{ fontSize: "11px", opacity: 0.75, marginTop: "3px" }}>{t.hint}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
                 <label style={labelStyle}>Project Title *</label>
                 <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required placeholder="e.g. Brand Campaign — Summer Drop" style={inputStyle} onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")} onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")} />
               </div>
@@ -455,6 +509,46 @@ export function AdminClientDetailPage() {
                 <label style={labelStyle}>Description</label>
                 <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Brief project overview…" rows={3} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")} onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")} />
               </div>
+              {form.type === "web" && (
+                <>
+                  <div>
+                    <label style={labelStyle}>Demo-URL *</label>
+                    <input
+                      type="url"
+                      value={form.demoUrl}
+                      onChange={(e) => setForm({ ...form, demoUrl: e.target.value })}
+                      required
+                      placeholder="https://demo-klantnaam.vercel.app"
+                      style={inputStyle}
+                      onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
+                      onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")}
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Uitleg bij de demo</label>
+                    <textarea
+                      value={form.demoNotes}
+                      onChange={(e) => setForm({ ...form, demoNotes: e.target.value })}
+                      placeholder="Waar moet de klant op letten? Wat werkt nog niet?"
+                      rows={2}
+                      style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
+                      onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
+                      onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")}
+                    />
+                  </div>
+                </>
+              )}
+
+              <div>
+                <label style={labelStyle}>Klanten</label>
+                <ClientPicker
+                  selected={[clientId!, ...formClientIds.filter((id) => id !== clientId)]}
+                  onChange={(ids) => setFormClientIds(ids.filter((id) => id !== clientId))}
+                  clients={allClients}
+                  lockedId={clientId}
+                />
+              </div>
+
               {formError && <p style={{ color: "#e07060", fontSize: "12px", margin: 0 }}>{formError}</p>}
               <div>
                 <button type="submit" disabled={formLoading} style={{
