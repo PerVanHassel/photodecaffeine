@@ -1,0 +1,330 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   PDC Admin app — token layer
+
+   Imported from the mobile shell rather than styles/index.css so Vite bundles
+   it into the lazily-loaded /app chunk; the public site never downloads it.
+
+   Two themes, both keyed off [data-m-theme] on <html>. The desktop admin panel
+   has its own --admin-* tokens (see styles/theme.css); these are deliberately
+   separate rather than shared, because the app's surfaces are translucent glass
+   over a lit backdrop while the desktop panel's are flat fills — the same token
+   would have to mean two different things.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+[data-m-theme="dark"] {
+  --m-bg: #070301;
+  --m-bg-2: #0e0805;
+  --m-bg-3: #150c06;
+
+  /* Glass surfaces. Alpha is low because they sit over a lit backdrop —
+     the blur, not the fill, is what separates them from the page. */
+  --m-surface: rgba(255, 247, 225, 0.045);
+  --m-surface-2: rgba(255, 247, 225, 0.075);
+  --m-surface-3: rgba(255, 247, 225, 0.11);
+  --m-surface-solid: #100904;
+
+  --m-hairline: rgba(255, 247, 225, 0.085);
+  --m-hairline-2: rgba(255, 247, 225, 0.16);
+  /* Top-edge specular highlight that makes a glass card read as raised. */
+  --m-sheen: rgba(255, 247, 225, 0.14);
+
+  --m-fg: #fffbe0;
+  --m-fg-rgb: 255, 251, 224;
+  --m-fg-2: rgba(255, 251, 224, 0.68);
+  --m-fg-3: rgba(255, 251, 224, 0.44);
+  --m-fg-4: rgba(255, 251, 224, 0.26);
+
+  --m-copper: #c8905a;
+  --m-copper-hi: #e8b07a;
+  --m-copper-lo: #8a5a30;
+  --m-copper-rgb: 200, 144, 90;
+  --m-copper-wash: rgba(200, 144, 90, 0.13);
+
+  --m-ok: #74c495;
+  --m-warn: #e3ae52;
+  --m-danger: #e8706c;
+  --m-info: #86a4e8;
+
+  --m-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 28px rgba(0, 0, 0, 0.45);
+  --m-shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.5), 0 22px 60px rgba(0, 0, 0, 0.6);
+  --m-shadow-tab: 0 -1px 0 rgba(255, 247, 225, 0.07), 0 -18px 44px rgba(0, 0, 0, 0.6);
+
+  --m-scrim: rgba(0, 0, 0, 0.62);
+  color-scheme: dark;
+}
+
+[data-m-theme="light"] {
+  --m-bg: #f2ebdc;
+  --m-bg-2: #e9dfca;
+  --m-bg-3: #e0d3b8;
+
+  --m-surface: rgba(255, 253, 248, 0.72);
+  --m-surface-2: rgba(255, 253, 248, 0.9);
+  --m-surface-3: rgba(255, 253, 248, 1);
+  --m-surface-solid: #fffdf8;
+
+  --m-hairline: rgba(26, 12, 4, 0.1);
+  --m-hairline-2: rgba(26, 12, 4, 0.2);
+  --m-sheen: rgba(255, 255, 255, 0.9);
+
+  --m-fg: #1a0c04;
+  --m-fg-rgb: 26, 12, 4;
+  --m-fg-2: rgba(26, 12, 4, 0.72);
+  --m-fg-3: rgba(26, 12, 4, 0.52);
+  --m-fg-4: rgba(26, 12, 4, 0.34);
+
+  --m-copper: #a2683a;
+  --m-copper-hi: #c8905a;
+  --m-copper-lo: #7a4a24;
+  --m-copper-rgb: 162, 104, 58;
+  --m-copper-wash: rgba(162, 104, 58, 0.12);
+
+  --m-ok: #2f7d51;
+  --m-warn: #9a6a12;
+  --m-danger: #b03b38;
+  --m-info: #3d5da8;
+
+  --m-shadow-card: 0 1px 2px rgba(60, 38, 14, 0.06), 0 8px 24px rgba(60, 38, 14, 0.09);
+  --m-shadow-lift: 0 2px 6px rgba(60, 38, 14, 0.1), 0 22px 56px rgba(60, 38, 14, 0.18);
+  --m-shadow-tab: 0 -1px 0 rgba(26, 12, 4, 0.07), 0 -18px 44px rgba(60, 38, 14, 0.1);
+
+  --m-scrim: rgba(40, 24, 8, 0.42);
+  color-scheme: light;
+}
+
+/* ── App root ───────────────────────────────────────────────────────────── */
+
+.m-app {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--m-bg);
+  color: var(--m-fg);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Kills the grey flash iOS paints over every tap target. */
+  -webkit-tap-highlight-color: transparent;
+  overflow: hidden;
+  /* Stops the whole app rubber-banding when a list hits its end. */
+  overscroll-behavior: none;
+}
+
+/* The lit backdrop the glass surfaces sit on: two soft copper pools, fixed so
+   they stay put while content scrolls over them. */
+.m-app::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(105% 62% at 8% -8%, rgba(var(--m-copper-rgb), 0.2), transparent 62%),
+    radial-gradient(88% 52% at 106% 4%, rgba(var(--m-copper-rgb), 0.11), transparent 58%),
+    linear-gradient(180deg, var(--m-bg-2) 0%, var(--m-bg) 46%);
+  z-index: 0;
+}
+
+.m-app > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Chrome (headers, tab bar, buttons) must never be text-selectable — a long
+   press on a nav item selecting its label is the clearest "this is a website"
+   tell there is. Content areas opt back in via .m-selectable. */
+.m-app button,
+.m-app nav,
+.m-app header,
+.m-app label {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.m-selectable {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Sheets and toasts are portalled to <body> — a transformed ancestor inside
+   .m-app would otherwise become the containing block for their fixed
+   positioning — so they need the app's typographic and touch defaults applied
+   again out here. */
+.m-portal {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--m-fg);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.m-portal button,
+.m-portal label {
+  -webkit-user-select: none;
+  user-select: none;
+  font-family: inherit;
+}
+
+.m-portal input,
+.m-portal textarea,
+.m-portal select {
+  font-family: inherit;
+  color: var(--m-fg);
+  font-size: 16px;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.m-portal input::placeholder,
+.m-portal textarea::placeholder {
+  color: var(--m-fg-4);
+}
+
+.m-portal input:focus,
+.m-portal textarea:focus,
+.m-portal select:focus {
+  outline: none;
+  border-color: var(--m-copper) !important;
+}
+
+/* ── Scrolling ──────────────────────────────────────────────────────────── */
+
+.m-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  scrollbar-width: none;
+}
+.m-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.m-hscroll {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.m-hscroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Glass ──────────────────────────────────────────────────────────────── */
+
+.m-glass {
+  background-color: var(--m-surface);
+  -webkit-backdrop-filter: blur(26px) saturate(165%);
+  backdrop-filter: blur(26px) saturate(165%);
+  border: 1px solid var(--m-hairline);
+}
+
+/* Hairline of light along the top edge — the detail that separates a glass
+   panel from a flat translucent rectangle. */
+.m-sheen {
+  position: relative;
+}
+.m-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--m-sheen) 22%, var(--m-sheen) 78%, transparent);
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* ── Type ───────────────────────────────────────────────────────────────── */
+
+/* The PDC signature: tiny, heavily tracked, uppercase. Carried over from the
+   website so the app still reads as the same brand. */
+.m-eyebrow {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--m-fg-4);
+}
+
+.m-num {
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* ── Animation ──────────────────────────────────────────────────────────── */
+
+@keyframes m-shimmer {
+  0% { background-position: -180% 0; }
+  100% { background-position: 180% 0; }
+}
+
+.m-skeleton {
+  background-image: linear-gradient(
+    90deg,
+    var(--m-surface) 0%,
+    var(--m-surface-2) 44%,
+    var(--m-surface) 88%
+  );
+  background-size: 220% 100%;
+  animation: m-shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+@keyframes m-breathe {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.12); }
+}
+
+@keyframes m-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Everything motion-driven honours the OS switch. Framer Motion springs are
+   handled separately in theme.ts (`prefersReducedMotion`); this covers the
+   CSS-only animations above. */
+@media (prefers-reduced-motion: reduce) {
+  .m-skeleton,
+  .m-app *[style*="animation"] {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* ── Inputs ─────────────────────────────────────────────────────────────── */
+
+.m-app input,
+.m-app textarea,
+.m-app select {
+  font-family: inherit;
+  color: var(--m-fg);
+  /* 16px minimum: anything smaller makes iOS Safari zoom the viewport on
+     focus, which in a standalone app looks like the layout breaking. */
+  font-size: 16px;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.m-app input::placeholder,
+.m-app textarea::placeholder {
+  color: var(--m-fg-4);
+}
+
+.m-app input:focus,
+.m-app textarea:focus,
+.m-app select:focus {
+  outline: none;
+  border-color: var(--m-copper) !important;
+}
+
+/* The app draws its own focus treatment; the site-wide copper outline ring
+   from styles/theme.css would double up on it. */
+.m-app :focus-visible {
+  outline: none;
+}
+.m-app button:focus-visible,
+.m-app a:focus-visible {
+  box-shadow: 0 0 0 2px var(--m-bg), 0 0 0 4px var(--m-copper);
+}

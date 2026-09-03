@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router";
 import { Root } from "./Root";
+import { appRoutes } from "./mobile/routes";
 import { Home } from "./pages/Home";
 
 // Marketing pages — loaded eagerly (they're the public site, often the first visit)
@@ -152,6 +153,9 @@ export const router = createBrowserRouter([
       },
     ],
   },
+  // The mobile admin app. Its whole subtree is lazily loaded (see
+  // src/app/mobile/routes.tsx), so the public site never pays for it.
+  appRoutes,
   {
     path: "*",
     Component: LazyNotFoundPage,
