@@ -1,0 +1,5 @@
+# Voor de twee opruimscripts. Installeren met:
+#   pip install -r requirements.txt
+requests>=2.31
+Pillow>=10.0
+pytest>=8.0
