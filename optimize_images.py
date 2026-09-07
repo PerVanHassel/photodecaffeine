@@ -140,15 +140,20 @@ def render(
     widths: Sequence[int] = DEFAULT_WIDTHS,
     quality: int = DEFAULT_QUALITY,
     force: bool = False,
+    slug: str | None = None,
 ) -> Result:
-    """Write every variant for one image and describe what was written."""
+    """Write every variant for one image and describe what was written.
+
+    The output files are named after the source, unless ``slug`` overrides it —
+    a caller working through a batch may need to guarantee unique names.
+    """
     with Image.open(source) as probe:
         upright = ImageOps.exif_transpose(probe)
         source_width, source_height = upright.size
         exif = copyright_exif(probe)
 
     prepared = load_prepared(source)
-    slug = slugify(source.name)
+    slug = slug or slugify(source.name)
     result = Result(
         source=source, slug=slug, source_width=source_width, source_height=source_height
     )

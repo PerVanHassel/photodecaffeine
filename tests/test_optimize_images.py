@@ -309,3 +309,9 @@ def test_main_skips_a_corrupt_file_and_keeps_going(photo, tmp_path):
 def test_input_and_output_are_required():
     with pytest.raises(SystemExit):
         build_parser().parse_args([])
+
+
+def test_render_can_be_given_its_own_slug(photo, tmp_path):
+    # publish_web_images needs unique names across a batch, so it overrides.
+    result = render(photo(), tmp_path / "out", widths=[1280], slug="klant-01")
+    assert [v.path.name for v in result.variants] == ["klant-01-1280.webp", "klant-01-1280.jpg"]

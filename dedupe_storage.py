@@ -108,7 +108,11 @@ class Group:
 
 
 class StorageClient:
-    """The slice of the Supabase API this script needs."""
+    """The slice of the Supabase API these scripts need.
+
+    Shared with publish_web_images.py, which uploads variants and rewrites the
+    key-value rows through the same session.
+    """
 
     def __init__(self, url: str, service_key: str, *, timeout: int = 60) -> None:
         self.base = url.rstrip("/")
@@ -164,6 +168,51 @@ class StorageClient:
             if len(rows) < KV_PAGE_SIZE:
                 return found
             offset += KV_PAGE_SIZE
+
+    def kv_rows(self, table: str = DEFAULT_KV_TABLE) -> list[dict[str, Any]]:
+        """Every key/value row, paged."""
+        rows: list[dict[str, Any]] = []
+        offset = 0
+        while True:
+            response = self.session.get(
+                f"{self.base}/rest/v1/{table}",
+                params={"select": "key,value", "limit": KV_PAGE_SIZE, "offset": offset},
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            page = response.json()
+            rows.extend(page)
+            if len(page) < KV_PAGE_SIZE:
+                return rows
+            offset += KV_PAGE_SIZE
+
+    def kv_set(self, key: str, value: Any, table: str = DEFAULT_KV_TABLE) -> None:
+        """Replace one row's value, leaving the rest of the table alone."""
+        response = self.session.patch(
+            f"{self.base}/rest/v1/{table}",
+            params={"key": f"eq.{key}"},
+            json={"value": value},
+            headers={"Content-Type": "application/json", "Prefer": "return=minimal"},
+            timeout=self.timeout,
+        )
+        response.raise_for_status()
+
+    def upload(self, bucket: str, name: str, path: Path, content_type: str) -> None:
+        """Put a local file in the bucket, overwriting a name already there."""
+        with path.open("rb") as handle:
+            response = self.session.post(
+                f"{self.base}/storage/v1/object/{bucket}/{name}",
+                data=handle,
+                headers={
+                    "Content-Type": content_type,
+                    # The names carry an upload stamp, so a given URL always
+                    # holds the same bytes and can be cached hard.
+                    "Cache-Control": "public, max-age=31536000, immutable",
+                    "x-upsert": "true",
+                },
+                timeout=self.timeout,
+            )
+        response.raise_for_status()
 
     def download(self, bucket: str, name: str, target: Path) -> None:
         response = self.session.get(

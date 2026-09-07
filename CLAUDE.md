@@ -50,6 +50,20 @@ met de repo voordat je zegt dat het gelukt is.
 De entrypoint is `index.tsx`, niet `index.ts`. `supabase/config.toml` wijst
 de CLI daarheen; zonder dat bestand faalt de bundel.
 
+## Opslag en foto's
+
+Drie Python-scripts, in deze volgorde te draaien. Alle drie doen niets zonder
+`--apply` en hebben `SUPABASE_URL` + `SUPABASE_SERVICE_KEY` nodig.
+
+- `dedupe_storage.py` — ruimt dubbele uploads op. Kijkt eerst welke foto's de
+  site gebruikt; die blijven altijd staan.
+- `optimize_images.py` — maakt WebP + JPEG varianten van een lokale map.
+- `publish_web_images.py` — verkleint de foto's die de site toont, zet ze in de
+  bucket en verzet de URL's in de kv-tabel.
+
+De kv-waarden zijn soms een JSON-object en soms JSON als tekst. Vervang URL's
+altijd op hele strings, nooit als tekstfragment.
+
 ## Taal
 
 De site is tweetalig (`src/app/i18n/translations.ts`, standaard Nederlands).
