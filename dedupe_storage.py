@@ -4,8 +4,14 @@
 The admin panel names every upload ``<epoch-ms>-<original-name>``, so
 re-uploading the same photo produces a second object that differs only in its
 timestamp prefix. Those copies are what this script collapses: it groups
-objects by the name with the prefix stripped, keeps the newest, and deletes the
-rest.
+objects by the name with the prefix stripped and keeps one.
+
+Which copy survives is decided by the site, not by the clock. Before planning
+anything the script reads the key-value table and collects every object name
+the site actually links to; those are never deleted. This matters: in this
+bucket the newest upload is often *not* the one the portfolio points at, so a
+plain "keep the newest" rule would break live images. Pass
+``--no-usage-check`` to skip the lookup and fall back to keeping the newest.
 
 Nothing is deleted unless you pass ``--apply``, and ``--apply`` is refused
 without ``--download-dir`` so a local copy always exists first. Every planned
@@ -14,7 +20,8 @@ deletion is written to the manifest before anything is removed.
 By default a group is only collapsed when all its copies are byte-for-byte the
 same size. A differing size usually means a real re-edit rather than a repeat
 upload, so those groups are skipped and listed in the manifest instead. Pass
-``--include-size-mismatch`` to collapse them too, keeping the largest copy.
+``--include-size-mismatch`` to collapse them too, keeping the largest copy
+that nothing links to.
 
 Usage::
 
@@ -45,6 +52,8 @@ import requests
 TIMESTAMP_PREFIX = re.compile(r"^(?P<stamp>\d{10,})-(?P<rest>.+)$")
 
 LIST_PAGE_SIZE = 100
+KV_PAGE_SIZE = 500
+DEFAULT_KV_TABLE = "kv_store_0951c59e"
 DEFAULT_MANIFEST = "cleanup-manifest.json"
 
 
@@ -99,7 +108,7 @@ class Group:
 
 
 class StorageClient:
-    """The slice of the Supabase Storage REST API this script needs."""
+    """The slice of the Supabase API this script needs."""
 
     def __init__(self, url: str, service_key: str, *, timeout: int = 60) -> None:
         self.base = url.rstrip("/")
@@ -134,6 +143,28 @@ class StorageClient:
                 return objects
             offset += LIST_PAGE_SIZE
 
+    def in_use_names(self, bucket: str, table: str = DEFAULT_KV_TABLE) -> set[str]:
+        """Object names the site links to, read from the key-value table.
+
+        Every portfolio item, project and setting lives in that one table, so
+        scanning its values catches every reference the site can render.
+        """
+        found: set[str] = set()
+        offset = 0
+        while True:
+            response = self.session.get(
+                f"{self.base}/rest/v1/{table}",
+                params={"select": "value", "limit": KV_PAGE_SIZE, "offset": offset},
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            rows = response.json()
+            for row in rows:
+                found |= extract_names(json.dumps(row.get("value")), bucket)
+            if len(rows) < KV_PAGE_SIZE:
+                return found
+            offset += KV_PAGE_SIZE
+
     def download(self, bucket: str, name: str, target: Path) -> None:
         response = self.session.get(
             f"{self.base}/storage/v1/object/{bucket}/{name}",
@@ -155,6 +186,16 @@ class StorageClient:
             timeout=self.timeout,
         )
         response.raise_for_status()
+
+
+def extract_names(blob: str, bucket: str) -> set[str]:
+    """Pull object names for one bucket out of arbitrary stored text.
+
+    URLs appear both public and signed, so the query string is cut off. The
+    stored JSON is escaped, so a backslash ends a name too.
+    """
+    pattern = re.compile(re.escape(bucket) + r"/([^\"?\s\\<>')]+)")
+    return {match.group(1) for match in pattern.finditer(blob or "")}
 
 
 def parse_objects(payload: Iterable[dict[str, Any]]) -> list[StorageObject]:
@@ -193,9 +234,14 @@ def group_objects(objects: Iterable[StorageObject]) -> list[Group]:
 
 
 def plan(
-    objects: Iterable[StorageObject], *, include_size_mismatch: bool = False
+    objects: Iterable[StorageObject],
+    *,
+    in_use: Iterable[str] = (),
+    include_size_mismatch: bool = False,
 ) -> dict[str, Any]:
     """Decide what to delete, keep and skip — without touching anything."""
+    objects = list(objects)
+    in_use = set(in_use)
     groups = group_objects(objects)
     delete: list[dict[str, Any]] = []
     skipped: list[dict[str, Any]] = []
@@ -214,9 +260,8 @@ def plan(
                     "basename": group.basename,
                     "reason": "copies differ in size",
                     "copies": [
-                        {"name": o.name, "size": o.size} for o in sorted(
-                            group.objects, key=lambda o: o.sort_key
-                        )
+                        {"name": o.name, "size": o.size, "in_use": o.name in in_use}
+                        for o in sorted(group.objects, key=lambda o: o.sort_key)
                     ],
                     "reclaimable_bytes": group.total_bytes - group.largest.size,
                 }
@@ -224,12 +269,18 @@ def plan(
             keep.extend(o.name for o in group.objects)
             continue
 
-        # With equal sizes "newest" is the only sensible survivor; with mixed
-        # sizes the largest is, since that is the highest-quality copy.
-        survivor = group.newest if group.sizes_match else group.largest
-        keep.append(survivor.name)
+        # Anything the site links to survives, however old it is — deleting a
+        # referenced copy would leave a broken image on the page. Only when no
+        # copy is referenced does the fallback apply: newest for equal sizes,
+        # largest when we were told to collapse re-edits too.
+        survivors = {o.name for o in group.objects if o.name in in_use}
+        if not survivors:
+            fallback = group.newest if group.sizes_match else group.largest
+            survivors = {fallback.name}
+
+        keep.extend(sorted(survivors))
         for obj in sorted(group.objects, key=lambda o: o.sort_key):
-            if obj.name == survivor.name:
+            if obj.name in survivors:
                 continue
             delete.append(
                 {"name": obj.name, "size": obj.size, "basename": group.basename}
@@ -237,12 +288,17 @@ def plan(
 
     total_bytes = sum(o.size for o in objects)
     freed_bytes = sum(item["size"] for item in delete)
+    unreferenced = [o for o in objects if in_use and o.name not in in_use]
     return {
         "bucket": None,
+        "usage_checked": bool(in_use),
         "totals": {
-            "objects": len(list(objects)) if isinstance(objects, list) else None,
+            "objects": len(objects),
             "unique_names": len(groups),
             "groups_with_duplicates": sum(1 for g in groups if len(g.objects) > 1),
+            "in_use": len([o for o in objects if o.name in in_use]),
+            "unreferenced": len(unreferenced),
+            "unreferenced_bytes": sum(o.size for o in unreferenced),
             "bytes_before": total_bytes,
             "bytes_freed": freed_bytes,
             "bytes_after": total_bytes - freed_bytes,
@@ -267,6 +323,16 @@ def report(manifest: dict[str, Any]) -> str:
         f"Te verwijderen    {len(manifest['delete'])} bestanden, {megabytes(totals['bytes_freed'])}",
         f"Daarna            {megabytes(totals['bytes_after'])}",
     ]
+    if manifest.get("usage_checked"):
+        lines.insert(
+            3,
+            f"In gebruik        {totals['in_use']} (die blijven hoe dan ook staan)",
+        )
+    else:
+        lines.append(
+            "Let op            zonder gebruikscheck kan een foto die de site "
+            "toont verdwijnen"
+        )
     if manifest["skipped"]:
         held = sum(item["reclaimable_bytes"] for item in manifest["skipped"])
         lines.append(
@@ -302,6 +368,16 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Also collapse groups whose copies differ in size, keeping the largest.",
     )
+    parser.add_argument(
+        "--kv-table",
+        default=DEFAULT_KV_TABLE,
+        help=f"Table holding the site's data (default: {DEFAULT_KV_TABLE}).",
+    )
+    parser.add_argument(
+        "--no-usage-check",
+        action="store_true",
+        help="Don't look up which photos the site uses. Rarely what you want.",
+    )
     return parser
 
 
@@ -331,9 +407,23 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"Geen bestanden gevonden in {args.bucket}.")
         return 0
 
-    manifest = plan(objects, include_size_mismatch=args.include_size_mismatch)
+    in_use: set[str] = set()
+    if not args.no_usage_check:
+        in_use = client.in_use_names(args.bucket, args.kv_table)
+        if not in_use:
+            print(
+                "Geweigerd: geen enkele foto gevonden als 'in gebruik'. Dat "
+                "klopt bijna zeker niet, en doorgaan zou live foto's kunnen "
+                "wissen. Controleer --kv-table, of forceer met "
+                "--no-usage-check.",
+                file=sys.stderr,
+            )
+            return 2
+
+    manifest = plan(
+        objects, in_use=in_use, include_size_mismatch=args.include_size_mismatch
+    )
     manifest["bucket"] = args.bucket
-    manifest["totals"]["objects"] = len(objects)
     args.manifest.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 
     print(report(manifest))

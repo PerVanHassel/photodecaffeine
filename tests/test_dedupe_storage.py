@@ -19,6 +19,7 @@ from dedupe_storage import (  # noqa: E402
     Group,
     StorageObject,
     build_parser,
+    extract_names,
     group_objects,
     main,
     megabytes,
@@ -262,3 +263,90 @@ def test_bucket_is_required():
 
 def test_apply_defaults_to_off():
     assert build_parser().parse_args(["--bucket", "b"]).apply is False
+
+
+# --- what the site actually uses ------------------------------------------
+
+
+def test_extract_names_reads_a_public_url():
+    blob = '{"image":"https://x.supabase.co/storage/v1/object/public/b/1712345678901-a.jpg"}'
+    assert extract_names(blob, "b") == {"1712345678901-a.jpg"}
+
+
+def test_extract_names_drops_the_signed_query_string():
+    blob = '"/object/sign/b/1712345678901-a.jpg?token=abc.def"'
+    assert extract_names(blob, "b") == {"1712345678901-a.jpg"}
+
+
+def test_extract_names_finds_every_reference_in_one_value():
+    blob = '["b/1-a.jpg","b/2-b.jpg"]'
+    assert extract_names(blob, "b") == {"1-a.jpg", "2-b.jpg"}
+
+
+def test_extract_names_ignores_another_bucket():
+    assert extract_names('"other/1-a.jpg"', "b") == set()
+
+
+def test_extract_names_on_empty_input():
+    assert extract_names("", "b") == set()
+
+
+def test_a_referenced_copy_survives_even_when_it_is_older():
+    older = obj("1000000000000-a.jpg", 100, "2026-01-01T00:00:00Z")
+    newer = obj("1000000000001-a.jpg", 100, "2026-06-01T00:00:00Z")
+    result = plan([older, newer], in_use={"1000000000000-a.jpg"})
+    assert result["keep"] == ["1000000000000-a.jpg"]
+    assert [d["name"] for d in result["delete"]] == ["1000000000001-a.jpg"]
+
+
+def test_every_referenced_copy_is_kept():
+    objects = [obj("1000000000000-a.jpg", 100), obj("1000000000001-a.jpg", 100)]
+    names = {"1000000000000-a.jpg", "1000000000001-a.jpg"}
+    result = plan(objects, in_use=names)
+    assert sorted(result["keep"]) == sorted(names)
+    assert result["delete"] == []
+
+
+def test_unreferenced_copies_go_when_one_is_referenced():
+    objects = [obj(f"100000000000{i}-a.jpg", 100) for i in range(3)]
+    result = plan(objects, in_use={"1000000000001-a.jpg"})
+    assert result["keep"] == ["1000000000001-a.jpg"]
+    assert len(result["delete"]) == 2
+
+
+def test_a_group_nothing_references_falls_back_to_the_newest():
+    objects = [
+        obj("1000000000000-a.jpg", 100, "2026-01-01T00:00:00Z"),
+        obj("1000000000001-a.jpg", 100, "2026-06-01T00:00:00Z"),
+    ]
+    result = plan(objects, in_use={"1000000000000-b.jpg"})
+    assert result["keep"] == ["1000000000001-a.jpg"]
+
+
+def test_a_referenced_copy_is_never_deleted_by_the_size_mismatch_flag():
+    small = obj("1000000000000-a.jpg", 100)
+    large = obj("1000000000001-a.jpg", 900)
+    result = plan([small, large], in_use={"1000000000000-a.jpg"}, include_size_mismatch=True)
+    assert result["keep"] == ["1000000000000-a.jpg"]
+    assert [d["name"] for d in result["delete"]] == ["1000000000001-a.jpg"]
+
+
+def test_totals_count_what_is_referenced():
+    objects = [obj("1000000000000-a.jpg", 100), obj("b.jpg", 50)]
+    totals = plan(objects, in_use={"b.jpg"})["totals"]
+    assert totals["in_use"] == 1
+    assert totals["unreferenced"] == 1
+    assert totals["unreferenced_bytes"] == 100
+
+
+def test_report_says_when_the_usage_check_ran():
+    result = plan([obj("a.jpg", 10)], in_use={"a.jpg"})
+    assert "In gebruik" in report(result)
+
+
+def test_report_warns_when_the_usage_check_did_not_run():
+    assert "zonder gebruikscheck" in report(plan([obj("a.jpg", 10)]))
+
+
+def test_usage_check_is_on_by_default():
+    assert build_parser().parse_args(["--bucket", "b"]).no_usage_check is False
