@@ -197,6 +197,77 @@
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
+  .dup-chip {
+    position: absolute; right: 0; top: 0; z-index: 2;
+    font-family: "IBM Plex Mono", monospace; font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer;
+    padding: 5px 9px; background: var(--sunk); color: var(--faint);
+    border: none; border-left: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft);
+  }
+  .dup-chip:hover { color: var(--fg); }
+  .dup-chip[aria-pressed="true"] { background: var(--accent); color: #1a1512; }
+  .card[data-dup="drop"] { opacity: .55; }
+  .card[data-dup="drop"] .frame::after {
+    content: "Gaat weg"; position: absolute; inset: auto 0 0 0; text-align: center;
+    font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: .14em;
+    text-transform: uppercase; padding: 5px; background: var(--bad); color: #2a100c;
+  }
+  .card[data-dup="keep"] .frame::after {
+    content: "Blijft"; position: absolute; inset: auto 0 0 0; text-align: center;
+    font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: .14em;
+    text-transform: uppercase; padding: 5px; background: var(--good); color: #102015;
+  }
+
+  .hints { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 20px; }
+  .hints button {
+    font-family: "IBM Plex Mono", monospace; font-size: 11.5px; cursor: pointer;
+    background: var(--card); color: var(--muted);
+    border: 1px dashed var(--line); padding: 7px 12px;
+  }
+  .hints button:hover { color: var(--accent); border-color: var(--accent); }
+
+  .tray {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+    background: var(--card); border-top: 1px solid var(--accent);
+    padding: 14px 20px; box-shadow: 0 -16px 40px -22px rgba(0,0,0,.95);
+  }
+  .tray-inner {
+    max-width: 1240px; margin: 0 auto; display: flex; align-items: center;
+    gap: 16px; flex-wrap: wrap;
+  }
+  .tray p { margin: 0; font-size: 13px; color: var(--muted); flex-basis: 100%; }
+  .tray p b { color: var(--fg); font-weight: 600; }
+  .picks { display: flex; gap: 10px; flex-wrap: wrap; flex: 1; }
+  .pick {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    cursor: pointer; background: none; border: none; padding: 0;
+    font-family: "IBM Plex Mono", monospace; font-size: 10px; color: var(--faint);
+  }
+  .pick img {
+    width: 84px; height: 60px; object-fit: cover; display: block;
+    border: 2px solid transparent; background: var(--sunk);
+  }
+  .pick[aria-pressed="true"] img { border-color: var(--good); }
+  .pick[aria-pressed="true"] { color: var(--good); }
+
+  .groups { margin: 30px 0 0; display: flex; flex-direction: column; gap: 10px; }
+  .group {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    background: var(--card); border: 1px solid var(--line-soft); padding: 13px 16px;
+    font-family: "IBM Plex Mono", monospace; font-size: 11.5px;
+  }
+  .group .keep { color: var(--good); }
+  .group .drop { color: var(--bad); text-decoration: line-through; }
+  .group button {
+    margin-left: auto; font-family: inherit; font-size: 11px; cursor: pointer;
+    background: none; border: 1px solid var(--line); color: var(--muted); padding: 5px 10px;
+  }
+  .group button:hover { color: var(--fg); }
+  h2.section {
+    margin: 46px 0 14px; font-size: 19px; font-weight: 700; letter-spacing: -0.015em;
+  }
+  h2.section + p.sub { margin: -8px 0 18px; color: var(--muted); font-size: 13.5px; max-width: 66ch; }
+
   .reject {
     margin: 34px 0 0; padding: 22px; background: var(--card);
     border: 1px solid color-mix(in srgb, var(--bad) 40%, var(--line-soft));
@@ -240,9 +311,18 @@
 
   <div class="grid" id="grid"></div>
 
+  <h2 class="section">Dubbele foto's</h2>
+  <p class="sub">
+    Zet <b>Dubbel</b> aan bij twee of meer foto's die dezelfde opname zijn. Kies daarna
+    onderin welke je wilt houden; de rest zet ik weg. Foto's met dezelfde bestandsnaam
+    staan hieronder alvast als voorstel.
+  </p>
+  <div class="hints" id="hints"></div>
+  <div class="groups" id="groups"></div>
+
   <section class="reject" id="reject" hidden>
-    <h2>Deze wil je opnieuw</h2>
-    <p>Kopieer de lijst en plak hem in het gesprek, dan laat ik precies deze foto's opnieuw uitrekenen.</p>
+    <h2>Door te geven</h2>
+    <p>Kopieer dit en plak het in het gesprek, dan voer ik het uit.</p>
     <textarea id="reject-list" readonly rows="6" spellcheck="false"></textarea>
     <button class="ghost" id="reject-copy">Kopieer lijst</button>
   </section>
@@ -252,6 +332,15 @@
     hier staan; ik kan die lijst uitlezen en precies die foto's opnieuw laten uitrekenen.
     De originelen staan nog gewoon in je bucket, dus er is niets onherstelbaars gebeurd.
   </p>
+</div>
+
+<div class="tray" id="tray" hidden>
+  <div class="tray-inner">
+    <p id="tray-text"></p>
+    <div class="picks" id="picks"></div>
+    <button class="ghost" id="tray-save">Vastleggen</button>
+    <button class="ghost" id="tray-clear">Leegmaken</button>
+  </div>
 </div>
 
 <dialog id="box">
@@ -275,6 +364,12 @@
   const grid = document.getElementById("grid");
   const saving = document.getElementById("saving");
   const verdicts = new Map();
+  const bySlug = new Map(PHOTOS.map((p) => [p.slug, p]));
+  /* Confirmed duplicate groups: {keep: slug, drop: [slug]}. */
+  let groups = [];
+  /* Slugs currently being grouped, in the order they were picked. */
+  let picking = [];
+  let keeper = null;
   let filter = "todo";
 
   /* Totals are facts about the batch, so they are computed from the data
@@ -296,6 +391,7 @@
     el.innerHTML = `
       <div class="frame">
         <span class="tag">Web</span>
+        <button class="dup-chip" aria-pressed="false">Dubbel</button>
         <img class="web" src="${p.webUrl}" alt="${p.name}" loading="lazy" decoding="async">
         <img class="original" alt="${p.name} origineel" decoding="async">
       </div>
@@ -325,6 +421,8 @@
     ["pointerup", "pointerleave", "pointercancel"].forEach((e) =>
       cmp.addEventListener(e, () => compare(false)));
 
+    const chip = el.querySelector(".dup-chip");
+    chip.addEventListener("click", (e) => { e.stopPropagation(); toggleSelect(p.slug); });
     frame.addEventListener("click", () => open(p));
     el.querySelector(".yes").addEventListener("click", () => mark(p.slug, "good"));
     el.querySelector(".no").addEventListener("click", () => mark(p.slug, "bad"));
@@ -381,9 +479,115 @@
       b.setAttribute("aria-pressed", String(b.dataset.filter === filter));
     }
 
+    renderDuplicates();
+
     const rejected = PHOTOS.filter((p) => verdicts.get(p.slug) === "bad").map((p) => p.name);
-    document.getElementById("reject").hidden = rejected.length === 0;
-    document.getElementById("reject-list").value = rejected.join("\n");
+    const lines = [];
+    if (rejected.length) lines.push("OPNIEUW DOEN", ...rejected);
+    if (groups.length) {
+      if (lines.length) lines.push("");
+      lines.push("DUBBEL");
+      for (const g of groups) {
+        lines.push(`houd ${bySlug.get(g.keep).name}  |  weg ${g.drop.map((s) => bySlug.get(s).name).join(", ")}`);
+      }
+    }
+    document.getElementById("reject").hidden = lines.length === 0;
+    document.getElementById("reject-list").value = lines.join("\n");
+  }
+
+  function renderDuplicates() {
+    const keep = new Set(groups.map((g) => g.keep));
+    const drop = new Set(groups.flatMap((g) => g.drop));
+    for (const el of grid.children) {
+      const slug = el.dataset.slug;
+      el.dataset.dup = keep.has(slug) ? "keep" : drop.has(slug) ? "drop" : "";
+      el.querySelector(".dup-chip").setAttribute("aria-pressed", String(picking.includes(slug)));
+    }
+
+    const hints = document.getElementById("hints");
+    hints.innerHTML = "";
+    for (const [base, slugs] of suggestions()) {
+      const b = document.createElement("button");
+      b.textContent = `${base} — ${slugs.length} keer`;
+      b.addEventListener("click", () => {
+        picking = slugs; keeper = slugs[0];
+        render();
+        document.getElementById("tray").scrollIntoView({ block: "nearest" });
+      });
+      hints.appendChild(b);
+    }
+    if (!hints.children.length) {
+      hints.innerHTML = '<span class="saving">Geen namen die twee keer voorkomen.</span>';
+    }
+
+    const list = document.getElementById("groups");
+    list.innerHTML = "";
+    groups.forEach((g, i) => {
+      const row = document.createElement("div");
+      row.className = "group";
+      row.innerHTML = `<span class="keep">houd ${bySlug.get(g.keep).name}</span>` +
+        g.drop.map((s) => `<span class="drop">${bySlug.get(s).name}</span>`).join("") +
+        `<button>Ongedaan maken</button>`;
+      row.querySelector("button").addEventListener("click", () => dropGroup(i));
+      list.appendChild(row);
+    });
+
+    const tray = document.getElementById("tray");
+    tray.hidden = picking.length === 0;
+    document.getElementById("tray-text").innerHTML = picking.length < 2
+      ? "Zet <b>Dubbel</b> aan bij nog een foto van dezelfde opname."
+      : "Klik de foto die je wilt <b>houden</b>. De rest gaat weg.";
+    const picks = document.getElementById("picks");
+    picks.innerHTML = "";
+    for (const slug of picking) {
+      const p = bySlug.get(slug);
+      const b = document.createElement("button");
+      b.className = "pick";
+      b.setAttribute("aria-pressed", String(slug === keeper));
+      b.innerHTML = `<img src="${p.webUrl}" alt=""><span>${slug === keeper ? "houden" : "weg"}</span>`;
+      b.addEventListener("click", () => { keeper = slug; render(); });
+      picks.appendChild(b);
+    }
+    document.getElementById("tray-save").disabled = picking.length < 2;
+  }
+
+  /* The same shot uploaded twice has the same name under its timestamp, so
+     that is a good suggestion — but only a suggestion; two different shots
+     can share a name, and two uploads of one shot can be named differently. */
+  function baseName(p) {
+    return p.name.replace(/^\d{10,}-/, "").replace(/\.[^.]+$/, "").toLowerCase();
+  }
+
+  function suggestions() {
+    const byBase = new Map();
+    for (const p of PHOTOS) {
+      const key = baseName(p);
+      if (!byBase.has(key)) byBase.set(key, []);
+      byBase.get(key).push(p.slug);
+    }
+    const settled = new Set(groups.flatMap((g) => [g.keep, ...g.drop]));
+    return [...byBase].filter(([, slugs]) =>
+      slugs.length > 1 && !slugs.every((s) => settled.has(s)));
+  }
+
+  function toggleSelect(slug) {
+    picking = picking.includes(slug) ? picking.filter((s) => s !== slug) : [...picking, slug];
+    if (!picking.includes(keeper)) keeper = picking[0] || null;
+    render();
+  }
+
+  function saveGroup() {
+    if (picking.length < 2 || !keeper) return;
+    groups = [...groups, { keep: keeper, drop: picking.filter((s) => s !== keeper) }];
+    picking = []; keeper = null;
+    save();
+    render();
+  }
+
+  function dropGroup(index) {
+    groups = groups.filter((_, i) => i !== index);
+    save();
+    render();
   }
 
   function mark(slug, verdict) {
@@ -395,20 +599,41 @@
 
   const LOCAL = "fotoproef-verdicts";
   function saveLocal() {
-    try { localStorage.setItem(LOCAL, JSON.stringify([...verdicts])); } catch (e) { /* private window */ }
+    try {
+      localStorage.setItem(LOCAL, JSON.stringify({ verdicts: [...verdicts], groups }));
+    } catch (e) { /* private window */ }
   }
   function save() {
     saveLocal();
-    saving.textContent = `${verdicts.size} bewaard in deze browser`;
+    saving.textContent = `${verdicts.size + groups.length} bewaard in deze browser`;
   }
 
   try {
-    const stored = JSON.parse(localStorage.getItem(LOCAL) || "[]");
-    for (const [k, v] of stored) verdicts.set(k, v);
+    const stored = JSON.parse(localStorage.getItem(LOCAL) || "{}");
+    /* An earlier version stored a bare array of verdicts. */
+    const pairs = Array.isArray(stored) ? stored : stored.verdicts || [];
+    for (const [k, v] of pairs) verdicts.set(k, v);
+    if (!Array.isArray(stored) && Array.isArray(stored.groups)) {
+      groups = stored.groups.filter((g) => bySlug.has(g.keep) && g.drop.every((s) => bySlug.has(s)));
+    }
   } catch (e) { /* nothing stored yet */ }
   for (const b of document.querySelectorAll("#filters button")) {
     b.addEventListener("click", () => { filter = b.dataset.filter; render(); });
   }
+  document.getElementById("tray-save").addEventListener("click", saveGroup);
+  document.getElementById("tray-clear").addEventListener("click", () => {
+    picking = []; keeper = null; render();
+  });
+
+  document.getElementById("reject-copy").addEventListener("click", async (e) => {
+    const field = document.getElementById("reject-list");
+    field.select();
+    try { await navigator.clipboard.writeText(field.value); }
+    catch (err) { document.execCommand("copy"); }
+    e.target.textContent = "Gekopieerd";
+    setTimeout(() => { e.target.textContent = "Kopieer lijst"; }, 1600);
+  });
+
   render();
 
 </script>
