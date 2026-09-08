@@ -1,0 +1,93 @@
+name: Foto's webklaar maken
+
+# Verkleint de foto's die de site toont en verzet de links. Draait hier omdat
+# het downloaden en uploaden van honderden megabytes niet op een laptop hoeft,
+# en omdat de service key dan nergens rondslingert.
+#
+# Eenmalig instellen: voeg SUPABASE_SERVICE_KEY toe als repository secret.
+# Daarna: Actions -> Foto's webklaar maken -> Run workflow.
+#
+# De originelen blijven in de bucket staan tot je 'delete_originals' aanvinkt.
+# Doe dat pas als de site goed staat en je de foto's zelf ook hebt - ze worden
+# hier niet bewaard, want een runner wordt na afloop weggegooid.
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Echt doen (uit = alleen laten zien wat er zou gebeuren)"
+        type: boolean
+        default: false
+      limit:
+        description: "Aantal foto's (leeg = allemaal)"
+        type: string
+        default: "3"
+      delete_originals:
+        description: "Originelen daarna weggooien - pas doen als de site goed staat"
+        type: boolean
+        default: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # Ruim boven de verwachte looptijd, maar niet eindeloos als er iets hangt.
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      # Zegt welke fout er gemaakt is in plaats van alleen dat de sleutel mist.
+      # De sleutel zelf wordt nooit geprint, alleen de lengte.
+      - name: Sleutel controleren
+        env:
+          FROM_SECRET: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          FROM_VARIABLE: ${{ vars.SUPABASE_SERVICE_KEY }}
+        run: |
+          if [ -n "$FROM_SECRET" ]; then
+            echo "Gevonden als repository secret (${#FROM_SECRET} tekens)."
+            exit 0
+          fi
+          if [ -n "$FROM_VARIABLE" ]; then
+            echo "::error::De naam staat onder 'Variables' in plaats van 'Secrets'. Haal hem daar weg en zet hem onder het tabblad Secrets - een sleutel hoort niet in een variable, die is voor iedereen leesbaar."
+            exit 1
+          fi
+          echo "::error::SUPABASE_SERVICE_KEY is leeg. Kijk op https://github.com/PerVanHassel/photodecaffeine/settings/secrets/actions of daar onder 'Repository secrets' een regel SUPABASE_SERVICE_KEY staat, precies zo geschreven. De waarde staat in Supabase onder Project Settings -> API -> service_role."
+          exit 1
+
+      - name: Foto's verwerken
+        env:
+          SUPABASE_URL: https://uunwhesmymkwmkgqkmxy.supabase.co
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          BUCKET: portfolio-images-0951c59e
+          APPLY: ${{ inputs.apply }}
+          LIMIT: ${{ inputs.limit }}
+          DELETE_ORIGINALS: ${{ inputs.delete_originals }}
+        run: |
+          set -euo pipefail
+          # if/fi, niet '[ ... ] && ...': onder 'set -e' stopt de stap dan
+          # zodra een vinkje uit staat, want de test geeft dan een foutcode.
+          args=(--bucket "$BUCKET")
+          if [ "$APPLY" = "true" ]; then args+=(--work-dir ./werkmap --apply); fi
+          if [ -n "$LIMIT" ]; then args+=(--limit "$LIMIT"); fi
+          if [ "$DELETE_ORIGINALS" = "true" ]; then args+=(--delete-originals); fi
+          echo "publish_web_images.py ${args[*]}"
+          python publish_web_images.py "${args[@]}"
+
+      # De runner wordt daarna weggegooid, dus de backup van de databaseregels
+      # moet hier vandaan. Zonder dit is er geen weg terug als een link
+      # verkeerd komt te staan.
+      - name: Backup en verslag bewaren
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-en-verslag
+          path: |
+            kv-backup.json
+            publish-manifest.json
+          if-no-files-found: ignore
+          retention-days: 90
