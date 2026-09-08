@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Fotoproef</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Deliberately one dark environment, not theme-aware: judging a photo
+     needs the same neutral surround every time, the way a proofing table
+     or Lightroom does. A page that flips to white would change how every
+     one of these reads. Every colour is therefore painted explicitly. */
+  :root {
+    --ground: #141312;
+    --card: #1e1d1b;
+    --sunk: #0e0d0c;
+    --line: #302e2b;
+    --line-soft: #262421;
+    --fg: #ece8e2;
+    --muted: #8b857c;
+    --faint: #605b54;
+    --accent: #c8905a;
+    --good: #78be8c;
+    --bad: #e07060;
+    --shadow: 0 1px 0 rgba(255,255,255,0.03), 0 12px 28px -18px rgba(0,0,0,0.9);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--fg);
+    font-family: "Archivo", ui-sans-serif, system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 20px 96px; }
+
+  /* --- header --- */
+  header { padding: 56px 0 28px; }
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--accent); margin: 0 0 14px;
+  }
+  h1 {
+    font-size: clamp(30px, 5vw, 46px); font-weight: 800; letter-spacing: -0.025em;
+    margin: 0; line-height: 1.05; text-wrap: balance;
+  }
+  .lede { color: var(--muted); max-width: 60ch; margin: 16px 0 0; }
+  .lede b { color: var(--fg); font-weight: 600; }
+
+  .totals {
+    display: flex; flex-wrap: wrap; gap: 0 40px; margin: 30px 0 0;
+    padding: 20px 0 0; border-top: 1px solid var(--line-soft);
+  }
+  .total-k {
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--faint);
+  }
+  .total-v {
+    font-size: 22px; font-weight: 600; letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+  .total-v .unit { font-size: 13px; color: var(--muted); font-weight: 400; }
+  .total-v .was {
+    color: var(--faint); text-decoration: line-through;
+    text-decoration-thickness: 1px; font-weight: 400; margin-right: 8px;
+  }
+
+  /* --- sticky bar --- */
+  .bar {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 14px;
+    margin: 30px 0 26px; padding: 12px 0;
+    background: color-mix(in srgb, var(--ground) 92%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .meter { flex: 1 1 220px; min-width: 180px; }
+  .meter-top {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: "IBM Plex Mono", monospace; font-size: 11.5px;
+    color: var(--muted); margin-bottom: 7px; font-variant-numeric: tabular-nums;
+  }
+  .track { height: 3px; background: var(--line); overflow: hidden; }
+  .fill { height: 100%; width: 0; background: var(--accent); transition: width .28s ease; }
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; }
+  .filters button {
+    font-family: inherit; font-size: 12px; font-weight: 500;
+    color: var(--muted); background: none; cursor: pointer;
+    border: 1px solid var(--line); padding: 7px 13px;
+  }
+  .filters button:hover { color: var(--fg); border-color: var(--faint); }
+  .filters button[aria-pressed="true"] {
+    color: var(--ground); background: var(--fg); border-color: var(--fg);
+  }
+  .filters .count { color: inherit; opacity: .55; margin-left: 6px; font-variant-numeric: tabular-nums; }
+
+  /* --- grid --- */
+  .grid {
+    display: grid; gap: 18px;
+    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--line-soft);
+    display: flex; flex-direction: column; box-shadow: var(--shadow);
+  }
+  .card[data-verdict="good"] { border-color: color-mix(in srgb, var(--good) 45%, var(--line-soft)); }
+  .card[data-verdict="bad"] { border-color: color-mix(in srgb, var(--bad) 55%, var(--line-soft)); }
+  .card.hidden { display: none; }
+
+  .frame {
+    position: relative; background: var(--sunk); aspect-ratio: 4 / 3;
+    display: flex; align-items: center; justify-content: center;
+    cursor: zoom-in; overflow: hidden;
+  }
+  .frame img {
+    max-width: 100%; max-height: 100%; width: auto; height: auto;
+    object-fit: contain; display: block;
+  }
+  .frame img.original { display: none; }
+  .frame.comparing img.web { display: none; }
+  .frame.comparing img.original { display: block; }
+  .tag {
+    position: absolute; left: 0; top: 0; padding: 4px 9px;
+    font-family: "IBM Plex Mono", monospace; font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    background: var(--sunk); color: var(--faint); border-right: 1px solid var(--line-soft);
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .frame.comparing .tag { background: var(--accent); color: #1a1512; border-color: transparent; }
+
+  .meta { padding: 13px 15px 0; }
+  .name {
+    font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--fg);
+    overflow-wrap: anywhere; margin-bottom: 6px;
+  }
+  .facts {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--faint);
+    display: flex; flex-wrap: wrap; gap: 4px 12px; font-variant-numeric: tabular-nums;
+  }
+  .facts .drop { color: var(--good); }
+
+  .actions { display: flex; gap: 1px; margin-top: 13px; background: var(--line-soft); }
+  .actions button {
+    flex: 1; font-family: inherit; font-size: 12.5px; font-weight: 600;
+    padding: 11px 8px; cursor: pointer; border: none;
+    background: var(--card); color: var(--muted);
+  }
+  .actions button:hover { color: var(--fg); }
+  .actions .yes[aria-pressed="true"] { background: var(--good); color: #102015; }
+  .actions .no[aria-pressed="true"] { background: var(--bad); color: #2a100c; }
+  .actions .cmp { flex: 0 0 auto; padding-left: 15px; padding-right: 15px; }
+  .actions .cmp:hover, .actions .cmp:active { color: var(--accent); }
+
+  /* --- lightbox --- */
+  dialog {
+    border: none; padding: 0; max-width: 100vw; max-height: 100vh;
+    width: 100vw; height: 100vh; background: rgba(8,7,6,0.97); color: var(--fg);
+  }
+  dialog::backdrop { background: rgba(8,7,6,0.9); }
+  .box { display: flex; flex-direction: column; height: 100%; }
+  .box-top {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    padding: 14px 20px; border-bottom: 1px solid var(--line-soft);
+  }
+  .box-top .name { margin: 0; flex: 1; }
+  .box-body {
+    flex: 1; min-height: 0; display: flex; align-items: center;
+    justify-content: center; padding: 16px; position: relative;
+  }
+  .box-body img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .box-body img.original { display: none; }
+  .box-body.comparing img.web { display: none; }
+  .box-body.comparing img.original { display: block; }
+  .ghost {
+    font-family: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer;
+    background: none; border: 1px solid var(--line); color: var(--muted); padding: 8px 14px;
+  }
+  .ghost:hover { color: var(--fg); border-color: var(--faint); }
+  .ghost[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #1a1512; }
+
+  .note {
+    margin: 34px 0 0; padding: 16px 18px; border-left: 2px solid var(--accent);
+    background: var(--card); color: var(--muted); font-size: 13.5px; max-width: 68ch;
+  }
+  .note b { color: var(--fg); font-weight: 600; }
+  .saving {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px;
+    color: var(--faint); letter-spacing: 0.1em;
+  }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+  .reject {
+    margin: 34px 0 0; padding: 22px; background: var(--card);
+    border: 1px solid color-mix(in srgb, var(--bad) 40%, var(--line-soft));
+    max-width: 68ch;
+  }
+  .reject h2 { margin: 0 0 6px; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+  .reject p { margin: 0 0 14px; color: var(--muted); font-size: 13.5px; }
+  .reject textarea {
+    width: 100%; background: var(--sunk); color: var(--fg); border: 1px solid var(--line);
+    font-family: "IBM Plex Mono", monospace; font-size: 12px; padding: 11px 13px;
+    resize: vertical; margin-bottom: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Controle na het verkleinen</p>
+    <h1>Fotoproef</h1>
+    <p class="lede">
+      Elke foto die op de site staat is opnieuw uitgerekend naar <b>2560&nbsp;px</b> en als
+      WebP&nbsp;+&nbsp;JPEG teruggezet. Hieronder staat wat bezoekers nu te zien krijgen.
+      Houd <b>Vergelijk</b> ingedrukt om het origineel ernaast te leggen — let op scherpte,
+      kleur, en of staande foto's rechtop staan.
+    </p>
+    <div class="totals" id="totals"></div>
+  </header>
+
+  <div class="bar">
+    <div class="meter">
+      <div class="meter-top"><span id="meter-label">0 van 0 beoordeeld</span><span id="meter-pct">0%</span></div>
+      <div class="track"><div class="fill" id="meter-fill"></div></div>
+    </div>
+    <div class="filters" id="filters">
+      <button data-filter="todo" aria-pressed="true">Nog te doen <span class="count"></span></button>
+      <button data-filter="all" aria-pressed="false">Alles <span class="count"></span></button>
+      <button data-filter="bad" aria-pressed="false">Niet goed <span class="count"></span></button>
+    </div>
+    <span class="saving" id="saving"></span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <section class="reject" id="reject" hidden>
+    <h2>Deze wil je opnieuw</h2>
+    <p>Kopieer de lijst en plak hem in het gesprek, dan laat ik precies deze foto's opnieuw uitrekenen.</p>
+    <textarea id="reject-list" readonly rows="6" spellcheck="false"></textarea>
+    <button class="ghost" id="reject-copy">Kopieer lijst</button>
+  </section>
+
+  <p class="note">
+    <b>Wat er met je oordeel gebeurt.</b> Alles wat je op <em>Niet goed</em> zet blijft
+    hier staan; ik kan die lijst uitlezen en precies die foto's opnieuw laten uitrekenen.
+    De originelen staan nog gewoon in je bucket, dus er is niets onherstelbaars gebeurd.
+  </p>
+</div>
+
+<dialog id="box">
+  <div class="box">
+    <div class="box-top">
+      <span class="name mono" id="box-name"></span>
+      <button class="ghost" id="box-cmp" aria-pressed="false">Vergelijk met origineel</button>
+      <button class="ghost" id="box-close">Sluiten</button>
+    </div>
+    <div class="box-body" id="box-body">
+      <img class="web" id="box-web" alt="">
+      <img class="original" id="box-original" alt="">
+    </div>
+  </div>
+</dialog>
+
+<script>
+  const PHOTOS = [{"slug": "1780712288522-maj01569", "name": "1780712288522-MAJ01569.jpg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780712288522-maj01569-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780712288522-MAJ01569.jpg", "width": 2560, "originalBytes": 15501105, "webBytes": 1395900}, {"slug": "1780712326017-maj01567", "name": "1780712326017-MAJ01567.jpg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780712326017-maj01567-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780712326017-MAJ01567.jpg", "width": 2560, "originalBytes": 4510497, "webBytes": 668675}, {"slug": "1780712330063-maj01558-edit", "name": "1780712330063-MAJ01558-Edit.jpg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780712330063-maj01558-edit-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780712330063-MAJ01558-Edit.jpg", "width": 2560, "originalBytes": 6938800, "webBytes": 542922}, {"slug": "1780712332520-maj01566", "name": "1780712332520-MAJ01566.jpg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780712332520-maj01566-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780712332520-MAJ01566.jpg", "width": 2560, "originalBytes": 8041210, "webBytes": 1432281}, {"slug": "1780712334919-maj01557", "name": "1780712334919-MAJ01557.jpg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780712334919-maj01557-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780712334919-MAJ01557.jpg", "width": 2560, "originalBytes": 10436281, "webBytes": 279104}, {"slug": "1780712336385-maj01565-edit", "name": "1780712336385-MAJ01565-Edit.jpg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780712336385-maj01565-edit-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780712336385-MAJ01565-Edit.jpg", "width": 2560, "originalBytes": 12563026, "webBytes": 788642}, {"slug": "1780712341736-maj01574", "name": "1780712341736-MAJ01574.jpg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780712341736-maj01574-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780712341736-MAJ01574.jpg", "width": 2560, "originalBytes": 22038243, "webBytes": 1607510}, {"slug": "1780712341895-maj01560-edit", "name": "1780712341895-MAJ01560-Edit.jpg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780712341895-maj01560-edit-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780712341895-MAJ01560-Edit.jpg", "width": 2560, "originalBytes": 22962260, "webBytes": 1917052}, {"slug": "1780712343006-maj01563", "name": "1780712343006-MAJ01563.jpg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780712343006-maj01563-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780712343006-MAJ01563.jpg", "width": 2560, "originalBytes": 30363636, "webBytes": 2505784}, {"slug": "1780713401523-dsc0016", "name": "1780713401523-_DSC0016.jpg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780713401523-dsc0016-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780713401523-_DSC0016.jpg", "width": 2560, "originalBytes": 6907083, "webBytes": 1192891}, {"slug": "1780713418462-dsc0019", "name": "1780713418462-_DSC0019.jpg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780713418462-dsc0019-1280.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780713418462-_DSC0019.jpg", "width": 1280, "originalBytes": 5090435, "webBytes": 322801}, {"slug": "1780713419915-dsc0032-edit", "name": "1780713419915-_DSC0032-Edit.jpg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780713419915-dsc0032-edit-1280.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780713419915-_DSC0032-Edit.jpg", "width": 1280, "originalBytes": 5950167, "webBytes": 436589}, {"slug": "1780713420009-dsc0015-edit", "name": "1780713420009-_DSC0015-Edit.jpg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780713420009-dsc0015-edit-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780713420009-_DSC0015-Edit.jpg", "width": 2560, "originalBytes": 5986385, "webBytes": 1236874}, {"slug": "1780754075268-maj00854", "name": "1780754075268-MAJ00854.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780754075268-maj00854-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780754075268-MAJ00854.jpeg", "width": 2560, "originalBytes": 9349154, "webBytes": 639896}, {"slug": "1780754163434-maj00797", "name": "1780754163434-MAJ00797.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780754163434-maj00797-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780754163434-MAJ00797.jpeg", "width": 2560, "originalBytes": 10070561, "webBytes": 1064839}, {"slug": "1780754164466-dsc0178", "name": "1780754164466-_DSC0178.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780754164466-dsc0178-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780754164466-_DSC0178.jpeg", "width": 2560, "originalBytes": 7490650, "webBytes": 1214837}, {"slug": "1780754164945-dsc0243", "name": "1780754164945-_DSC0243.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780754164945-dsc0243-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780754164945-_DSC0243.jpeg", "width": 2560, "originalBytes": 7213211, "webBytes": 1139502}, {"slug": "1780754165045-dsc0214", "name": "1780754165045-_DSC0214.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780754165045-dsc0214-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780754165045-_DSC0214.jpeg", "width": 2560, "originalBytes": 6500512, "webBytes": 1209923}, {"slug": "1780754165712-maj00856", "name": "1780754165712-MAJ00856.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780754165712-maj00856-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780754165712-MAJ00856.jpeg", "width": 2560, "originalBytes": 7930973, "webBytes": 472347}, {"slug": "1780754165807-maj00822", "name": "1780754165807-MAJ00822.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780754165807-maj00822-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780754165807-MAJ00822.jpeg", "width": 2560, "originalBytes": 8500258, "webBytes": 418458}, {"slug": "1780754166749-maj00780", "name": "1780754166749-MAJ00780.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780754166749-maj00780-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780754166749-MAJ00780.jpeg", "width": 2560, "originalBytes": 12267641, "webBytes": 1167001}, {"slug": "1780754166946-maj00684", "name": "1780754166946-MAJ00684.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780754166946-maj00684-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780754166946-MAJ00684.jpeg", "width": 2560, "originalBytes": 17200344, "webBytes": 1560389}, {"slug": "1780754167164-maj00824", "name": "1780754167164-MAJ00824.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780754167164-maj00824-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780754167164-MAJ00824.jpeg", "width": 2560, "originalBytes": 14609217, "webBytes": 1131859}, {"slug": "1780754732170-dsc0146", "name": "1780754732170-_DSC0146.jpg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780754732170-dsc0146-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780754732170-_DSC0146.jpg", "width": 2560, "originalBytes": 4186612, "webBytes": 1091783}, {"slug": "1780754748044-dsc0014", "name": "1780754748044-_DSC0014.jpg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780754748044-dsc0014-1280.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780754748044-_DSC0014.jpg", "width": 1280, "originalBytes": 4062512, "webBytes": 341809}, {"slug": "1780754900687-maj00987", "name": "1780754900687-MAJ00987.jpg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780754900687-maj00987-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780754900687-MAJ00987.jpg", "width": 2560, "originalBytes": 8898772, "webBytes": 1004673}, {"slug": "1780754901356-maj00559", "name": "1780754901356-MAJ00559.jpg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780754901356-maj00559-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780754901356-MAJ00559.jpg", "width": 2560, "originalBytes": 14671127, "webBytes": 1514860}, {"slug": "1780755325510-maj00559", "name": "1780755325510-MAJ00559.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780755325510-maj00559-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780755325510-MAJ00559.jpeg", "width": 2560, "originalBytes": 14084324, "webBytes": 1439101}, {"slug": "1780755704194-img-2710", "name": "1780755704194-IMG_2710.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780755704194-img-2710-1280.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780755704194-IMG_2710.jpeg", "width": 1280, "originalBytes": 5264429, "webBytes": 442744}, {"slug": "1780755705460-img-0022-tif", "name": "1780755705460-IMG_0022_TIF.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780755705460-img-0022-tif-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780755705460-IMG_0022_TIF.jpeg", "width": 2560, "originalBytes": 8756465, "webBytes": 1987171}, {"slug": "1780755705948-img-0099-tif", "name": "1780755705948-IMG_0099_TIF.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780755705948-img-0099-tif-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780755705948-IMG_0099_TIF.jpeg", "width": 2560, "originalBytes": 6179471, "webBytes": 1289527}, {"slug": "1780755707215-maj00884", "name": "1780755707215-MAJ00884.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780755707215-maj00884-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780755707215-MAJ00884.jpeg", "width": 2560, "originalBytes": 15061179, "webBytes": 1674446}, {"slug": "1780755808020-dsc0300", "name": "1780755808020-_DSC0300.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780755808020-dsc0300-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780755808020-_DSC0300.jpeg", "width": 2560, "originalBytes": 6214648, "webBytes": 799978}, {"slug": "1780756123230-img-0624", "name": "1780756123230-IMG_0624.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780756123230-img-0624-1179.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780756123230-IMG_0624.jpeg", "width": 1179, "originalBytes": 447146, "webBytes": 235364}, {"slug": "1780756123249-img-0625", "name": "1780756123249-IMG_0625.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780756123249-img-0625-1179.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780756123249-IMG_0625.jpeg", "width": 1179, "originalBytes": 526394, "webBytes": 242406}, {"slug": "1780756124197-dsc-0220", "name": "1780756124197-DSC_0220.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780756124197-dsc-0220-1280.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780756124197-DSC_0220.jpeg", "width": 1280, "originalBytes": 4890190, "webBytes": 478236}, {"slug": "1780756124984-img-0619", "name": "1780756124984-IMG_0619.png", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780756124984-img-0619-1179.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780756124984-IMG_0619.png", "width": 1179, "originalBytes": 4986245, "webBytes": 135008}, {"slug": "1780756124987-dsc-0557", "name": "1780756124987-DSC_0557.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780756124987-dsc-0557-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780756124987-DSC_0557.jpeg", "width": 2560, "originalBytes": 5202345, "webBytes": 1031455}, {"slug": "1780756125139-dsc-0069", "name": "1780756125139-DSC_0069.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780756125139-dsc-0069-1280.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780756125139-DSC_0069.jpeg", "width": 1280, "originalBytes": 8677028, "webBytes": 460918}, {"slug": "1780756125185-dsc-0068", "name": "1780756125185-DSC_0068.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780756125185-dsc-0068-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780756125185-DSC_0068.jpeg", "width": 2560, "originalBytes": 7241033, "webBytes": 1322836}, {"slug": "1780794275542-2000sblend-1561", "name": "1780794275542-2000sblend-1561.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780794275542-2000sblend-1561-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780794275542-2000sblend-1561.jpeg", "width": 2560, "originalBytes": 467640, "webBytes": 294649}, {"slug": "1780794322105-2000sblend-1581", "name": "1780794322105-2000sblend-1581.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780794322105-2000sblend-1581-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780794322105-2000sblend-1581.jpeg", "width": 2560, "originalBytes": 460132, "webBytes": 282361}, {"slug": "1780794332442-2000sblend-1721", "name": "1780794332442-2000sblend-1721.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780794332442-2000sblend-1721-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780794332442-2000sblend-1721.jpeg", "width": 2560, "originalBytes": 244706, "webBytes": 140625}, {"slug": "1780794340448-2000sblend-1591", "name": "1780794340448-2000sblend-1591.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780794340448-2000sblend-1591-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780794340448-2000sblend-1591.jpeg", "width": 2560, "originalBytes": 466332, "webBytes": 267450}, {"slug": "1780794457379-bikersoul-041", "name": "1780794457379-bikersoul-041.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780794457379-bikersoul-041-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780794457379-bikersoul-041.jpeg", "width": 2560, "originalBytes": 330547, "webBytes": 173090}, {"slug": "1780794488659-bikersoul-221", "name": "1780794488659-bikersoul-221.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780794488659-bikersoul-221-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780794488659-bikersoul-221.jpeg", "width": 2560, "originalBytes": 560600, "webBytes": 290308}, {"slug": "1780794502208-bikersoul-371", "name": "1780794502208-bikersoul-371.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780794502208-bikersoul-371-1280.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780794502208-bikersoul-371.jpeg", "width": 1280, "originalBytes": 789399, "webBytes": 334090}, {"slug": "1780794512488-bikersoul-341", "name": "1780794512488-bikersoul-341.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780794512488-bikersoul-341-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780794512488-bikersoul-341.jpeg", "width": 2560, "originalBytes": 615683, "webBytes": 322718}, {"slug": "1780794541374-bikersoul-301", "name": "1780794541374-bikersoul-301.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780794541374-bikersoul-301-1280.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780794541374-bikersoul-301.jpeg", "width": 1280, "originalBytes": 597619, "webBytes": 244804}, {"slug": "1780794560979-bikersoul-211", "name": "1780794560979-bikersoul-211.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780794560979-bikersoul-211-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780794560979-bikersoul-211.jpeg", "width": 2560, "originalBytes": 396420, "webBytes": 198153}, {"slug": "1780794572477-bikersoul-061", "name": "1780794572477-bikersoul-061.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780794572477-bikersoul-061-1280.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780794572477-bikersoul-061.jpeg", "width": 1280, "originalBytes": 690942, "webBytes": 293978}, {"slug": "1780794579763-bikersoul-111", "name": "1780794579763-bikersoul-111.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780794579763-bikersoul-111-1280.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780794579763-bikersoul-111.jpeg", "width": 1280, "originalBytes": 690107, "webBytes": 293942}, {"slug": "1780794587366-bikersoul-151", "name": "1780794587366-bikersoul-151.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780794587366-bikersoul-151-1280.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1780794587366-bikersoul-151.jpeg", "width": 1280, "originalBytes": 542473, "webBytes": 226758}, {"slug": "1781109789554-dsc-0117", "name": "1781109789554-dsc_0117.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1781109789554-dsc-0117-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1781109789554-dsc_0117.jpeg", "width": 2560, "originalBytes": 6419474, "webBytes": 1156963}, {"slug": "1783196997096-dsc0853", "name": "1783196997096-_dsc0853.jpg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1783196997096-dsc0853-1280.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1783196997096-_dsc0853.jpg", "width": 1280, "originalBytes": 1083417, "webBytes": 529014}, {"slug": "1783210219777-dsc0748", "name": "1783210219777-_dsc0748.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1783210219777-dsc0748-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1783210219777-_dsc0748.jpeg", "width": 2560, "originalBytes": 9572707, "webBytes": 2001982}, {"slug": "1783805653821-dsc0765", "name": "1783805653821-_dsc0765.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1783805653821-dsc0765-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1783805653821-_dsc0765.jpeg", "width": 2560, "originalBytes": 10137233, "webBytes": 1967437}, {"slug": "1783872131633-dsc0724", "name": "1783872131633-_dsc0724.jpg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1783872131633-dsc0724-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1783872131633-_dsc0724.jpg", "width": 2560, "originalBytes": 9486117, "webBytes": 1775577}, {"slug": "1786195435270-dsc0724", "name": "1786195435270-_dsc0724.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1786195435270-dsc0724-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1786195435270-_dsc0724.jpeg", "width": 2560, "originalBytes": 8962428, "webBytes": 1597815}, {"slug": "1786195445126-dsc0713", "name": "1786195445126-_dsc0713.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1786195445126-dsc0713-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1786195445126-_dsc0713.jpeg", "width": 2560, "originalBytes": 7489104, "webBytes": 1443011}, {"slug": "1786195450959-dsc0956", "name": "1786195450959-_dsc0956.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1786195450959-dsc0956-1280.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1786195450959-_dsc0956.jpeg", "width": 1280, "originalBytes": 4896076, "webBytes": 434180}, {"slug": "1786195465476-dsc0014", "name": "1786195465476-_dsc0014.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1786195465476-dsc0014-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1786195465476-_dsc0014.jpeg", "width": 2560, "originalBytes": 5908295, "webBytes": 399958}, {"slug": "1786195471021-dsc0801", "name": "1786195471021-_dsc0801.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1786195471021-dsc0801-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1786195471021-_dsc0801.jpeg", "width": 2560, "originalBytes": 7581728, "webBytes": 1525686}, {"slug": "1786195483121-dsc0887", "name": "1786195483121-_dsc0887.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1786195483121-dsc0887-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1786195483121-_dsc0887.jpeg", "width": 2560, "originalBytes": 8339792, "webBytes": 1562227}, {"slug": "1786195487867-dsc0893", "name": "1786195487867-_dsc0893.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1786195487867-dsc0893-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1786195487867-_dsc0893.jpeg", "width": 2560, "originalBytes": 8193835, "webBytes": 1529633}, {"slug": "1786195491314-dsc0925", "name": "1786195491314-_dsc0925.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1786195491314-dsc0925-1280.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1786195491314-_dsc0925.jpeg", "width": 1280, "originalBytes": 5415695, "webBytes": 525088}, {"slug": "1786195516115-dsc0863", "name": "1786195516115-_dsc0863.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1786195516115-dsc0863-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1786195516115-_dsc0863.jpeg", "width": 2560, "originalBytes": 21810509, "webBytes": 1639568}, {"slug": "1786195518938-dsc0778", "name": "1786195518938-_dsc0778.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1786195518938-dsc0778-1280.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1786195518938-_dsc0778.jpeg", "width": 1280, "originalBytes": 6157694, "webBytes": 396043}, {"slug": "1786195532196-dsc0767", "name": "1786195532196-_dsc0767.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1786195532196-dsc0767-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1786195532196-_dsc0767.jpeg", "width": 2560, "originalBytes": 3909955, "webBytes": 453997}, {"slug": "1786195534829-dsc0709", "name": "1786195534829-_dsc0709.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1786195534829-dsc0709-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1786195534829-_dsc0709.jpeg", "width": 2560, "originalBytes": 8269210, "webBytes": 1455789}, {"slug": "1786200335009-img-4708", "name": "1786200335009-img_4708.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1786200335009-img-4708-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1786200335009-img_4708.jpeg", "width": 2560, "originalBytes": 9865866, "webBytes": 692447}, {"slug": "1786200336135-img-7001", "name": "1786200336135-img_7001.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1786200336135-img-7001-1280.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1786200336135-img_7001.jpeg", "width": 1280, "originalBytes": 895898, "webBytes": 464016}, {"slug": "1786200347518-img-4707", "name": "1786200347518-img_4707.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1786200347518-img-4707-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1786200347518-img_4707.jpeg", "width": 2560, "originalBytes": 7702043, "webBytes": 614122}, {"slug": "1786200350919-img-4829", "name": "1786200350919-img_4829.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1786200350919-img-4829-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1786200350919-img_4829.jpeg", "width": 2560, "originalBytes": 3420696, "webBytes": 1122480}, {"slug": "1786200357231-img-4706", "name": "1786200357231-img_4706.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1786200357231-img-4706-1280.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1786200357231-img_4706.jpeg", "width": 1280, "originalBytes": 5175046, "webBytes": 427780}, {"slug": "1786200357926-img-4789", "name": "1786200357926-img_4789.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1786200357926-img-4789-1280.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1786200357926-img_4789.jpeg", "width": 1280, "originalBytes": 2030661, "webBytes": 371235}, {"slug": "1786200360323-img-4842", "name": "1786200360323-img_4842.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1786200360323-img-4842-1280.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1786200360323-img_4842.jpeg", "width": 1280, "originalBytes": 3077567, "webBytes": 517039}, {"slug": "1788380879945-dsc0155", "name": "1788380879945-_dsc0155.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1788380879945-dsc0155-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1788380879945-_dsc0155.jpeg", "width": 2560, "originalBytes": 2467906, "webBytes": 325315}, {"slug": "1788380890559-dsc0061", "name": "1788380890559-_dsc0061.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1788380890559-dsc0061-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1788380890559-_dsc0061.jpeg", "width": 2560, "originalBytes": 19700258, "webBytes": 2460466}, {"slug": "1788380893403-dsc0129", "name": "1788380893403-_dsc0129.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1788380893403-dsc0129-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1788380893403-_dsc0129.jpeg", "width": 2560, "originalBytes": 6467488, "webBytes": 545825}, {"slug": "1788380897897-dsc0097", "name": "1788380897897-_dsc0097.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1788380897897-dsc0097-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1788380897897-_dsc0097.jpeg", "width": 2560, "originalBytes": 8504166, "webBytes": 1538053}, {"slug": "1788380899771-dsc0081", "name": "1788380899771-_dsc0081.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1788380899771-dsc0081-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1788380899771-_dsc0081.jpeg", "width": 2560, "originalBytes": 14989918, "webBytes": 978791}, {"slug": "1788380902495-dsc0176", "name": "1788380902495-_dsc0176.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1788380902495-dsc0176-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1788380902495-_dsc0176.jpeg", "width": 2560, "originalBytes": 13265163, "webBytes": 715356}, {"slug": "1788380907489-dsc0076", "name": "1788380907489-_dsc0076.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1788380907489-dsc0076-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1788380907489-_dsc0076.jpeg", "width": 2560, "originalBytes": 16294364, "webBytes": 984500}, {"slug": "1788380911251-dsc0177", "name": "1788380911251-_dsc0177.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1788380911251-dsc0177-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1788380911251-_dsc0177.jpeg", "width": 2560, "originalBytes": 18127424, "webBytes": 723380}, {"slug": "1788380911806-dsc0103", "name": "1788380911806-_dsc0103.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1788380911806-dsc0103-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1788380911806-_dsc0103.jpeg", "width": 2560, "originalBytes": 13862529, "webBytes": 917009}, {"slug": "1788380912109-dsc0143", "name": "1788380912109-_dsc0143.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1788380912109-dsc0143-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1788380912109-_dsc0143.jpeg", "width": 2560, "originalBytes": 13917284, "webBytes": 1500091}, {"slug": "1788380913817-dsc0195", "name": "1788380913817-_dsc0195.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1788380913817-dsc0195-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1788380913817-_dsc0195.jpeg", "width": 2560, "originalBytes": 16633261, "webBytes": 2341440}, {"slug": "1788380915020-dsc0173", "name": "1788380915020-_dsc0173.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1788380915020-dsc0173-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1788380915020-_dsc0173.jpeg", "width": 2560, "originalBytes": 16724291, "webBytes": 1815928}, {"slug": "1788380915628-dsc0074", "name": "1788380915628-_dsc0074.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1788380915628-dsc0074-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1788380915628-_dsc0074.jpeg", "width": 2560, "originalBytes": 15425669, "webBytes": 901959}, {"slug": "1788380915799-dsc0188", "name": "1788380915799-_dsc0188.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1788380915799-dsc0188-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1788380915799-_dsc0188.jpeg", "width": 2560, "originalBytes": 17276989, "webBytes": 1029925}, {"slug": "1788380918688-dsc0072", "name": "1788380918688-_dsc0072.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1788380918688-dsc0072-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1788380918688-_dsc0072.jpeg", "width": 2560, "originalBytes": 18903276, "webBytes": 2270422}, {"slug": "1788380918987-dsc0082", "name": "1788380918987-_dsc0082.jpeg", "webUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1788380918987-dsc0082-2560.jpg", "originalUrl": "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/1788380918987-_dsc0082.jpeg", "width": 2560, "originalBytes": 16460660, "webBytes": 1084525}];
+
+  const mb = (b) => (b / 1048576).toFixed(b < 1048576 ? 2 : 1);
+  const grid = document.getElementById("grid");
+  const saving = document.getElementById("saving");
+  const verdicts = new Map();
+  let filter = "todo";
+
+  /* Totals are facts about the batch, so they are computed from the data
+     rather than written into the markup. */
+  (function totals() {
+    const before = PHOTOS.reduce((n, p) => n + p.originalBytes, 0);
+    const after = PHOTOS.reduce((n, p) => n + p.webBytes, 0);
+    document.getElementById("totals").innerHTML = [
+      ["Foto's", PHOTOS.length],
+      ["Wat de site laadt", `<span class="was">${mb(before)}</span>${mb(after)}<span class="unit"> MB</span>`],
+      ["Scheelt", `${Math.round((1 - after / before) * 100)}<span class="unit">%</span>`],
+    ].map(([k, v]) => `<div><div class="total-k">${k}</div><div class="total-v">${v}</div></div>`).join("");
+  })();
+
+  function card(p) {
+    const el = document.createElement("article");
+    el.className = "card";
+    el.dataset.slug = p.slug;
+    el.innerHTML = `
+      <div class="frame">
+        <span class="tag">Web</span>
+        <img class="web" src="${p.webUrl}" alt="${p.name}" loading="lazy" decoding="async">
+        <img class="original" alt="${p.name} origineel" decoding="async">
+      </div>
+      <div class="meta">
+        <div class="name">${p.name}</div>
+        <div class="facts">
+          <span>${p.width} px breed</span>
+          <span>${mb(p.originalBytes)} → ${mb(p.webBytes)} MB</span>
+          <span class="drop">−${Math.round((1 - p.webBytes / p.originalBytes) * 100)}%</span>
+        </div>
+        <div class="actions">
+          <button class="yes" aria-pressed="false">Goed</button>
+          <button class="no" aria-pressed="false">Niet goed</button>
+          <button class="cmp" title="Ingedrukt houden">Vergelijk</button>
+        </div>
+      </div>`;
+
+    const frame = el.querySelector(".frame");
+    const original = el.querySelector("img.original");
+    /* The originals are the multi-megabyte files this whole exercise is
+       about, so one is only fetched when it is actually asked for. */
+    const loadOriginal = () => { if (!original.src) original.src = p.originalUrl; };
+
+    const compare = (on) => { if (on) loadOriginal(); frame.classList.toggle("comparing", on); };
+    const cmp = el.querySelector(".cmp");
+    cmp.addEventListener("pointerdown", () => compare(true));
+    ["pointerup", "pointerleave", "pointercancel"].forEach((e) =>
+      cmp.addEventListener(e, () => compare(false)));
+
+    frame.addEventListener("click", () => open(p));
+    el.querySelector(".yes").addEventListener("click", () => mark(p.slug, "good"));
+    el.querySelector(".no").addEventListener("click", () => mark(p.slug, "bad"));
+    return el;
+  }
+
+  PHOTOS.forEach((p) => grid.appendChild(card(p)));
+
+  /* --- lightbox --- */
+  const box = document.getElementById("box");
+  const boxBody = document.getElementById("box-body");
+  const boxWeb = document.getElementById("box-web");
+  const boxOriginal = document.getElementById("box-original");
+  const boxCmp = document.getElementById("box-cmp");
+
+  function open(p) {
+    document.getElementById("box-name").textContent = p.name;
+    boxWeb.src = p.webUrl;
+    boxOriginal.removeAttribute("src");
+    boxOriginal.dataset.src = p.originalUrl;
+    boxBody.classList.remove("comparing");
+    boxCmp.setAttribute("aria-pressed", "false");
+    box.showModal();
+  }
+  boxCmp.addEventListener("click", () => {
+    const on = boxCmp.getAttribute("aria-pressed") !== "true";
+    if (on && !boxOriginal.src) boxOriginal.src = boxOriginal.dataset.src;
+    boxBody.classList.toggle("comparing", on);
+    boxCmp.setAttribute("aria-pressed", String(on));
+  });
+  document.getElementById("box-close").addEventListener("click", () => box.close());
+  box.addEventListener("click", (e) => { if (e.target === box) box.close(); });
+
+  /* --- verdicts --- */
+  function render() {
+    let done = 0, bad = 0;
+    for (const el of grid.children) {
+      const v = verdicts.get(el.dataset.slug);
+      if (v) done++;
+      if (v === "bad") bad++;
+      el.dataset.verdict = v || "";
+      el.querySelector(".yes").setAttribute("aria-pressed", String(v === "good"));
+      el.querySelector(".no").setAttribute("aria-pressed", String(v === "bad"));
+      const show = filter === "all" || (filter === "todo" && !v) || (filter === "bad" && v === "bad");
+      el.classList.toggle("hidden", !show);
+    }
+    const pct = PHOTOS.length ? Math.round((done / PHOTOS.length) * 100) : 0;
+    document.getElementById("meter-label").textContent = `${done} van ${PHOTOS.length} beoordeeld`;
+    document.getElementById("meter-pct").textContent = `${pct}%`;
+    document.getElementById("meter-fill").style.width = `${pct}%`;
+    const counts = { todo: PHOTOS.length - done, all: PHOTOS.length, bad };
+    for (const b of document.querySelectorAll("#filters button")) {
+      b.querySelector(".count").textContent = counts[b.dataset.filter];
+      b.setAttribute("aria-pressed", String(b.dataset.filter === filter));
+    }
+
+    const rejected = PHOTOS.filter((p) => verdicts.get(p.slug) === "bad").map((p) => p.name);
+    document.getElementById("reject").hidden = rejected.length === 0;
+    document.getElementById("reject-list").value = rejected.join("\n");
+  }
+
+  function mark(slug, verdict) {
+    if (verdicts.get(slug) === verdict) verdicts.delete(slug);
+    else verdicts.set(slug, verdict);
+    render();
+    save();
+  }
+
+  const LOCAL = "fotoproef-verdicts";
+  function saveLocal() {
+    try { localStorage.setItem(LOCAL, JSON.stringify([...verdicts])); } catch (e) { /* private window */ }
+  }
+  function save() {
+    saveLocal();
+    saving.textContent = `${verdicts.size} bewaard in deze browser`;
+  }
+
+  try {
+    const stored = JSON.parse(localStorage.getItem(LOCAL) || "[]");
+    for (const [k, v] of stored) verdicts.set(k, v);
+  } catch (e) { /* nothing stored yet */ }
+  for (const b of document.querySelectorAll("#filters button")) {
+    b.addEventListener("click", () => { filter = b.dataset.filter; render(); });
+  }
+  render();
+
+</script>
+</body>
+</html>

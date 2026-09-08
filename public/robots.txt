@@ -1,6 +1,7 @@
 User-agent: *
 Disallow: /admin/
 Disallow: /portal/
+Disallow: /fotoproef.html
 Allow: /
 
 Sitemap: https://www.photodecaffeine.com/sitemap.xml
