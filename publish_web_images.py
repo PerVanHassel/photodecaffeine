@@ -47,6 +47,7 @@ from typing import Any, Iterable, Sequence
 
 from dedupe_storage import (
     DEFAULT_KV_TABLE,
+    StorageBlocked,
     StorageClient,
     StorageObject,
     extract_names,
@@ -229,7 +230,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
 
     client = StorageClient(url, key)
-    objects = client.list_objects(args.bucket)
+    try:
+        objects = client.list_objects(args.bucket)
+    except StorageBlocked as err:
+        print(err, file=sys.stderr)
+        return 3
     in_use = client.in_use_names(args.bucket, args.kv_table)
     if not in_use:
         print(

@@ -107,6 +107,28 @@ class Group:
         return sum(o.size for o in self.objects)
 
 
+class StorageBlocked(RuntimeError):
+    """Supabase has shut the storage API for this project."""
+
+
+def check(response: "requests.Response") -> None:
+    """raise_for_status, but say what a 402 actually means.
+
+    Over the free storage limit Supabase answers 402 to everything in the
+    storage API — reads included. That locks you out of the very cleanup that
+    would get you back under it, so a bare stack trace is the wrong answer.
+    """
+    if response.status_code == 402:
+        raise StorageBlocked(
+            "Supabase heeft de opslag van dit project op slot gezet (402 "
+            "Payment Required). Dat gebeurt zodra de bucket boven de gratis "
+            "limiet van 1024 MB komt. Zolang dat zo is kan er niets gelezen, "
+            "geupload of verwijderd worden - ook niet om juist op te ruimen. "
+            "Upgrade het project en draai dit daarna opnieuw."
+        )
+    response.raise_for_status()
+
+
 class StorageClient:
     """The slice of the Supabase API these scripts need.
 
@@ -140,7 +162,7 @@ class StorageClient:
                 },
                 timeout=self.timeout,
             )
-            response.raise_for_status()
+            check(response)
             page = response.json()
             objects.extend(parse_objects(page))
             if len(page) < LIST_PAGE_SIZE:
@@ -161,7 +183,7 @@ class StorageClient:
                 params={"select": "value", "limit": KV_PAGE_SIZE, "offset": offset},
                 timeout=self.timeout,
             )
-            response.raise_for_status()
+            check(response)
             rows = response.json()
             for row in rows:
                 found |= extract_names(json.dumps(row.get("value")), bucket)
@@ -179,7 +201,7 @@ class StorageClient:
                 params={"select": "key,value", "limit": KV_PAGE_SIZE, "offset": offset},
                 timeout=self.timeout,
             )
-            response.raise_for_status()
+            check(response)
             page = response.json()
             rows.extend(page)
             if len(page) < KV_PAGE_SIZE:
@@ -195,7 +217,7 @@ class StorageClient:
             headers={"Content-Type": "application/json", "Prefer": "return=minimal"},
             timeout=self.timeout,
         )
-        response.raise_for_status()
+        check(response)
 
     def upload(self, bucket: str, name: str, path: Path, content_type: str) -> None:
         """Put a local file in the bucket, overwriting a name already there."""
@@ -212,7 +234,7 @@ class StorageClient:
                 },
                 timeout=self.timeout,
             )
-        response.raise_for_status()
+        check(response)
 
     def download(self, bucket: str, name: str, target: Path) -> None:
         response = self.session.get(
@@ -220,7 +242,7 @@ class StorageClient:
             timeout=self.timeout,
             stream=True,
         )
-        response.raise_for_status()
+        check(response)
         target.parent.mkdir(parents=True, exist_ok=True)
         with target.open("wb") as handle:
             for chunk in response.iter_content(chunk_size=1 << 16):
@@ -234,7 +256,7 @@ class StorageClient:
             json={"prefixes": list(names)},
             timeout=self.timeout,
         )
-        response.raise_for_status()
+        check(response)
 
 
 def extract_names(blob: str, bucket: str) -> set[str]:
@@ -451,7 +473,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
 
     client = StorageClient(url, key)
-    objects = client.list_objects(args.bucket)
+    try:
+        objects = client.list_objects(args.bucket)
+    except StorageBlocked as err:
+        print(err, file=sys.stderr)
+        return 3
     if not objects:
         print(f"Geen bestanden gevonden in {args.bucket}.")
         return 0

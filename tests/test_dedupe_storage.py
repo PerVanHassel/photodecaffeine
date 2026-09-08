@@ -350,3 +350,39 @@ def test_report_warns_when_the_usage_check_did_not_run():
 
 def test_usage_check_is_on_by_default():
     assert build_parser().parse_args(["--bucket", "b"]).no_usage_check is False
+
+
+# --- when Supabase shuts the door -----------------------------------------
+
+
+class FakeResponse:
+    def __init__(self, status_code: int) -> None:
+        self.status_code = status_code
+        self.raised = False
+
+    def raise_for_status(self) -> None:
+        self.raised = True
+
+
+def test_a_402_is_explained_instead_of_thrown_raw():
+    from dedupe_storage import StorageBlocked, check
+
+    with pytest.raises(StorageBlocked) as caught:
+        check(FakeResponse(402))
+    assert "1024 MB" in str(caught.value)
+
+
+def test_other_statuses_are_left_to_requests():
+    from dedupe_storage import check
+
+    response = FakeResponse(500)
+    check(response)
+    assert response.raised
+
+
+def test_a_healthy_response_passes_through():
+    from dedupe_storage import check
+
+    response = FakeResponse(200)
+    check(response)
+    assert response.raised
