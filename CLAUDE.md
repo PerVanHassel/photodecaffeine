@@ -60,6 +60,8 @@ Drie Python-scripts, in deze volgorde te draaien. Alle drie doen niets zonder
 - `optimize_images.py` — maakt WebP + JPEG varianten van een lokale map.
 - `publish_web_images.py` — verkleint de foto's die de site toont, zet ze in de
   bucket en verzet de URL's in de kv-tabel.
+- `prune_unused.py` — gooit weg waar niets meer naar linkt. `web/` blijft altijd
+  staan; daar zitten de varianten voor later.
 
 De kv-waarden zijn soms een JSON-object en soms JSON als tekst. Vervang URL's
 altijd op hele strings, nooit als tekstfragment.

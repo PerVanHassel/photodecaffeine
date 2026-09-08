@@ -1,0 +1,47 @@
+name: Oude originelen opruimen
+
+# Verwijdert alles in de bucket waar niets meer naar linkt. Wat de site
+# gebruikt blijft staan, en alles onder web/ blijft staan omdat daar de
+# kleinere en WebP-versies zitten die we later nog willen gebruiken.
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Echt verwijderen (uit = alleen laten zien)"
+        type: boolean
+        default: false
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Opruimen
+        env:
+          SUPABASE_URL: https://uunwhesmymkwmkgqkmxy.supabase.co
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          APPLY: ${{ inputs.apply }}
+        run: |
+          set -euo pipefail
+          args=(--bucket portfolio-images-0951c59e)
+          if [ "$APPLY" = "true" ]; then args+=(--apply); fi
+          python prune_unused.py "${args[@]}"
+
+      # De lijst van wat er weg is gegaan; de runner zelf verdwijnt.
+      - name: Lijst bewaren
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prune-lijst
+          path: prune-manifest.json
+          if-no-files-found: ignore
+          retention-days: 90
