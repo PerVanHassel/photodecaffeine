@@ -118,6 +118,11 @@ async function sendEmail(opts: {
   }
 }
 
+// The site records ad clicks through the contact endpoint so the Ads page can
+// count them. They are stored as inquiries and filtered back out everywhere
+// they are listed; this is the name they carry.
+const AD_VISIT_MARKER = "__ad_visit__";
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 // Escapes values interpolated into email HTML so a stray quote or angle
@@ -1840,6 +1845,14 @@ app.post("/make-server-0951c59e/contact", async (c) => {
     const allIds = allIdsStr ? JSON.parse(allIdsStr) : [];
     allIds.push(id);
     await kv.set("contact:inquiryIds", JSON.stringify(allIds));
+
+    // An ad click is a counter, not an enquiry: nobody wrote it and its email
+    // address does not exist. Counting it is the whole job — mailing the studio
+    // about every click, and bouncing a confirmation off a made-up address,
+    // is not.
+    if (inquiry.name === AD_VISIT_MARKER) {
+      return c.json({ success: true });
+    }
 
     // Notify admin — reply-to set to the visitor so replying goes straight to them
     await sendEmail({
