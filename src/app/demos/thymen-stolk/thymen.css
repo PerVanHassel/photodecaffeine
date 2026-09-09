@@ -106,7 +106,7 @@
   padding: clamp(30px, 6vw, 72px) clamp(20px, 4vw, 48px) clamp(24px, 4vw, 40px);
 }
 .tsd-masthead {
-  font-size: clamp(58px, 16vw, 172px);
+  font-size: clamp(58px, calc(7.5vw + 16px), 120px);
   line-height: .98;
   letter-spacing: -0.03em;
   margin: 0;
