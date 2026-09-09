@@ -40,7 +40,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(s?.user ?? null);
     });
 
-    return () => subscription.unsubscribe();
+    // Any call that comes back 401 with a token attached means this session is
+    // spent. Clear it so the app shows the login screen rather than leaving
+    // every page stuck on an error it cannot recover from.
+    async function onExpired() {
+      await supabase.auth.signOut().catch(() => {});
+      setSession(null);
+      setUser(null);
+    }
+    window.addEventListener("pdc:session-expired", onExpired);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener("pdc:session-expired", onExpired);
+    };
   }, []);
 
   async function signIn(email: string, password: string) {

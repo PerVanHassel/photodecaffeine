@@ -26,6 +26,13 @@ export async function portalFetch(
   const data = await res.json();
   console.log("portalFetch: response status=", res.status, "ok=", res.ok);
   if (!res.ok) {
+    // A 401 on a call we sent a real token with means that token is no longer
+    // good — the session lapsed while the tab sat there. That is not a server
+    // failure, and showing it as one sends people looking for a bug that isn't.
+    if (res.status === 401 && accessToken) {
+      window.dispatchEvent(new CustomEvent("pdc:session-expired"));
+      throw new Error("Je sessie is verlopen. Log opnieuw in.");
+    }
     console.error("portalFetch error:", data.error || "Request failed");
     throw new Error(data.error || "Request failed");
   }
