@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { portalFetch } from "../../../lib/supabase";
 import { ClientPicker, type PickableClient } from "../../components/portal/ClientPicker";
+import { DEMOS } from "../../demos/registry";
 import { ArrowLeft, Plus, Clock, CheckCircle, Circle, AlertCircle, X, Trash2, Pencil, Check } from "lucide-react";
 import { useMobile } from "../../hooks/useMobile";
 
@@ -55,13 +56,14 @@ const BLANK_PROJECT = {
   description: "",
   dueDate: "",
   type: "photo" as "photo" | "web",
+  demoSlug: "",
   demoUrl: "",
   demoNotes: "",
 };
 
 const PROJECT_TYPES = [
   { value: "photo" as const, label: "Foto / video", hint: "Galerij, deliverables, levering" },
-  { value: "web" as const, label: "Webdemo", hint: "Link naar een live demo-site" },
+  { value: "web" as const, label: "Webdemo", hint: "Een demo die je aan of uit kunt zetten" },
 ];
 
 export function AdminClientDetailPage() {
@@ -512,12 +514,27 @@ export function AdminClientDetailPage() {
               {form.type === "web" && (
                 <>
                   <div>
-                    <label style={labelStyle}>Demo-URL *</label>
+                    <label style={labelStyle}>Welke demo</label>
+                    <select
+                      value={form.demoSlug}
+                      onChange={(e) => setForm({ ...form, demoSlug: e.target.value })}
+                      style={{ ...inputStyle, appearance: "none" }}
+                    >
+                      <option value="">Kies een demo…</option>
+                      {DEMOS.map((d) => (
+                        <option key={d.slug} value={d.slug}>{d.name}</option>
+                      ))}
+                    </select>
+                    <p style={{ color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "11.5px", lineHeight: 1.6, margin: "8px 0 0" }}>
+                      Nieuwe projecten staan offline. Zet de demo aan bij Webdemo&rsquo;s zodra hij klaar is.
+                    </p>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Of een demo die ergens anders staat</label>
                     <input
                       type="url"
                       value={form.demoUrl}
                       onChange={(e) => setForm({ ...form, demoUrl: e.target.value })}
-                      required
                       placeholder="https://demo-klantnaam.vercel.app"
                       style={inputStyle}
                       onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}

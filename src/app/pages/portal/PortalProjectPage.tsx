@@ -37,6 +37,8 @@ interface Project {
   galleryUrls?: string[];
   gallerySettings?: GallerySettings;
   type?: "photo" | "web";
+  demoSlug?: string;
+  demoLive?: boolean;
   demoUrl?: string;
   demoNotes?: string;
 }
@@ -279,6 +281,12 @@ export function PortalProjectPage() {
   const done = project.deliverables?.filter((d) => d.done).length ?? 0;
   const total = project.deliverables?.length ?? 0;
 
+  // A built-in demo lives at /demo/<slug> and only counts when it is live;
+  // otherwise fall back to a demo hosted somewhere else.
+  const demoHref =
+    project?.demoSlug && project?.demoLive
+      ? `/demo/${project.demoSlug}`
+      : project?.demoUrl || "";
   return (
     <div
       style={{
@@ -564,8 +572,10 @@ export function PortalProjectPage() {
             </div>
           )}
 
-          {/* Web demo — only for web projects that actually have a link */}
-          {project.type === "web" && project.demoUrl && (
+          {/* Web demo. A demo built into this site is only shown once it has been
+              switched on; one hosted elsewhere is always reachable, so there is
+              nothing to switch. */}
+          {project.type === "web" && demoHref && (
             <div
               style={{
                 border: "1px solid rgba(200,144,90,0.28)",
@@ -584,7 +594,7 @@ export function PortalProjectPage() {
                     : "Dit is een werkende demo — klik erdoorheen alsof het je eigen site is."}
                 </p>
                 <a
-                  href={project.demoUrl}
+                  href={demoHref}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
@@ -601,7 +611,7 @@ export function PortalProjectPage() {
               {/* A live preview, so the demo is usable without leaving the portal. */}
               <div style={{ borderTop: "1px solid rgba(255,251,224,0.08)", backgroundColor: "rgba(255,251,224,0.02)" }}>
                 <iframe
-                  src={project.demoUrl}
+                  src={demoHref}
                   title={`Demo — ${project.title}`}
                   loading="lazy"
                   sandbox="allow-scripts allow-same-origin allow-forms allow-popups"

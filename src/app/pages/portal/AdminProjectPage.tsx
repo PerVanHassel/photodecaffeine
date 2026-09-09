@@ -6,6 +6,7 @@ import { useMobile } from "../../hooks/useMobile";
 import { ArrowLeft, Save, Plus, Trash2, Check, Send, AlertTriangle, Upload, Images, X, Bell, ChevronUp, ChevronDown, Star, ExternalLink, MessageSquare } from "lucide-react";
 import { projectId as supabaseProjectId } from "/utils/supabase/info";
 import { ClientPicker, type PickableClient } from "../../components/portal/ClientPicker";
+import { DEMOS } from "../../demos/registry";
 
 const BUCKET = "portfolio-images-0951c59e";
 
@@ -33,6 +34,8 @@ interface Project {
   clientId: string;
   clientIds?: string[];
   type?: "photo" | "web";
+  demoSlug?: string;
+  demoLive?: boolean;
   demoUrl?: string;
   demoNotes?: string;
   createdAt: string;
@@ -147,6 +150,7 @@ export function AdminProjectPage() {
   // Attached clients + web-demo link
   const [allClients, setAllClients] = useState<PickableClient[]>([]);
   const [clientIds, setClientIds] = useState<string[]>([]);
+  const [demoSlug, setDemoSlug] = useState("");
   const [demoUrl, setDemoUrl] = useState("");
   const [demoNotes, setDemoNotes] = useState("");
   const [projectType, setProjectType] = useState<"photo" | "web">("photo");
@@ -184,6 +188,7 @@ export function AdminProjectPage() {
         setGallerySettings(p.gallerySettings || {});
         setClientIds(p.clientIds?.length ? p.clientIds : p.clientId ? [p.clientId] : []);
         setProjectType(p.type === "web" ? "web" : "photo");
+        setDemoSlug(p.demoSlug || "");
         setDemoUrl(p.demoUrl || "");
         setDemoNotes(p.demoNotes || "");
         setMessages(msgData.messages || []);
@@ -213,6 +218,7 @@ export function AdminProjectPage() {
         body: JSON.stringify({
           clientIds,
           type: projectType,
+          demoSlug,
           demoUrl: demoUrl.trim(),
           demoNotes: demoNotes.trim(),
         }),
@@ -1089,7 +1095,20 @@ export function AdminProjectPage() {
             {projectType === "web" && (
               <>
                 <div style={{ marginBottom: "14px" }}>
-                  <label style={labelStyle}>Demo-URL</label>
+                  <label style={labelStyle}>Welke demo</label>
+                  <select
+                    value={demoSlug}
+                    onChange={(e) => setDemoSlug(e.target.value)}
+                    style={{ ...inputStyle, appearance: "none" }}
+                  >
+                    <option value="">Geen</option>
+                    {DEMOS.map((d) => (
+                      <option key={d.slug} value={d.slug}>{d.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ marginBottom: "14px" }}>
+                  <label style={labelStyle}>Of een demo die ergens anders staat</label>
                   <input
                     type="url"
                     value={demoUrl}
