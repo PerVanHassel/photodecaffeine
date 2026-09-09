@@ -37,6 +37,8 @@ interface Project {
   galleryUrls?: string[];
   gallerySettings?: GallerySettings;
   type?: "photo" | "web";
+  /** Demos built into this site. Older projects carry demoSlug/demoLive. */
+  demos?: { slug: string; live: boolean }[];
   demoSlug?: string;
   demoLive?: boolean;
   demoUrl?: string;
@@ -283,13 +285,22 @@ export function PortalProjectPage() {
 
   // A built-in demo lives at /demo/<slug> and only counts when it is live;
   // otherwise fall back to a demo hosted somewhere else.
-  const demoHref =
-    project?.demoSlug && project?.demoLive
-      ? `/demo/${project.demoSlug}`
-      : project?.demoUrl || "";
-  // A demo that is linked but switched off used to leave the page blank, which
-  // reads to the client as "there is no demo" rather than "not yet".
-  const demoPending = Boolean(project?.demoSlug) && !demoHref;
+  // A project can carry several demos — two designs to choose between, say —
+  // and each is switched on separately. Only the live ones are shown; if some
+  // are attached but none are live, the client is told one is coming rather
+  // than being left with a blank page.
+  const attachedDemos = (project?.demos ?? []).filter((d) => d.slug);
+  const openDemos: { key: string; href: string; label: string }[] = [
+    ...attachedDemos
+      .filter((d) => d.live)
+      .map((d, i) => ({
+        key: d.slug,
+        href: `/demo/${d.slug}`,
+        label: attachedDemos.filter((x) => x.live).length > 1 ? `Ontwerp ${i + 1}` : "",
+      })),
+    ...(project?.demoUrl ? [{ key: "extern", href: project.demoUrl, label: "" }] : []),
+  ];
+  const demoPending = openDemos.length === 0 && attachedDemos.length > 0;
   return (
     <div
       style={{
@@ -575,33 +586,55 @@ export function PortalProjectPage() {
             </div>
           )}
 
-          {/* Web demo. A demo built into this site opens once it has been
-              switched on; until then the client sees that it is coming. One
-              hosted elsewhere is always reachable, so there is nothing to
-              switch. */}
-          {project.type === "web" && (demoHref || demoPending) && (
-            <div
-              style={{
-                border: "1px solid rgba(200,144,90,0.28)",
-                marginBottom: "24px",
-                overflow: "hidden",
-              }}
-            >
+          {/* Web demos. Each one the studio has switched on gets its own block —
+              two designs to compare is a normal thing to be shown. Attached but
+              not yet live: say so, rather than leave the page blank. */}
+          {project.type === "web" && demoPending && (
+            <div style={{ border: "1px solid rgba(200,144,90,0.28)", marginBottom: "24px", overflow: "hidden" }}>
               <div style={{ padding: isMobile ? "22px 18px" : "26px 28px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#c8905a", fontSize: "9px", fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: "12px" }}>
                   <Globe size={12} />
                   Website-demo
                 </div>
                 <p style={{ color: "rgba(255,251,224,0.4)", fontSize: "13.5px", lineHeight: 1.7, margin: "0 0 18px" }}>
-                  {demoPending
-                    ? "De demo wordt nog afgemaakt. Zodra hij klaarstaat kun je hem hier openen — je krijgt er bericht van."
-                    : project.demoNotes
+                  De demo wordt nog afgemaakt. Zodra hij klaarstaat kun je hem hier openen — je krijgt er bericht van.
+                </p>
+                <span
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: "9px",
+                    border: "1px solid rgba(255,251,224,0.18)", color: "rgba(255,251,224,0.45)",
+                    fontSize: "11px", fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase",
+                    padding: "13px 26px",
+                  }}
+                >
+                  Nog niet online
+                </span>
+              </div>
+            </div>
+          )}
+
+          {project.type === "web" &&
+            openDemos.map((demo) => (
+              <div
+                key={demo.key}
+                style={{
+                  border: "1px solid rgba(200,144,90,0.28)",
+                  marginBottom: "24px",
+                  overflow: "hidden",
+                }}
+              >
+                <div style={{ padding: isMobile ? "22px 18px" : "26px 28px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#c8905a", fontSize: "9px", fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: "12px" }}>
+                    <Globe size={12} />
+                    Website-demo{demo.label ? ` — ${demo.label}` : ""}
+                  </div>
+                  <p style={{ color: "rgba(255,251,224,0.4)", fontSize: "13.5px", lineHeight: 1.7, margin: "0 0 18px" }}>
+                    {project.demoNotes
                       ? project.demoNotes
                       : "Dit is een werkende demo — klik erdoorheen alsof het je eigen site is."}
-                </p>
-                {demoHref ? (
+                  </p>
                   <a
-                    href={demoHref}
+                    href={demo.href}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
@@ -613,34 +646,20 @@ export function PortalProjectPage() {
                   >
                     Demo openen <ExternalLink size={13} />
                   </a>
-                ) : (
-                  <span
-                    style={{
-                      display: "inline-flex", alignItems: "center", gap: "9px",
-                      border: "1px solid rgba(255,251,224,0.18)", color: "rgba(255,251,224,0.45)",
-                      fontSize: "11px", fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase",
-                      padding: "13px 26px",
-                    }}
-                  >
-                    Nog niet online
-                  </span>
-                )}
-              </div>
+                </div>
 
-              {/* A live preview, so the demo is usable without leaving the portal. */}
-              {demoHref && (
+                {/* A live preview, so the demo is usable without leaving the portal. */}
                 <div style={{ borderTop: "1px solid rgba(255,251,224,0.08)", backgroundColor: "rgba(255,251,224,0.02)" }}>
                   <iframe
-                    src={demoHref}
-                    title={`Demo — ${project.title}`}
+                    src={demo.href}
+                    title={`Demo — ${project.title}${demo.label ? ` — ${demo.label}` : ""}`}
                     loading="lazy"
                     sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
                     style={{ display: "block", width: "100%", height: isMobile ? "420px" : "560px", border: "none" }}
                   />
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            ))}
 
           {/* Review request — shown only once the studio has asked for one */}
           {engagement?.reviewRequested && (

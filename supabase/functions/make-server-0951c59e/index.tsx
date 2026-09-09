@@ -150,6 +150,30 @@ function demoSlugOf(value: any): string {
     .slice(0, 60);
 }
 
+/**
+ * The demos attached to a project, as [{slug, live}].
+ *
+ * Projects used to carry a single demoSlug/demoLive pair; those are still
+ * written alongside the list so anything reading the old fields keeps working,
+ * and are read here for projects saved before the list existed.
+ */
+function projectDemos(project: any): { slug: string; live: boolean }[] {
+  const raw = Array.isArray(project?.demos) ? project.demos : null;
+  const list = raw
+    ? raw.map((d: any) => ({ slug: demoSlugOf(d?.slug), live: Boolean(d?.live) }))
+    : project?.demoSlug
+      ? [{ slug: demoSlugOf(project.demoSlug), live: Boolean(project.demoLive) }]
+      : [];
+
+  // One entry per slug, first mention wins, empties dropped.
+  const seen = new Set<string>();
+  return list.filter((d) => {
+    if (!d.slug || seen.has(d.slug)) return false;
+    seen.add(d.slug);
+    return true;
+  });
+}
+
 function projectClientIds(project: any): string[] {
   if (Array.isArray(project?.clientIds) && project.clientIds.length > 0) return project.clientIds;
   return project?.clientId ? [project.clientId] : [];
@@ -651,6 +675,7 @@ app.get("/make-server-0951c59e/portal/project/:id", async (c) => {
     if (!projectStr) return c.json({ error: "Project not found" }, 404);
 
     const project = JSON.parse(projectStr);
+    project.demos = projectDemos(project);
     if (!clientCanSeeProject(project, user.id))
       return c.json({ error: "Unauthorized" }, 403);
 
@@ -1349,7 +1374,8 @@ app.get("/make-server-0951c59e/admin/project/:id", async (c) => {
     const projectStr = await kv.get(`portal:project:${projectId}`);
     if (!projectStr) return c.json({ error: "Project not found" }, 404);
 
-    return c.json({ project: JSON.parse(projectStr) });
+    const project = JSON.parse(projectStr);
+    return c.json({ project: { ...project, demos: projectDemos(project) } });
   } catch (err) {
     console.log("Admin get project error:", err);
     return c.json({ error: `Failed to fetch project: ${err}` }, 500);
@@ -1387,6 +1413,7 @@ app.get("/make-server-0951c59e/admin/projects", async (c) => {
     return c.json({
       projects: filtered.map((p) => ({
         ...p,
+        demos: projectDemos(p),
         clientIds: projectClientIds(p),
         clientNames: projectClientIds(p).map((id) => nameById.get(id) || "Onbekende klant"),
       })),
@@ -1405,6 +1432,9 @@ app.post("/make-server-0951c59e/admin/project", async (c) => {
 
     const body = await c.req.json();
     const { title, status, phase, description, dueDate, type, demoUrl, demoNotes, demoSlug } = body;
+    // A project can carry several demos; the create form sends at most one.
+    const demos =
+      type === "web" ? projectDemos({ demos: body.demos, demoSlug, demoLive: false }) : [];
 
     // Accepts either the old single clientId or the new clientIds list.
     const clientIds: string[] = [
@@ -1433,7 +1463,9 @@ app.post("/make-server-0951c59e/admin/project", async (c) => {
       // A demo built into this site is named by its slug; demoUrl stays for
       // demos hosted somewhere else. demoLive is what /demo/:slug checks, so a
       // new demo is always offline until it is switched on.
-      demoSlug: type === "web" ? demoSlugOf(demoSlug) : "",
+      demos,
+      // Mirrored for anything still reading the single-demo fields.
+      demoSlug: demos[0]?.slug || "",
       demoLive: false,
       clientIds,
       clientId: clientIds[0],
@@ -1496,11 +1528,26 @@ app.put("/make-server-0951c59e/admin/project/:id", async (c) => {
     if (updated.type !== "web") {
       updated.demoUrl = "";
       updated.demoNotes = "";
+      updated.demos = [];
       updated.demoSlug = "";
       updated.demoLive = false;
     } else {
-      updated.demoSlug = demoSlugOf(updated.demoSlug);
-      updated.demoLive = updated.demoSlug ? Boolean(updated.demoLive) : false;
+      // `demos` replaces the list. A bare `demoSlug` comes from the older
+      // single-demo pickers and means "this one demo" — it keeps its on/off
+      // state if it was already attached. Neither field: leave the list alone.
+      const before = projectDemos(existing);
+      if (Array.isArray(updates.demos)) {
+        updated.demos = projectDemos({ demos: updates.demos });
+      } else if ("demoSlug" in updates) {
+        const slug = demoSlugOf(updates.demoSlug);
+        updated.demos = slug
+          ? [{ slug, live: before.find((d) => d.slug === slug)?.live ?? false }]
+          : [];
+      } else {
+        updated.demos = before;
+      }
+      updated.demoSlug = updated.demos[0]?.slug || "";
+      updated.demoLive = Boolean(updated.demos[0]?.live);
     }
 
     // If meeting is explicitly null, remove it from the project
@@ -3364,7 +3411,10 @@ app.get("/make-server-0951c59e/demo/:slug", async (c) => {
       })
       .find(
         (p: any) =>
-          p && !Array.isArray(p) && p.type === "web" && p.demoSlug === slug && p.demoLive
+          p &&
+          !Array.isArray(p) &&
+          p.type === "web" &&
+          projectDemos(p).some((d) => d.slug === slug && d.live)
       );
 
     if (!project) return c.json({ live: false });
@@ -3394,10 +3444,14 @@ app.get("/make-server-0951c59e/admin/demo/:slug", async (c) => {
           return null;
         }
       })
-      .find((p: any) => p && !Array.isArray(p) && p.type === "web" && p.demoSlug === slug);
+      .find(
+        (p: any) =>
+          p && !Array.isArray(p) && p.type === "web" && projectDemos(p).some((d) => d.slug === slug)
+      );
 
     if (!project) return c.json({ error: "Demo not found" }, 404);
-    return c.json({ live: Boolean(project.demoLive), title: project.title });
+    const demo = projectDemos(project).find((d) => d.slug === slug);
+    return c.json({ live: Boolean(demo?.live), title: project.title });
   } catch (err) {
     console.log("Admin get demo error:", err);
     return c.json({ error: `Failed to fetch demo: ${err}` }, 500);
