@@ -1,0 +1,329 @@
+/* Demo: Thymen Stolk, fotojournalist.
+   Everything is scoped under .tsd so nothing leaks into the PDC site or the
+   admin, which share this bundle. The look is a newspaper front page taken
+   seriously rather than parodied: a dark, full-bleed opening photo with the
+   masthead overprinted, then newsprint-coloured paper for the reading. One
+   hairline rule stitches the whole page together — it draws under the
+   masthead on load and returns as every section divider. */
+
+.tsd {
+  --ink: #14130f;
+  --ink-soft: #2a2823;
+  --paper: #f5f2ea;
+  --paper-warm: #efeadf;
+  --rule: #d6cfc0;
+  --muted: #6f6a5e;
+  --press: #a8291f;
+
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+.tsd *,
+.tsd *::before,
+.tsd *::after { box-sizing: border-box; }
+
+.tsd-serif { font-family: "Bodoni Moda", "Times New Roman", Georgia, serif; }
+.tsd-mono { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace; }
+
+.tsd-shell { max-width: 1280px; margin: 0 auto; padding: 0 clamp(18px, 4vw, 48px); }
+
+.tsd-kicker {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px; letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--press); margin: 0;
+}
+.tsd-rule { height: 1px; background: var(--rule); border: 0; margin: 0; }
+
+/* ---------- opening ---------- */
+
+.tsd-hero {
+  position: relative;
+  min-height: 92svh;
+  display: flex; flex-direction: column;
+  background: #0b0b09;
+  color: #f7f4ee;
+  overflow: hidden;
+}
+/* Explicit layers. A blanket `.tsd-hero > *` rule used to sit further down
+   and reset this to position: relative, which collapsed the stage — and with
+   it every photograph inside — to zero height. */
+.tsd-hero-stage { position: absolute; inset: 0; z-index: 0; }
+.tsd-hero-stage img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%; object-fit: cover;
+  opacity: 0; transition: opacity 1.6s ease;
+  /* Barely-there drift, so the frame feels alive without anyone noticing. */
+  animation: tsd-drift 26s ease-in-out infinite alternate;
+}
+.tsd-hero-stage img.is-on { opacity: 1; }
+.tsd-hero::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background:
+    /* A wash weighted to the lower left, where the masthead sits, so the type
+       holds on a bright frame as well as a dark one — and the upper right of
+       the photograph stays clear. */
+    linear-gradient(102deg, rgba(8,8,6,.72) 0%, rgba(8,8,6,.34) 40%, rgba(8,8,6,.04) 70%),
+    linear-gradient(180deg, rgba(8,8,6,.5) 0%, rgba(8,8,6,.04) 28%, rgba(8,8,6,.02) 44%, rgba(8,8,6,.5) 76%, rgba(8,8,6,.82) 100%);
+}
+.tsd-hero-top, .tsd-hero-body { position: relative; z-index: 2; }
+
+.tsd-hero-top {
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  flex-wrap: wrap;
+  padding: 22px clamp(18px, 4vw, 48px);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(247,244,238,.72);
+  border-bottom: 1px solid rgba(247,244,238,.14);
+}
+.tsd-hero-top nav { display: flex; gap: clamp(14px, 3vw, 30px); }
+.tsd-hero-top a { color: inherit; text-decoration: none; }
+.tsd-hero-top a:hover { color: #fff; }
+.tsd-badge {
+  color: #0b0b09; background: rgba(247,244,238,.9);
+  padding: 3px 7px; letter-spacing: 0.16em;
+}
+
+.tsd-hero-body {
+  flex: 1; display: flex; flex-direction: column; justify-content: flex-end;
+  padding: clamp(28px, 6vw, 72px) clamp(18px, 4vw, 48px) clamp(24px, 4vw, 44px);
+}
+.tsd-masthead {
+  font-family: "Bodoni Moda", "Times New Roman", Georgia, serif;
+  font-weight: 600;
+  font-size: clamp(46px, 13.5vw, 196px);
+  line-height: .84;
+  letter-spacing: -0.028em;
+  margin: 0;
+  text-wrap: balance;
+}
+.tsd-masthead span { display: block; overflow: hidden; }
+.tsd-masthead span > i {
+  display: block; font-style: normal;
+  animation: tsd-rise 1.15s cubic-bezier(.16,.84,.3,1) both;
+}
+.tsd-masthead .tsd-thin { font-weight: 400; font-style: italic; color: #e6ddcc; }
+
+.tsd-standfirst {
+  display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap;
+  margin: clamp(20px, 3vw, 34px) 0 0;
+  font-size: clamp(15px, 1.5vw, 19px);
+  color: rgba(247,244,238,.86);
+  max-width: 62ch;
+  animation: tsd-fade .7s ease .5s both;
+}
+.tsd-hero-rule {
+  transform-origin: left center;
+  animation: tsd-draw .9s cubic-bezier(.16,.84,.3,1) .34s both;
+  background: rgba(247,244,238,.3);
+  margin: clamp(18px, 3vw, 30px) 0 0;
+}
+.tsd-hero-foot {
+  display: flex; justify-content: space-between; align-items: flex-end; gap: 20px;
+  flex-wrap: wrap; margin-top: clamp(18px, 3vw, 30px);
+  font-family: "IBM Plex Mono", monospace; font-size: 10.5px;
+  letter-spacing: 0.16em; text-transform: uppercase; color: rgba(247,244,238,.6);
+  animation: tsd-fade .7s ease .66s both;
+}
+.tsd-dots { display: flex; gap: 7px; }
+.tsd-dots button {
+  width: 22px; height: 3px; padding: 0; border: 0; cursor: pointer;
+  background: rgba(247,244,238,.28);
+}
+.tsd-dots button[aria-current="true"] { background: #f7f4ee; }
+.tsd-scroll { display: flex; align-items: center; gap: 9px; }
+.tsd-scroll span:last-child { animation: tsd-nudge 2.4s ease-in-out infinite; }
+
+/* ---------- dateline ---------- */
+
+.tsd-strapline {
+  background: var(--ink); color: var(--paper);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase;
+}
+.tsd-strapline div {
+  display: flex; justify-content: space-between; gap: 18px; flex-wrap: wrap;
+  padding: 13px clamp(18px, 4vw, 48px); max-width: 1280px; margin: 0 auto;
+}
+.tsd-strapline b { color: #d8b48a; font-weight: 500; }
+
+/* ---------- sections ---------- */
+
+.tsd-section { padding: clamp(52px, 8vw, 104px) 0 0; }
+.tsd-section-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap; margin-bottom: clamp(20px, 3vw, 32px);
+}
+.tsd-section-head h2 {
+  font-family: "Bodoni Moda", Georgia, serif;
+  font-size: clamp(26px, 4vw, 44px); font-weight: 600; letter-spacing: -0.02em;
+  margin: 0; line-height: 1.05;
+}
+.tsd-section-head p { margin: 0; color: var(--muted); font-size: 13.5px; }
+
+/* Lead article: one photo, one headline, nothing else competing. */
+.tsd-lead {
+  display: grid; gap: clamp(20px, 3vw, 44px);
+  grid-template-columns: 1fr;
+  padding-bottom: clamp(30px, 5vw, 52px);
+  border-bottom: 1px solid var(--rule);
+}
+@media (min-width: 900px) { .tsd-lead { grid-template-columns: 1.35fr 1fr; align-items: center; } }
+.tsd-lead figure { margin: 0; }
+.tsd-lead img { width: 100%; height: auto; display: block; background: var(--paper-warm); }
+.tsd-lead h3 {
+  font-family: "Bodoni Moda", Georgia, serif;
+  font-size: clamp(26px, 3.4vw, 42px); font-weight: 600; letter-spacing: -0.02em;
+  line-height: 1.1; margin: 12px 0 14px; text-wrap: balance;
+}
+.tsd-lead p { margin: 0 0 18px; color: var(--ink-soft); max-width: 46ch; }
+
+.tsd-byline {
+  font-family: "IBM Plex Mono", monospace; font-size: 10.5px;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);
+  display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+}
+.tsd-byline .tsd-outlet { color: var(--ink); }
+
+/* The rest of the articles: a plain, even grid — commercial and scannable,
+   which is what a page of clippings wants. */
+.tsd-grid {
+  display: grid; gap: clamp(22px, 3vw, 40px) clamp(18px, 2.5vw, 34px);
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  padding: clamp(30px, 5vw, 52px) 0 0;
+}
+.tsd-card { display: flex; flex-direction: column; }
+.tsd-card a { text-decoration: none; color: inherit; display: block; }
+.tsd-card .tsd-frame { overflow: hidden; background: var(--paper-warm); }
+.tsd-card img {
+  width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block;
+  transition: transform .7s cubic-bezier(.16,.84,.3,1);
+}
+.tsd-card a:hover img { transform: scale(1.035); }
+.tsd-card h3 {
+  font-family: "Bodoni Moda", Georgia, serif;
+  font-size: 20px; font-weight: 600; letter-spacing: -0.012em; line-height: 1.2;
+  margin: 12px 0 8px; text-wrap: balance;
+}
+.tsd-card a:hover h3 { text-decoration: underline; text-underline-offset: 3px; }
+
+/* A run of headlines with no photo, the way a paper fills its lower half. */
+.tsd-more {
+  margin-top: clamp(34px, 5vw, 56px);
+  border-top: 1px solid var(--rule);
+}
+.tsd-more a {
+  display: flex; gap: clamp(12px, 2vw, 28px); align-items: baseline;
+  padding: 15px 0; border-bottom: 1px solid var(--rule);
+  color: inherit; text-decoration: none; flex-wrap: wrap;
+}
+.tsd-more a:hover { background: var(--paper-warm); }
+.tsd-more .tsd-when {
+  font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--muted);
+  min-width: 92px; letter-spacing: 0.06em;
+}
+.tsd-more h3 {
+  font-family: "Bodoni Moda", Georgia, serif; font-size: 19px; font-weight: 600;
+  margin: 0; flex: 1; min-width: 220px; line-height: 1.25;
+}
+.tsd-more .tsd-outlet {
+  font-family: "IBM Plex Mono", monospace; font-size: 10.5px;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--press);
+}
+
+/* Full-bleed band of work: the photographs get the whole width, no cards. */
+.tsd-strip { margin-top: clamp(56px, 9vw, 108px); background: var(--ink); }
+.tsd-strip-inner { display: grid; grid-template-columns: 1fr; }
+@media (min-width: 760px) { .tsd-strip-inner { grid-template-columns: repeat(3, 1fr); } }
+.tsd-strip figure { margin: 0; position: relative; }
+.tsd-strip img {
+  width: 100%; height: clamp(240px, 34vw, 460px); object-fit: cover; display: block;
+}
+.tsd-strip figcaption {
+  position: absolute; left: 0; bottom: 0; right: 0;
+  padding: 26px 18px 14px; color: rgba(247,244,238,.9);
+  background: linear-gradient(180deg, rgba(8,8,6,0), rgba(8,8,6,.8));
+  font-family: "IBM Plex Mono", monospace; font-size: 10.5px;
+  letter-spacing: 0.16em; text-transform: uppercase;
+}
+
+/* ---------- about, contact, footer ---------- */
+
+.tsd-about {
+  display: grid; gap: clamp(24px, 4vw, 56px); align-items: center;
+  grid-template-columns: 1fr; padding-top: clamp(56px, 9vw, 108px);
+}
+@media (min-width: 900px) { .tsd-about { grid-template-columns: 380px 1fr; } }
+.tsd-about img { width: 100%; height: auto; display: block; background: var(--paper-warm); }
+.tsd-about h2 {
+  font-family: "Bodoni Moda", Georgia, serif;
+  font-size: clamp(26px, 4vw, 44px); font-weight: 600; letter-spacing: -0.02em;
+  margin: 14px 0 18px; line-height: 1.08;
+}
+.tsd-about p { margin: 0 0 16px; max-width: 56ch; color: var(--ink-soft); }
+
+.tsd-contact {
+  margin-top: clamp(56px, 9vw, 108px);
+  background: var(--ink); color: var(--paper);
+  padding: clamp(46px, 8vw, 92px) 0;
+}
+.tsd-contact h2 {
+  font-family: "Bodoni Moda", Georgia, serif;
+  font-size: clamp(30px, 6vw, 68px); font-weight: 600; letter-spacing: -0.025em;
+  margin: 16px 0 22px; line-height: 1; text-wrap: balance;
+}
+.tsd-contact p { color: rgba(245,242,234,.7); max-width: 50ch; margin: 0 0 30px; }
+.tsd-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.tsd-btn {
+  font-family: "IBM Plex Mono", monospace; font-size: 11px;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  padding: 14px 22px; text-decoration: none; display: inline-block;
+  background: var(--paper); color: var(--ink); border: 1px solid var(--paper);
+}
+.tsd-btn:hover { background: transparent; color: var(--paper); }
+.tsd-btn.is-ghost { background: transparent; color: var(--paper); border-color: rgba(245,242,234,.35); }
+.tsd-btn.is-ghost:hover { border-color: var(--paper); }
+
+.tsd-footer {
+  background: var(--ink); color: rgba(245,242,234,.5);
+  font-family: "IBM Plex Mono", monospace; font-size: 10.5px;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  border-top: 1px solid rgba(245,242,234,.14);
+}
+.tsd-footer div {
+  display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding: 22px clamp(18px, 4vw, 48px); max-width: 1280px; margin: 0 auto;
+}
+
+.tsd a:focus-visible, .tsd button:focus-visible {
+  outline: 2px solid var(--press); outline-offset: 3px;
+}
+.tsd-hero a:focus-visible, .tsd-hero button:focus-visible,
+.tsd-contact a:focus-visible { outline-color: #e8c9a0; }
+
+@keyframes tsd-rise {
+  from { transform: translateY(104%); }
+  to { transform: translateY(0); }
+}
+@keyframes tsd-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes tsd-draw { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes tsd-nudge {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
+}
+@keyframes tsd-drift {
+  from { transform: scale(1.06); }
+  to { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tsd *, .tsd *::before, .tsd *::after {
+    animation: none !important;
+    transition-duration: .01ms !important;
+  }
+  .tsd-masthead span > i { transform: none; }
+}

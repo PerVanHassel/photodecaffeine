@@ -134,6 +134,17 @@ function escapeHtml(str: string): string {
 // Every client attached to a project. Projects used to carry a single
 // `clientId`; they now carry a `clientIds` list and keep `clientId` as the
 // first entry, so records written before the change keep working untouched.
+// Slugs address a demo page built into this site, so they may only ever be a
+// path segment: lowercase letters, digits and hyphens.
+function demoSlugOf(value: any): string {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/-{2,}/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 60);
+}
+
 function projectClientIds(project: any): string[] {
   if (Array.isArray(project?.clientIds) && project.clientIds.length > 0) return project.clientIds;
   return project?.clientId ? [project.clientId] : [];
@@ -1388,7 +1399,7 @@ app.post("/make-server-0951c59e/admin/project", async (c) => {
     if (!admin) return c.json({ error: "Unauthorized" }, 401);
 
     const body = await c.req.json();
-    const { title, status, phase, description, dueDate, type, demoUrl, demoNotes } = body;
+    const { title, status, phase, description, dueDate, type, demoUrl, demoNotes, demoSlug } = body;
 
     // Accepts either the old single clientId or the new clientIds list.
     const clientIds: string[] = [
@@ -1414,6 +1425,11 @@ app.post("/make-server-0951c59e/admin/project", async (c) => {
       type: type === "web" ? "web" : "photo",
       demoUrl: type === "web" ? String(demoUrl || "").trim() : "",
       demoNotes: type === "web" ? String(demoNotes || "").trim() : "",
+      // A demo built into this site is named by its slug; demoUrl stays for
+      // demos hosted somewhere else. demoLive is what /demo/:slug checks, so a
+      // new demo is always offline until it is switched on.
+      demoSlug: type === "web" ? demoSlugOf(demoSlug) : "",
+      demoLive: false,
       clientIds,
       clientId: clientIds[0],
       createdAt: new Date().toISOString(),
@@ -1475,6 +1491,11 @@ app.put("/make-server-0951c59e/admin/project/:id", async (c) => {
     if (updated.type !== "web") {
       updated.demoUrl = "";
       updated.demoNotes = "";
+      updated.demoSlug = "";
+      updated.demoLive = false;
+    } else {
+      updated.demoSlug = demoSlugOf(updated.demoSlug);
+      updated.demoLive = updated.demoSlug ? Boolean(updated.demoLive) : false;
     }
 
     // If meeting is explicitly null, remove it from the project
@@ -3303,6 +3324,70 @@ app.get("/make-server-0951c59e/reviews", async (c) => {
   } catch (err) {
     console.log("Get public reviews error:", err);
     return c.json({ error: `Failed to fetch reviews: ${err}` }, 500);
+  }
+});
+
+// ============================================================================
+// WEB DEMOS
+// ============================================================================
+
+// --- GET /demo/:slug — may a visitor see this demo? ---
+// Public on purpose: the demo page itself is public once it is switched on.
+// An unknown or switched-off demo answers the same way, so the endpoint never
+// reveals that a demo exists before the client is meant to see it.
+app.get("/make-server-0951c59e/demo/:slug", async (c) => {
+  try {
+    const slug = demoSlugOf(c.req.param("slug"));
+    if (!slug) return c.json({ live: false });
+
+    const values = await kv.getByPrefix("portal:project:");
+    const project = values
+      .map((v) => {
+        try {
+          return typeof v === "string" ? JSON.parse(v) : v;
+        } catch {
+          return null;
+        }
+      })
+      .find(
+        (p: any) =>
+          p && !Array.isArray(p) && p.type === "web" && p.demoSlug === slug && p.demoLive
+      );
+
+    if (!project) return c.json({ live: false });
+    // Only what the page prints in its own chrome — no client ids, no notes.
+    return c.json({ live: true, title: project.title });
+  } catch (err) {
+    console.log("Get demo error:", err);
+    return c.json({ live: false });
+  }
+});
+
+// --- GET /admin/demo/:slug — the same lookup, ignoring the on/off switch ---
+// Lets an admin open a demo that is still switched off, which is the only way
+// to check one over before the client gets the link.
+app.get("/make-server-0951c59e/admin/demo/:slug", async (c) => {
+  try {
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
+
+    const slug = demoSlugOf(c.req.param("slug"));
+    const values = await kv.getByPrefix("portal:project:");
+    const project = values
+      .map((v) => {
+        try {
+          return typeof v === "string" ? JSON.parse(v) : v;
+        } catch {
+          return null;
+        }
+      })
+      .find((p: any) => p && !Array.isArray(p) && p.type === "web" && p.demoSlug === slug);
+
+    if (!project) return c.json({ error: "Demo not found" }, 404);
+    return c.json({ live: Boolean(project.demoLive), title: project.title });
+  } catch (err) {
+    console.log("Admin get demo error:", err);
+    return c.json({ error: `Failed to fetch demo: ${err}` }, 500);
   }
 });
 

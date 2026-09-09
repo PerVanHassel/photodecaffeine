@@ -35,6 +35,7 @@ const AdminGalleryPreviewPage = lazy(() => import("./pages/portal/AdminGalleryPr
 const AdminInquiriesPage = lazy(() => import("./pages/portal/AdminInquiriesPage").then(m => ({ default: m.AdminInquiriesPage })));
 const AdminReviewsPage = lazy(() => import("./pages/portal/AdminReviewsPage").then(m => ({ default: m.AdminReviewsPage })));
 const AdminDemosPage = lazy(() => import("./pages/portal/AdminDemosPage").then(m => ({ default: m.AdminDemosPage })));
+const DemoPage = lazy(() => import("./pages/demo/DemoPage").then(m => ({ default: m.DemoPage })));
 const AdminPortfolioPage = lazy(() => import("./pages/portal/AdminPortfolioPage").then(m => ({ default: m.AdminPortfolioPage })));
 const AdminRemindersPage = lazy(() => import("./pages/portal/AdminRemindersPage").then(m => ({ default: m.AdminRemindersPage })));
 const AdminSettingsPage = lazy(() => import("./pages/portal/AdminSettingsPage").then(m => ({ default: m.AdminSettingsPage })));
@@ -89,6 +90,7 @@ const LazyAdminGalleryPreviewPage = wrap(AdminGalleryPreviewPage);
 const LazyAdminInquiriesPage = wrap(AdminInquiriesPage);
 const LazyAdminReviewsPage = wrap(AdminReviewsPage);
 const LazyAdminDemosPage = wrap(AdminDemosPage);
+const LazyDemoPage = wrap(DemoPage);
 const LazyAdminPortfolioPage = wrap(AdminPortfolioPage);
 const LazyAdminRemindersPage = wrap(AdminRemindersPage);
 const LazyAdminSettingsPage = wrap(AdminSettingsPage);
@@ -156,6 +158,7 @@ export const router = createBrowserRouter([
       },
     ],
   },
+  { path: "/demo/:slug", Component: LazyDemoPage },
   // The mobile admin app. Its whole subtree is lazily loaded (see
   // src/app/mobile/routes.tsx), so the public site never pays for it.
   appRoutes,

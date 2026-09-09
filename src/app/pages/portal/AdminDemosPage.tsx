@@ -2,14 +2,20 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { portalFetch } from "../../../lib/supabase";
-import { Globe, ExternalLink, ArrowRight, Users, AlertCircle, Check, Save } from "lucide-react";
+import { Globe, ExternalLink, ArrowRight, Users, AlertCircle, Check, Save, Eye } from "lucide-react";
 import { useMobile } from "../../hooks/useMobile";
+import { DEMOS } from "../../demos/registry";
 
 interface DemoProject {
   id: string;
   title: string;
   status: string;
   type?: "photo" | "web";
+  /** A demo built into this site, addressed as /demo/<slug>. */
+  demoSlug?: string;
+  /** Whether visitors may see it. Only meaningful together with demoSlug. */
+  demoLive?: boolean;
+  /** A demo hosted somewhere else. We cannot switch that one on or off. */
   demoUrl?: string;
   demoNotes?: string;
   clientIds: string[];
@@ -21,7 +27,7 @@ function formatDate(str: string) {
   return new Date(str).toLocaleDateString("nl-NL", { day: "numeric", month: "short", year: "numeric" });
 }
 
-/** A URL we are willing to put in an iframe and a link. */
+/** A URL we are willing to put in a link. */
 function isUsableUrl(url: string): boolean {
   try {
     const u = new URL(url);
@@ -39,7 +45,7 @@ export function AdminDemosPage() {
   const [projects, setProjects] = useState<DemoProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [drafts, setDrafts] = useState<Record<string, { demoSlug: string; demoUrl: string }>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
 
@@ -52,19 +58,21 @@ export function AdminDemosPage() {
       .finally(() => setLoading(false));
   }, [session]);
 
-  async function saveUrl(project: DemoProject) {
+  function draftFor(p: DemoProject) {
+    return drafts[p.id] ?? { demoSlug: p.demoSlug ?? "", demoUrl: p.demoUrl ?? "" };
+  }
+
+  async function patch(project: DemoProject, body: Record<string, unknown>) {
     if (!session) return;
-    const next = (drafts[project.id] ?? project.demoUrl ?? "").trim();
     setSavingId(project.id);
     setError("");
     try {
       await portalFetch(
         `/admin/project/${project.id}`,
-        { method: "PUT", body: JSON.stringify({ demoUrl: next }) },
+        { method: "PUT", body: JSON.stringify(body) },
         session.access_token
       );
-      setProjects((prev) => prev.map((p) => (p.id === project.id ? { ...p, demoUrl: next } : p)));
-      setDrafts((d) => { const { [project.id]: _drop, ...rest } = d; return rest; });
+      setProjects((prev) => prev.map((p) => (p.id === project.id ? { ...p, ...body } : p)));
       setSavedId(project.id);
       setTimeout(() => setSavedId(null), 1800);
     } catch (err) {
@@ -74,13 +82,29 @@ export function AdminDemosPage() {
     }
   }
 
+  async function save(project: DemoProject) {
+    const draft = draftFor(project);
+    const body: Record<string, unknown> = {
+      demoSlug: draft.demoSlug,
+      demoUrl: draft.demoUrl.trim(),
+    };
+    // Dropping the built-in demo takes the page offline with it, otherwise the
+    // switch would claim a demo is live that no longer has anything to show.
+    if (!draft.demoSlug) body.demoLive = false;
+    await patch(project, body);
+    setDrafts((d) => {
+      const { [project.id]: _drop, ...rest } = d;
+      return rest;
+    });
+  }
+
   const cardStyle: React.CSSProperties = {
     backgroundColor: "rgba(var(--admin-bg-card-rgb),0.6)",
     border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
     padding: isMobile ? "18px" : "22px",
   };
 
-  const inputStyle: React.CSSProperties = {
+  const fieldStyle: React.CSSProperties = {
     flex: 1,
     minWidth: 0,
     backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.03 * var(--admin-fg-boost)))",
@@ -93,6 +117,16 @@ export function AdminDemosPage() {
     boxSizing: "border-box",
   };
 
+  const labelStyle: React.CSSProperties = {
+    color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))",
+    fontSize: "9px",
+    fontWeight: 600,
+    letterSpacing: "0.24em",
+    textTransform: "uppercase",
+    display: "block",
+    marginBottom: "7px",
+  };
+
   return (
     <div style={{ padding: isMobile ? "24px 16px 60px" : "48px 40px 80px", maxWidth: "1000px" }}>
       <div style={{ marginBottom: "28px" }}>
@@ -102,9 +136,9 @@ export function AdminDemosPage() {
         <h1 style={{ color: "var(--admin-fg-solid)", fontSize: "clamp(22px, 3vw, 38px)", fontWeight: 800, letterSpacing: "-0.02em", margin: 0, lineHeight: 1.1 }}>
           Webdemo&rsquo;s
         </h1>
-        <p style={{ color: "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))", fontSize: "13px", lineHeight: 1.7, margin: "14px 0 0", maxWidth: "620px" }}>
+        <p style={{ color: "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))", fontSize: "13px", lineHeight: 1.7, margin: "14px 0 0", maxWidth: "640px" }}>
           Elk project van het soort <strong style={{ color: "var(--admin-fg-solid)", fontWeight: 600 }}>Webdemo</strong> staat hier.
-          Zet de demo online (bijvoorbeeld via Vercel) en plak de URL erbij — de klant ziet hem dan meteen in het portaal.
+          Kies welke demo erbij hoort en zet hem aan of uit — staat hij uit, dan ziet de klant niets.
         </p>
       </div>
 
@@ -126,19 +160,30 @@ export function AdminDemosPage() {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {projects.map((p) => {
-            const draft = drafts[p.id];
-            const current = draft ?? p.demoUrl ?? "";
-            const dirty = draft !== undefined && draft.trim() !== (p.demoUrl ?? "");
-            const live = (p.demoUrl ?? "").trim();
-            const valid = current.trim() === "" || isUsableUrl(current.trim());
+            const draft = draftFor(p);
+            const dirty =
+              draft.demoSlug !== (p.demoSlug ?? "") || draft.demoUrl.trim() !== (p.demoUrl ?? "");
+            const urlValid = draft.demoUrl.trim() === "" || isUsableUrl(draft.demoUrl.trim());
+            const live = Boolean(p.demoLive && p.demoSlug);
+            const busy = savingId === p.id;
 
             return (
               <div key={p.id} style={cardStyle}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", flexWrap: "wrap", marginBottom: "14px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", flexWrap: "wrap", marginBottom: "18px" }}>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "5px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "5px", flexWrap: "wrap" }}>
                       <Globe size={14} color="#c8905a" />
                       <span style={{ color: "var(--admin-fg-solid)", fontSize: "15px", fontWeight: 700 }}>{p.title}</span>
+                      <span style={{
+                        display: "inline-flex", alignItems: "center", gap: "6px",
+                        fontSize: "9px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase",
+                        padding: "3px 8px",
+                        color: live ? "rgba(120,190,140,0.95)" : "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))",
+                        border: `1px solid ${live ? "rgba(120,190,140,0.4)" : "rgba(var(--admin-fg-rgb),calc(0.12 * var(--admin-fg-boost)))"}`,
+                      }}>
+                        <span style={{ width: 5, height: 5, borderRadius: "50%", background: live ? "rgba(120,190,140,0.95)" : "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))" }} />
+                        {live ? "Online" : "Offline"}
+                      </span>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))", fontSize: "12px" }}>
                       <Users size={11} />
@@ -148,40 +193,46 @@ export function AdminDemosPage() {
                   <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "11px" }}>{formatDate(p.createdAt)}</span>
                 </div>
 
-                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
-                  <input
-                    type="url"
-                    value={current}
-                    onChange={(e) => setDrafts((d) => ({ ...d, [p.id]: e.target.value }))}
-                    placeholder="https://demo-klantnaam.vercel.app"
-                    style={{
-                      ...inputStyle,
-                      borderColor: valid
-                        ? "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))"
-                        : "rgba(224,112,96,0.45)",
-                    }}
-                  />
-                  <button
-                    onClick={() => saveUrl(p)}
-                    disabled={!dirty || !valid || savingId === p.id}
-                    style={{
-                      display: "flex", alignItems: "center", gap: "6px",
-                      backgroundColor: savedId === p.id ? "rgba(120,190,140,0.15)" : "rgba(200,144,90,0.12)",
-                      border: `1px solid ${savedId === p.id ? "rgba(120,190,140,0.4)" : "rgba(200,144,90,0.3)"}`,
-                      color: savedId === p.id ? "rgba(120,190,140,0.95)" : "#c8905a",
-                      fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase",
-                      padding: "10px 15px",
-                      opacity: !dirty || !valid ? 0.45 : 1,
-                      cursor: !dirty || !valid || savingId === p.id ? "not-allowed" : "pointer",
-                      fontFamily: "'Inter', sans-serif",
-                    }}
-                  >
-                    {savedId === p.id ? <Check size={12} /> : <Save size={12} />}
-                    {savingId === p.id ? "Opslaan…" : savedId === p.id ? "Opgeslagen" : "Opslaan"}
-                  </button>
+                <div style={{ display: "grid", gap: "16px", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr" }}>
+                  <div>
+                    <label style={labelStyle} htmlFor={`demo-${p.id}`}>Demo in deze site</label>
+                    <select
+                      id={`demo-${p.id}`}
+                      value={draft.demoSlug}
+                      onChange={(e) =>
+                        setDrafts((d) => ({ ...d, [p.id]: { ...draft, demoSlug: e.target.value } }))
+                      }
+                      style={{ ...fieldStyle, width: "100%" }}
+                    >
+                      <option value="">Geen</option>
+                      {DEMOS.map((d) => (
+                        <option key={d.slug} value={d.slug}>{d.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={labelStyle} htmlFor={`url-${p.id}`}>Of een demo die ergens anders staat</label>
+                    <input
+                      id={`url-${p.id}`}
+                      type="url"
+                      value={draft.demoUrl}
+                      onChange={(e) =>
+                        setDrafts((d) => ({ ...d, [p.id]: { ...draft, demoUrl: e.target.value } }))
+                      }
+                      placeholder="https://demo-klantnaam.vercel.app"
+                      style={{
+                        ...fieldStyle,
+                        width: "100%",
+                        borderColor: urlValid
+                          ? "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))"
+                          : "rgba(224,112,96,0.45)",
+                      }}
+                    />
+                  </div>
                 </div>
 
-                {!valid && (
+                {!urlValid && (
                   <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#e07060", fontSize: "11.5px", marginTop: "8px" }}>
                     <AlertCircle size={11} />
                     Begin met https:// zodat de link ook echt opent.
@@ -195,31 +246,90 @@ export function AdminDemosPage() {
                 )}
 
                 <div style={{
-                  display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "center",
+                  display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center",
                   borderTop: "1px solid rgba(var(--admin-fg-rgb),calc(0.07 * var(--admin-fg-boost)))",
-                  marginTop: "16px", paddingTop: "14px",
+                  marginTop: "18px", paddingTop: "16px",
                 }}>
-                  {live && isUsableUrl(live) ? (
+                  <button
+                    onClick={() => save(p)}
+                    disabled={!dirty || !urlValid || busy}
+                    style={{
+                      display: "flex", alignItems: "center", gap: "6px",
+                      backgroundColor: savedId === p.id ? "rgba(120,190,140,0.15)" : "rgba(200,144,90,0.12)",
+                      border: `1px solid ${savedId === p.id ? "rgba(120,190,140,0.4)" : "rgba(200,144,90,0.3)"}`,
+                      color: savedId === p.id ? "rgba(120,190,140,0.95)" : "#c8905a",
+                      fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase",
+                      padding: "10px 15px",
+                      opacity: !dirty || !urlValid ? 0.45 : 1,
+                      cursor: !dirty || !urlValid || busy ? "not-allowed" : "pointer",
+                      fontFamily: "'Inter', sans-serif",
+                    }}
+                  >
+                    {savedId === p.id ? <Check size={12} /> : <Save size={12} />}
+                    {busy ? "Opslaan…" : savedId === p.id ? "Opgeslagen" : "Opslaan"}
+                  </button>
+
+                  {p.demoSlug && (
+                    <>
+                      <button
+                        onClick={() => patch(p, { demoLive: !live })}
+                        disabled={busy || dirty}
+                        title={dirty ? "Sla eerst je keuze op" : undefined}
+                        style={{
+                          display: "flex", alignItems: "center", gap: "8px",
+                          background: "none",
+                          border: `1px solid ${live ? "rgba(224,112,96,0.35)" : "rgba(120,190,140,0.4)"}`,
+                          color: live ? "#e07060" : "rgba(120,190,140,0.95)",
+                          fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase",
+                          padding: "10px 15px",
+                          opacity: busy || dirty ? 0.45 : 1,
+                          cursor: busy || dirty ? "not-allowed" : "pointer",
+                          fontFamily: "'Inter', sans-serif",
+                        }}
+                      >
+                        {live ? "Offline halen" : "Online zetten"}
+                      </button>
+
+                      <a
+                        href={`/demo/${p.demoSlug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: "flex", alignItems: "center", gap: "6px",
+                          color: "#c8905a", fontSize: "10px", fontWeight: 700,
+                          letterSpacing: "0.15em", textTransform: "uppercase", textDecoration: "none",
+                        }}
+                      >
+                        <Eye size={11} /> Bekijken
+                      </a>
+                    </>
+                  )}
+
+                  {p.demoUrl && isUsableUrl(p.demoUrl) && (
                     <a
-                      href={live}
+                      href={p.demoUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
                         display: "flex", alignItems: "center", gap: "6px",
-                        color: "#c8905a", fontSize: "10px", fontWeight: 700,
-                        letterSpacing: "0.15em", textTransform: "uppercase", textDecoration: "none",
+                        color: "rgba(var(--admin-fg-rgb),calc(0.45 * var(--admin-fg-boost)))", fontSize: "10px",
+                        fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", textDecoration: "none",
                       }}
                     >
-                      Demo openen <ExternalLink size={11} />
+                      Externe demo <ExternalLink size={11} />
                     </a>
-                  ) : (
+                  )}
+
+                  {!p.demoSlug && !p.demoUrl && (
                     <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.28 * var(--admin-fg-boost)))", fontSize: "10px", letterSpacing: "0.15em", textTransform: "uppercase" }}>
-                      Nog geen link — de klant ziet niets
+                      Nog geen demo gekoppeld
                     </span>
                   )}
+
                   <button
                     onClick={() => navigate(`/admin/project/${p.id}`)}
                     style={{
+                      marginLeft: "auto",
                       display: "flex", alignItems: "center", gap: "6px",
                       background: "none", border: "none", padding: 0, cursor: "pointer",
                       color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "10px",
