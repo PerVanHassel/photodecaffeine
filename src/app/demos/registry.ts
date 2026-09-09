@@ -26,6 +26,14 @@ export const DEMOS: DemoEntry[] = [
       import("./thymen-stolk/ThymenStolkDemo").then((m) => ({ default: m.ThymenStolkDemo }))
     ),
   },
+  {
+    slug: "thymen-stolk-b",
+    name: "Thymen Stolk — fotograaf (B)",
+    description: "Tweede richting: donker en afgerond, met de weekoverzichten bovenaan.",
+    Component: lazy(() =>
+      import("./thymen-stolk-b/ThymenStolkBDemo").then((m) => ({ default: m.ThymenStolkBDemo }))
+    ),
+  },
 ];
 
 export function findDemo(slug: string | undefined): DemoEntry | undefined {
