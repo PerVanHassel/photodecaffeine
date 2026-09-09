@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Select } from "./portal/Select";
 import { useLanguage } from "../context/LanguageContext";
 import { useMobile } from "../hooks/useMobile";
 import { portalFetch } from "../../lib/supabase";
@@ -537,57 +538,19 @@ export function Contact() {
                 >
                   {t.contact.packageLabel}
                 </label>
-                <select
+                <Select
+                  variant="underline"
                   value={formData.package}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      package: e.target.value,
-                    })
-                  }
-                  onFocus={() => setFocused("package")}
-                  onBlur={() => setFocused(null)}
-                  style={{
-                    ...inputStyle("package"),
-                    cursor: "pointer",
-                    appearance: "none" as const,
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,251,224,0.35)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
-                    backgroundRepeat: "no-repeat",
-                    backgroundPosition: "right 4px center",
-                    paddingRight: "24px",
-                  }}
-                >
-                  <option
-                    value=""
-                    style={{ backgroundColor: "#1a0c04" }}
-                  >
-                    {t.contact.packageDefault}
-                  </option>
-                  <option
-                    value="espresso"
-                    style={{ backgroundColor: "#1a0c04" }}
-                  >
-                    Espresso — €890
-                  </option>
-                  <option
-                    value="reserve"
-                    style={{ backgroundColor: "#1a0c04" }}
-                  >
-                    Reserve — €2,400
-                  </option>
-                  <option
-                    value="blend"
-                    style={{ backgroundColor: "#1a0c04" }}
-                  >
-                    Blend Retainer — €1,200/mo
-                  </option>
-                  <option
-                    value="custom"
-                    style={{ backgroundColor: "#1a0c04" }}
-                  >
-                    Custom / Not Sure Yet
-                  </option>
-                </select>
+                  onChange={(v) => setFormData({ ...formData, package: v })}
+                  placeholder={t.contact.packageDefault}
+                  ariaLabel={t.contact.packageDefault}
+                  options={[
+                    { value: "espresso", label: "Espresso — €890" },
+                    { value: "reserve", label: "Reserve — €2,400" },
+                    { value: "blend", label: "Blend Retainer — €1,200/mo" },
+                    { value: "custom", label: "Custom / Not Sure Yet" },
+                  ]}
+                />
               </div>
 
               <div>

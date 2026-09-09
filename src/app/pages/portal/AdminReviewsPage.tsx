@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Select } from "../../components/portal/Select";
 import { useNavigate } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { portalFetch } from "../../../lib/supabase";
@@ -259,19 +260,16 @@ export function AdminReviewsPage() {
                   <label style={{ color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase" }}>
                     Portfoliostuk
                   </label>
-                  <select
+                  <Select
                     value={r.portfolioArticleId || ""}
                     disabled={savingId === r.id}
-                    onChange={(e) => patchReview(r.id, { portfolioArticleId: e.target.value || null })}
-                    style={selectStyle}
-                  >
-                    <option value="" style={{ backgroundColor: "#1a0c04", color: "#fffbe0" }}>Geen koppeling</option>
-                    {articles.map((a) => (
-                      <option key={a.id} value={a.id} style={{ backgroundColor: "#1a0c04", color: "#fffbe0" }}>
-                        {a.title}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(v) => patchReview(r.id, { portfolioArticleId: v || null })}
+                    ariaLabel="Gekoppeld portfolio-artikel"
+                    options={[
+                      { value: "", label: "Geen koppeling" },
+                      ...articles.map((a) => ({ value: a.id, label: a.title })),
+                    ]}
+                  />
 
                   <div style={{ flex: 1 }} />
 

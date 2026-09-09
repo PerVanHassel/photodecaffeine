@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Select } from "../../components/portal/Select";
 import { useNavigate, useParams } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { portalFetch } from "../../../lib/supabase";
@@ -491,12 +492,17 @@ export function AdminClientDetailPage() {
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr", gap: "12px" }}>
                 <div>
                   <label style={labelStyle}>Status</label>
-                  <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as typeof form.status })} style={{ ...inputStyle, appearance: "none" }}>
-                    <option value="in_progress">In Progress</option>
-                    <option value="in_review">In Review</option>
-                    <option value="delivered">Delivered</option>
-                    <option value="on_hold">On Hold</option>
-                  </select>
+                  <Select
+                    value={form.status}
+                    onChange={(v) => setForm({ ...form, status: v as typeof form.status })}
+                    ariaLabel="Status"
+                    options={[
+                      { value: "in_progress", label: "In Progress" },
+                      { value: "in_review", label: "In Review" },
+                      { value: "delivered", label: "Delivered" },
+                      { value: "on_hold", label: "On Hold" },
+                    ]}
+                  />
                 </div>
                 <div>
                   <label style={labelStyle}>Phase</label>
@@ -515,16 +521,13 @@ export function AdminClientDetailPage() {
                 <>
                   <div>
                     <label style={labelStyle}>Welke demo</label>
-                    <select
+                    <Select
                       value={form.demoSlug}
-                      onChange={(e) => setForm({ ...form, demoSlug: e.target.value })}
-                      style={{ ...inputStyle, appearance: "none" }}
-                    >
-                      <option value="">Kies een demo…</option>
-                      {DEMOS.map((d) => (
-                        <option key={d.slug} value={d.slug}>{d.name}</option>
-                      ))}
-                    </select>
+                      onChange={(v) => setForm({ ...form, demoSlug: v })}
+                      placeholder="Kies een demo…"
+                      ariaLabel="Welke demo"
+                      options={DEMOS.map((d) => ({ value: d.slug, label: d.name, hint: d.description }))}
+                    />
                     <p style={{ color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "11.5px", lineHeight: 1.6, margin: "8px 0 0" }}>
                       Nieuwe projecten staan offline. Zet de demo aan bij Webdemo&rsquo;s zodra hij klaar is.
                     </p>

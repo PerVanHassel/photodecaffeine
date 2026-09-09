@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { Select } from "../../components/portal/Select";
 import { useNavigate } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { portalFetch } from "../../../lib/supabase";
@@ -206,22 +207,41 @@ export function AdminInquiriesPage() {
           <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginRight: "4px" }}>
             Filter:
           </span>
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)} style={selectStyle}>
-            <option value="all">All statuses</option>
-            <option value="pending">Pending</option>
-            <option value="handled">Handled</option>
-          </select>
-          <select value={filterPackage} onChange={(e) => setFilterPackage(e.target.value)} style={selectStyle}>
-            <option value="all">All packages</option>
-            {PACKAGE_KEYS.map((k) => (
-              <option key={k} value={k}>{k.charAt(0).toUpperCase() + k.slice(1)}</option>
-            ))}
-          </select>
-          <select value={filterPeriod} onChange={(e) => setFilterPeriod(e.target.value as typeof filterPeriod)} style={selectStyle}>
-            <option value="all">All time</option>
-            <option value="week">This week</option>
-            <option value="month">This month</option>
-          </select>
+          <Select
+            value={filterStatus}
+            onChange={(v) => setFilterStatus(v as typeof filterStatus)}
+            ariaLabel="Status"
+            block={false}
+            style={{ minWidth: "160px" }}
+            options={[
+              { value: "all", label: "All statuses" },
+              { value: "pending", label: "Pending" },
+              { value: "handled", label: "Handled" },
+            ]}
+          />
+          <Select
+            value={filterPackage}
+            onChange={setFilterPackage}
+            ariaLabel="Pakket"
+            block={false}
+            style={{ minWidth: "160px" }}
+            options={[
+              { value: "all", label: "All packages" },
+              ...PACKAGE_KEYS.map((k) => ({ value: k, label: k.charAt(0).toUpperCase() + k.slice(1) })),
+            ]}
+          />
+          <Select
+            value={filterPeriod}
+            onChange={(v) => setFilterPeriod(v as typeof filterPeriod)}
+            ariaLabel="Periode"
+            block={false}
+            style={{ minWidth: "150px" }}
+            options={[
+              { value: "all", label: "All time" },
+              { value: "week", label: "This week" },
+              { value: "month", label: "This month" },
+            ]}
+          />
           {hasActiveFilter && (
             <button
               onClick={() => { setFilterPackage("all"); setFilterStatus("all"); setFilterPeriod("all"); }}

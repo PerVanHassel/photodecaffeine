@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { Select } from "../../components/portal/Select";
 import { Plus, Trash2, X, Check, AlertCircle, Paperclip, Edit2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { projectId } from "/utils/supabase/info";
@@ -318,21 +319,45 @@ export function AdminDeclarationsPage() {
 
       {/* Filters */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "24px" }}>
-        <select value={q} onChange={(e) => setQ(Number(e.target.value))} style={{ ...inputStyle, width: "auto", cursor: "pointer" }}>
-          {[1, 2, 3, 4].map((n) => <option key={n} value={n} style={{ backgroundColor: "#1a0c04", color: "#fffbe0" }}>Q{n}</option>)}
-        </select>
-        <select value={year} onChange={(e) => setYear(Number(e.target.value))} style={{ ...inputStyle, width: "auto", cursor: "pointer" }}>
-          {years.map((y) => <option key={y} value={y} style={{ backgroundColor: "#1a0c04", color: "#fffbe0" }}>{y}</option>)}
-        </select>
-        <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} style={{ ...inputStyle, width: "auto", cursor: "pointer" }}>
-          <option value="">Alle categorieën</option>
-          {CATEGORIES.map((c) => <option key={c} value={c} style={{ backgroundColor: "#1a0c04", color: "#fffbe0" }}>{c}</option>)}
-        </select>
+        <Select
+          value={String(q)}
+          onChange={(v) => setQ(Number(v))}
+          ariaLabel="Kwartaal"
+          block={false}
+          style={{ minWidth: "90px" }}
+          options={[1, 2, 3, 4].map((n) => ({ value: String(n), label: `Q${n}` }))}
+        />
+        <Select
+          value={String(year)}
+          onChange={(v) => setYear(Number(v))}
+          ariaLabel="Jaar"
+          block={false}
+          style={{ minWidth: "110px" }}
+          options={years.map((y) => ({ value: String(y), label: String(y) }))}
+        />
+        <Select
+          value={categoryFilter}
+          onChange={setCategoryFilter}
+          ariaLabel="Categorie"
+          block={false}
+          style={{ minWidth: "180px" }}
+          options={[
+            { value: "", label: "Alle categorieën" },
+            ...CATEGORIES.map((c) => ({ value: c, label: c })),
+          ]}
+        />
         {canViewAll && (
-          <select value={adminFilter} onChange={(e) => setAdminFilter(e.target.value)} style={{ ...inputStyle, width: "auto", cursor: "pointer" }}>
-            <option value="">Alle admins</option>
-            {workers.map((w) => <option key={w.id} value={w.id} style={{ backgroundColor: "#1a0c04", color: "#fffbe0" }}>{w.name}</option>)}
-          </select>
+          <Select
+            value={adminFilter}
+            onChange={setAdminFilter}
+            ariaLabel="Admin"
+            block={false}
+            style={{ minWidth: "170px" }}
+            options={[
+              { value: "", label: "Alle admins" },
+              ...workers.map((w) => ({ value: w.id, label: w.name })),
+            ]}
+          />
         )}
       </div>
 
@@ -418,9 +443,12 @@ export function AdminDeclarationsPage() {
               {canViewAll && (
                 <div>
                   <label style={labelStyle}>Voor wie</label>
-                  <select style={{ ...inputStyle, cursor: "pointer" }} value={form.adminId} onChange={(e) => setForm({ ...form, adminId: e.target.value })}>
-                    {workers.map((w) => <option key={w.id} value={w.id} style={{ backgroundColor: "#1a0c04", color: "#fffbe0" }}>{w.name}</option>)}
-                  </select>
+                  <Select
+                    value={form.adminId}
+                    onChange={(v) => setForm({ ...form, adminId: v })}
+                    ariaLabel="Voor wie"
+                    options={workers.map((w) => ({ value: w.id, label: w.name }))}
+                  />
                 </div>
               )}
 
@@ -437,9 +465,12 @@ export function AdminDeclarationsPage() {
 
               <div>
                 <label style={labelStyle}>BTW-tarief</label>
-                <select style={{ ...inputStyle, cursor: "pointer" }} value={form.vatRate} onChange={(e) => setForm({ ...form, vatRate: e.target.value })}>
-                  {VAT_RATES.map((r) => <option key={r.value} value={r.value} style={{ backgroundColor: "#1a0c04", color: "#fffbe0" }}>{r.label}</option>)}
-                </select>
+                <Select
+                  value={form.vatRate}
+                  onChange={(v) => setForm({ ...form, vatRate: v })}
+                  ariaLabel="Btw"
+                  options={VAT_RATES.map((r) => ({ value: String(r.value), label: r.label }))}
+                />
                 {Number(form.amount) > 0 && (
                   <p style={{ color: "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))", fontSize: "11px", margin: "8px 0 0" }}>
                     Terug te vragen BTW: <strong style={{ color: "#c8905a" }}>{formatEUR((Number(form.amount) * Number(form.vatRate)) / (100 + Number(form.vatRate)))}</strong>
@@ -454,14 +485,13 @@ export function AdminDeclarationsPage() {
 
               <div>
                 <label style={labelStyle}>Categorie {!categoryTouched && form.category && "(automatisch voorgesteld)"}</label>
-                <select
-                  style={{ ...inputStyle, cursor: "pointer" }}
+                <Select
                   value={form.category}
-                  onChange={(e) => { setCategoryTouched(true); setForm({ ...form, category: e.target.value }); }}
-                >
-                  <option value="">Kies een categorie</option>
-                  {CATEGORIES.map((c) => <option key={c} value={c} style={{ backgroundColor: "#1a0c04", color: "#fffbe0" }}>{c}</option>)}
-                </select>
+                  onChange={(v) => { setCategoryTouched(true); setForm({ ...form, category: v }); }}
+                  placeholder="Kies een categorie"
+                  ariaLabel="Categorie"
+                  options={CATEGORIES.map((c) => ({ value: c, label: c }))}
+                />
               </div>
 
               <div>

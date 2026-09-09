@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Select } from "../../components/portal/Select";
 import { useNavigate } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { portalFetch } from "../../../lib/supabase";
@@ -196,19 +197,18 @@ export function AdminDemosPage() {
                 <div style={{ display: "grid", gap: "16px", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr" }}>
                   <div>
                     <label style={labelStyle} htmlFor={`demo-${p.id}`}>Demo in deze site</label>
-                    <select
+                    <Select
                       id={`demo-${p.id}`}
                       value={draft.demoSlug}
-                      onChange={(e) =>
-                        setDrafts((d) => ({ ...d, [p.id]: { ...draft, demoSlug: e.target.value } }))
+                      onChange={(v) =>
+                        setDrafts((d) => ({ ...d, [p.id]: { ...draft, demoSlug: v } }))
                       }
-                      style={{ ...fieldStyle, width: "100%" }}
-                    >
-                      <option value="">Geen</option>
-                      {DEMOS.map((d) => (
-                        <option key={d.slug} value={d.slug}>{d.name}</option>
-                      ))}
-                    </select>
+                      placeholder="Geen"
+                      options={[
+                        { value: "", label: "Geen" },
+                        ...DEMOS.map((d) => ({ value: d.slug, label: d.name, hint: d.description })),
+                      ]}
+                    />
                   </div>
 
                   <div>

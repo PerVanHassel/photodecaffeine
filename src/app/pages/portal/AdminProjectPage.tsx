@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { Select } from "../../components/portal/Select";
 import { useNavigate, useParams } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { portalFetch } from "../../../lib/supabase";
@@ -522,9 +523,12 @@ export function AdminProjectPage() {
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: "12px" }}>
               <div>
                 <label style={labelStyle}>Status</label>
-                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as Project["status"] })} style={{ ...inputStyle, appearance: "none" }}>
-                  {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-                </select>
+                <Select
+                  value={form.status}
+                  onChange={(v) => setForm({ ...form, status: v as Project["status"] })}
+                  ariaLabel="Status"
+                  options={STATUSES.map((s) => ({ value: s.value, label: s.label }))}
+                />
               </div>
               <div>
                 <label style={labelStyle}>Phase</label>
@@ -1096,16 +1100,16 @@ export function AdminProjectPage() {
               <>
                 <div style={{ marginBottom: "14px" }}>
                   <label style={labelStyle}>Welke demo</label>
-                  <select
+                  <Select
                     value={demoSlug}
-                    onChange={(e) => setDemoSlug(e.target.value)}
-                    style={{ ...inputStyle, appearance: "none" }}
-                  >
-                    <option value="">Geen</option>
-                    {DEMOS.map((d) => (
-                      <option key={d.slug} value={d.slug}>{d.name}</option>
-                    ))}
-                  </select>
+                    onChange={setDemoSlug}
+                    placeholder="Geen"
+                    ariaLabel="Welke demo"
+                    options={[
+                      { value: "", label: "Geen" },
+                      ...DEMOS.map((d) => ({ value: d.slug, label: d.name, hint: d.description })),
+                    ]}
+                  />
                 </div>
                 <div style={{ marginBottom: "14px" }}>
                   <label style={labelStyle}>Of een demo die ergens anders staat</label>

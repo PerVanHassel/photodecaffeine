@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Select } from "../../components/portal/Select";
 import { Plus, Trash2, X, Check, AlertCircle, Shield, Crown } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { projectId } from "/utils/supabase/info";
@@ -322,21 +323,18 @@ export function AdminTeamPage() {
                 Eigenaar
               </span>
             ) : (
-              <select
+              <Select
                 value={w.roleId || ""}
-                onChange={(e) => handleRoleChange(w.id, e.target.value)}
-                style={{
-                  backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))",
-                  border: "1px solid rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))",
-                  color: "var(--admin-fg-solid)", fontSize: "12px", padding: "8px 10px",
-                  fontFamily: "'Inter', sans-serif", cursor: "pointer",
-                }}
-              >
-                {!w.roleId && <option value="">Geen rol</option>}
-                {roles.map((r) => (
-                  <option key={r.id} value={r.id} style={{ backgroundColor: "#1a0c04", color: "#fffbe0" }}>{r.name}</option>
-                ))}
-              </select>
+                onChange={(v) => handleRoleChange(w.id, v)}
+                placeholder="Geen rol"
+                ariaLabel={`Rol van ${w.name}`}
+                block={false}
+                style={{ minWidth: "170px" }}
+                options={[
+                  ...(w.roleId ? [] : [{ value: "", label: "Geen rol" }]),
+                  ...roles.map((r) => ({ value: r.id, label: r.name })),
+                ]}
+              />
             )}
 
             {!w.isOwner && (
@@ -454,10 +452,13 @@ export function AdminTeamPage() {
               </div>
               <div>
                 <label style={labelStyle}>Rol *</label>
-                <select style={{ ...inputStyle, cursor: "pointer" }} value={addForm.roleId} onChange={(e) => setAddForm({ ...addForm, roleId: e.target.value })}>
-                  <option value="">Kies een rol</option>
-                  {roles.map((r) => <option key={r.id} value={r.id} style={{ backgroundColor: "#1a0c04", color: "#fffbe0" }}>{r.name}</option>)}
-                </select>
+                <Select
+                  value={addForm.roleId}
+                  onChange={(v) => setAddForm({ ...addForm, roleId: v })}
+                  placeholder="Kies een rol"
+                  ariaLabel="Rol"
+                  options={roles.map((r) => ({ value: r.id, label: r.name }))}
+                />
               </div>
               {addError && (
                 <div style={{ backgroundColor: "rgba(224,112,96,0.1)", border: "1px solid rgba(224,112,96,0.3)", color: "#e07060", padding: "10px 14px", fontSize: "12px", display: "flex", gap: "8px", alignItems: "center" }}>
