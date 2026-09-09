@@ -1,39 +1,52 @@
 /* Demo: Thymen Stolk, fotojournalist.
-   Everything is scoped under .tsd so nothing leaks into the PDC site or the
-   admin, which share this bundle. The look is a newspaper front page taken
-   seriously rather than parodied: a dark, full-bleed opening photo with the
-   masthead overprinted, then newsprint-coloured paper for the reading. One
-   hairline rule stitches the whole page together — it draws under the
-   masthead on load and returns as every section divider. */
+   Scoped under .tsd so nothing leaks into the PDC site or the admin, which
+   share this bundle. A newspaper front page taken seriously: the opening
+   frame is the photograph with the name over it, then newsprint-coloured
+   paper where the articles do the talking.
+
+   Type is chosen for reading, not for period flavour. Headings are Archivo —
+   an even-weight grotesque with open counters that stays clear at 20px and at
+   180px — rather than a high-contrast Didone whose hairlines disappear.
+   Nothing is set in italics, tracking is never squeezed below -0.015em, and
+   the small mono labels stay short so uppercase never has to be read as a
+   sentence. */
 
 .tsd {
-  --ink: #14130f;
-  --ink-soft: #2a2823;
+  --ink: #15140f;
+  --ink-soft: #38352d;
   --paper: #f5f2ea;
-  --paper-warm: #efeadf;
-  --rule: #d6cfc0;
-  --muted: #6f6a5e;
-  --press: #a8291f;
+  --paper-warm: #ece7db;
+  --rule: #cdc6b5;
+  --muted: #5d584d;
+  --press: #9c2b21;
 
   background: var(--paper);
   color: var(--ink);
   font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  font-size: 16px;
-  line-height: 1.6;
+  font-size: 17px;
+  line-height: 1.75;
   -webkit-font-smoothing: antialiased;
 }
 .tsd *,
 .tsd *::before,
 .tsd *::after { box-sizing: border-box; }
 
-.tsd-serif { font-family: "Bodoni Moda", "Times New Roman", Georgia, serif; }
+.tsd h1, .tsd h2, .tsd h3 {
+  font-family: "Archivo", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
 .tsd-mono { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace; }
 
-.tsd-shell { max-width: 1280px; margin: 0 auto; padding: 0 clamp(18px, 4vw, 48px); }
+.tsd-shell { max-width: 1240px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
 
+/* Short labels only — never a sentence, because uppercase with wide tracking
+   is slow to read. */
 .tsd-kicker {
   font-family: "IBM Plex Mono", monospace;
-  font-size: 10.5px; letter-spacing: 0.24em; text-transform: uppercase;
+  font-size: 11.5px; font-weight: 500;
+  letter-spacing: 0.16em; text-transform: uppercase;
   color: var(--press); margin: 0;
 }
 .tsd-rule { height: 1px; background: var(--rule); border: 0; margin: 0; }
@@ -42,288 +55,333 @@
 
 .tsd-hero {
   position: relative;
-  min-height: 92svh;
+  min-height: 90svh;
   display: flex; flex-direction: column;
   background: #0b0b09;
-  color: #f7f4ee;
+  color: #fbf9f5;
   overflow: hidden;
 }
-/* Explicit layers. A blanket `.tsd-hero > *` rule used to sit further down
-   and reset this to position: relative, which collapsed the stage — and with
-   it every photograph inside — to zero height. */
+/* Explicit layers. A blanket `.tsd-hero > *` rule once reset this to
+   position: relative and collapsed every hero photograph to zero height. */
 .tsd-hero-stage { position: absolute; inset: 0; z-index: 0; }
 .tsd-hero-stage img {
   position: absolute; inset: 0;
   width: 100%; height: 100%; object-fit: cover;
   opacity: 0; transition: opacity 1.6s ease;
-  /* Barely-there drift, so the frame feels alive without anyone noticing. */
   animation: tsd-drift 26s ease-in-out infinite alternate;
 }
 .tsd-hero-stage img.is-on { opacity: 1; }
 .tsd-hero::after {
   content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1;
   background:
-    /* A wash weighted to the lower left, where the masthead sits, so the type
-       holds on a bright frame as well as a dark one — and the upper right of
-       the photograph stays clear. */
-    linear-gradient(102deg, rgba(8,8,6,.72) 0%, rgba(8,8,6,.34) 40%, rgba(8,8,6,.04) 70%),
-    linear-gradient(180deg, rgba(8,8,6,.5) 0%, rgba(8,8,6,.04) 28%, rgba(8,8,6,.02) 44%, rgba(8,8,6,.5) 76%, rgba(8,8,6,.82) 100%);
+    /* Weighted to the lower left, where the name sits, so the type holds on a
+       bright frame as well as a dark one. */
+    linear-gradient(102deg, rgba(8,8,6,.78) 0%, rgba(8,8,6,.4) 40%, rgba(8,8,6,.06) 72%),
+    linear-gradient(180deg, rgba(8,8,6,.55) 0%, rgba(8,8,6,.08) 28%, rgba(8,8,6,.06) 44%, rgba(8,8,6,.58) 76%, rgba(8,8,6,.86) 100%);
 }
 .tsd-hero-top, .tsd-hero-body { position: relative; z-index: 2; }
 
 .tsd-hero-top {
   display: flex; justify-content: space-between; align-items: center; gap: 16px;
   flex-wrap: wrap;
-  padding: 22px clamp(18px, 4vw, 48px);
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10.5px; letter-spacing: 0.2em; text-transform: uppercase;
-  color: rgba(247,244,238,.72);
-  border-bottom: 1px solid rgba(247,244,238,.14);
+  padding: 20px clamp(20px, 4vw, 48px);
+  font-size: 14px;
+  color: rgba(251,249,245,.82);
+  border-bottom: 1px solid rgba(251,249,245,.16);
 }
-.tsd-hero-top nav { display: flex; gap: clamp(14px, 3vw, 30px); }
-.tsd-hero-top a { color: inherit; text-decoration: none; }
-.tsd-hero-top a:hover { color: #fff; }
+.tsd-hero-top nav { display: flex; gap: clamp(16px, 3vw, 32px); }
+.tsd-hero-top a { color: inherit; text-decoration: none; padding: 4px 0; }
+.tsd-hero-top a:hover { color: #fff; box-shadow: inset 0 -1px 0 currentColor; }
 .tsd-badge {
-  color: #0b0b09; background: rgba(247,244,238,.9);
-  padding: 3px 7px; letter-spacing: 0.16em;
+  font-family: "IBM Plex Mono", monospace;
+  color: #14120f; background: rgba(251,249,245,.92);
+  padding: 4px 9px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
 }
 
 .tsd-hero-body {
   flex: 1; display: flex; flex-direction: column; justify-content: flex-end;
-  padding: clamp(28px, 6vw, 72px) clamp(18px, 4vw, 48px) clamp(24px, 4vw, 44px);
+  padding: clamp(30px, 6vw, 72px) clamp(20px, 4vw, 48px) clamp(24px, 4vw, 40px);
 }
 .tsd-masthead {
-  font-family: "Bodoni Moda", "Times New Roman", Georgia, serif;
-  font-weight: 600;
-  font-size: clamp(46px, 13.5vw, 196px);
-  line-height: .84;
-  letter-spacing: -0.028em;
+  font-size: clamp(46px, 11.5vw, 168px);
+  line-height: .92;
+  letter-spacing: -0.03em;
   margin: 0;
-  text-wrap: balance;
+  font-weight: 800;
 }
 .tsd-masthead span { display: block; overflow: hidden; }
 .tsd-masthead span > i {
   display: block; font-style: normal;
-  animation: tsd-rise 1.15s cubic-bezier(.16,.84,.3,1) both;
+  animation: tsd-rise 1.05s cubic-bezier(.16,.84,.3,1) both;
 }
-.tsd-masthead .tsd-thin { font-weight: 400; font-style: italic; color: #e6ddcc; }
+.tsd-masthead .tsd-thin { font-weight: 400; color: #ece2d2; }
 
 .tsd-standfirst {
-  display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap;
-  margin: clamp(20px, 3vw, 34px) 0 0;
-  font-size: clamp(15px, 1.5vw, 19px);
-  color: rgba(247,244,238,.86);
-  max-width: 62ch;
+  margin: clamp(18px, 3vw, 30px) 0 0;
+  font-size: clamp(17px, 1.6vw, 21px);
+  line-height: 1.65;
+  color: rgba(251,249,245,.92);
+  max-width: 40ch;
   animation: tsd-fade .7s ease .5s both;
 }
 .tsd-hero-rule {
   transform-origin: left center;
   animation: tsd-draw .9s cubic-bezier(.16,.84,.3,1) .34s both;
-  background: rgba(247,244,238,.3);
-  margin: clamp(18px, 3vw, 30px) 0 0;
+  background: rgba(251,249,245,.34);
+  margin: clamp(18px, 3vw, 28px) 0 0;
 }
 .tsd-hero-foot {
   display: flex; justify-content: space-between; align-items: flex-end; gap: 20px;
-  flex-wrap: wrap; margin-top: clamp(18px, 3vw, 30px);
-  font-family: "IBM Plex Mono", monospace; font-size: 10.5px;
-  letter-spacing: 0.16em; text-transform: uppercase; color: rgba(247,244,238,.6);
+  flex-wrap: wrap; margin-top: clamp(20px, 3vw, 30px);
+  font-size: 13.5px; color: rgba(251,249,245,.78);
   animation: tsd-fade .7s ease .66s both;
 }
-.tsd-dots { display: flex; gap: 7px; }
+.tsd-hero-foot a { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 9px; }
+.tsd-hero-foot a:hover { color: #fff; }
+.tsd-hero-foot a span:last-child { animation: tsd-nudge 2.4s ease-in-out infinite; }
+.tsd-dots { display: flex; gap: 8px; }
 .tsd-dots button {
-  width: 22px; height: 3px; padding: 0; border: 0; cursor: pointer;
-  background: rgba(247,244,238,.28);
+  width: 26px; height: 4px; padding: 0; border: 0; cursor: pointer;
+  background: rgba(251,249,245,.32);
 }
-.tsd-dots button[aria-current="true"] { background: #f7f4ee; }
-.tsd-scroll { display: flex; align-items: center; gap: 9px; }
-.tsd-scroll span:last-child { animation: tsd-nudge 2.4s ease-in-out infinite; }
+.tsd-dots button[aria-current="true"] { background: #fbf9f5; }
 
 /* ---------- dateline ---------- */
 
 .tsd-strapline {
   background: var(--ink); color: var(--paper);
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase;
+  font-size: 13.5px;
 }
 .tsd-strapline div {
   display: flex; justify-content: space-between; gap: 18px; flex-wrap: wrap;
-  padding: 13px clamp(18px, 4vw, 48px); max-width: 1280px; margin: 0 auto;
+  padding: 14px clamp(20px, 4vw, 48px); max-width: 1240px; margin: 0 auto;
 }
-.tsd-strapline b { color: #d8b48a; font-weight: 500; }
+.tsd-strapline b { color: #e0b98e; font-weight: 600; }
 
-/* ---------- sections ---------- */
+/* ---------- shared section furniture ---------- */
 
-.tsd-section { padding: clamp(52px, 8vw, 104px) 0 0; }
+.tsd-section { padding: clamp(56px, 8vw, 104px) 0 0; }
 .tsd-section-head {
   display: flex; align-items: baseline; justify-content: space-between;
-  gap: 16px; flex-wrap: wrap; margin-bottom: clamp(20px, 3vw, 32px);
+  gap: 16px; flex-wrap: wrap; margin-bottom: clamp(22px, 3vw, 34px);
 }
 .tsd-section-head h2 {
-  font-family: "Bodoni Moda", Georgia, serif;
-  font-size: clamp(26px, 4vw, 44px); font-weight: 600; letter-spacing: -0.02em;
-  margin: 0; line-height: 1.05;
+  font-size: clamp(30px, 4.2vw, 48px);
+  margin: 6px 0 0; line-height: 1.08;
 }
-.tsd-section-head p { margin: 0; color: var(--muted); font-size: 13.5px; }
+.tsd-section-head p { margin: 0; color: var(--muted); font-size: 15px; max-width: 40ch; }
 
-/* Lead article: one photo, one headline, nothing else competing. */
+/* ---------- facts ---------- */
+
+.tsd-facts {
+  display: grid; gap: 1px; background: var(--rule);
+  border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+  grid-template-columns: repeat(2, 1fr);
+  margin-top: clamp(40px, 6vw, 72px);
+}
+@media (min-width: 760px) { .tsd-facts { grid-template-columns: repeat(4, 1fr); } }
+.tsd-facts div { background: var(--paper); padding: clamp(20px, 3vw, 30px) clamp(16px, 2vw, 24px); }
+.tsd-facts dt {
+  font-family: "IBM Plex Mono", monospace; font-size: 11.5px;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+  margin-bottom: 8px;
+}
+.tsd-facts dd {
+  margin: 0; font-family: "Archivo", sans-serif; font-weight: 700;
+  font-size: clamp(28px, 3.4vw, 40px); line-height: 1; letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.tsd-facts dd small { font-size: 15px; font-weight: 500; color: var(--muted); margin-left: 4px; }
+
+/* ---------- articles ---------- */
+
 .tsd-lead {
-  display: grid; gap: clamp(20px, 3vw, 44px);
+  display: grid; gap: clamp(22px, 3vw, 44px);
   grid-template-columns: 1fr;
-  padding-bottom: clamp(30px, 5vw, 52px);
+  padding-bottom: clamp(32px, 5vw, 52px);
   border-bottom: 1px solid var(--rule);
 }
-@media (min-width: 900px) { .tsd-lead { grid-template-columns: 1.35fr 1fr; align-items: center; } }
+@media (min-width: 900px) { .tsd-lead { grid-template-columns: 1.3fr 1fr; align-items: center; } }
 .tsd-lead figure { margin: 0; }
 .tsd-lead img { width: 100%; height: auto; display: block; background: var(--paper-warm); }
-.tsd-lead h3 {
-  font-family: "Bodoni Moda", Georgia, serif;
-  font-size: clamp(26px, 3.4vw, 42px); font-weight: 600; letter-spacing: -0.02em;
-  line-height: 1.1; margin: 12px 0 14px; text-wrap: balance;
+.tsd-lead figcaption {
+  font-size: 13.5px; color: var(--muted); margin-top: 10px; line-height: 1.55;
 }
-.tsd-lead p { margin: 0 0 18px; color: var(--ink-soft); max-width: 46ch; }
+.tsd-lead h3 {
+  font-size: clamp(26px, 3.2vw, 38px);
+  line-height: 1.18; margin: 12px 0 14px;
+}
+.tsd-lead p { margin: 0 0 20px; color: var(--ink-soft); max-width: 44ch; }
 
 .tsd-byline {
-  font-family: "IBM Plex Mono", monospace; font-size: 10.5px;
-  letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);
-  display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+  font-size: 13.5px; color: var(--muted);
+  display: flex; gap: 8px 14px; flex-wrap: wrap; align-items: center; margin: 0;
 }
-.tsd-byline .tsd-outlet { color: var(--ink); }
+.tsd-byline .tsd-outlet { color: var(--ink); font-weight: 600; }
+.tsd-byline .tsd-sep { color: var(--rule); }
 
-/* The rest of the articles: a plain, even grid — commercial and scannable,
-   which is what a page of clippings wants. */
 .tsd-grid {
-  display: grid; gap: clamp(22px, 3vw, 40px) clamp(18px, 2.5vw, 34px);
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  padding: clamp(30px, 5vw, 52px) 0 0;
+  display: grid; gap: clamp(26px, 3vw, 40px) clamp(20px, 2.5vw, 34px);
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  padding: clamp(32px, 5vw, 52px) 0 0;
 }
 .tsd-card { display: flex; flex-direction: column; }
-.tsd-card a { text-decoration: none; color: inherit; display: block; }
+.tsd-card > a { text-decoration: none; color: inherit; display: block; }
 .tsd-card .tsd-frame { overflow: hidden; background: var(--paper-warm); }
 .tsd-card img {
   width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block;
   transition: transform .7s cubic-bezier(.16,.84,.3,1);
 }
-.tsd-card a:hover img { transform: scale(1.035); }
-.tsd-card h3 {
-  font-family: "Bodoni Moda", Georgia, serif;
-  font-size: 20px; font-weight: 600; letter-spacing: -0.012em; line-height: 1.2;
-  margin: 12px 0 8px; text-wrap: balance;
-}
-.tsd-card a:hover h3 { text-decoration: underline; text-underline-offset: 3px; }
+.tsd-card > a:hover img { transform: scale(1.035); }
+.tsd-card h3 { font-size: 22px; line-height: 1.28; margin: 12px 0 8px; }
+.tsd-card > a:hover h3 { box-shadow: inset 0 -2px 0 var(--press); }
+.tsd-card p.tsd-excerpt { margin: 0 0 12px; color: var(--ink-soft); font-size: 15.5px; line-height: 1.65; }
 
-/* A run of headlines with no photo, the way a paper fills its lower half. */
-.tsd-more {
-  margin-top: clamp(34px, 5vw, 56px);
-  border-top: 1px solid var(--rule);
-}
+.tsd-more { margin-top: clamp(38px, 5vw, 56px); border-top: 1px solid var(--rule); }
 .tsd-more a {
-  display: flex; gap: clamp(12px, 2vw, 28px); align-items: baseline;
-  padding: 15px 0; border-bottom: 1px solid var(--rule);
-  color: inherit; text-decoration: none; flex-wrap: wrap;
+  display: grid; gap: 4px 24px; align-items: baseline;
+  grid-template-columns: 1fr;
+  padding: 16px 0; border-bottom: 1px solid var(--rule);
+  color: inherit; text-decoration: none;
 }
+@media (min-width: 760px) { .tsd-more a { grid-template-columns: 110px 1fr 200px; } }
 .tsd-more a:hover { background: var(--paper-warm); }
-.tsd-more .tsd-when {
-  font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--muted);
-  min-width: 92px; letter-spacing: 0.06em;
-}
-.tsd-more h3 {
-  font-family: "Bodoni Moda", Georgia, serif; font-size: 19px; font-weight: 600;
-  margin: 0; flex: 1; min-width: 220px; line-height: 1.25;
-}
-.tsd-more .tsd-outlet {
-  font-family: "IBM Plex Mono", monospace; font-size: 10.5px;
-  letter-spacing: 0.16em; text-transform: uppercase; color: var(--press);
-}
+.tsd-more .tsd-when { font-size: 14px; color: var(--muted); }
+.tsd-more h3 { font-size: 20px; margin: 0; line-height: 1.35; }
+.tsd-more .tsd-outlet { font-size: 14px; color: var(--press); font-weight: 600; }
 
-/* Full-bleed band of work: the photographs get the whole width, no cards. */
-.tsd-strip { margin-top: clamp(56px, 9vw, 108px); background: var(--ink); }
+/* ---------- work, with a viewer ---------- */
+
+.tsd-strip { margin-top: clamp(60px, 9vw, 108px); background: var(--ink); }
 .tsd-strip-inner { display: grid; grid-template-columns: 1fr; }
-@media (min-width: 760px) { .tsd-strip-inner { grid-template-columns: repeat(3, 1fr); } }
-.tsd-strip figure { margin: 0; position: relative; }
-.tsd-strip img {
-  width: 100%; height: clamp(240px, 34vw, 460px); object-fit: cover; display: block;
+@media (min-width: 640px) { .tsd-strip-inner { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1000px) { .tsd-strip-inner { grid-template-columns: repeat(4, 1fr); } }
+.tsd-strip button {
+  margin: 0; padding: 0; border: 0; background: none; cursor: zoom-in;
+  position: relative; display: block; width: 100%; overflow: hidden;
 }
+.tsd-strip img {
+  width: 100%; height: clamp(230px, 26vw, 340px); object-fit: cover; display: block;
+  transition: transform .7s cubic-bezier(.16,.84,.3,1);
+}
+.tsd-strip button:hover img { transform: scale(1.04); }
 .tsd-strip figcaption {
-  position: absolute; left: 0; bottom: 0; right: 0;
-  padding: 26px 18px 14px; color: rgba(247,244,238,.9);
-  background: linear-gradient(180deg, rgba(8,8,6,0), rgba(8,8,6,.8));
-  font-family: "IBM Plex Mono", monospace; font-size: 10.5px;
-  letter-spacing: 0.16em; text-transform: uppercase;
+  position: absolute; left: 0; right: 0; bottom: 0;
+  padding: 30px 16px 14px; color: #fbf9f5; text-align: left;
+  background: linear-gradient(180deg, rgba(8,8,6,0), rgba(8,8,6,.85));
+  font-size: 14px;
 }
 
-/* ---------- about, contact, footer ---------- */
+.tsd-viewer {
+  position: fixed; inset: 0; z-index: 60; border: 0; padding: 0;
+  width: 100%; height: 100%; max-width: 100%; max-height: 100%;
+  background: rgba(9,9,7,.97); color: #fbf9f5;
+}
+.tsd-viewer::backdrop { background: rgba(9,9,7,.9); }
+.tsd-viewer-inner { display: flex; flex-direction: column; height: 100%; }
+.tsd-viewer figure {
+  flex: 1; min-height: 0; margin: 0; display: flex; align-items: center;
+  justify-content: center; padding: clamp(12px, 3vw, 32px);
+}
+.tsd-viewer img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.tsd-viewer-bar {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 14px clamp(16px, 3vw, 28px);
+  border-top: 1px solid rgba(251,249,245,.16); font-size: 14px;
+}
+.tsd-viewer-bar p { margin: 0; flex: 1; min-width: 160px; }
+.tsd-viewer-bar button {
+  font: inherit; cursor: pointer; padding: 9px 16px;
+  background: none; color: inherit; border: 1px solid rgba(251,249,245,.34);
+}
+.tsd-viewer-bar button:hover { border-color: #fbf9f5; }
+
+/* ---------- how it works ---------- */
+
+.tsd-steps {
+  display: grid; gap: clamp(22px, 3vw, 36px);
+  grid-template-columns: 1fr; padding-top: clamp(24px, 3vw, 34px);
+}
+@media (min-width: 760px) { .tsd-steps { grid-template-columns: repeat(3, 1fr); } }
+.tsd-steps article { border-top: 2px solid var(--ink); padding-top: 16px; }
+.tsd-steps h3 { font-size: 21px; margin: 10px 0 8px; }
+.tsd-steps p { margin: 0; color: var(--ink-soft); font-size: 15.5px; }
+.tsd-step-no {
+  font-family: "IBM Plex Mono", monospace; font-size: 13px; color: var(--press);
+  font-weight: 500;
+}
+
+/* ---------- about ---------- */
 
 .tsd-about {
-  display: grid; gap: clamp(24px, 4vw, 56px); align-items: center;
-  grid-template-columns: 1fr; padding-top: clamp(56px, 9vw, 108px);
+  display: grid; gap: clamp(26px, 4vw, 56px); align-items: start;
+  grid-template-columns: 1fr; padding-top: clamp(60px, 9vw, 108px);
 }
-@media (min-width: 900px) { .tsd-about { grid-template-columns: 380px 1fr; } }
+@media (min-width: 900px) { .tsd-about { grid-template-columns: 400px 1fr; } }
 .tsd-about img { width: 100%; height: auto; display: block; background: var(--paper-warm); }
-.tsd-about h2 {
-  font-family: "Bodoni Moda", Georgia, serif;
-  font-size: clamp(26px, 4vw, 44px); font-weight: 600; letter-spacing: -0.02em;
-  margin: 14px 0 18px; line-height: 1.08;
+.tsd-about h2 { font-size: clamp(28px, 4vw, 44px); margin: 10px 0 18px; line-height: 1.12; }
+.tsd-about p { margin: 0 0 18px; max-width: 54ch; color: var(--ink-soft); }
+.tsd-kit {
+  list-style: none; margin: 26px 0 0; padding: 0;
+  display: grid; gap: 10px 28px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  border-top: 1px solid var(--rule); padding-top: 20px;
 }
-.tsd-about p { margin: 0 0 16px; max-width: 56ch; color: var(--ink-soft); }
+.tsd-kit li { display: flex; justify-content: space-between; gap: 14px; font-size: 15px; }
+.tsd-kit span:first-child { color: var(--muted); }
+.tsd-kit span:last-child { font-weight: 600; text-align: right; }
+
+/* ---------- contact ---------- */
 
 .tsd-contact {
-  margin-top: clamp(56px, 9vw, 108px);
+  margin-top: clamp(60px, 9vw, 108px);
   background: var(--ink); color: var(--paper);
-  padding: clamp(46px, 8vw, 92px) 0;
+  padding: clamp(50px, 8vw, 96px) 0;
 }
-.tsd-contact h2 {
-  font-family: "Bodoni Moda", Georgia, serif;
-  font-size: clamp(30px, 6vw, 68px); font-weight: 600; letter-spacing: -0.025em;
-  margin: 16px 0 22px; line-height: 1; text-wrap: balance;
-}
-.tsd-contact p { color: rgba(245,242,234,.7); max-width: 50ch; margin: 0 0 30px; }
-.tsd-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.tsd-contact h2 { font-size: clamp(30px, 5.2vw, 60px); margin: 14px 0 20px; line-height: 1.06; }
+.tsd-contact > div > p { color: rgba(245,242,234,.82); max-width: 46ch; margin: 0 0 32px; font-size: 18px; }
+.tsd-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
 .tsd-btn {
-  font-family: "IBM Plex Mono", monospace; font-size: 11px;
-  letter-spacing: 0.18em; text-transform: uppercase;
-  padding: 14px 22px; text-decoration: none; display: inline-block;
+  font-family: "Archivo", sans-serif; font-size: 15px; font-weight: 600;
+  padding: 14px 26px; text-decoration: none; display: inline-block;
   background: var(--paper); color: var(--ink); border: 1px solid var(--paper);
 }
 .tsd-btn:hover { background: transparent; color: var(--paper); }
-.tsd-btn.is-ghost { background: transparent; color: var(--paper); border-color: rgba(245,242,234,.35); }
+.tsd-btn.is-ghost { background: transparent; color: var(--paper); border-color: rgba(245,242,234,.4); }
 .tsd-btn.is-ghost:hover { border-color: var(--paper); }
+.tsd-reach {
+  display: grid; gap: 10px 30px; margin: 34px 0 0; padding-top: 26px;
+  border-top: 1px solid rgba(245,242,234,.18);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  font-size: 15px;
+}
+.tsd-reach div span { display: block; color: rgba(245,242,234,.55); font-size: 13.5px; }
+.tsd-reach a { color: var(--paper); text-decoration: none; box-shadow: inset 0 -1px 0 rgba(245,242,234,.4); }
+.tsd-reach a:hover { box-shadow: inset 0 -2px 0 var(--paper); }
 
 .tsd-footer {
-  background: var(--ink); color: rgba(245,242,234,.5);
-  font-family: "IBM Plex Mono", monospace; font-size: 10.5px;
-  letter-spacing: 0.16em; text-transform: uppercase;
-  border-top: 1px solid rgba(245,242,234,.14);
+  background: var(--ink); color: rgba(245,242,234,.62);
+  font-size: 13.5px; border-top: 1px solid rgba(245,242,234,.16);
 }
 .tsd-footer div {
   display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
-  padding: 22px clamp(18px, 4vw, 48px); max-width: 1280px; margin: 0 auto;
+  padding: 22px clamp(20px, 4vw, 48px); max-width: 1240px; margin: 0 auto;
 }
 
 .tsd a:focus-visible, .tsd button:focus-visible {
-  outline: 2px solid var(--press); outline-offset: 3px;
+  outline: 3px solid var(--press); outline-offset: 3px;
 }
 .tsd-hero a:focus-visible, .tsd-hero button:focus-visible,
-.tsd-contact a:focus-visible { outline-color: #e8c9a0; }
+.tsd-contact a:focus-visible, .tsd-viewer button:focus-visible { outline-color: #e8c9a0; }
 
-@keyframes tsd-rise {
-  from { transform: translateY(104%); }
-  to { transform: translateY(0); }
-}
+@keyframes tsd-rise { from { transform: translateY(104%); } to { transform: translateY(0); } }
 @keyframes tsd-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes tsd-draw { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-@keyframes tsd-nudge {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(4px); }
-}
-@keyframes tsd-drift {
-  from { transform: scale(1.06); }
-  to { transform: scale(1); }
-}
+@keyframes tsd-nudge { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+@keyframes tsd-drift { from { transform: scale(1.06); } to { transform: scale(1); } }
 
 @media (prefers-reduced-motion: reduce) {
   .tsd *, .tsd *::before, .tsd *::after {
     animation: none !important;
     transition-duration: .01ms !important;
   }
-  .tsd-masthead span > i { transform: none; }
 }
