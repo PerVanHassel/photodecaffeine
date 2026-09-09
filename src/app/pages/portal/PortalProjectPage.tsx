@@ -287,6 +287,9 @@ export function PortalProjectPage() {
     project?.demoSlug && project?.demoLive
       ? `/demo/${project.demoSlug}`
       : project?.demoUrl || "";
+  // A demo that is linked but switched off used to leave the page blank, which
+  // reads to the client as "there is no demo" rather than "not yet".
+  const demoPending = Boolean(project?.demoSlug) && !demoHref;
   return (
     <div
       style={{
@@ -572,10 +575,11 @@ export function PortalProjectPage() {
             </div>
           )}
 
-          {/* Web demo. A demo built into this site is only shown once it has been
-              switched on; one hosted elsewhere is always reachable, so there is
-              nothing to switch. */}
-          {project.type === "web" && demoHref && (
+          {/* Web demo. A demo built into this site opens once it has been
+              switched on; until then the client sees that it is coming. One
+              hosted elsewhere is always reachable, so there is nothing to
+              switch. */}
+          {project.type === "web" && (demoHref || demoPending) && (
             <div
               style={{
                 border: "1px solid rgba(200,144,90,0.28)",
@@ -589,35 +593,52 @@ export function PortalProjectPage() {
                   Website-demo
                 </div>
                 <p style={{ color: "rgba(255,251,224,0.4)", fontSize: "13.5px", lineHeight: 1.7, margin: "0 0 18px" }}>
-                  {project.demoNotes
-                    ? project.demoNotes
-                    : "Dit is een werkende demo — klik erdoorheen alsof het je eigen site is."}
+                  {demoPending
+                    ? "De demo wordt nog afgemaakt. Zodra hij klaarstaat kun je hem hier openen — je krijgt er bericht van."
+                    : project.demoNotes
+                      ? project.demoNotes
+                      : "Dit is een werkende demo — klik erdoorheen alsof het je eigen site is."}
                 </p>
-                <a
-                  href={demoHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: "9px",
-                    backgroundColor: "#c8905a", color: "#0d0703",
-                    fontSize: "11px", fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase",
-                    padding: "13px 26px", textDecoration: "none",
-                  }}
-                >
-                  Demo openen <ExternalLink size={13} />
-                </a>
+                {demoHref ? (
+                  <a
+                    href={demoHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: "9px",
+                      backgroundColor: "#c8905a", color: "#0d0703",
+                      fontSize: "11px", fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase",
+                      padding: "13px 26px", textDecoration: "none",
+                    }}
+                  >
+                    Demo openen <ExternalLink size={13} />
+                  </a>
+                ) : (
+                  <span
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: "9px",
+                      border: "1px solid rgba(255,251,224,0.18)", color: "rgba(255,251,224,0.45)",
+                      fontSize: "11px", fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase",
+                      padding: "13px 26px",
+                    }}
+                  >
+                    Nog niet online
+                  </span>
+                )}
               </div>
 
               {/* A live preview, so the demo is usable without leaving the portal. */}
-              <div style={{ borderTop: "1px solid rgba(255,251,224,0.08)", backgroundColor: "rgba(255,251,224,0.02)" }}>
-                <iframe
-                  src={demoHref}
-                  title={`Demo — ${project.title}`}
-                  loading="lazy"
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                  style={{ display: "block", width: "100%", height: isMobile ? "420px" : "560px", border: "none" }}
-                />
-              </div>
+              {demoHref && (
+                <div style={{ borderTop: "1px solid rgba(255,251,224,0.08)", backgroundColor: "rgba(255,251,224,0.02)" }}>
+                  <iframe
+                    src={demoHref}
+                    title={`Demo — ${project.title}`}
+                    loading="lazy"
+                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                    style={{ display: "block", width: "100%", height: isMobile ? "420px" : "560px", border: "none" }}
+                  />
+                </div>
+              )}
             </div>
           )}
 
