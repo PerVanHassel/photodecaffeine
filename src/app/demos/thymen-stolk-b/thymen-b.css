@@ -1280,6 +1280,12 @@
   .tsb-nav.is-open { transform: none; }
   .tsb-nav a { padding: 14px 18px; font-size: 1rem; text-align: center; }
 
+  /* Room for a thumb. The category chips came out 33px tall and the footer
+     links 21px, both under the 44px a finger needs; the extra padding only
+     applies here, so the desktop layout is unchanged. */
+  .tsb-cats a, .tsb-cats button { padding-block: 11px; }
+  .tsb-footer-links a { padding-block: 11px; display: inline-block; }
+
   .tsb-nav-toggle { display: block; }
   .tsb-hero-cta { display: none; }
 
