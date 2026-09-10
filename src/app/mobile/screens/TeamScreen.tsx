@@ -13,6 +13,7 @@ import { ConfirmSheet, Sheet } from "../ui/Sheet";
 const PERMISSION_LABELS: Record<string, string> = {
   manageAdmins: "Team & rollen beheren",
   manageClients: "Klanten & projecten beheren",
+  manageQuotes: "Prijsopgaves maken & versturen",
   managePortfolio: "Portfolio beheren",
   manageInquiries: "Aanvragen inzien",
   manageReminders: "Actiepunten inzien",

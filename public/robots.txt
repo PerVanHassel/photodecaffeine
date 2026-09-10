@@ -2,6 +2,7 @@ User-agent: *
 Disallow: /admin/
 Disallow: /portal/
 Disallow: /fotoproef.html
+Disallow: /offerte/
 Allow: /
 
 Sitemap: https://www.photodecaffeine.com/sitemap.xml

@@ -2,7 +2,7 @@ import image_PDClogo2_0_12_1 from '@/imports/PDClogo2.0-12-1.png';
 import { Outlet, Navigate, useNavigate, useLocation } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { AdminThemeProvider, useAdminTheme } from "../../context/AdminThemeContext";
-import { LayoutDashboard, Users, LogOut, ChevronRight, Menu, X, Mail, Images, Bell, Settings, Car, Megaphone, Receipt, Shield, Sun, Moon, Star, Globe } from "lucide-react";
+import { LayoutDashboard, Users, LogOut, ChevronRight, Menu, X, Mail, Images, Bell, Settings, Car, Megaphone, Receipt, Shield, Sun, Moon, Star, Globe, FileText } from "lucide-react";
 import { useState } from "react";
 import { useMobile } from "../../hooks/useMobile";
 
@@ -33,6 +33,7 @@ const NAV_GROUPS = [
   {
     label: "Beheer",
     items: [
+      { label: "Prijsopgaves", path: "/admin/quotes", icon: FileText },
       { label: "Actiepunten", path: "/admin/reminders", icon: Bell },
       { label: "Declaraties", path: "/admin/declarations", icon: Receipt },
       { label: "Team & Rollen", path: "/admin/team", icon: Shield },

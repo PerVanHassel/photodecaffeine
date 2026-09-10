@@ -43,6 +43,8 @@ const AdminAutomotiveGalleryPage = lazy(() => import("./pages/portal/AdminAutomo
 const AdminAdsPage = lazy(() => import("./pages/portal/AdminAdsPage").then(m => ({ default: m.AdminAdsPage })));
 const AdminTeamPage = lazy(() => import("./pages/portal/AdminTeamPage").then(m => ({ default: m.AdminTeamPage })));
 const AdminDeclarationsPage = lazy(() => import("./pages/portal/AdminDeclarationsPage").then(m => ({ default: m.AdminDeclarationsPage })));
+const AdminQuotesPage = lazy(() => import("./pages/portal/AdminQuotesPage").then(m => ({ default: m.AdminQuotesPage })));
+const QuotePage = lazy(() => import("./pages/QuotePage").then(m => ({ default: m.QuotePage })));
 
 function PageLoader() {
   return (
@@ -98,6 +100,8 @@ const LazyAdminAutomotiveGalleryPage = wrap(AdminAutomotiveGalleryPage);
 const LazyAdminAdsPage = wrap(AdminAdsPage);
 const LazyAdminTeamPage = wrap(AdminTeamPage);
 const LazyAdminDeclarationsPage = wrap(AdminDeclarationsPage);
+const LazyAdminQuotesPage = wrap(AdminQuotesPage);
+const LazyQuotePage = wrap(QuotePage);
 
 export const router = createBrowserRouter([
   {
@@ -151,6 +155,7 @@ export const router = createBrowserRouter([
           { path: "services/automotive", Component: LazyAdminAutomotiveGalleryPage },
           { path: "ads", Component: LazyAdminAdsPage },
           { path: "team", Component: LazyAdminTeamPage },
+          { path: "quotes", Component: LazyAdminQuotesPage },
           { path: "declarations", Component: LazyAdminDeclarationsPage },
           { path: "reminders", Component: LazyAdminRemindersPage },
           { path: "settings", Component: LazyAdminSettingsPage },
@@ -159,6 +164,9 @@ export const router = createBrowserRouter([
     ],
   },
   { path: "/demo/:slug", Component: LazyDemoPage },
+  // A price quote the client opens from the emailed link — the token in the
+  // query string is what stands in for a login.
+  { path: "/offerte/:id", Component: LazyQuotePage },
   // The mobile admin app. Its whole subtree is lazily loaded (see
   // src/app/mobile/routes.tsx), so the public site never pays for it.
   appRoutes,

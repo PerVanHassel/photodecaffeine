@@ -37,6 +37,7 @@ const DEFAULT_ROLES: { name: string; permissions: Record<string, boolean> }[] = 
     permissions: {
       manageAdmins: false,
       manageClients: true,
+      manageQuotes: true,
       managePortfolio: true,
       manageInquiries: true,
       manageReminders: true,
@@ -51,6 +52,7 @@ const DEFAULT_ROLES: { name: string; permissions: Record<string, boolean> }[] = 
     permissions: {
       manageAdmins: false,
       manageClients: true,
+      manageQuotes: true,
       managePortfolio: false,
       manageInquiries: true,
       manageReminders: false,
@@ -65,6 +67,7 @@ const DEFAULT_ROLES: { name: string; permissions: Record<string, boolean> }[] = 
     permissions: {
       manageAdmins: false,
       manageClients: true,
+      manageQuotes: true,
       managePortfolio: true,
       manageInquiries: true,
       manageReminders: true,
@@ -3507,6 +3510,592 @@ app.put("/make-server-0951c59e/admin/settings", async (c) => {
   } catch (err) {
     console.log("Update settings error:", err);
     return c.json({ error: `Failed to update settings: ${err}` }, 500);
+  }
+});
+
+// ============================================================================
+// Prijsopgaves (offertes)
+// ---------------------------------------------------------------------------
+// An offer is a small document: a couple of monthly lines, a couple of one-off
+// lines, what is included, and the terms underneath. The same shape covers a
+// photo shoot (only one-off lines) and a website (monthly + one-off), so there
+// is one editor and one email template rather than two of each.
+//
+// It goes out by email and carries a link to a public page. That link is the
+// only way in — quotes go to people who often do not have a portal account —
+// so every quote gets a random token and the public routes check it.
+// ============================================================================
+
+interface QuoteLine {
+  label: string;
+  amount: number;
+  note: string;
+}
+
+function quoteLines(raw: any): QuoteLine[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((l: any) => ({
+      label: String(l?.label ?? "").trim(),
+      amount: Math.round((Number(l?.amount) || 0) * 100) / 100,
+      note: String(l?.note ?? "").trim(),
+    }))
+    .filter((l) => l.label !== "")
+    .slice(0, 20);
+}
+
+function quoteTexts(raw: any): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((s: any) => String(s ?? "").trim())
+    .filter(Boolean)
+    .slice(0, 30);
+}
+
+function quoteTerms(raw: any): { label: string; text: string }[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((t: any) => ({
+      label: String(t?.label ?? "").trim(),
+      text: String(t?.text ?? "").trim(),
+    }))
+    .filter((t) => t.label !== "" || t.text !== "")
+    .slice(0, 10);
+}
+
+function quoteSum(lines: QuoteLine[]): number {
+  return Math.round(lines.reduce((sum, l) => sum + (Number(l.amount) || 0), 0) * 100) / 100;
+}
+
+/** €45 / €1.234,50 — no cents when the amount is round, the way a price reads. */
+function euro(amount: number): string {
+  const n = Number(amount) || 0;
+  const decimals = Math.round(n * 100) % 100 === 0 ? 0 : 2;
+  return `€${n.toLocaleString("nl-NL", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  })}`;
+}
+
+const QUOTE_STATUSES = ["draft", "sent", "accepted", "declined"];
+
+const QUOTE_STATUS_LABELS: Record<string, string> = {
+  draft: "Concept",
+  sent: "Verstuurd",
+  accepted: "Geaccepteerd",
+  declined: "Afgewezen",
+};
+
+/** OF-2026-004 — sequential within the year the quote is made. */
+async function nextQuoteNumber(): Promise<string> {
+  const year = new Date().getFullYear();
+  const idsStr = await kv.get("quotes:quoteIds");
+  const ids: string[] = idsStr ? JSON.parse(idsStr) : [];
+  const values = await Promise.all(ids.map((id) => kv.get(`quotes:quote:${id}`)));
+  const thisYear = values
+    .filter(Boolean)
+    .map((v) => JSON.parse(v as string))
+    .filter((q) => String(q.number || "").startsWith(`OF-${year}-`));
+  return `OF-${year}-${String(thisYear.length + 1).padStart(3, "0")}`;
+}
+
+/** Everything an admin may set on a quote, cleaned up. */
+function quoteFields(body: any) {
+  return {
+    type: body.type === "photo" ? "photo" : "web",
+    title: String(body.title ?? "").trim(),
+    subtitle: String(body.subtitle ?? "").trim(),
+    clientId: String(body.clientId ?? "").trim(),
+    clientName: String(body.clientName ?? "").trim(),
+    clientEmail: String(body.clientEmail ?? "").trim().toLowerCase(),
+    intro: String(body.intro ?? "").trim(),
+    monthly: quoteLines(body.monthly),
+    oneTime: quoteLines(body.oneTime),
+    included: quoteTexts(body.included),
+    terms: quoteTerms(body.terms),
+    notes: String(body.notes ?? "").trim(),
+    validUntil: String(body.validUntil ?? "").trim(),
+  };
+}
+
+/** The public shape — the token and the internal bookkeeping stay behind. */
+function publicQuote(quote: any) {
+  const monthly = quoteLines(quote.monthly);
+  const oneTime = quoteLines(quote.oneTime);
+  return {
+    id: quote.id,
+    number: quote.number || "",
+    type: quote.type || "web",
+    title: quote.title || "",
+    subtitle: quote.subtitle || "",
+    clientName: quote.clientName || "",
+    intro: quote.intro || "",
+    monthly,
+    oneTime,
+    included: quoteTexts(quote.included),
+    terms: quoteTerms(quote.terms),
+    notes: quote.notes || "",
+    validUntil: quote.validUntil || "",
+    status: quote.status || "draft",
+    sentAt: quote.sentAt || "",
+    respondedAt: quote.respondedAt || "",
+    totals: { monthly: quoteSum(monthly), oneTime: quoteSum(oneTime) },
+  };
+}
+
+function quoteLink(quote: any): string {
+  return `${SITE_URL}/offerte/${quote.id}?t=${quote.token}`;
+}
+
+function quoteDate(iso: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" });
+}
+
+// --- The offer, as email rows ---
+// Mail clients drop flexbox and most modern CSS, so the whole thing is nested
+// tables with inline styles, matching the other emails in this file.
+function quoteEmailRows(quote: any, message: string): string {
+  const monthly = quoteLines(quote.monthly);
+  const oneTime = quoteLines(quote.oneTime);
+  const included = quoteTexts(quote.included);
+  const terms = quoteTerms(quote.terms);
+  const link = quoteLink(quote);
+
+  const muted = "rgba(255,251,224,0.55)";
+  const faint = "rgba(255,251,224,0.28)";
+  const cardStyle =
+    "background-color:rgba(255,251,224,0.03);border:1px solid rgba(255,251,224,0.08);";
+
+  const lineRow = (l: QuoteLine) => `
+    <tr>
+      <td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.05);">
+        <span style="color:#fffbe0;font-size:14px;">${escapeHtml(l.label)}</span>
+        ${l.note ? `<br /><span style="color:${faint};font-size:11.5px;">${escapeHtml(l.note)}</span>` : ""}
+      </td>
+      <td align="right" valign="top" style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.05);white-space:nowrap;">
+        <span style="color:#fffbe0;font-size:14px;font-weight:600;">${euro(l.amount)}</span>
+      </td>
+    </tr>`;
+
+  const block = (label: string, lines: QuoteLine[], totalLabel: string, perMonth: boolean) => {
+    if (lines.length === 0) return "";
+    const total = quoteSum(lines);
+    return `
+    <tr>
+      <td style="padding:0 36px 14px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="${cardStyle}">
+          <tr>
+            <td style="padding:20px 20px 4px;">
+              <span style="color:${faint};font-size:9px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;">${escapeHtml(label)}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:6px 20px 0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${lines.map(lineRow).join("")}</table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 20px 20px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:rgba(200,144,90,0.08);">
+                <tr>
+                  <td style="padding:14px 16px;">
+                    <span style="color:${muted};font-size:12px;">${escapeHtml(totalLabel)}</span>
+                  </td>
+                  <td align="right" style="padding:14px 16px;white-space:nowrap;">
+                    <span style="color:#c8905a;font-size:24px;font-weight:800;letter-spacing:-0.02em;">${euro(total)}</span>
+                    ${perMonth ? `<span style="color:${faint};font-size:12px;"> p/m</span>` : ""}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>`;
+  };
+
+  const includedBlock =
+    included.length === 0
+      ? ""
+      : `
+    <tr>
+      <td style="padding:6px 36px 14px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:rgba(120,190,140,0.07);border:1px solid rgba(120,190,140,0.2);">
+          <tr>
+            <td style="padding:20px 20px 12px;">
+              <span style="color:rgba(120,190,140,0.95);font-size:13px;font-weight:700;">&#10003;&nbsp;&nbsp;Wat is inbegrepen</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 20px 20px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                ${included
+                  .map(
+                    (item) => `
+                <tr>
+                  <td valign="top" width="18" style="padding:5px 0;">
+                    <span style="color:rgba(120,190,140,0.7);font-size:13px;">&bull;</span>
+                  </td>
+                  <td style="padding:5px 0;">
+                    <span style="color:rgba(120,190,140,0.95);font-size:13.5px;line-height:1.6;">${escapeHtml(item)}</span>
+                  </td>
+                </tr>`
+                  )
+                  .join("")}
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>`;
+
+  const termsBlock =
+    terms.length === 0
+      ? ""
+      : `
+    <tr>
+      <td style="padding:10px 36px 0;border-top:1px solid rgba(255,251,224,0.06);">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          ${terms
+            .map(
+              (t) => `
+          <tr>
+            <td style="padding:9px 0;">
+              <span style="color:#fffbe0;font-size:13px;font-weight:700;">${escapeHtml(t.label)}${t.label ? ":" : ""}</span>
+              <span style="color:${muted};font-size:13px;line-height:1.7;"> ${escapeHtml(t.text)}</span>
+            </td>
+          </tr>`
+            )
+            .join("")}
+        </table>
+      </td>
+    </tr>`;
+
+  const greeting = quote.clientName
+    ? `Hallo ${escapeHtml(String(quote.clientName).split(" ")[0])},`
+    : "Hallo,";
+
+  return `
+    <tr>
+      <td style="padding:32px 36px 0;">
+        <span style="color:#c8905a;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;">Prijsopgave${quote.number ? ` &middot; ${escapeHtml(quote.number)}` : ""}</span>
+        <div style="height:10px;line-height:10px;font-size:0;">&nbsp;</div>
+        <span style="display:block;color:#fffbe0;font-size:26px;font-weight:800;letter-spacing:-0.02em;line-height:1.2;">${escapeHtml(quote.title || "Prijsopgave")}</span>
+        ${quote.subtitle ? `<div style="height:8px;line-height:8px;font-size:0;">&nbsp;</div><span style="color:${muted};font-size:14px;font-weight:300;">${escapeHtml(quote.subtitle)}</span>` : ""}
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:22px 36px 20px;">
+        <span style="color:${muted};font-size:14px;font-weight:300;line-height:1.75;">${greeting}${message ? ` ${escapeHtml(message)}` : ""}</span>
+        ${quote.intro ? `<div style="height:12px;line-height:12px;font-size:0;">&nbsp;</div><span style="color:${muted};font-size:14px;font-weight:300;line-height:1.75;">${escapeHtml(quote.intro)}</span>` : ""}
+      </td>
+    </tr>
+    ${block("Maandelijks", monthly, "Totaal per maand", true)}
+    ${block("Eenmalig", oneTime, "Totaal eenmalig", false)}
+    ${includedBlock}
+    ${termsBlock}
+    ${
+      quote.notes
+        ? `<tr><td style="padding:14px 36px 0;"><span style="color:${muted};font-size:13px;line-height:1.75;">${escapeHtml(quote.notes)}</span></td></tr>`
+        : ""
+    }
+    ${
+      quote.validUntil
+        ? `<tr><td style="padding:14px 36px 0;"><span style="color:${faint};font-size:12px;">Deze prijsopgave is geldig tot ${escapeHtml(quoteDate(quote.validUntil))}.</span></td></tr>`
+        : ""
+    }
+    <tr>
+      <td style="padding:26px 36px 40px;">
+        <a href="${link}" style="display:inline-block;background-color:#c8905a;color:#0d0703;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 30px;">Bekijk en reageer</a>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:18px 36px 28px;border-top:1px solid rgba(255,251,224,0.06);">
+        <span style="color:rgba(255,251,224,0.2);font-size:11px;">Werkt de knop niet? Open dan deze link: ${link}<br />Vragen of iets aanpassen? Antwoord gerust op deze mail.</span>
+      </td>
+    </tr>`;
+}
+
+// --- GET /admin/quotes — every quote, newest first ---
+app.get("/make-server-0951c59e/admin/quotes", async (c) => {
+  try {
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
+    if (!(await hasPermission(admin, "manageQuotes"))) {
+      return c.json({ error: "Je hebt geen rechten voor prijsopgaves." }, 403);
+    }
+
+    const idsStr = await kv.get("quotes:quoteIds");
+    const ids: string[] = idsStr ? JSON.parse(idsStr) : [];
+    const values = await Promise.all(ids.map((id) => kv.get(`quotes:quote:${id}`)));
+    const quotes = values
+      .filter(Boolean)
+      .map((v) => JSON.parse(v as string))
+      .map((q) => ({
+        ...publicQuote(q),
+        clientId: q.clientId || "",
+        clientEmail: q.clientEmail || "",
+        createdAt: q.createdAt || "",
+        updatedAt: q.updatedAt || "",
+        response: q.response || "",
+        link: quoteLink(q),
+      }))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return c.json({ quotes });
+  } catch (err) {
+    console.log("Get quotes error:", err);
+    return c.json({ error: `Failed to fetch quotes: ${err}` }, 500);
+  }
+});
+
+// --- POST /admin/quotes — new quote, always a concept ---
+app.post("/make-server-0951c59e/admin/quotes", async (c) => {
+  try {
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
+    if (!(await hasPermission(admin, "manageQuotes"))) {
+      return c.json({ error: "Je hebt geen rechten voor prijsopgaves." }, 403);
+    }
+
+    const body = await c.req.json().catch(() => ({}));
+    const fields = quoteFields(body);
+    if (!fields.title) return c.json({ error: "Vul een titel in." }, 400);
+    if (fields.monthly.length === 0 && fields.oneTime.length === 0) {
+      return c.json({ error: "Zet er minstens één bedrag in." }, 400);
+    }
+
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const quote = {
+      id,
+      number: await nextQuoteNumber(),
+      ...fields,
+      // Whoever holds this token can open the quote page — it is what the
+      // email link carries instead of a login.
+      token: crypto.randomUUID().replace(/-/g, ""),
+      status: "draft",
+      sentAt: "",
+      sendCount: 0,
+      respondedAt: "",
+      response: "",
+      createdAt: now,
+      updatedAt: now,
+      createdBy: { id: admin.id, name: admin.user_metadata?.name || admin.email },
+    };
+
+    await kv.set(`quotes:quote:${id}`, JSON.stringify(quote));
+    const idsStr = await kv.get("quotes:quoteIds");
+    const ids: string[] = idsStr ? JSON.parse(idsStr) : [];
+    ids.push(id);
+    await kv.set("quotes:quoteIds", JSON.stringify(ids));
+
+    return c.json({ quote: { ...publicQuote(quote), clientId: quote.clientId, clientEmail: quote.clientEmail, createdAt: now, updatedAt: now, response: "", link: quoteLink(quote) } });
+  } catch (err) {
+    console.log("Create quote error:", err);
+    return c.json({ error: `Prijsopgave aanmaken mislukt: ${err}` }, 500);
+  }
+});
+
+// --- PUT /admin/quotes/:id — edit ---
+app.put("/make-server-0951c59e/admin/quotes/:id", async (c) => {
+  try {
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
+    if (!(await hasPermission(admin, "manageQuotes"))) {
+      return c.json({ error: "Je hebt geen rechten voor prijsopgaves." }, 403);
+    }
+
+    const id = c.req.param("id");
+    const existingStr = await kv.get(`quotes:quote:${id}`);
+    if (!existingStr) return c.json({ error: "Prijsopgave niet gevonden" }, 404);
+    const existing = JSON.parse(existingStr);
+
+    const body = await c.req.json().catch(() => ({}));
+    const fields = quoteFields({ ...existing, ...body });
+    if (!fields.title) return c.json({ error: "Vul een titel in." }, 400);
+
+    // The status is set by sending and by the client's answer; an admin may
+    // only put it back to a concept or mark it by hand from the list.
+    const status =
+      typeof body.status === "string" && QUOTE_STATUSES.includes(body.status)
+        ? body.status
+        : existing.status;
+
+    const quote = {
+      ...existing,
+      ...fields,
+      status,
+      updatedAt: new Date().toISOString(),
+    };
+    await kv.set(`quotes:quote:${id}`, JSON.stringify(quote));
+
+    return c.json({ quote: { ...publicQuote(quote), clientId: quote.clientId, clientEmail: quote.clientEmail, createdAt: quote.createdAt, updatedAt: quote.updatedAt, response: quote.response || "", link: quoteLink(quote) } });
+  } catch (err) {
+    console.log("Update quote error:", err);
+    return c.json({ error: `Prijsopgave opslaan mislukt: ${err}` }, 500);
+  }
+});
+
+// --- DELETE /admin/quotes/:id ---
+app.delete("/make-server-0951c59e/admin/quotes/:id", async (c) => {
+  try {
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
+    if (!(await hasPermission(admin, "manageQuotes"))) {
+      return c.json({ error: "Je hebt geen rechten voor prijsopgaves." }, 403);
+    }
+
+    const id = c.req.param("id");
+    await kv.del(`quotes:quote:${id}`);
+    const idsStr = await kv.get("quotes:quoteIds");
+    const ids: string[] = idsStr ? JSON.parse(idsStr) : [];
+    await kv.set("quotes:quoteIds", JSON.stringify(ids.filter((x) => x !== id)));
+
+    return c.json({ success: true });
+  } catch (err) {
+    console.log("Delete quote error:", err);
+    return c.json({ error: `Prijsopgave verwijderen mislukt: ${err}` }, 500);
+  }
+});
+
+// --- POST /admin/quotes/:id/send — mail it to the client ---
+app.post("/make-server-0951c59e/admin/quotes/:id/send", async (c) => {
+  try {
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
+    if (!(await hasPermission(admin, "manageQuotes"))) {
+      return c.json({ error: "Je hebt geen rechten voor prijsopgaves." }, 403);
+    }
+
+    const id = c.req.param("id");
+    const existingStr = await kv.get(`quotes:quote:${id}`);
+    if (!existingStr) return c.json({ error: "Prijsopgave niet gevonden" }, 404);
+    const quote = JSON.parse(existingStr);
+
+    const body = await c.req.json().catch(() => ({}));
+    const to = String(body.email || quote.clientEmail || "").trim().toLowerCase();
+    if (!EMAIL_RE.test(to)) {
+      return c.json({ error: "Vul een geldig e-mailadres in om naar te versturen." }, 400);
+    }
+    const message = String(body.message || "").trim();
+
+    // This email IS the request, so a failure has to come back as a failure —
+    // no telling the admin it went out when it did not.
+    const sent = await sendEmail({
+      to,
+      subject: `Prijsopgave — ${quote.title || "PhotoDeCaffeine"}`,
+      replyTo: EMAIL_ADMIN_NOTIFY,
+      html: emailWrap(quoteEmailRows(quote, message)),
+    });
+    if (!sent.ok) {
+      return c.json({ error: sent.error || "De prijsopgave kon niet verstuurd worden." }, 502);
+    }
+
+    const now = new Date().toISOString();
+    const updated = {
+      ...quote,
+      clientEmail: to,
+      // An answer already given stays standing; re-sending does not undo it.
+      status: quote.status === "accepted" || quote.status === "declined" ? quote.status : "sent",
+      sentAt: now,
+      sendCount: (Number(quote.sendCount) || 0) + 1,
+      updatedAt: now,
+    };
+    await kv.set(`quotes:quote:${id}`, JSON.stringify(updated));
+
+    return c.json({ success: true, quote: { ...publicQuote(updated), clientId: updated.clientId, clientEmail: to, createdAt: updated.createdAt, updatedAt: now, response: updated.response || "", link: quoteLink(updated) } });
+  } catch (err) {
+    console.log("Send quote error:", err);
+    return c.json({ error: `Versturen mislukt: ${err}` }, 500);
+  }
+});
+
+// --- GET /quote/:id?t=token — the client's own copy, no login ---
+app.get("/make-server-0951c59e/quote/:id", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const token = c.req.query("t") || "";
+    const str = await kv.get(`quotes:quote:${id}`);
+    if (!str) return c.json({ error: "Deze prijsopgave bestaat niet (meer)." }, 404);
+    const quote = JSON.parse(str);
+    if (!token || token !== quote.token) {
+      return c.json({ error: "Deze link klopt niet." }, 403);
+    }
+    // A concept is not for the client's eyes yet.
+    if (quote.status === "draft") {
+      return c.json({ error: "Deze prijsopgave is nog niet verstuurd." }, 404);
+    }
+    return c.json({ quote: publicQuote(quote) });
+  } catch (err) {
+    console.log("Get public quote error:", err);
+    return c.json({ error: `Prijsopgave ophalen mislukt: ${err}` }, 500);
+  }
+});
+
+// --- POST /quote/:id/respond?t=token — accept or decline ---
+app.post("/make-server-0951c59e/quote/:id/respond", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const token = c.req.query("t") || "";
+    const str = await kv.get(`quotes:quote:${id}`);
+    if (!str) return c.json({ error: "Deze prijsopgave bestaat niet (meer)." }, 404);
+    const quote = JSON.parse(str);
+    if (!token || token !== quote.token) {
+      return c.json({ error: "Deze link klopt niet." }, 403);
+    }
+    if (quote.status === "draft") {
+      return c.json({ error: "Deze prijsopgave is nog niet verstuurd." }, 404);
+    }
+
+    const body = await c.req.json().catch(() => ({}));
+    const answer = body.answer === "accepted" ? "accepted" : body.answer === "declined" ? "declined" : "";
+    if (!answer) return c.json({ error: "Kies akkoord of niet akkoord." }, 400);
+    const response = String(body.message || "").trim().slice(0, 2000);
+
+    const now = new Date().toISOString();
+    const updated = { ...quote, status: answer, response, respondedAt: now, updatedAt: now };
+    await kv.set(`quotes:quote:${id}`, JSON.stringify(updated));
+
+    const who = escapeHtml(quote.clientName || quote.clientEmail || "De klant");
+    const verdict = answer === "accepted" ? "gaat akkoord" : "gaat niet akkoord";
+    await sendEmail({
+      to: EMAIL_ADMIN_NOTIFY,
+      subject: `Prijsopgave ${answer === "accepted" ? "geaccepteerd" : "afgewezen"} — ${quote.title || ""}`,
+      replyTo: quote.clientEmail || undefined,
+      html: emailWrap(`
+        <tr>
+          <td style="padding:32px 36px 0;">
+            <span style="color:#c8905a;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;">Reactie op prijsopgave</span>
+            <div style="height:10px;line-height:10px;font-size:0;">&nbsp;</div>
+            <span style="display:block;color:#fffbe0;font-size:22px;font-weight:800;letter-spacing:-0.01em;">${who} ${verdict}</span>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 36px 0;">
+            <span style="color:rgba(255,251,224,0.55);font-size:14px;font-weight:300;line-height:1.75;">${escapeHtml(quote.number || "")} &mdash; ${escapeHtml(quote.title || "")}</span>
+          </td>
+        </tr>
+        ${
+          response
+            ? `<tr><td style="padding:16px 36px 0;"><span style="color:rgba(255,251,224,0.55);font-size:14px;font-weight:300;line-height:1.75;">&ldquo;${escapeHtml(response)}&rdquo;</span></td></tr>`
+            : ""
+        }
+        <tr>
+          <td style="padding:26px 36px 40px;">
+            <a href="${SITE_URL}/admin/quotes" style="display:inline-block;background-color:#c8905a;color:#0d0703;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 30px;">Open in het adminpaneel</a>
+          </td>
+        </tr>
+      `),
+    });
+
+    return c.json({ quote: publicQuote(updated) });
+  } catch (err) {
+    console.log("Respond to quote error:", err);
+    return c.json({ error: `Reactie versturen mislukt: ${err}` }, 500);
   }
 });
 

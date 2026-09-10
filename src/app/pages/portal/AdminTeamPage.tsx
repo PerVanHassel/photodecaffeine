@@ -10,6 +10,7 @@ const API = `https://${projectId}.supabase.co/functions/v1/make-server-0951c59e`
 const PERMISSION_LABELS: Record<string, string> = {
   manageAdmins: "Team & rollen beheren",
   manageClients: "Klanten & projecten beheren",
+  manageQuotes: "Prijsopgaves maken & versturen",
   managePortfolio: "Portfolio beheren",
   manageInquiries: "Aanvragen inzien",
   manageReminders: "Actiepunten inzien",
