@@ -449,7 +449,7 @@ export function AdminTeamPage() {
               </div>
               <div>
                 <label style={labelStyle}>Wachtwoord *</label>
-                <input style={inputStyle} type="password" value={addForm.password} onChange={(e) => setAddForm({ ...addForm, password: e.target.value })} placeholder="Tijdelijk wachtwoord" />
+                <input style={inputStyle} type="password" value={addForm.password} onChange={(e) => setAddForm({ ...addForm, password: e.target.value })} placeholder="Tijdelijk wachtwoord (min. 8 tekens)" />
               </div>
               <div>
                 <label style={labelStyle}>Rol *</label>

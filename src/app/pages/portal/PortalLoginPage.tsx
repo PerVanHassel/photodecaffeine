@@ -380,8 +380,8 @@ export function PortalLoginPage() {
                   type={showSuPass ? "text" : "password"}
                   value={suPassword}
                   onChange={(e) => setSuPassword(e.target.value)}
-                  placeholder="Min. 6 characters"
-                  minLength={6}
+                  placeholder="Min. 8 characters"
+                  minLength={8}
                   required
                   style={{ ...inputStyle, paddingRight: "48px" }}
                   onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.5)")}
