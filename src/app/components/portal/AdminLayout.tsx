@@ -2,9 +2,10 @@ import image_PDClogo2_0_12_1 from '@/imports/PDClogo2.0-12-1.png';
 import { Outlet, Navigate, useNavigate, useLocation } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { AdminThemeProvider, useAdminTheme } from "../../context/AdminThemeContext";
-import { LayoutDashboard, Users, LogOut, ChevronRight, Menu, X, Mail, Images, Bell, Settings, Car, Megaphone, Receipt, Shield, Sun, Moon, Star, Globe, FileText } from "lucide-react";
+import { LayoutDashboard, Users, LogOut, ChevronRight, Menu, X, Mail, Images, Settings, Car, Megaphone, Receipt, Shield, Sun, Moon, Star, Globe, FileText, ListChecks } from "lucide-react";
 import { useState } from "react";
 import { useMobile } from "../../hooks/useMobile";
+import { NotificationBell } from "./NotificationBell";
 
 const NAV_GROUPS = [
   {
@@ -34,7 +35,7 @@ const NAV_GROUPS = [
     label: "Beheer",
     items: [
       { label: "Prijsopgaves", path: "/admin/quotes", icon: FileText },
-      { label: "Actiepunten", path: "/admin/reminders", icon: Bell },
+      { label: "Actiepunten", path: "/admin/reminders", icon: ListChecks },
       { label: "Declaraties", path: "/admin/declarations", icon: Receipt },
       { label: "Team & Rollen", path: "/admin/team", icon: Shield },
       { label: "Settings", path: "/admin/settings", icon: Settings },
@@ -277,12 +278,7 @@ function AdminLayoutInner() {
             )}
           </div>
           <ThemeToggle compact />
-          <button
-            onClick={() => { navigate("/admin/reminders"); setSidebarOpen(false); }}
-            style={{ background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))", color: "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
-          >
-            <Bell size={16} />
-          </button>
+          <NotificationBell />
           <div style={{
             width: "28px", height: "28px",
             backgroundColor: "rgba(200,144,90,0.15)",
@@ -350,15 +346,7 @@ function AdminLayoutInner() {
           </span>
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "8px" }}>
             <ThemeToggle />
-            <button
-              onClick={() => navigate("/admin/reminders")}
-              style={{ background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))", color: "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.2s ease" }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))"; e.currentTarget.style.color = "var(--admin-fg-solid)"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))"; e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))"; }}
-              title="Actiepunten"
-            >
-              <Bell size={16} />
-            </button>
+            <NotificationBell />
           </div>
         </div>
         <Outlet />

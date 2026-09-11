@@ -217,6 +217,36 @@ export function PortalLoginPage() {
           </div>
         )}
 
+        {/* No invite in the link — say up front that an account needs one, so a
+            refusal from the server is not the first anyone hears of it. */}
+        {!invitedEmail && tab === "signup" && (
+          <div
+            style={{
+              border: "1px solid rgba(255,251,224,0.1)",
+              backgroundColor: "rgba(255,251,224,0.02)",
+              padding: "14px 16px",
+              marginBottom: "28px",
+            }}
+          >
+            <div
+              style={{
+                color: "rgba(255,251,224,0.4)",
+                fontSize: "9px",
+                fontWeight: 700,
+                letterSpacing: "0.25em",
+                textTransform: "uppercase",
+                marginBottom: "7px",
+              }}
+            >
+              Invitation Only
+            </div>
+            <div style={{ color: "rgba(255,251,224,0.5)", fontSize: "12px", lineHeight: 1.6 }}>
+              Accounts are opened by invitation. If PDC has invited you, use the link in that
+              email — or sign up below with the address it was sent to.
+            </div>
+          </div>
+        )}
+
         {/* Sign In Form */}
         {tab === "signin" && (
           <form onSubmit={handleSignIn} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>

@@ -128,6 +128,9 @@ const AD_VISIT_MARKER = "__ad_visit__";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
+// How long a client invitation stays good for.
+const INVITE_VALID_DAYS = 30;
+
 // Escapes values interpolated into email HTML so a stray quote or angle
 // bracket in a name or address can't break out of the surrounding markup.
 function escapeHtml(str: string): string {
@@ -575,6 +578,24 @@ app.post("/make-server-0951c59e/portal/signup", async (c) => {
   try {
     const { email, password, name, company } = await c.req.json();
 
+    // An account is made for someone we invited, not for whoever finds this
+    // address. Without a standing invitation there is nothing to activate.
+    const inviteEmail = String(email || "").trim().toLowerCase();
+    const inviteStr = await kv.get(`portal:invite:${inviteEmail}`);
+    const invite = inviteStr ? JSON.parse(inviteStr) : null;
+    if (!invite || invite.usedAt) {
+      return c.json(
+        { error: "Voor dit e-mailadres staat geen uitnodiging klaar. Vraag PhotoDeCaffeine om een uitnodiging." },
+        403
+      );
+    }
+    if (invite.expiresAt && new Date(invite.expiresAt).getTime() < Date.now()) {
+      return c.json(
+        { error: "Deze uitnodiging is verlopen. Vraag PhotoDeCaffeine om een nieuwe." },
+        403
+      );
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -605,6 +626,12 @@ app.post("/make-server-0951c59e/portal/signup", async (c) => {
     // Initialize empty project list for new client
     await kv.set(`portal:client:${userId}:projectIds`, JSON.stringify([]));
 
+    // Spent — an invitation makes one account, not a supply of them.
+    await kv.set(
+      `portal:invite:${inviteEmail}`,
+      JSON.stringify({ ...invite, usedAt: new Date().toISOString(), userId })
+    );
+
     // Notify admin of the new signup
     await sendEmail({
       to: EMAIL_ADMIN_NOTIFY,
@@ -634,6 +661,13 @@ app.post("/make-server-0951c59e/portal/signup", async (c) => {
           </td>
         </tr>
       `),
+    });
+
+    await notify({
+      type: "client",
+      title: `Nieuwe klant: ${name || email}`,
+      body: company ? `${company} — ${email}` : email,
+      link: "/admin/clients",
     });
 
     return c.json({ success: true });
@@ -776,6 +810,13 @@ app.post("/make-server-0951c59e/portal/project/:id/messages", async (c) => {
           </td>
         </tr>
       `),
+    });
+
+    await notify({
+      type: "message",
+      title: `${newMessage.senderName} stuurde een bericht`,
+      body: newMessage.content,
+      link: `/admin/project/${projectId}`,
     });
 
     return c.json({ message: newMessage });
@@ -952,6 +993,20 @@ app.post("/make-server-0951c59e/admin/clients/invite", async (c) => {
     if (!sent.ok) {
       return c.json({ error: sent.error || "De uitnodiging kon niet verstuurd worden." }, 502);
     }
+
+    // The record is what opens the sign-up form for this address. Re-inviting
+    // overwrites it, so the clock starts again with every new invitation.
+    await kv.set(
+      `portal:invite:${email}`,
+      JSON.stringify({
+        email,
+        name,
+        invitedBy: { id: admin.id, name: admin.user_metadata?.name || admin.email },
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + INVITE_VALID_DAYS * 86400000).toISOString(),
+        usedAt: "",
+      })
+    );
 
     return c.json({ success: true, email });
   } catch (err) {
@@ -1903,6 +1958,13 @@ app.post("/make-server-0951c59e/contact", async (c) => {
     if (inquiry.name === AD_VISIT_MARKER) {
       return c.json({ success: true });
     }
+
+    await notify({
+      type: "inquiry",
+      title: `Nieuwe aanvraag van ${inquiry.name}`,
+      body: inquiry.message,
+      link: "/admin/inquiries",
+    });
 
     // Notify admin — reply-to set to the visitor so replying goes straight to them
     await sendEmail({
@@ -3237,6 +3299,13 @@ app.post("/make-server-0951c59e/portal/project/:id/review", async (c) => {
       `),
     });
 
+    await notify({
+      type: "review",
+      title: `${stars}/5 sterren van ${review.clientName}`,
+      body: review.text,
+      link: "/admin/reviews",
+    });
+
     return c.json({ review });
   } catch (err) {
     console.log("Submit review error:", err);
@@ -3352,6 +3421,13 @@ app.post("/make-server-0951c59e/portal/project/:id/feedback", async (c) => {
           </td>
         </tr>
       `),
+    });
+
+    await notify({
+      type: "feedback",
+      title: `Feedback van ${entry.clientName}`,
+      body: `${project.title} — ${items.length} opmerking${items.length === 1 ? "" : "en"}`,
+      link: `/admin/project/${projectId}`,
     });
 
     return c.json({ feedback: entry });
@@ -4092,10 +4168,128 @@ app.post("/make-server-0951c59e/quote/:id/respond", async (c) => {
       `),
     });
 
+    await notify({
+      type: "quote",
+      title: `${quote.clientName || quote.clientEmail || "De klant"} ${verdict}`,
+      body: response || `${quote.number || ""} — ${quote.title || ""}`,
+      link: "/admin/quotes",
+    });
+
     return c.json({ quote: publicQuote(updated) });
   } catch (err) {
     console.log("Respond to quote error:", err);
     return c.json({ error: `Reactie versturen mislukt: ${err}` }, 500);
+  }
+});
+
+// ============================================================================
+// Meldingen
+// ---------------------------------------------------------------------------
+// What the bell in the admin top bar shows: a client wrote something, someone
+// signed up, an enquiry came in, a review or feedback landed, a quote was
+// answered. Every one of those already sends an email; this is the same news
+// in the panel, so it does not depend on the inbox being read.
+//
+// One key holds the list, newest first, capped — meldingen are a running tail,
+// not records, and a per-id key each would cost a read per item on every open.
+// Read state is per admin: a timestamp, so nothing has to be written per item.
+// ============================================================================
+
+const NOTIFICATION_LIMIT = 100;
+
+/**
+ * Adds a notification. Never throws and never blocks the caller's own work —
+ * a failed melding must not fail the message, signup or enquiry that caused it.
+ */
+async function notify(n: {
+  type: "message" | "client" | "inquiry" | "review" | "feedback" | "quote";
+  title: string;
+  body?: string;
+  link?: string;
+}): Promise<void> {
+  try {
+    const raw = await kv.get("notifications:items");
+    const items = raw ? JSON.parse(raw) : [];
+    items.unshift({
+      id: crypto.randomUUID(),
+      type: n.type,
+      title: String(n.title || "").slice(0, 160),
+      body: String(n.body || "").replace(/\s+/g, " ").trim().slice(0, 240),
+      link: n.link || "",
+      createdAt: new Date().toISOString(),
+    });
+    await kv.set("notifications:items", JSON.stringify(items.slice(0, NOTIFICATION_LIMIT)));
+  } catch (err) {
+    console.log("notify failed:", err);
+  }
+}
+
+async function notificationItems(): Promise<any[]> {
+  const raw = await kv.get("notifications:items");
+  return raw ? JSON.parse(raw) : [];
+}
+
+// --- GET /admin/notifications ---
+app.get("/make-server-0951c59e/admin/notifications", async (c) => {
+  try {
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
+
+    const items = await notificationItems();
+    const readAt = (await kv.get(`notifications:read:${admin.id}`)) || "";
+    const unread = readAt
+      ? items.filter((n: any) => new Date(n.createdAt).getTime() > new Date(readAt).getTime()).length
+      : items.length;
+
+    return c.json({ notifications: items, unread, readAt });
+  } catch (err) {
+    console.log("Get notifications error:", err);
+    return c.json({ error: `Meldingen ophalen mislukt: ${err}` }, 500);
+  }
+});
+
+// --- POST /admin/notifications/read — everything up to now is seen ---
+app.post("/make-server-0951c59e/admin/notifications/read", async (c) => {
+  try {
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
+
+    await kv.set(`notifications:read:${admin.id}`, new Date().toISOString());
+    return c.json({ success: true, unread: 0 });
+  } catch (err) {
+    console.log("Mark notifications read error:", err);
+    return c.json({ error: `Markeren als gelezen mislukt: ${err}` }, 500);
+  }
+});
+
+// --- DELETE /admin/notifications — clear the list ---
+app.delete("/make-server-0951c59e/admin/notifications", async (c) => {
+  try {
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
+
+    await kv.set("notifications:items", JSON.stringify([]));
+    await kv.set(`notifications:read:${admin.id}`, new Date().toISOString());
+    return c.json({ success: true });
+  } catch (err) {
+    console.log("Clear notifications error:", err);
+    return c.json({ error: `Meldingen wissen mislukt: ${err}` }, 500);
+  }
+});
+
+// --- DELETE /admin/notifications/:id — drop one ---
+app.delete("/make-server-0951c59e/admin/notifications/:id", async (c) => {
+  try {
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
+
+    const id = c.req.param("id");
+    const items = await notificationItems();
+    await kv.set("notifications:items", JSON.stringify(items.filter((n: any) => n.id !== id)));
+    return c.json({ success: true });
+  } catch (err) {
+    console.log("Delete notification error:", err);
+    return c.json({ error: `Melding verwijderen mislukt: ${err}` }, 500);
   }
 });
 
