@@ -53,7 +53,7 @@ export function AdminGalleryPreviewPage() {
           fontSize: "10px",
           letterSpacing: "0.3em",
           textTransform: "uppercase",
-          fontFamily: "'Inter', sans-serif",
+          fontFamily: "'Space Grotesk', system-ui, sans-serif",
         }}
       >
         Loading preview…
@@ -63,7 +63,7 @@ export function AdminGalleryPreviewPage() {
 
   if (error || !project) {
     return (
-      <div style={{ padding: "48px 40px", color: "#e07060", fontSize: "13px", fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ padding: "48px 40px", color: "#e07060", fontSize: "13px", fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
         {error || "Project not found."}
       </div>
     );

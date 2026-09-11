@@ -219,7 +219,7 @@ const inputStyle: React.CSSProperties = {
   border: `1px solid ${fg(0.1)}`,
   color: "var(--admin-fg-solid)",
   fontSize: "13px",
-  fontFamily: "'Inter', sans-serif",
+  fontFamily: "'Space Grotesk', system-ui, sans-serif",
   padding: "10px 12px",
   outline: "none",
   boxSizing: "border-box",
@@ -281,7 +281,7 @@ function AddButton({ onClick, label }: { onClick: () => void; label: string }) {
       style={{
         display: "flex", alignItems: "center", gap: "6px",
         background: "none", border: `1px dashed ${fg(0.15)}`,
-        color: fg(0.4), fontSize: "11px", fontFamily: "'Inter', sans-serif",
+        color: fg(0.4), fontSize: "11px", fontFamily: "'Space Grotesk', system-ui, sans-serif",
         padding: "9px 12px", cursor: "pointer", width: "100%", justifyContent: "center",
       }}
     >
@@ -549,7 +549,7 @@ export function AdminQuotesPage() {
                 backgroundColor: "rgba(200,144,90,0.12)", border: "1px solid rgba(200,144,90,0.3)",
                 color: "#c8905a", fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em",
                 textTransform: "uppercase", padding: "11px 16px", cursor: "pointer",
-                fontFamily: "'Inter', sans-serif",
+                fontFamily: "'Space Grotesk', system-ui, sans-serif",
               }}
             >
               <Plus size={12} /> Nieuwe website-opgave
@@ -562,7 +562,7 @@ export function AdminQuotesPage() {
                 background: "none", border: `1px solid ${fg(0.15)}`,
                 color: fg(0.5), fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em",
                 textTransform: "uppercase", padding: "11px 16px", cursor: "pointer",
-                fontFamily: "'Inter', sans-serif",
+                fontFamily: "'Space Grotesk', system-ui, sans-serif",
               }}
             >
               <Plus size={12} /> Foto-opgave
@@ -686,7 +686,7 @@ export function AdminQuotesPage() {
                   color: "#c8905a", fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em",
                   textTransform: "uppercase", padding: "11px 18px",
                   cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.5 : 1,
-                  fontFamily: "'Inter', sans-serif",
+                  fontFamily: "'Space Grotesk', system-ui, sans-serif",
                 }}
               >
                 <Save size={12} /> {saving ? "Opslaan…" : "Opslaan"}
@@ -697,7 +697,7 @@ export function AdminQuotesPage() {
                 style={{
                   background: "none", border: `1px solid ${fg(0.12)}`, color: fg(0.4),
                   fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase",
-                  padding: "11px 18px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+                  padding: "11px 18px", cursor: "pointer", fontFamily: "'Space Grotesk', system-ui, sans-serif",
                 }}
               >
                 Annuleren
@@ -779,7 +779,7 @@ export function AdminQuotesPage() {
                       display: "flex", alignItems: "center", gap: "6px",
                       backgroundColor: "rgba(200,144,90,0.12)", border: "1px solid rgba(200,144,90,0.3)",
                       color: "#c8905a", fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em",
-                      textTransform: "uppercase", padding: "9px 14px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+                      textTransform: "uppercase", padding: "9px 14px", cursor: "pointer", fontFamily: "'Space Grotesk', system-ui, sans-serif",
                     }}
                   >
                     <Send size={11} /> {q.sentAt ? "Opnieuw versturen" : "Versturen"}
@@ -791,7 +791,7 @@ export function AdminQuotesPage() {
                       display: "flex", alignItems: "center", gap: "6px", background: "none",
                       border: `1px solid ${fg(0.13)}`, color: fg(0.45), fontSize: "10px", fontWeight: 700,
                       letterSpacing: "0.15em", textTransform: "uppercase", padding: "9px 14px",
-                      cursor: "pointer", fontFamily: "'Inter', sans-serif",
+                      cursor: "pointer", fontFamily: "'Space Grotesk', system-ui, sans-serif",
                     }}
                   >
                     <Pencil size={11} /> Bewerken
@@ -805,7 +805,7 @@ export function AdminQuotesPage() {
                           display: "flex", alignItems: "center", gap: "6px", background: "none",
                           border: "none", color: fg(0.4), fontSize: "10px", fontWeight: 700,
                           letterSpacing: "0.15em", textTransform: "uppercase", padding: "9px 8px",
-                          cursor: "pointer", fontFamily: "'Inter', sans-serif",
+                          cursor: "pointer", fontFamily: "'Space Grotesk', system-ui, sans-serif",
                         }}
                       >
                         <Copy size={11} /> Link kopiëren
@@ -834,7 +834,7 @@ export function AdminQuotesPage() {
                         style={{
                           background: "none", border: "1px solid rgba(224,112,96,0.35)", color: "#e07060",
                           fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase",
-                          padding: "8px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+                          padding: "8px 12px", cursor: "pointer", fontFamily: "'Space Grotesk', system-ui, sans-serif",
                         }}
                       >
                         Verwijderen
@@ -845,7 +845,7 @@ export function AdminQuotesPage() {
                         style={{
                           background: "none", border: `1px solid ${fg(0.12)}`, color: fg(0.4),
                           fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase",
-                          padding: "8px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+                          padding: "8px 12px", cursor: "pointer", fontFamily: "'Space Grotesk', system-ui, sans-serif",
                         }}
                       >
                         Nee
@@ -917,7 +917,7 @@ export function AdminQuotesPage() {
                   color: "#c8905a", fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em",
                   textTransform: "uppercase", padding: "11px 18px",
                   cursor: sending ? "not-allowed" : "pointer", opacity: sending ? 0.5 : 1,
-                  fontFamily: "'Inter', sans-serif",
+                  fontFamily: "'Space Grotesk', system-ui, sans-serif",
                 }}
               >
                 <Send size={12} /> {sending ? "Versturen…" : "Nu versturen"}
@@ -928,7 +928,7 @@ export function AdminQuotesPage() {
                 style={{
                   background: "none", border: `1px solid ${fg(0.12)}`, color: fg(0.4),
                   fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase",
-                  padding: "11px 18px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+                  padding: "11px 18px", cursor: "pointer", fontFamily: "'Space Grotesk', system-ui, sans-serif",
                 }}
               >
                 Annuleren

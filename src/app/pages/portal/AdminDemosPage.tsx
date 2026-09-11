@@ -225,7 +225,7 @@ export function AdminDemosPage() {
                             color: d.live ? "#e07060" : "rgba(120,190,140,0.95)",
                             fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase",
                             padding: "8px 13px", cursor: busy ? "not-allowed" : "pointer",
-                            opacity: busy ? 0.5 : 1, fontFamily: "'Inter', sans-serif",
+                            opacity: busy ? 0.5 : 1, fontFamily: "'Space Grotesk', system-ui, sans-serif",
                           }}
                         >
                           {d.live ? "Offline halen" : "Online zetten"}
@@ -294,7 +294,7 @@ export function AdminDemosPage() {
                       backgroundColor: fg(0.03),
                       border: `1px solid ${urlValid ? fg(0.1) : "rgba(224,112,96,0.45)"}`,
                       color: "var(--admin-fg-solid)", fontSize: "13px",
-                      fontFamily: "'Inter', sans-serif", padding: "10px 12px",
+                      fontFamily: "'Space Grotesk', system-ui, sans-serif", padding: "10px 12px",
                       outline: "none", boxSizing: "border-box",
                     }}
                   />
@@ -309,7 +309,7 @@ export function AdminDemosPage() {
                       padding: "10px 15px",
                       opacity: !urlDirty || !urlValid ? 0.45 : 1,
                       cursor: !urlDirty || !urlValid || busy ? "not-allowed" : "pointer",
-                      fontFamily: "'Inter', sans-serif",
+                      fontFamily: "'Space Grotesk', system-ui, sans-serif",
                     }}
                   >
                     <Save size={12} /> Opslaan
@@ -351,7 +351,7 @@ export function AdminDemosPage() {
                       background: "none", border: "none", padding: 0, cursor: "pointer",
                       color: fg(0.4), fontSize: "10px", fontWeight: 600,
                       letterSpacing: "0.15em", textTransform: "uppercase",
-                      fontFamily: "'Inter', sans-serif",
+                      fontFamily: "'Space Grotesk', system-ui, sans-serif",
                     }}
                   >
                     Project openen <ArrowRight size={11} />

@@ -100,7 +100,7 @@ export function RemindersWidget() {
         </div>
         <button
           onClick={() => navigate("/admin/reminders")}
-          style={{ display: "flex", alignItems: "center", gap: "4px", background: "none", border: "none", color: "rgba(255,251,224,0.3)", fontSize: "10px", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase", cursor: "pointer", fontFamily: "'Inter', sans-serif", transition: "color 0.2s ease" }}
+          style={{ display: "flex", alignItems: "center", gap: "4px", background: "none", border: "none", color: "rgba(255,251,224,0.3)", fontSize: "10px", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase", cursor: "pointer", fontFamily: "'Space Grotesk', system-ui, sans-serif", transition: "color 0.2s ease" }}
           onMouseEnter={e => (e.currentTarget.style.color = "#c8905a")}
           onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,251,224,0.3)")}
         >

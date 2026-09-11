@@ -349,7 +349,7 @@ export function AdminPortfolioPage() {
   }
 
   return (
-    <div style={{ padding: "40px", fontFamily: "'Inter', sans-serif" }}>
+    <div style={{ padding: "40px", fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
       <div
         style={{
           display: "flex",
@@ -798,7 +798,7 @@ export function AdminPortfolioPage() {
                     color: "var(--admin-fg-solid)",
                     padding: "12px",
                     fontSize: "14px",
-                    fontFamily: "'Inter', sans-serif",
+                    fontFamily: "'Space Grotesk', system-ui, sans-serif",
                   }}
                   placeholder="Project title"
                 />
@@ -885,7 +885,7 @@ export function AdminPortfolioPage() {
                     color: "var(--admin-fg-solid)",
                     padding: "12px",
                     fontSize: "14px",
-                    fontFamily: "'Inter', sans-serif",
+                    fontFamily: "'Space Grotesk', system-ui, sans-serif",
                     resize: "vertical",
                   }}
                   placeholder="Project description"

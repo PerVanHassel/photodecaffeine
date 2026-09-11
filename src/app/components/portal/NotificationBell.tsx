@@ -216,7 +216,7 @@ export function NotificationBell() {
             border: `1px solid ${fg(0.16)}`,
             boxShadow: "0 18px 40px rgba(0,0,0,0.45)",
             zIndex: 120,
-            fontFamily: "'Inter', sans-serif",
+            fontFamily: "'Space Grotesk', system-ui, sans-serif",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderBottom: `1px solid ${fg(0.08)}` }}>
@@ -226,7 +226,7 @@ export function NotificationBell() {
             {items.length > 0 && (
               <button
                 onClick={clearAll}
-                style={{ background: "none", border: "none", color: fg(0.35), fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", fontFamily: "'Inter', sans-serif", padding: 0 }}
+                style={{ background: "none", border: "none", color: fg(0.35), fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", fontFamily: "'Space Grotesk', system-ui, sans-serif", padding: 0 }}
               >
                 Alles wissen
               </button>
@@ -272,7 +272,7 @@ export function NotificationBell() {
                         padding: 0,
                         textAlign: "left",
                         cursor: n.link ? "pointer" : "default",
-                        fontFamily: "'Inter', sans-serif",
+                        fontFamily: "'Space Grotesk', system-ui, sans-serif",
                       }}
                     >
                       <span style={{ display: "block", color: "var(--admin-fg-solid)", fontSize: "13px", fontWeight: 600, lineHeight: 1.45 }}>

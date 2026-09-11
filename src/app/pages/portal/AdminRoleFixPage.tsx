@@ -102,7 +102,7 @@ export function AdminRoleFixPage() {
     border: "1px solid rgba(255,251,224,0.08)",
     color: "#fffbe0",
     fontSize: "14px",
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: "'Space Grotesk', system-ui, sans-serif",
     fontWeight: 300,
     padding: "13px 16px",
     outline: "none",
@@ -128,7 +128,7 @@ export function AdminRoleFixPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontFamily: "'Inter', sans-serif",
+        fontFamily: "'Space Grotesk', system-ui, sans-serif",
         padding: "40px 20px",
       }}
     >
@@ -318,7 +318,7 @@ export function AdminRoleFixPage() {
                   letterSpacing: "0.2em",
                   textTransform: "uppercase",
                   cursor: checking || !email || !secret ? "not-allowed" : "pointer",
-                  fontFamily: "'Inter', sans-serif",
+                  fontFamily: "'Space Grotesk', system-ui, sans-serif",
                   flex: 1,
                   transition: "all 0.2s ease",
                   display: "flex",
@@ -350,7 +350,7 @@ export function AdminRoleFixPage() {
                   letterSpacing: "0.2em",
                   textTransform: "uppercase",
                   cursor: loading || (userStatus && userStatus.isAdmin) ? "not-allowed" : "pointer",
-                  fontFamily: "'Inter', sans-serif",
+                  fontFamily: "'Space Grotesk', system-ui, sans-serif",
                   flex: 1,
                   transition: "all 0.2s ease",
                 }}

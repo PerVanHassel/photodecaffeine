@@ -144,14 +144,14 @@ export function AdminAutomotiveGalleryPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: "40px", color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ padding: "40px", color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
         Loading…
       </div>
     );
   }
 
   return (
-    <div style={{ padding: "40px", fontFamily: "'Inter', sans-serif", maxWidth: "900px", position: "relative" }}>
+    <div style={{ padding: "40px", fontFamily: "'Space Grotesk', system-ui, sans-serif", maxWidth: "900px", position: "relative" }}>
       {/* Toast */}
       {toast && (
         <div style={{
@@ -330,7 +330,7 @@ export function AdminAutomotiveGalleryPage() {
             display: "flex",
             alignItems: "center",
             gap: "8px",
-            fontFamily: "'Inter', sans-serif",
+            fontFamily: "'Space Grotesk', system-ui, sans-serif",
             transition: "all 0.25s ease",
           }}
           onMouseEnter={(e) => {

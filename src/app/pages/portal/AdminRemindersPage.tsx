@@ -131,7 +131,7 @@ export function AdminRemindersPage() {
   }
 
   return (
-    <div style={{ padding: isMobile ? "24px 16px 60px" : "40px", fontFamily: "'Inter', sans-serif", maxWidth: "800px" }}>
+    <div style={{ padding: isMobile ? "24px 16px 60px" : "40px", fontFamily: "'Space Grotesk', system-ui, sans-serif", maxWidth: "800px" }}>
       {/* Header */}
       <div style={{ marginBottom: "32px" }}>
         <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 500, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: "10px" }}>
@@ -152,7 +152,7 @@ export function AdminRemindersPage() {
           </div>
           <button
             onClick={load}
-            style={{ display: "flex", alignItems: "center", gap: "6px", background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))", color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", padding: "8px 14px", fontSize: "10px", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase", cursor: "pointer", fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease" }}
+            style={{ display: "flex", alignItems: "center", gap: "6px", background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))", color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", padding: "8px 14px", fontSize: "10px", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase", cursor: "pointer", fontFamily: "'Space Grotesk', system-ui, sans-serif", transition: "all 0.2s ease" }}
             onMouseEnter={e => { e.currentTarget.style.color = "var(--admin-fg-solid)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))"; }}
             onMouseLeave={e => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))"; }}
           >
@@ -229,7 +229,7 @@ export function AdminRemindersPage() {
                         padding: "8px 12px",
                         fontSize: "10px", fontWeight: 700,
                         letterSpacing: "0.1em", textTransform: "uppercase",
-                        cursor: "pointer", fontFamily: "'Inter', sans-serif",
+                        cursor: "pointer", fontFamily: "'Space Grotesk', system-ui, sans-serif",
                         whiteSpace: "nowrap", transition: "all 0.2s ease",
                       }}
                       onMouseEnter={e => { e.currentTarget.style.backgroundColor = cfg.headerBg; }}

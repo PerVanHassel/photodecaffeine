@@ -89,7 +89,7 @@ const inputStyle: React.CSSProperties = {
   border: "1px solid rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))",
   color: "var(--admin-fg-solid)",
   fontSize: "13px",
-  fontFamily: "'Inter', sans-serif",
+  fontFamily: "'Space Grotesk', system-ui, sans-serif",
   fontWeight: 300,
   padding: "10px 14px",
   outline: "none",
@@ -466,7 +466,7 @@ export function AdminProjectPage() {
           background: "none", border: "none", cursor: "pointer",
           color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "10px", fontWeight: 500,
           letterSpacing: "0.2em", textTransform: "uppercase",
-          fontFamily: "'Inter', sans-serif", padding: 0, marginBottom: "36px",
+          fontFamily: "'Space Grotesk', system-ui, sans-serif", padding: 0, marginBottom: "36px",
           transition: "color 0.2s ease",
         }}
         onMouseEnter={(e) => (e.currentTarget.style.color = "var(--admin-fg-solid)")}
@@ -506,7 +506,7 @@ export function AdminProjectPage() {
                 color: saveSuccess ? "rgba(120,190,140,0.9)" : saving ? "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))" : "var(--admin-cta-fg)",
                 fontSize: "10px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase",
                 cursor: saving ? "not-allowed" : "pointer", padding: "11px 20px",
-                fontFamily: "'Inter', sans-serif", transition: "all 0.25s ease", flexShrink: 0,
+                fontFamily: "'Space Grotesk', system-ui, sans-serif", transition: "all 0.25s ease", flexShrink: 0,
               }}
             >
               {saveSuccess ? <Check size={12} /> : <Save size={12} />}
@@ -617,7 +617,7 @@ export function AdminProjectPage() {
                     textTransform: "uppercase",
                     cursor: "pointer",
                     padding: "7px 12px",
-                    fontFamily: "'Inter', sans-serif",
+                    fontFamily: "'Space Grotesk', system-ui, sans-serif",
                     alignSelf: "flex-start",
                     transition: "all 0.2s ease",
                   }}
@@ -657,7 +657,7 @@ export function AdminProjectPage() {
                     background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))",
                     color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600,
                     letterSpacing: "0.2em", textTransform: "uppercase", cursor: "pointer",
-                    padding: "7px 12px", fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
+                    padding: "7px 12px", fontFamily: "'Space Grotesk', system-ui, sans-serif", transition: "all 0.2s ease",
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.color = "var(--admin-fg-solid)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))"; }}
@@ -691,8 +691,8 @@ export function AdminProjectPage() {
                     onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")}
                   />
                 </div>
-                <button onClick={addDeliverable} style={{ backgroundColor: "var(--admin-cta-bg)", border: "none", color: "var(--admin-bg-page)", fontSize: "10px", fontWeight: 700, padding: "10px 16px", cursor: "pointer", fontFamily: "'Inter', sans-serif", letterSpacing: "0.1em", marginBottom: "0" }}>Add</button>
-                <button onClick={() => { setAddingDel(false); setNewDelName(""); setNewDelCount("1"); }} style={{ backgroundColor: "transparent", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))", color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "10px", padding: "10px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>Cancel</button>
+                <button onClick={addDeliverable} style={{ backgroundColor: "var(--admin-cta-bg)", border: "none", color: "var(--admin-bg-page)", fontSize: "10px", fontWeight: 700, padding: "10px 16px", cursor: "pointer", fontFamily: "'Space Grotesk', system-ui, sans-serif", letterSpacing: "0.1em", marginBottom: "0" }}>Add</button>
+                <button onClick={() => { setAddingDel(false); setNewDelName(""); setNewDelCount("1"); }} style={{ backgroundColor: "transparent", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))", color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "10px", padding: "10px 12px", cursor: "pointer", fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>Cancel</button>
               </div>
             )}
 
@@ -765,7 +765,7 @@ export function AdminProjectPage() {
                       border: "1px solid rgba(200,144,90,0.25)",
                       color: "#c8905a", fontSize: "9px", fontWeight: 600,
                       letterSpacing: "0.2em", textTransform: "uppercase",
-                      padding: "7px 12px", fontFamily: "'Inter', sans-serif",
+                      padding: "7px 12px", fontFamily: "'Space Grotesk', system-ui, sans-serif",
                       textDecoration: "none", transition: "all 0.2s ease",
                     }}
                     onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(200,144,90,0.1)"; }}
@@ -782,7 +782,7 @@ export function AdminProjectPage() {
                     fontSize: "9px", fontWeight: 600,
                     letterSpacing: "0.2em", textTransform: "uppercase",
                     cursor: uploading ? "not-allowed" : "pointer",
-                    padding: "7px 12px", fontFamily: "'Inter', sans-serif",
+                    padding: "7px 12px", fontFamily: "'Space Grotesk', system-ui, sans-serif",
                     transition: "all 0.2s ease",
                     backgroundColor: uploading ? "rgba(200,144,90,0.05)" : "transparent",
                   }}
@@ -954,7 +954,7 @@ export function AdminProjectPage() {
                   color: "#c8905a", fontSize: "9px", fontWeight: 700,
                   letterSpacing: "0.15em", textTransform: "uppercase",
                   cursor: "pointer", padding: "6px 11px",
-                  fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
+                  fontFamily: "'Space Grotesk', system-ui, sans-serif", transition: "all 0.2s ease",
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(200,144,90,0.1)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
@@ -1052,7 +1052,7 @@ export function AdminProjectPage() {
                   cursor: reply.trim() ? "pointer" : "not-allowed",
                   display: "flex", alignItems: "center", gap: "6px",
                   fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase",
-                  fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
+                  fontFamily: "'Space Grotesk', system-ui, sans-serif", transition: "all 0.2s ease",
                   marginBottom: "0",
                 }}
               >
@@ -1082,7 +1082,7 @@ export function AdminProjectPage() {
                       border: `1px solid ${active ? "rgba(200,144,90,0.45)" : "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))"}`,
                       color: active ? "#c8905a" : "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))",
                       fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase",
-                      padding: "9px 16px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+                      padding: "9px 16px", cursor: "pointer", fontFamily: "'Space Grotesk', system-ui, sans-serif",
                     }}
                   >
                     {label}
@@ -1150,7 +1150,7 @@ export function AdminProjectPage() {
                 color: linkFlash ? "rgba(120,190,140,0.95)" : "#c8905a",
                 fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase",
                 padding: "10px 18px", cursor: linkSaving ? "not-allowed" : "pointer",
-                fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
+                fontFamily: "'Space Grotesk', system-ui, sans-serif", transition: "all 0.2s ease",
               }}
             >
               {linkFlash ? <Check size={12} /> : <Save size={12} />}
@@ -1183,7 +1183,7 @@ export function AdminProjectPage() {
                     letterSpacing: "0.15em", textTransform: "uppercase",
                     cursor: requesting ? "not-allowed" : "pointer", padding: "9px 14px",
                     opacity: requesting && requesting !== kind ? 0.5 : 1,
-                    fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
+                    fontFamily: "'Space Grotesk', system-ui, sans-serif", transition: "all 0.2s ease",
                   }}
                   onMouseEnter={(e) => { if (!requesting) e.currentTarget.style.backgroundColor = "rgba(200,144,90,0.1)"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
@@ -1247,7 +1247,7 @@ export function AdminProjectPage() {
                     background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))",
                     color: "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 700,
                     letterSpacing: "0.15em", textTransform: "uppercase",
-                    cursor: "pointer", padding: "8px 13px", fontFamily: "'Inter', sans-serif",
+                    cursor: "pointer", padding: "8px 13px", fontFamily: "'Space Grotesk', system-ui, sans-serif",
                   }}
                 >
                   Publiceren &amp; koppelen <ExternalLink size={10} />
@@ -1304,7 +1304,7 @@ export function AdminProjectPage() {
                   background: "none", border: "1px solid rgba(224,112,96,0.2)",
                   color: "rgba(224,112,96,0.5)", fontSize: "10px", fontWeight: 600,
                   letterSpacing: "0.18em", textTransform: "uppercase", cursor: "pointer",
-                  padding: "10px 18px", fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
+                  padding: "10px 18px", fontFamily: "'Space Grotesk', system-ui, sans-serif", transition: "all 0.2s ease",
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(224,112,96,0.5)"; e.currentTarget.style.color = "#e07060"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(224,112,96,0.2)"; e.currentTarget.style.color = "rgba(224,112,96,0.5)"; }}
@@ -1328,7 +1328,7 @@ export function AdminProjectPage() {
                   style={{
                     backgroundColor: "#e07060", border: "none", color: "#fff",
                     fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase",
-                    padding: "9px 18px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+                    padding: "9px 18px", cursor: "pointer", fontFamily: "'Space Grotesk', system-ui, sans-serif",
                   }}
                 >
                   {deleting ? "Deleting…" : "Yes, Delete"}
@@ -1337,7 +1337,7 @@ export function AdminProjectPage() {
                   onClick={() => setShowDelete(false)}
                   style={{
                     background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))", color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))",
-                    fontSize: "10px", padding: "9px 14px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+                    fontSize: "10px", padding: "9px 14px", cursor: "pointer", fontFamily: "'Space Grotesk', system-ui, sans-serif",
                   }}
                 >
                   Cancel
@@ -1376,7 +1376,7 @@ export function AdminProjectPage() {
                     background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
                     color: "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 500,
                     letterSpacing: "0.05em", cursor: "pointer", padding: "5px 9px",
-                    fontFamily: "'Inter', sans-serif", transition: "all 0.15s ease",
+                    fontFamily: "'Space Grotesk', system-ui, sans-serif", transition: "all 0.15s ease",
                     textAlign: "left",
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.color = "var(--admin-fg-solid)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))"; }}
@@ -1398,10 +1398,10 @@ export function AdminProjectPage() {
                 onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")}
               />
               <div style={{ display: "flex", gap: "10px" }}>
-                <button type="button" onClick={() => setShowNotify(false)} style={{ flex: 1, padding: "11px", background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))", color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "10px", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>
+                <button type="button" onClick={() => setShowNotify(false)} style={{ flex: 1, padding: "11px", background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))", color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "10px", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", cursor: "pointer", fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
                   Cancel
                 </button>
-                <button type="submit" disabled={notifying || !notifyMsg.trim()} style={{ flex: 1, padding: "11px", backgroundColor: notifyMsg.trim() ? "#c8905a" : "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))", border: "none", color: notifyMsg.trim() ? "var(--admin-bg-page)" : "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "10px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", cursor: notifyMsg.trim() ? "pointer" : "not-allowed", fontFamily: "'Inter', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                <button type="submit" disabled={notifying || !notifyMsg.trim()} style={{ flex: 1, padding: "11px", backgroundColor: notifyMsg.trim() ? "#c8905a" : "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))", border: "none", color: notifyMsg.trim() ? "var(--admin-bg-page)" : "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "10px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", cursor: notifyMsg.trim() ? "pointer" : "not-allowed", fontFamily: "'Space Grotesk', system-ui, sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
                   <Send size={11} />
                   {notifying ? "Sending…" : "Send Message"}
                 </button>

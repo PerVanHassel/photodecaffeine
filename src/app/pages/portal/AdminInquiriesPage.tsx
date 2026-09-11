@@ -148,7 +148,7 @@ export function AdminInquiriesPage() {
     border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
     color: "rgba(var(--admin-fg-rgb),calc(0.6 * var(--admin-fg-boost)))",
     fontSize: "10px",
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: "'Space Grotesk', system-ui, sans-serif",
     fontWeight: 500,
     padding: "6px 10px",
     outline: "none",
@@ -186,7 +186,7 @@ export function AdminInquiriesPage() {
               color: hasActiveFilter ? "#c8905a" : "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))",
               fontSize: "9px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase",
               cursor: "pointer", padding: "7px 11px",
-              fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
+              fontFamily: "'Space Grotesk', system-ui, sans-serif", transition: "all 0.2s ease",
             }}
           >
             <Filter size={11} />
@@ -250,7 +250,7 @@ export function AdminInquiriesPage() {
                 color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600,
                 letterSpacing: "0.15em", textTransform: "uppercase",
                 cursor: "pointer", padding: "4px 8px",
-                fontFamily: "'Inter', sans-serif",
+                fontFamily: "'Space Grotesk', system-ui, sans-serif",
               }}
             >
               Clear
@@ -318,7 +318,7 @@ export function AdminInquiriesPage() {
                       padding: isMobile ? "14px 12px" : "18px 20px",
                       background: "none", border: "none",
                       cursor: "pointer", textAlign: "left",
-                      fontFamily: "'Inter', sans-serif",
+                      fontFamily: "'Space Grotesk', system-ui, sans-serif",
                       flex: 1, minWidth: 0,
                     }}
                   >
@@ -397,7 +397,7 @@ export function AdminInquiriesPage() {
                       fontSize: "9px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase",
                       cursor: isDeleting ? "not-allowed" : "pointer",
                       padding: isMobile ? "6px 8px" : "6px 10px",
-                      fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
+                      fontFamily: "'Space Grotesk', system-ui, sans-serif", transition: "all 0.2s ease",
                       backgroundColor: isConfirmingDelete ? "rgba(224,112,96,0.08)" : "transparent",
                       marginRight: "8px",
                     }}
@@ -428,7 +428,7 @@ export function AdminInquiriesPage() {
                           color: isHandled ? "rgba(120,190,140,0.9)" : "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))",
                           fontSize: "9px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase",
                           cursor: "pointer", padding: "6px 12px",
-                          fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
+                          fontFamily: "'Space Grotesk', system-ui, sans-serif", transition: "all 0.2s ease",
                         }}
                       >
                         <Check size={10} />
@@ -506,7 +506,7 @@ export function AdminInquiriesPage() {
                             fontSize: "9px", fontWeight: 700,
                             letterSpacing: "0.18em", textTransform: "uppercase",
                             cursor: "pointer",
-                            fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
+                            fontFamily: "'Space Grotesk', system-ui, sans-serif", transition: "all 0.2s ease",
                           }}
                           onMouseEnter={(e) => { if (!isCopied) { e.currentTarget.style.color = "var(--admin-fg-solid)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))"; } }}
                           onMouseLeave={(e) => { if (!isCopied) { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.12 * var(--admin-fg-boost)))"; } }}
@@ -527,7 +527,7 @@ export function AdminInquiriesPage() {
                             fontSize: "9px", fontWeight: 700,
                             letterSpacing: "0.18em", textTransform: "uppercase",
                             cursor: "pointer",
-                            fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
+                            fontFamily: "'Space Grotesk', system-ui, sans-serif", transition: "all 0.2s ease",
                           }}
                           onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(200,144,90,0.1)"; }}
                           onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
@@ -545,7 +545,7 @@ export function AdminInquiriesPage() {
                             fontSize: "9px", fontWeight: 800,
                             letterSpacing: "0.2em", textTransform: "uppercase",
                             textDecoration: "none",
-                            fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
+                            fontFamily: "'Space Grotesk', system-ui, sans-serif", transition: "all 0.2s ease",
                           }}
                           onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "#c8905a"; (e.currentTarget as HTMLElement).style.color = "#fffbe0"; }}
                           onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--admin-cta-bg)"; (e.currentTarget as HTMLElement).style.color = "var(--admin-cta-fg)"; }}

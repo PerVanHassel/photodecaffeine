@@ -55,7 +55,7 @@ const inputStyle: React.CSSProperties = {
   color: "var(--admin-fg-solid)",
   padding: "12px",
   fontSize: "14px",
-  fontFamily: "'Inter', sans-serif",
+  fontFamily: "'Space Grotesk', system-ui, sans-serif",
   boxSizing: "border-box",
 };
 
@@ -233,7 +233,7 @@ export function AdminTeamPage() {
 
   if (!canManage) {
     return (
-      <div style={{ padding: "40px", fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ padding: "40px", fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
         <h1 style={{ color: "var(--admin-fg-solid)", fontSize: "24px", fontWeight: 800, textTransform: "uppercase", margin: "0 0 12px" }}>
           Team &amp; Rollen
         </h1>
@@ -245,7 +245,7 @@ export function AdminTeamPage() {
   }
 
   return (
-    <div style={{ padding: "40px", fontFamily: "'Inter', sans-serif" }}>
+    <div style={{ padding: "40px", fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
       <div style={{ marginBottom: "40px" }}>
         <h1 style={{ color: "var(--admin-fg-solid)", fontSize: "28px", fontWeight: 800, letterSpacing: "-0.02em", textTransform: "uppercase", margin: 0 }}>
           Team &amp; Rollen

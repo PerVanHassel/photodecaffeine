@@ -276,7 +276,7 @@ export function AdminSettingsPage() {
   }
 
   return (
-    <div style={{ padding: isMobile ? "24px 16px 60px" : "40px", fontFamily: "'Inter', sans-serif" }}>
+    <div style={{ padding: isMobile ? "24px 16px 60px" : "40px", fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
       {/* Header */}
       <div
         style={{
@@ -775,7 +775,7 @@ export function AdminSettingsPage() {
               value={settings.studioName}
               onChange={(e) => setSettings(prev => ({ ...prev, studioName: e.target.value }))}
               placeholder="e.g. Photo De Caffeine"
-              style={{ width: "100%", backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.04 * var(--admin-fg-boost)))", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.12 * var(--admin-fg-boost)))", color: "var(--admin-fg-solid)", padding: "12px 14px", fontSize: "14px", fontFamily: "'Inter', sans-serif", boxSizing: "border-box" }}
+              style={{ width: "100%", backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.04 * var(--admin-fg-boost)))", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.12 * var(--admin-fg-boost)))", color: "var(--admin-fg-solid)", padding: "12px 14px", fontSize: "14px", fontFamily: "'Space Grotesk', system-ui, sans-serif", boxSizing: "border-box" }}
             />
           </div>
           <div>
@@ -787,7 +787,7 @@ export function AdminSettingsPage() {
               value={settings.contactEmail}
               onChange={(e) => setSettings(prev => ({ ...prev, contactEmail: e.target.value }))}
               placeholder="e.g. hello@photodecaffeine.nl"
-              style={{ width: "100%", backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.04 * var(--admin-fg-boost)))", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.12 * var(--admin-fg-boost)))", color: "var(--admin-fg-solid)", padding: "12px 14px", fontSize: "14px", fontFamily: "'Inter', sans-serif", boxSizing: "border-box" }}
+              style={{ width: "100%", backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.04 * var(--admin-fg-boost)))", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.12 * var(--admin-fg-boost)))", color: "var(--admin-fg-solid)", padding: "12px 14px", fontSize: "14px", fontFamily: "'Space Grotesk', system-ui, sans-serif", boxSizing: "border-box" }}
             />
           </div>
         </div>

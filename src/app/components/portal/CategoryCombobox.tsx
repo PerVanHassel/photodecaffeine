@@ -192,7 +192,7 @@ export function CategoryCombobox({ value, onChange, existing, placeholder }: Cat
           color: "var(--admin-fg-solid)",
           padding: "12px",
           fontSize: "14px",
-          fontFamily: "'Inter', sans-serif",
+          fontFamily: "'Space Grotesk', system-ui, sans-serif",
           outline: "none",
           boxSizing: "border-box",
           transition: "border-color 0.15s ease",
@@ -236,7 +236,7 @@ export function CategoryCombobox({ value, onChange, existing, placeholder }: Cat
                     color: "var(--admin-fg-solid)",
                     padding: "10px 12px",
                     fontSize: "13.5px",
-                    fontFamily: "'Inter', sans-serif",
+                    fontFamily: "'Space Grotesk', system-ui, sans-serif",
                     cursor: "pointer",
                   }}
                 >

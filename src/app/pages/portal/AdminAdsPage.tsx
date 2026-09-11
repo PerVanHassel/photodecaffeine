@@ -116,7 +116,7 @@ function CopyUrl({ campaign, page }: { campaign: string; page: string }) {
       <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "11px", fontFamily: "'Courier New', monospace", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
         {url}
       </span>
-      <button onClick={copy} style={{ background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))", color: copied ? "#80c880" : "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))", cursor: "pointer", padding: "4px 8px", display: "flex", alignItems: "center", gap: "4px", fontSize: "9px", fontFamily: "'Inter', sans-serif", letterSpacing: "0.1em", transition: "all 0.2s ease", flexShrink: 0 }}>
+      <button onClick={copy} style={{ background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))", color: copied ? "#80c880" : "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))", cursor: "pointer", padding: "4px 8px", display: "flex", alignItems: "center", gap: "4px", fontSize: "9px", fontFamily: "'Space Grotesk', system-ui, sans-serif", letterSpacing: "0.1em", transition: "all 0.2s ease", flexShrink: 0 }}>
         {copied ? <><Check size={10} /> Copied</> : <><Copy size={10} /> Copy</>}
       </button>
     </div>
@@ -163,7 +163,7 @@ function LabelEditor({ value, onChange }: { value: string; onChange: (v: string)
             color: "var(--admin-fg-solid)",
             fontSize: "13px",
             fontWeight: 500,
-            fontFamily: "'Inter', sans-serif",
+            fontFamily: "'Space Grotesk', system-ui, sans-serif",
             padding: "4px 8px",
             outline: "none",
             width: "180px",
@@ -216,7 +216,7 @@ function ActiveToggle({ active, onChange }: { active: boolean; onChange: (v: boo
         fontWeight: 600,
         letterSpacing: "0.15em",
         textTransform: "uppercase",
-        fontFamily: "'Inter', sans-serif",
+        fontFamily: "'Space Grotesk', system-ui, sans-serif",
         cursor: "pointer",
         padding: "5px 10px",
         transition: "all 0.2s ease",
@@ -356,7 +356,7 @@ export function AdminAdsPage() {
     textTransform: "uppercase",
     cursor: "pointer",
     padding: "14px 20px",
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: "'Space Grotesk', system-ui, sans-serif",
     transition: "all 0.2s ease",
   });
 
@@ -419,7 +419,7 @@ export function AdminAdsPage() {
                   border: `1px solid ${targetPage === opt.value ? "rgba(200,144,90,0.3)" : "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))"}`,
                   color: targetPage === opt.value ? "#c8905a" : "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))",
                   fontSize: "9px", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase",
-                  fontFamily: "'Inter', sans-serif", cursor: "pointer", padding: "5px 10px", transition: "all 0.15s ease",
+                  fontFamily: "'Space Grotesk', system-ui, sans-serif", cursor: "pointer", padding: "5px 10px", transition: "all 0.15s ease",
                 }}
               >
                 {opt.label}
@@ -452,7 +452,7 @@ export function AdminAdsPage() {
               border: `1px solid ${period === p ? "rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))" : "rgba(var(--admin-fg-rgb),calc(0.06 * var(--admin-fg-boost)))"}`,
               color: period === p ? "var(--admin-fg-solid)" : "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))",
               fontSize: "9px", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase",
-              fontFamily: "'Inter', sans-serif", cursor: "pointer", padding: "6px 12px", transition: "all 0.15s ease",
+              fontFamily: "'Space Grotesk', system-ui, sans-serif", cursor: "pointer", padding: "6px 12px", transition: "all 0.15s ease",
             }}>
               {p === "all" ? "All time" : p}
             </button>
@@ -463,7 +463,7 @@ export function AdminAdsPage() {
             display: "flex", alignItems: "center", gap: "6px",
             background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))",
             color: "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase",
-            fontFamily: "'Inter', sans-serif", cursor: "pointer", padding: "6px 12px", transition: "all 0.2s ease",
+            fontFamily: "'Space Grotesk', system-ui, sans-serif", cursor: "pointer", padding: "6px 12px", transition: "all 0.2s ease",
           }}
             onMouseEnter={e => { e.currentTarget.style.color = "var(--admin-fg-solid)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))"; }}
             onMouseLeave={e => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))"; }}
@@ -556,7 +556,7 @@ export function AdminAdsPage() {
                           fontWeight: 600,
                           letterSpacing: "0.1em",
                           textTransform: "uppercase",
-                          fontFamily: "'Inter', sans-serif",
+                          fontFamily: "'Space Grotesk', system-ui, sans-serif",
                           display: "flex",
                           alignItems: "center",
                           gap: "5px",
@@ -621,7 +621,7 @@ export function AdminAdsPage() {
                             color: "#e07060",
                             fontSize: "9px", fontWeight: 700,
                             letterSpacing: "0.1em", textTransform: "uppercase",
-                            fontFamily: "'Inter', sans-serif",
+                            fontFamily: "'Space Grotesk', system-ui, sans-serif",
                             cursor: "pointer", padding: "4px 10px",
                           }}
                         >
@@ -643,7 +643,7 @@ export function AdminAdsPage() {
                           color: "rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))",
                           cursor: "pointer", padding: "2px",
                           display: "flex", alignItems: "center", gap: "5px",
-                          fontSize: "9px", fontFamily: "'Inter', sans-serif",
+                          fontSize: "9px", fontFamily: "'Space Grotesk', system-ui, sans-serif",
                           letterSpacing: "0.1em", textTransform: "uppercase",
                           transition: "color 0.15s ease",
                         }}

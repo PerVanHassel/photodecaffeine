@@ -183,7 +183,7 @@ export function AdminClientDetailPage() {
     border: "1px solid rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))",
     color: "var(--admin-fg-solid)",
     fontSize: "13px",
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: "'Space Grotesk', system-ui, sans-serif",
     fontWeight: 300,
     padding: "10px 14px",
     outline: "none",
@@ -211,7 +211,7 @@ export function AdminClientDetailPage() {
           background: "none", border: "none", cursor: "pointer",
           color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "10px", fontWeight: 500,
           letterSpacing: "0.2em", textTransform: "uppercase",
-          fontFamily: "'Inter', sans-serif", padding: 0, marginBottom: "28px",
+          fontFamily: "'Space Grotesk', system-ui, sans-serif", padding: 0, marginBottom: "28px",
           transition: "color 0.2s ease",
         }}
         onMouseEnter={(e) => (e.currentTarget.style.color = "var(--admin-fg-solid)")}
@@ -283,7 +283,7 @@ export function AdminClientDetailPage() {
                     color: "rgba(120,190,140,0.9)", fontSize: "9px", fontWeight: 700,
                     letterSpacing: "0.15em", textTransform: "uppercase",
                     cursor: editSaving ? "not-allowed" : "pointer", padding: "6px 12px",
-                    fontFamily: "'Inter', sans-serif",
+                    fontFamily: "'Space Grotesk', system-ui, sans-serif",
                   }}>
                     <Check size={11} /> {editSaving ? "Saving…" : "Save"}
                   </button>
@@ -293,7 +293,7 @@ export function AdminClientDetailPage() {
                     color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600,
                     letterSpacing: "0.15em", textTransform: "uppercase",
                     cursor: "pointer", padding: "6px 12px",
-                    fontFamily: "'Inter', sans-serif",
+                    fontFamily: "'Space Grotesk', system-ui, sans-serif",
                   }}>
                     <X size={11} /> Cancel
                   </button>
@@ -325,7 +325,7 @@ export function AdminClientDetailPage() {
                     color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600,
                     letterSpacing: "0.2em", textTransform: "uppercase",
                     cursor: "pointer", padding: "7px 12px",
-                    fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
+                    fontFamily: "'Space Grotesk', system-ui, sans-serif", transition: "all 0.2s ease",
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.color = "var(--admin-fg-solid)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))"; }}
@@ -341,7 +341,7 @@ export function AdminClientDetailPage() {
                   color: "rgba(224,112,96,0.5)", fontSize: "9px", fontWeight: 600,
                   letterSpacing: "0.2em", textTransform: "uppercase",
                   cursor: "pointer", padding: "7px 12px",
-                  fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
+                  fontFamily: "'Space Grotesk', system-ui, sans-serif", transition: "all 0.2s ease",
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(224,112,96,0.5)"; e.currentTarget.style.color = "#e07060"; e.currentTarget.style.backgroundColor = "rgba(224,112,96,0.06)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(224,112,96,0.2)"; e.currentTarget.style.color = "rgba(224,112,96,0.5)"; e.currentTarget.style.backgroundColor = "transparent"; }}
@@ -394,7 +394,7 @@ export function AdminClientDetailPage() {
                       border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
                       color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "10px", fontWeight: 600,
                       letterSpacing: "0.2em", textTransform: "uppercase",
-                      cursor: "pointer", fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
+                      cursor: "pointer", fontFamily: "'Space Grotesk', system-ui, sans-serif", transition: "all 0.2s ease",
                     }}
                     onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))"; e.currentTarget.style.color = "var(--admin-fg-solid)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))"; e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))"; }}
@@ -412,7 +412,7 @@ export function AdminClientDetailPage() {
                       fontSize: "10px", fontWeight: 700,
                       letterSpacing: "0.2em", textTransform: "uppercase",
                       cursor: deleting ? "not-allowed" : "pointer",
-                      fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
+                      fontFamily: "'Space Grotesk', system-ui, sans-serif", transition: "all 0.2s ease",
                     }}
                     onMouseEnter={(e) => { if (!deleting) { e.currentTarget.style.backgroundColor = "rgba(224,112,96,0.2)"; e.currentTarget.style.borderColor = "rgba(224,112,96,0.5)"; } }}
                     onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = deleting ? "rgba(224,112,96,0.1)" : "rgba(224,112,96,0.12)"; e.currentTarget.style.borderColor = "rgba(224,112,96,0.3)"; }}
@@ -437,7 +437,7 @@ export function AdminClientDetailPage() {
                 border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
                 color: "var(--admin-fg-solid)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em",
                 textTransform: "uppercase", cursor: "pointer", padding: "8px 14px",
-                fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
+                fontFamily: "'Space Grotesk', system-ui, sans-serif", transition: "all 0.2s ease",
               }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = showForm ? "transparent" : "rgba(var(--admin-fg-rgb),calc(0.06 * var(--admin-fg-boost)))")}
@@ -474,7 +474,7 @@ export function AdminClientDetailPage() {
                           backgroundColor: active ? "rgba(200,144,90,0.12)" : "transparent",
                           border: `1px solid ${active ? "rgba(200,144,90,0.45)" : "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))"}`,
                           color: active ? "#c8905a" : "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))",
-                          padding: "11px 14px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+                          padding: "11px 14px", cursor: "pointer", fontFamily: "'Space Grotesk', system-ui, sans-serif",
                         }}
                       >
                         <div style={{ fontSize: "12.5px", fontWeight: 700 }}>{t.label}</div>
@@ -576,7 +576,7 @@ export function AdminClientDetailPage() {
                   color: formLoading ? "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))" : "var(--admin-cta-fg)",
                   border: "none", padding: "12px 24px", fontSize: "10px", fontWeight: 700,
                   letterSpacing: "0.2em", textTransform: "uppercase", cursor: formLoading ? "not-allowed" : "pointer",
-                  fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
+                  fontFamily: "'Space Grotesk', system-ui, sans-serif", transition: "all 0.2s ease",
                   width: isMobile ? "100%" : "auto",
                 }}>
                   {formLoading ? "Creating…" : "Create Project"}
@@ -608,7 +608,7 @@ export function AdminClientDetailPage() {
                     backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.015 * var(--admin-fg-boost)))",
                     border: "1px solid rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))",
                     cursor: "pointer", textAlign: "left",
-                    fontFamily: "'Inter', sans-serif",
+                    fontFamily: "'Space Grotesk', system-ui, sans-serif",
                     transition: "all 0.2s ease", width: "100%",
                     flexWrap: isMobile ? "wrap" : "nowrap",
                   }}

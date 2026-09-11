@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { portalFetch } from "../../../lib/supabase";
-import { Users, FolderOpen, ArrowRight, TrendingUp, Plus, Search, Bell } from "lucide-react";
+import { Users, ArrowRight, Plus, Search, Bell, AlertTriangle } from "lucide-react";
+import { motion } from "motion/react";
 import { useMobile } from "../../hooks/useMobile";
 import { RemindersWidget } from "../../components/RemindersWidget";
+import { ACCENT, ADMIN_FONT, ADMIN_MONO, CountUp, DANGER, Pulse, SPRING, Skeleton, eyebrow, fg } from "../../components/portal/adminTaste";
 
 interface ClientSummary {
   id: string;
@@ -21,17 +23,175 @@ function formatDate(str: string) {
 }
 
 function timeAgo(str: string | null) {
-  if (!str) return "Never";
+  if (!str) return "never";
   const diff = Date.now() - new Date(str).getTime();
   const days = Math.floor(diff / 86400000);
-  if (days === 0) return "Today";
-  if (days === 1) return "Yesterday";
+  if (days === 0) return "today";
+  if (days === 1) return "yesterday";
   if (days < 30) return `${days}d ago`;
   return formatDate(str);
 }
 
 function isRecentClient(createdAt: string): boolean {
   return Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000) <= 7;
+}
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 6) return "Still up";
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good to see you";
+  return "Good evening";
+}
+
+const monoMeta = { fontFamily: ADMIN_MONO, fontSize: "11px", fontVariantNumeric: "tabular-nums" as const };
+
+/** One line of the metric rail — a rule, a label, a number. No card. */
+function StatRow({
+  label, value, decimals = 0, hint, onClick, loading,
+}: {
+  label: string; value: number; decimals?: number; hint?: string;
+  onClick?: () => void; loading: boolean;
+}) {
+  const [hover, setHover] = useState(false);
+  const interactive = Boolean(onClick);
+  return (
+    <div
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={interactive ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick?.(); } } : undefined}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        borderTop: `1px solid ${hover && interactive ? fg(0.16) : fg(0.07)}`,
+        padding: "16px 0 18px",
+        display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "16px",
+        cursor: interactive ? "pointer" : "default",
+        transition: "border-color 0.25s ease",
+      }}
+    >
+      <div style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: 0 }}>
+        <span style={{ ...eyebrow(hover && interactive ? 0.55 : 0.3), transition: "color 0.25s ease" }}>{label}</span>
+        {hint && <span style={{ ...monoMeta, color: fg(0.22), fontSize: "10px" }}>{hint}</span>}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+        {loading
+          ? <Skeleton width={46} height={26} />
+          : <CountUp value={value} decimals={decimals} style={{ color: "var(--admin-fg-solid)", fontSize: "30px", fontWeight: 500, letterSpacing: "-0.03em", lineHeight: 1 }} />}
+        {interactive && (
+          <ArrowRight
+            size={13} strokeWidth={1.5}
+            style={{
+              color: hover ? ACCENT : fg(0.16),
+              transform: hover ? "translateX(2px)" : "none",
+              transition: "transform 0.25s cubic-bezier(0.16,1,0.3,1), color 0.25s ease",
+            }}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ClientRow({ client, index, onOpen, isMobile }: { client: ClientSummary; index: number; onOpen: () => void; isMobile: boolean }) {
+  const [hover, setHover] = useState(false);
+  const isRecent = isRecentClient(client.createdAt);
+  const initials = client.name.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
+
+  return (
+    <motion.button
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ ...SPRING, delay: Math.min(index * 0.045, 0.3) }}
+      whileTap={{ scale: 0.995 }}
+      onClick={onOpen}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        position: "relative",
+        display: "flex", alignItems: "center",
+        gap: isMobile ? "12px" : "20px",
+        padding: isMobile ? "15px 14px 15px 16px" : "17px 18px 17px 20px",
+        background: hover ? fg(0.035) : "transparent",
+        border: "none",
+        borderTop: `1px solid ${fg(0.07)}`,
+        cursor: "pointer", textAlign: "left",
+        fontFamily: ADMIN_FONT,
+        transition: "background-color 0.25s ease",
+        width: "100%",
+      }}
+    >
+      {/* The "new this week" marker: an edge tick, not a tinted box. */}
+      <span style={{
+        position: "absolute", left: 0, top: 0, bottom: 0, width: "2px",
+        backgroundColor: isRecent ? ACCENT : hover ? fg(0.2) : "transparent",
+        transition: "background-color 0.25s ease",
+      }} />
+      <div style={{
+        width: "32px", height: "32px", flexShrink: 0,
+        border: `1px solid ${isRecent ? "rgba(200,144,90,0.3)" : fg(0.1)}`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        color: isRecent ? ACCENT : fg(0.42),
+        fontSize: "10px", fontWeight: 600, fontFamily: ADMIN_MONO,
+      }}>
+        {initials}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span style={{ color: "var(--admin-fg-solid)", fontSize: "13px", fontWeight: 500, letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {client.name}
+          </span>
+          {isRecent && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
+              <Pulse size={4} />
+              <span style={{ ...eyebrow(0.3, 8), color: ACCENT }}>New</span>
+            </span>
+          )}
+        </div>
+        <div style={{ color: fg(0.32), fontSize: "11px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {isMobile ? client.email : (client.company || client.email)}
+        </div>
+      </div>
+      {!isMobile && (
+        <span style={{ ...monoMeta, color: fg(0.3), flexShrink: 0 }}>
+          {String(client.projectCount).padStart(2, "0")} proj
+        </span>
+      )}
+      {!isMobile && (
+        <span style={{ ...monoMeta, color: fg(0.24), flexShrink: 0, width: "92px", textAlign: "right" }}>
+          {timeAgo(client.lastSignIn)}
+        </span>
+      )}
+      <ArrowRight
+        size={13} strokeWidth={1.5}
+        style={{
+          flexShrink: 0,
+          color: hover ? ACCENT : fg(0.16),
+          transform: hover ? "translateX(3px)" : "none",
+          transition: "transform 0.25s cubic-bezier(0.16,1,0.3,1), color 0.25s ease",
+        }}
+      />
+    </motion.button>
+  );
+}
+
+function ClientRowSkeleton({ isMobile }: { isMobile: boolean }) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: isMobile ? "12px" : "20px",
+      padding: isMobile ? "15px 14px 15px 16px" : "17px 18px 17px 20px",
+      borderTop: `1px solid ${fg(0.07)}`,
+    }}>
+      <Skeleton width={32} height={32} />
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "8px" }}>
+        <Skeleton width="38%" height={11} />
+        <Skeleton width="22%" height={9} />
+      </div>
+      {!isMobile && <Skeleton width={54} height={9} />}
+      {!isMobile && <Skeleton width={70} height={9} />}
+    </div>
+  );
 }
 
 export function AdminDashboardPage() {
@@ -53,14 +213,9 @@ export function AdminDashboardPage() {
   }, [session]);
 
   const totalProjects = clients.reduce((sum, c) => sum + c.projectCount, 0);
-  const avgProjects = clients.length > 0 ? (totalProjects / clients.length).toFixed(1) : "0";
+  const avgProjects = clients.length > 0 ? totalProjects / clients.length : 0;
+  const newThisWeek = clients.filter((c) => isRecentClient(c.createdAt)).length;
   const recentClients = clients.slice(0, 6);
-
-  const statCards = [
-    { label: "Total Clients", value: clients.length, icon: Users, color: "#c8905a", route: "/admin/clients" },
-    { label: "Total Projects", value: totalProjects, icon: FolderOpen, color: "rgba(120,190,140,0.8)", route: "/admin/clients" },
-    { label: "Avg / Client", value: avgProjects, icon: TrendingUp, color: "rgba(140,160,220,0.8)", route: null },
-  ];
 
   const quickActions = [
     { label: "New Client", icon: Plus, action: () => navigate("/admin/clients") },
@@ -68,211 +223,176 @@ export function AdminDashboardPage() {
     { label: "Reminders", icon: Bell, action: () => document.getElementById("reminders-widget")?.scrollIntoView({ behavior: "smooth" }) },
   ];
 
+  const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+
   return (
-    <div style={{ padding: isMobile ? "28px 16px 60px" : "48px 40px 80px", maxWidth: "1000px" }}>
-      {/* Header */}
-      <div style={{ marginBottom: "48px" }}>
-        <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 500, letterSpacing: "0.35em", textTransform: "uppercase", marginBottom: "12px" }}>
-          Photo De Caffeine — Admin
-        </div>
-        <h1 style={{ color: "var(--admin-fg-solid)", fontSize: "clamp(28px, 3.5vw, 44px)", fontWeight: 800, letterSpacing: "-0.02em", margin: 0, lineHeight: 1.1 }}>
-          Good to see you,{" "}
-          <span style={{ color: "#c8905a" }}>{firstName}.</span>
-        </h1>
-      </div>
-
-      {/* Quick actions */}
-      <div style={{ display: "flex", gap: "8px", marginBottom: "40px", flexWrap: "wrap" }}>
-        {quickActions.map(({ label, icon: Icon, action }) => (
-          <button
-            key={label}
-            onClick={action}
-            style={{
-              display: "flex", alignItems: "center", gap: "6px",
-              background: "none", border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
-              color: "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 700,
-              letterSpacing: "0.2em", textTransform: "uppercase",
-              cursor: "pointer", padding: "8px 14px",
-              fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = "var(--admin-fg-solid)"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))"; e.currentTarget.style.backgroundColor = "rgba(var(--admin-fg-rgb),calc(0.04 * var(--admin-fg-boost)))"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))"; e.currentTarget.style.backgroundColor = "transparent"; }}
-          >
-            <Icon size={11} />
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {/* Stat cards — clickable where applicable */}
+    <div style={{
+      padding: isMobile ? "28px 16px 64px" : "52px 40px 96px",
+      maxWidth: "1240px",
+      fontFamily: ADMIN_FONT,
+    }}>
+      {/* Hero — greeting left, metric rail right. Deliberately off-balance. */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(3, 1fr)",
-        gap: isMobile ? "8px" : "12px",
-        marginBottom: isMobile ? "32px" : "48px",
+        gridTemplateColumns: isMobile ? "1fr" : "minmax(0,1.45fr) minmax(280px,1fr)",
+        gap: isMobile ? "36px" : "72px",
+        alignItems: "end",
+        marginBottom: isMobile ? "44px" : "72px",
       }}>
-        {statCards.map(({ label, value, icon: Icon, color, route }) => {
-          const Tag = route ? "button" : "div";
-          return (
-            <Tag
-              key={label}
-              onClick={route ? () => navigate(route) : undefined}
-              style={{
-                backgroundColor: "rgba(var(--admin-fg-rgb),calc(0.02 * var(--admin-fg-boost)))",
-                border: "1px solid rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))",
-                padding: "28px 24px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "12px",
-                cursor: route ? "pointer" : "default",
-                textAlign: "left",
-                fontFamily: "'Inter', sans-serif",
-                transition: route ? "all 0.2s ease" : undefined,
-                width: "100%",
-              }}
-              onMouseEnter={route ? (e: React.MouseEvent<HTMLElement>) => { e.currentTarget.style.backgroundColor = "rgba(var(--admin-fg-rgb),calc(0.04 * var(--admin-fg-boost)))"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))"; } : undefined}
-              onMouseLeave={route ? (e: React.MouseEvent<HTMLElement>) => { e.currentTarget.style.backgroundColor = "rgba(var(--admin-fg-rgb),calc(0.02 * var(--admin-fg-boost)))"; e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))"; } : undefined}
-            >
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 500, letterSpacing: "0.25em", textTransform: "uppercase" }}>
-                  {label}
-                </span>
-                <Icon size={14} color={color} />
-              </div>
-              <div style={{ color: "var(--admin-fg-solid)", fontSize: "36px", fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1 }}>
-                {loading ? "—" : value}
-              </div>
-              {route && !loading && (
-                <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "9px", letterSpacing: "0.15em", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "4px" }}>
-                  View all <ArrowRight size={9} />
-                </div>
-              )}
-            </Tag>
-          );
-        })}
+        <div>
+          <div style={{ ...eyebrow(0.24), display: "flex", alignItems: "center", gap: "8px", marginBottom: "18px" }}>
+            <Pulse size={4} />
+            Photo De Caffeine — Admin
+          </div>
+          <h1 style={{
+            color: "var(--admin-fg-solid)",
+            fontSize: isMobile ? "30px" : "clamp(30px, 3vw, 40px)",
+            fontWeight: 500, letterSpacing: "-0.035em",
+            margin: 0, lineHeight: 1.05,
+          }}>
+            {greeting()}, <span style={{ color: ACCENT }}>{firstName}.</span>
+          </h1>
+          <div style={{ ...monoMeta, color: fg(0.28), marginTop: "14px", textTransform: "lowercase" }}>
+            {today}
+            {!loading && newThisWeek > 0 && (
+              <span style={{ color: ACCENT }}>{`  ·  ${newThisWeek} new client${newThisWeek === 1 ? "" : "s"} this week`}</span>
+            )}
+          </div>
+
+          {/* Quick actions */}
+          <div style={{ display: "flex", gap: "8px", marginTop: "30px", flexWrap: "wrap" }}>
+            {quickActions.map(({ label, icon: Icon, action }) => (
+              <motion.button
+                key={label}
+                onClick={action}
+                whileTap={{ scale: 0.97, y: 1 }}
+                transition={SPRING}
+                style={{
+                  display: "flex", alignItems: "center", gap: "7px",
+                  background: "none", border: `1px solid ${fg(0.1)}`,
+                  color: fg(0.5), fontSize: "9px", fontWeight: 700,
+                  letterSpacing: "0.2em", textTransform: "uppercase",
+                  cursor: "pointer", padding: "9px 15px",
+                  fontFamily: ADMIN_FONT,
+                  transition: "color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = "var(--admin-fg-solid)"; e.currentTarget.style.borderColor = fg(0.25); e.currentTarget.style.backgroundColor = fg(0.04); }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = fg(0.5); e.currentTarget.style.borderColor = fg(0.1); e.currentTarget.style.backgroundColor = "transparent"; }}
+              >
+                <Icon size={11} strokeWidth={1.5} />
+                {label}
+              </motion.button>
+            ))}
+          </div>
+        </div>
+
+        {/* Metric rail */}
+        <div>
+          <StatRow label="Clients" value={clients.length} loading={loading} hint="accounts in the portal" onClick={() => navigate("/admin/clients")} />
+          <StatRow label="Projects" value={totalProjects} loading={loading} hint="across all clients" onClick={() => navigate("/admin/clients")} />
+          <StatRow label="Avg / client" value={avgProjects} decimals={1} loading={loading} hint="projects per account" />
+        </div>
       </div>
 
       {/* Error state */}
       {error && (
-        <div style={{ padding: "16px", border: "1px solid rgba(224,112,96,0.2)", color: "#e07060", fontSize: "13px", marginBottom: "24px" }}>
+        <div style={{
+          display: "flex", alignItems: "center", gap: "10px",
+          padding: "14px 16px",
+          borderLeft: `2px solid ${DANGER}`,
+          backgroundColor: "rgba(224,112,96,0.07)",
+          color: DANGER, fontSize: "12px",
+          marginBottom: "32px",
+        }}>
+          <AlertTriangle size={14} strokeWidth={1.5} style={{ flexShrink: 0 }} />
           {error}
         </div>
       )}
 
-      {/* Reminders Widget */}
-      <div id="reminders-widget" style={{ marginBottom: isMobile ? "32px" : "48px" }}>
+      {/* Reminders */}
+      <div id="reminders-widget" style={{ marginBottom: isMobile ? "40px" : "72px" }}>
         <RemindersWidget />
       </div>
 
       {/* Recent clients */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-        <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase" }}>
-          Recent Clients
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px", gap: "16px" }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: "12px", minWidth: 0 }}>
+          <span style={{ ...eyebrow(0.35), letterSpacing: "0.3em" }}>Recent Clients</span>
           {!loading && clients.length > 0 && (
-            <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.15 * var(--admin-fg-boost)))", marginLeft: "8px" }}>
-              {recentClients.length} of {clients.length}
+            <span style={{ ...monoMeta, color: fg(0.2), fontSize: "10px" }}>
+              {String(recentClients.length).padStart(2, "0")} / {String(clients.length).padStart(2, "0")}
             </span>
           )}
-        </span>
+        </div>
         <button
           onClick={() => navigate("/admin/clients")}
           style={{
             background: "none", border: "none", cursor: "pointer",
-            color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 600,
+            color: fg(0.32), fontSize: "9px", fontWeight: 700,
             letterSpacing: "0.2em", textTransform: "uppercase",
-            fontFamily: "'Inter', sans-serif",
-            display: "flex", alignItems: "center", gap: "5px",
+            fontFamily: ADMIN_FONT,
+            display: "flex", alignItems: "center", gap: "6px", flexShrink: 0,
             transition: "color 0.2s ease",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "#c8905a")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))")}
+          onMouseEnter={(e) => (e.currentTarget.style.color = ACCENT)}
+          onMouseLeave={(e) => (e.currentTarget.style.color = fg(0.32))}
         >
-          View All <ArrowRight size={10} />
+          View All <ArrowRight size={10} strokeWidth={1.5} />
         </button>
       </div>
 
-      {loading && (
-        <div style={{ textAlign: "center", padding: "48px 0", color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase" }}>
-          Loading…
-        </div>
-      )}
+      <div style={{ borderBottom: `1px solid ${fg(0.07)}` }}>
+        {loading && Array.from({ length: 4 }).map((_, i) => <ClientRowSkeleton key={i} isMobile={isMobile} />)}
 
-      {!loading && clients.length === 0 && !error && (
-        <div style={{ textAlign: "center", padding: "48px 0", color: "rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))", fontSize: "13px" }}>
-          No clients yet. They will appear here after signing up via the Client Portal.
-        </div>
-      )}
+        {!loading && clients.length === 0 && !error && (
+          <div style={{
+            borderTop: `1px solid ${fg(0.07)}`,
+            padding: isMobile ? "48px 16px" : "72px 24px",
+            display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "14px",
+          }}>
+            <div style={{
+              width: "38px", height: "38px",
+              border: `1px solid ${fg(0.12)}`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: fg(0.3),
+            }}>
+              <Users size={16} strokeWidth={1.5} />
+            </div>
+            <div style={{ color: "var(--admin-fg-solid)", fontSize: "15px", fontWeight: 500, letterSpacing: "-0.02em" }}>
+              No clients yet
+            </div>
+            <div style={{ color: fg(0.34), fontSize: "12px", lineHeight: 1.7, maxWidth: "46ch" }}>
+              Accounts show up here the moment someone signs up through the client portal. Send an invite from the Clients page to get the first one in.
+            </div>
+            <button
+              onClick={() => navigate("/admin/clients")}
+              style={{
+                marginTop: "6px",
+                display: "flex", alignItems: "center", gap: "7px",
+                background: "none", border: `1px solid ${fg(0.16)}`,
+                color: fg(0.6), fontSize: "9px", fontWeight: 700,
+                letterSpacing: "0.2em", textTransform: "uppercase",
+                cursor: "pointer", padding: "9px 15px", fontFamily: ADMIN_FONT,
+                transition: "color 0.2s ease, border-color 0.2s ease",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = "var(--admin-fg-solid)"; e.currentTarget.style.borderColor = fg(0.3); }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = fg(0.6); e.currentTarget.style.borderColor = fg(0.16); }}
+            >
+              <Plus size={11} strokeWidth={1.5} /> Go to Clients
+            </button>
+          </div>
+        )}
 
-      {!loading && recentClients.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          {recentClients.map((client) => {
-            const isRecent = isRecentClient(client.createdAt);
-            return (
-              <button
-                key={client.id}
-                onClick={() => navigate(`/admin/client/${client.id}`)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: isMobile ? "12px" : "20px",
-                  padding: isMobile ? "14px 16px" : "18px 24px",
-                  backgroundColor: isRecent ? "rgba(200,144,90,0.08)" : "rgba(var(--admin-fg-rgb),calc(0.015 * var(--admin-fg-boost)))",
-                  border: `1px solid ${isRecent ? "rgba(200,144,90,0.2)" : "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))"}`,
-                  cursor: "pointer", textAlign: "left",
-                  fontFamily: "'Inter', sans-serif",
-                  transition: "all 0.2s ease", width: "100%",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = isRecent ? "rgba(200,144,90,0.12)" : "rgba(var(--admin-fg-rgb),calc(0.03 * var(--admin-fg-boost)))";
-                  e.currentTarget.style.borderColor = isRecent ? "rgba(200,144,90,0.3)" : "rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = isRecent ? "rgba(200,144,90,0.08)" : "rgba(var(--admin-fg-rgb),calc(0.015 * var(--admin-fg-boost)))";
-                  e.currentTarget.style.borderColor = isRecent ? "rgba(200,144,90,0.2)" : "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))";
-                }}
-              >
-                <div style={{
-                  width: "34px", height: "34px", flexShrink: 0,
-                  backgroundColor: isRecent ? "rgba(200,144,90,0.15)" : "rgba(var(--admin-fg-rgb),calc(0.05 * var(--admin-fg-boost)))",
-                  border: `1px solid ${isRecent ? "rgba(200,144,90,0.25)" : "rgba(var(--admin-fg-rgb),calc(0.07 * var(--admin-fg-boost)))"}`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  color: isRecent ? "#c8905a" : "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))", fontSize: "11px", fontWeight: 600,
-                }}>
-                  {client.name.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2)}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span style={{ color: "var(--admin-fg-solid)", fontSize: "13px", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{client.name}</span>
-                    {isRecent && (
-                      <span style={{
-                        backgroundColor: "rgba(200,144,90,0.25)", color: "#c8905a",
-                        fontSize: "8px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
-                        padding: "2px 6px", flexShrink: 0,
-                      }}>
-                        New
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "11px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {isMobile ? client.email : (client.company || client.email)}
-                  </div>
-                </div>
-                {!isMobile && (
-                  <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))", fontSize: "11px", flexShrink: 0 }}>
-                    {client.projectCount} project{client.projectCount !== 1 ? "s" : ""}
-                  </div>
-                )}
-                {!isMobile && (
-                  <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "11px", flexShrink: 0 }}>
-                    {timeAgo(client.lastSignIn)}
-                  </div>
-                )}
-                <ArrowRight size={13} color="rgba(var(--admin-fg-rgb),calc(0.2 * var(--admin-fg-boost)))" style={{ flexShrink: 0 }} />
-              </button>
-            );
-          })}
-        </div>
-      )}
+        {!loading && recentClients.map((client, i) => (
+          <ClientRow
+            key={client.id}
+            client={client}
+            index={i}
+            isMobile={isMobile}
+            onOpen={() => navigate(`/admin/client/${client.id}`)}
+          />
+        ))}
+      </div>
     </div>
   );
 }

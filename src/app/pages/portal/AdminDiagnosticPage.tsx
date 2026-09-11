@@ -147,7 +147,7 @@ export function AdminDiagnosticPage() {
     letterSpacing: "0.15em",
     textTransform: "uppercase",
     cursor: disabled ? "not-allowed" : "pointer",
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: "'Space Grotesk', system-ui, sans-serif",
     display: "flex",
     alignItems: "center",
     gap: "6px",
@@ -158,7 +158,7 @@ export function AdminDiagnosticPage() {
       style={{
         minHeight: "100vh",
         backgroundColor: "#060301",
-        fontFamily: "'Inter', sans-serif",
+        fontFamily: "'Space Grotesk', system-ui, sans-serif",
         padding: "40px 20px",
       }}
     >
@@ -278,7 +278,7 @@ export function AdminDiagnosticPage() {
                           border: "1px solid rgba(255,251,224,0.08)",
                           color: "#fffbe0",
                           fontSize: "13px",
-                          fontFamily: "'Inter', sans-serif",
+                          fontFamily: "'Space Grotesk', system-ui, sans-serif",
                           padding: "10px 14px",
                           outline: "none",
                         }}

@@ -58,7 +58,7 @@ export function ClientPicker({ selected, onChange, clients, lockedId }: ClientPi
     border: "1px solid rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))",
     color: "var(--admin-fg-solid)",
     fontSize: "13px",
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: "'Space Grotesk', system-ui, sans-serif",
     fontWeight: 300,
     padding: "10px 14px 10px 34px",
     outline: "none",
@@ -140,7 +140,7 @@ export function ClientPicker({ selected, onChange, clients, lockedId }: ClientPi
                 color: "var(--admin-fg-solid)",
                 padding: "9px 12px",
                 fontSize: "13px",
-                fontFamily: "'Inter', sans-serif",
+                fontFamily: "'Space Grotesk', system-ui, sans-serif",
                 cursor: "pointer",
                 textAlign: "left",
               }}

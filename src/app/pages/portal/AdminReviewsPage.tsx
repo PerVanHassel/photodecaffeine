@@ -153,7 +153,7 @@ export function AdminReviewsPage() {
     color: "var(--admin-fg-solid)",
     fontSize: "12px",
     padding: "8px 10px",
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: "'Space Grotesk', system-ui, sans-serif",
     cursor: "pointer",
     maxWidth: "100%",
   };
@@ -190,7 +190,7 @@ export function AdminReviewsPage() {
               borderBottom: tab === key ? "1px solid #c8905a" : "1px solid transparent",
               color: tab === key ? "var(--admin-fg-solid)" : "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))",
               fontSize: "10px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase",
-              padding: "12px 18px", cursor: "pointer", fontFamily: "'Inter', sans-serif", marginBottom: "-1px",
+              padding: "12px 18px", cursor: "pointer", fontFamily: "'Space Grotesk', system-ui, sans-serif", marginBottom: "-1px",
             }}
           >
             {label}
@@ -226,7 +226,7 @@ export function AdminReviewsPage() {
                       style={{
                         background: "none", border: "none", padding: 0, cursor: "pointer",
                         color: "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))", fontSize: "12px",
-                        fontFamily: "'Inter', sans-serif", display: "flex", alignItems: "center", gap: "5px", marginTop: "3px",
+                        fontFamily: "'Space Grotesk', system-ui, sans-serif", display: "flex", alignItems: "center", gap: "5px", marginTop: "3px",
                       }}
                     >
                       {r.projectTitle} <ArrowRight size={11} />
@@ -283,7 +283,7 @@ export function AdminReviewsPage() {
                       color: r.published ? "rgba(var(--admin-fg-rgb),calc(0.5 * var(--admin-fg-boost)))" : "#c8905a",
                       fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase",
                       padding: "9px 14px", cursor: savingId === r.id ? "not-allowed" : "pointer",
-                      fontFamily: "'Inter', sans-serif",
+                      fontFamily: "'Space Grotesk', system-ui, sans-serif",
                     }}
                   >
                     {r.published ? <EyeOff size={12} /> : <Eye size={12} />}
@@ -317,7 +317,7 @@ export function AdminReviewsPage() {
                     style={{
                       background: "none", border: "none", padding: 0, cursor: "pointer",
                       color: "rgba(var(--admin-fg-rgb),calc(0.35 * var(--admin-fg-boost)))", fontSize: "12px",
-                      fontFamily: "'Inter', sans-serif", display: "flex", alignItems: "center", gap: "5px", marginTop: "3px",
+                      fontFamily: "'Space Grotesk', system-ui, sans-serif", display: "flex", alignItems: "center", gap: "5px", marginTop: "3px",
                     }}
                   >
                     {f.projectTitle} <ArrowRight size={11} />
@@ -380,7 +380,7 @@ export function AdminReviewsPage() {
                   border: "1px solid rgba(var(--admin-fg-rgb),calc(0.1 * var(--admin-fg-boost)))",
                   color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))",
                   fontSize: "10px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase",
-                  cursor: "pointer", fontFamily: "'Inter', sans-serif",
+                  cursor: "pointer", fontFamily: "'Space Grotesk', system-ui, sans-serif",
                 }}
               >
                 Annuleren
@@ -392,7 +392,7 @@ export function AdminReviewsPage() {
                   flex: 1, padding: "12px",
                   backgroundColor: "rgba(224,112,96,0.12)", border: "1px solid rgba(224,112,96,0.3)",
                   color: "#e07060", fontSize: "10px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase",
-                  cursor: savingId === deleteTarget.id ? "not-allowed" : "pointer", fontFamily: "'Inter', sans-serif",
+                  cursor: savingId === deleteTarget.id ? "not-allowed" : "pointer", fontFamily: "'Space Grotesk', system-ui, sans-serif",
                 }}
               >
                 {savingId === deleteTarget.id ? "Bezig…" : "Verwijderen"}

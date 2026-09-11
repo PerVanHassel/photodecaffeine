@@ -100,7 +100,7 @@ export function AdminQuickFixPage() {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: "'Space Grotesk', system-ui, sans-serif",
     padding: "40px 20px",
   };
 
@@ -118,7 +118,7 @@ export function AdminQuickFixPage() {
     border: "1px solid rgba(255,251,224,0.08)",
     color: "#fffbe0",
     fontSize: "14px",
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: "'Space Grotesk', system-ui, sans-serif",
     fontWeight: 300,
     padding: "13px 16px",
     outline: "none",
@@ -146,7 +146,7 @@ export function AdminQuickFixPage() {
     letterSpacing: "0.2em",
     textTransform: "uppercase",
     cursor: "pointer",
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: "'Space Grotesk', system-ui, sans-serif",
     width: "100%",
     transition: "all 0.2s ease",
     display: "flex",

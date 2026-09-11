@@ -86,7 +86,7 @@ const inputStyle: React.CSSProperties = {
   color: "var(--admin-fg-solid)",
   padding: "12px",
   fontSize: "14px",
-  fontFamily: "'Inter', sans-serif",
+  fontFamily: "'Space Grotesk', system-ui, sans-serif",
   boxSizing: "border-box",
 };
 
@@ -280,7 +280,7 @@ export function AdminDeclarationsPage() {
   const years = [currentQuarter().year, currentQuarter().year - 1, currentQuarter().year - 2];
 
   return (
-    <div style={{ padding: "40px", fontFamily: "'Inter', sans-serif" }}>
+    <div style={{ padding: "40px", fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px", flexWrap: "wrap", gap: "16px" }}>
         <div>
           <h1 style={{ color: "var(--admin-fg-solid)", fontSize: "28px", fontWeight: 800, letterSpacing: "-0.02em", textTransform: "uppercase", margin: 0 }}>

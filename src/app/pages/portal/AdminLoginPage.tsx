@@ -86,7 +86,7 @@ export function AdminLoginPage() {
     border: "1px solid rgba(255,251,224,0.08)",
     color: "#fffbe0",
     fontSize: "14px",
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: "'Space Grotesk', system-ui, sans-serif",
     fontWeight: 300,
     padding: "13px 16px",
     outline: "none",
@@ -111,7 +111,7 @@ export function AdminLoginPage() {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      fontFamily: "'Inter', sans-serif",
+      fontFamily: "'Space Grotesk', system-ui, sans-serif",
       padding: "40px 20px",
     }}>
       <div style={{ width: "100%", maxWidth: "400px" }}>
@@ -158,7 +158,7 @@ export function AdminLoginPage() {
                 textTransform: "uppercase",
                 padding: "11px 0",
                 cursor: "pointer",
-                fontFamily: "'Inter', sans-serif",
+                fontFamily: "'Space Grotesk', system-ui, sans-serif",
                 transition: "all 0.2s ease",
                 marginBottom: "-1px",
               }}
@@ -237,7 +237,7 @@ export function AdminLoginPage() {
                 letterSpacing: "0.2em",
                 textTransform: "uppercase",
                 cursor: signinLoading ? "not-allowed" : "pointer",
-                fontFamily: "'Inter', sans-serif",
+                fontFamily: "'Space Grotesk', system-ui, sans-serif",
                 width: "100%",
                 transition: "all 0.2s ease",
                 marginTop: "4px",
@@ -333,7 +333,7 @@ export function AdminLoginPage() {
                 letterSpacing: "0.2em",
                 textTransform: "uppercase",
                 cursor: setupLoading ? "not-allowed" : "pointer",
-                fontFamily: "'Inter', sans-serif",
+                fontFamily: "'Space Grotesk', system-ui, sans-serif",
                 width: "100%",
                 transition: "all 0.2s ease",
               }}
