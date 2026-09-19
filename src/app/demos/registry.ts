@@ -34,6 +34,14 @@ export const DEMOS: DemoEntry[] = [
       import("./thymen-stolk-b/ThymenStolkBDemo").then((m) => ({ default: m.ThymenStolkBDemo }))
     ),
   },
+  {
+    slug: "aqua-spa-service",
+    name: "Aqua Spa Service — spa-technieker",
+    description: "Homepage en onderdelenwebshop voor een spa-technieker uit Verrebroek. Brand kit via ?p=brandkit.",
+    Component: lazy(() =>
+      import("./aqua-spa-service/AquaSpaServiceDemo").then((m) => ({ default: m.AquaSpaServiceDemo }))
+    ),
+  },
 ];
 
 export function findDemo(slug: string | undefined): DemoEntry | undefined {
