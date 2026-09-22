@@ -131,6 +131,9 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 // How long a client invitation stays good for.
 const INVITE_VALID_DAYS = 30;
 
+// Ruim boven wat een intakegesprek oplevert; een briefing van 6 kB is normaal.
+const BRIEFING_MAX_CHARS = 100_000;
+
 // --- Wachtwoordcontrole ---
 // Have I Been Pwned's range API, the k-anonymous way: only the first five
 // characters of the SHA-1 hash leave the building, and the rest is matched
@@ -1624,6 +1627,24 @@ app.put("/make-server-0951c59e/admin/project/:id", async (c) => {
 
     if (Array.isArray(updates.clientIds) && afterClients.length === 0) {
       return c.json({ error: "Een project moet aan minstens één klant gekoppeld blijven." }, 400);
+    }
+
+    // De briefing is geplakte tekst uit een intakegesprek. Er staat een grens
+    // op, zodat één rij in de kv-tabel hanteerbaar blijft; een uitgeschreven
+    // gesprek van een uur past daar ruim binnen. Te groot wordt geweigerd in
+    // plaats van stilletjes afgekapt — dat laatste gooit werk weg.
+    if ("briefing" in updates) {
+      const text = String(updates.briefing ?? "");
+      if (text.length > BRIEFING_MAX_CHARS) {
+        return c.json(
+          {
+            error: `Deze briefing is te groot (${Math.round(text.length / 1000)} kB). De grens is ${BRIEFING_MAX_CHARS / 1000} kB.`,
+          },
+          400
+        );
+      }
+      updates.briefing = text;
+      updates.briefingUpdatedAt = text.trim() ? new Date().toISOString() : "";
     }
 
     // Merge updates with existing data

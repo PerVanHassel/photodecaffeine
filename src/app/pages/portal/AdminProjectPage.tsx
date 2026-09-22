@@ -4,7 +4,8 @@ import { useNavigate, useParams } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { portalFetch } from "../../../lib/supabase";
 import { useMobile } from "../../hooks/useMobile";
-import { ArrowLeft, Save, Plus, Trash2, Check, Send, AlertTriangle, Upload, Images, X, Bell, ChevronUp, ChevronDown, Star, ExternalLink, MessageSquare } from "lucide-react";
+import { Markdown, taskCount, toggleTaskLine } from "../../components/portal/Markdown";
+import { ArrowLeft, Save, Plus, Trash2, Check, Send, AlertTriangle, Upload, Images, X, Bell, ChevronUp, ChevronDown, Star, ExternalLink, MessageSquare, FileText, Copy, Pencil } from "lucide-react";
 import { projectId as supabaseProjectId } from "/utils/supabase/info";
 import { ClientPicker, type PickableClient } from "../../components/portal/ClientPicker";
 import { DEMOS } from "../../demos/registry";
@@ -145,6 +146,17 @@ export function AdminProjectPage() {
   const [uploading, setUploading] = useState(false);
   const [gallerySettings, setGallerySettings] = useState<GallerySettings>({});
 
+  // Briefing uit het intakegesprek — markdown, opgeslagen zoals hij binnenkomt.
+  const [briefing, setBriefing] = useState("");
+  const [briefingDraft, setBriefingDraft] = useState("");
+  const [editingBriefing, setEditingBriefing] = useState(false);
+  const [briefingSaving, setBriefingSaving] = useState(false);
+  const [briefingFlash, setBriefingFlash] = useState(false);
+  const [briefingError, setBriefingError] = useState("");
+  const [briefingCopied, setBriefingCopied] = useState(false);
+  const [confirmBriefingRemove, setConfirmBriefingRemove] = useState(false);
+  const [briefingOpen, setBriefingOpen] = useState(false);
+
   // Delete
   const [showDelete, setShowDelete] = useState(false);
 
@@ -185,6 +197,7 @@ export function AdminProjectPage() {
           notes: p.meeting?.notes || "",
         });
         setDeliverables(p.deliverables || []);
+        setBriefing(p.briefing || "");
         setGalleryUrls(p.galleryUrls || []);
         setGallerySettings(p.gallerySettings || {});
         setClientIds(p.clientIds?.length ? p.clientIds : p.clientId ? [p.clientId] : []);
@@ -300,6 +313,56 @@ export function AdminProjectPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  /**
+   * Slaat de briefing op zoals hij is. Het scherm loopt vooruit op de server,
+   * zodat een vinkje meteen reageert; mislukt het opslaan, dan komt de oude
+   * tekst terug en zegt de melding waarom.
+   */
+  async function saveBriefing(next: string) {
+    if (!session || !projectId) return;
+    const previous = briefing;
+    setBriefing(next);
+    setBriefingSaving(true);
+    setBriefingError("");
+    try {
+      await portalFetch(
+        `/admin/project/${projectId}`,
+        { method: "PUT", body: JSON.stringify({ briefing: next }) },
+        session.access_token
+      );
+      setBriefingFlash(true);
+      setTimeout(() => setBriefingFlash(false), 1800);
+    } catch (err) {
+      setBriefing(previous);
+      setBriefingError(err instanceof Error ? err.message : "Saving the briefing failed.");
+    } finally {
+      setBriefingSaving(false);
+    }
+  }
+
+  async function readBriefingFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setBriefingError("");
+    try {
+      setBriefingDraft(await file.text());
+      setEditingBriefing(true);
+    } catch {
+      setBriefingError("That file could not be read.");
+    }
+  }
+
+  function copyBriefing() {
+    navigator.clipboard?.writeText(briefing).then(
+      () => {
+        setBriefingCopied(true);
+        setTimeout(() => setBriefingCopied(false), 1800);
+      },
+      () => setBriefingError("Copying failed.")
+    );
   }
 
   async function saveDeliverables(updated: Deliverable[]) {
@@ -544,6 +607,178 @@ export function AdminProjectPage() {
               <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={4} style={{ ...inputStyle, resize: "vertical", lineHeight: 1.65 }} onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")} onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")} />
             </div>
           </div>
+
+
+          {sectionDivider}
+
+          {/* ── Briefing ── */}
+          {(() => {
+            const tasks = taskCount(briefing);
+            const ghost: React.CSSProperties = {
+              display: "flex", alignItems: "center", gap: "6px",
+              background: "none",
+              border: "1px solid rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))",
+              color: "rgba(var(--admin-fg-rgb),calc(0.4 * var(--admin-fg-boost)))",
+              fontSize: "9px", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase",
+              cursor: "pointer", padding: "7px 12px", fontFamily: "'Inter', sans-serif",
+            };
+            return (
+              <div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap", marginBottom: "16px" }}>
+                  <span style={{ color: "rgba(var(--admin-fg-rgb),calc(0.25 * var(--admin-fg-boost)))", fontSize: "9px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase" }}>
+                    Briefing
+                    {tasks.total > 0 && (
+                      <span style={{ color: tasks.done === tasks.total ? "rgba(120,190,140,0.8)" : "#c8905a", marginLeft: "10px", letterSpacing: "0.15em" }}>
+                        {tasks.done}/{tasks.total} done
+                      </span>
+                    )}
+                    {briefingFlash && (
+                      <span style={{ color: "rgba(120,190,140,0.8)", fontSize: "9px", letterSpacing: "0.15em", marginLeft: "10px", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                        <Check size={9} /> Saved
+                      </span>
+                    )}
+                  </span>
+
+                  {!editingBriefing && (
+                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                      {briefing ? (
+                        <>
+                          <button onClick={() => { setBriefingDraft(briefing); setEditingBriefing(true); setBriefingError(""); }} style={ghost}>
+                            <Pencil size={11} /> Edit
+                          </button>
+                          <button onClick={copyBriefing} style={ghost}>
+                            <Copy size={11} /> {briefingCopied ? "Copied" : "Copy"}
+                          </button>
+                          {confirmBriefingRemove ? (
+                            <>
+                              <button
+                                onClick={() => { setConfirmBriefingRemove(false); saveBriefing(""); }}
+                                style={{ ...ghost, border: "1px solid rgba(224,112,96,0.35)", color: "#e07060" }}
+                              >
+                                Remove
+                              </button>
+                              <button onClick={() => setConfirmBriefingRemove(false)} style={ghost}>Keep</button>
+                            </>
+                          ) : (
+                            <button onClick={() => setConfirmBriefingRemove(true)} style={ghost} aria-label="Remove briefing">
+                              <Trash2 size={11} />
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <button onClick={() => { setBriefingDraft(""); setEditingBriefing(true); setBriefingError(""); }} style={ghost}>
+                            <Plus size={11} /> Paste briefing
+                          </button>
+                          <label style={{ ...ghost, display: "inline-flex" }}>
+                            <Upload size={11} /> Upload .md
+                            <input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" onChange={readBriefingFile} style={{ display: "none" }} />
+                          </label>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {briefingError && (
+                  <div style={{ padding: "10px 14px", border: "1px solid rgba(224,112,96,0.25)", color: "#e07060", fontSize: "12.5px", marginBottom: "12px" }}>
+                    {briefingError}
+                  </div>
+                )}
+
+                {editingBriefing ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <textarea
+                      value={briefingDraft}
+                      onChange={(e) => setBriefingDraft(e.target.value)}
+                      rows={18}
+                      placeholder={"Paste the briefing here.\n\nMarkdown: # headings, | tables |, - lists, - [ ] open questions, > quotes."}
+                      style={{
+                        ...inputStyle, resize: "vertical", lineHeight: 1.6, fontSize: "12px",
+                        fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", whiteSpace: "pre",
+                      }}
+                      onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(200,144,90,0.4)")}
+                      onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(var(--admin-fg-rgb),calc(0.08 * var(--admin-fg-boost)))")}
+                      autoFocus
+                    />
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                      <button
+                        onClick={async () => { await saveBriefing(briefingDraft); setEditingBriefing(false); setBriefingOpen(true); }}
+                        disabled={briefingSaving}
+                        style={{
+                          display: "flex", alignItems: "center", gap: "7px",
+                          backgroundColor: "var(--admin-cta-bg)", border: "none", color: "var(--admin-cta-fg)",
+                          fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase",
+                          padding: "10px 18px", cursor: briefingSaving ? "not-allowed" : "pointer",
+                          opacity: briefingSaving ? 0.6 : 1, fontFamily: "'Inter', sans-serif",
+                        }}
+                      >
+                        <Save size={12} /> {briefingSaving ? "Saving…" : "Save briefing"}
+                      </button>
+                      <button onClick={() => { setEditingBriefing(false); setBriefingError(""); }} style={ghost}>Cancel</button>
+                      <label style={{ ...ghost, display: "inline-flex" }}>
+                        <Upload size={11} /> Load a file
+                        <input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" onChange={readBriefingFile} style={{ display: "none" }} />
+                      </label>
+                    </div>
+                  </div>
+                ) : briefing ? (
+                  <>
+                    <div
+                      style={{
+                        border: "1px solid rgba(var(--admin-fg-rgb),calc(0.07 * var(--admin-fg-boost)))",
+                        backgroundColor: "rgba(var(--admin-bg-card-rgb),0.5)",
+                        padding: isMobile ? "16px" : "22px 26px",
+                        maxHeight: briefingOpen ? "none" : "420px",
+                        overflow: "hidden",
+                        position: "relative",
+                      }}
+                    >
+                      <Markdown
+                        source={briefing}
+                        busy={briefingSaving}
+                        onToggleTask={(lineIndex) => saveBriefing(toggleTaskLine(briefing, lineIndex))}
+                      />
+                      {!briefingOpen && (
+                        <div
+                          aria-hidden="true"
+                          style={{
+                            position: "absolute", left: 0, right: 0, bottom: 0, height: "90px",
+                            background: "linear-gradient(to bottom, rgba(var(--admin-bg-card-rgb),0), rgb(var(--admin-bg-card-rgb)))",
+                            pointerEvents: "none",
+                          }}
+                        />
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setBriefingOpen((v) => !v)}
+                      style={{ ...ghost, marginTop: "10px" }}
+                    >
+                      {briefingOpen ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                      {briefingOpen ? "Collapse" : "Show the whole briefing"}
+                    </button>
+                  </>
+                ) : (
+                  <div
+                    style={{
+                      border: "1px dashed rgba(var(--admin-fg-rgb),calc(0.12 * var(--admin-fg-boost)))",
+                      padding: "28px 24px", textAlign: "center",
+                      color: "rgba(var(--admin-fg-rgb),calc(0.3 * var(--admin-fg-boost)))",
+                      fontSize: "12.5px", lineHeight: 1.7,
+                    }}
+                  >
+                    <FileText size={16} style={{ opacity: 0.5 }} />
+                    <div style={{ marginTop: "8px" }}>
+                      No briefing yet. Paste the notes from the intake, or drop in the .md file.
+                    </div>
+                    <div style={{ color: "rgba(var(--admin-fg-rgb),calc(0.22 * var(--admin-fg-boost)))", fontSize: "11.5px", marginTop: "5px" }}>
+                      Any markdown works — the open questions become boxes you can tick off here.
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {sectionDivider}
 
