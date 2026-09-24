@@ -1,0 +1,197 @@
+/* ---------------------------------------------------------------
+   Aqua Spa Service - de pagina's naast de homepage:
+   onderdelen aanvragen, cover op maat en Spa Pilot.
+   Hoort bij aqua.css en staat onder dezelfde .ass-scope.
+   De webshop is hier op 24-09-2026 uit gehaald.
+   --------------------------------------------------------------- */
+
+/* Kop van een losse pagina */
+.ass .pagehead{padding-top:clamp(28px,4vh,56px);padding-bottom:clamp(28px,4vw,44px)}
+.ass .pagehead__grid{display:grid;gap:28px;align-items:center}
+@media (min-width:900px){.ass .pagehead__grid{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:48px}}
+.ass .pagehead h1{font-size:clamp(2.1rem,4.4vw,3.3rem);letter-spacing:-.035em;max-width:18ch}
+.ass .pagehead--narrow h1{max-width:22ch}
+.ass .pagehead__lead{margin-top:16px;color:var(--ink-2);font-size:1.075rem;max-width:56ch}
+.ass .pagehead__cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px}
+.ass .pagehead__media{border-radius:var(--r-surface);overflow:hidden;box-shadow:var(--shadow-md);display:none}
+@media (min-width:900px){.ass .pagehead__media{display:block}}
+.ass .pagehead__media img{width:100%;aspect-ratio:4/3;object-fit:cover;object-position:center 65%}
+
+/* Strip met drie korte beloftes */
+.ass .promise{border-block:1px solid var(--line);background:var(--surface)}
+.ass .promise ul{display:grid;grid-template-columns:1fr}
+.ass .promise li{display:flex;align-items:center;gap:12px;padding:18px 0;border-top:1px solid var(--line);font-weight:500;font-size:.95rem}
+.ass .promise li:first-child{border-top:0}
+.ass .promise i{font-size:1.4rem;color:var(--accent);flex:0 0 auto}
+.ass .promise a{color:inherit;text-decoration:underline;text-underline-offset:3px}
+@media (min-width:900px){
+  .ass .promise ul{grid-template-columns:repeat(3,1fr)}
+  .ass .promise li{border-top:0;padding:22px 24px}
+  .ass .promise li + li{border-left:1px solid var(--line)}
+  .ass .promise li:first-child{padding-left:0}
+  .ass .promise li:last-child{padding-right:0}
+}
+
+/* Tekst links, formulier rechts */
+.ass .request{display:grid;gap:clamp(24px,4vw,48px)}
+@media (min-width:980px){.ass .request{grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);align-items:start}}
+.ass .request__intro h2{font-size:clamp(1.85rem,3.6vw,2.6rem)}
+.ass .request__intro p{margin-top:14px;color:var(--ink-2);max-width:46ch}
+.ass .request__intro ol{margin-top:22px;display:grid;gap:14px}
+.ass .request__intro li{display:flex;gap:12px;align-items:flex-start;color:var(--ink-2)}
+.ass .request__intro li i{font-size:1.3rem;color:var(--accent);margin-top:2px;flex:0 0 auto}
+.ass .request__intro li strong{color:var(--ink);font-weight:500}
+.ass .field input[type="file"]{padding:10px 12px;cursor:pointer}
+
+/* Wat wij leveren */
+.ass .groupgrid{display:grid;gap:16px;grid-template-columns:1fr}
+@media (min-width:700px){.ass .groupgrid{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:1080px){.ass .groupgrid{grid-template-columns:repeat(3,1fr)}}
+.ass .groupcard{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-surface);
+  padding:24px;display:flex;flex-direction:column;gap:10px;
+  transition:border-color .2s ease,transform .2s ease;
+}
+.ass .groupcard:hover{border-color:var(--line-strong);transform:translateY(-2px)}
+@media (prefers-reduced-motion: reduce){.ass .groupcard:hover{transform:none}}
+.ass .groupcard i{font-size:1.7rem;color:var(--accent)}
+.ass .groupcard h3{font-size:1.1rem;line-height:1.3}
+.ass .groupcard p{color:var(--ink-2);font-size:.95rem}
+.ass .groupcard .chips{margin-top:auto;padding-top:12px}
+
+.ass .chips--wide li{background:var(--surface)}
+.ass .chips__more{border-style:dashed;color:var(--ink-3)}
+.ass .brandsnote{color:var(--ink-2);max-width:70ch}
+.ass .brandsnote a{
+  color:var(--accent);font-weight:500;text-decoration:none;
+  display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
+}
+.ass .brandsnote a:hover{text-decoration:underline;text-underline-offset:3px}
+
+/* Verwijzing naar het coverformulier */
+.ass .coverbanner{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px;
+  padding:clamp(22px,3vw,32px);border-radius:var(--r-surface);
+  background:linear-gradient(140deg,var(--brand-50),var(--surface));
+  border:1px solid var(--line-strong);
+}
+.ass .coverbanner h2{font-size:clamp(1.5rem,2.6vw,2rem)}
+.ass .coverbanner p{margin-top:10px;color:var(--ink-2);max-width:52ch}
+
+/* Coverpagina: uitleg naast het formulier */
+.ass .cover{display:grid;gap:clamp(24px,4vw,44px)}
+@media (min-width:980px){
+  .ass .cover{grid-template-columns:minmax(0,.75fr) minmax(0,1.25fr);align-items:start}
+  .ass .cover__help{position:sticky;top:calc(var(--nav-h) + 24px)}
+}
+.ass .cover__help h2{font-size:clamp(1.5rem,2.6vw,2rem);margin-bottom:20px}
+.ass .cover__help dt{display:flex;align-items:center;gap:10px;font-weight:500;margin-top:20px}
+.ass .cover__help dt:first-of-type{margin-top:0}
+.ass .cover__help dt i{color:var(--accent);font-size:1.2rem}
+.ass .cover__help dd{margin:6px 0 0 30px;color:var(--ink-2);font-size:.95rem}
+.ass .rule{border:0;border-top:1px solid var(--line);margin:8px 0 24px}
+
+/* Keuzechips in formulieren */
+.ass .choice{border:0;padding:0;margin:0 0 20px}
+.ass .choice legend{font-size:.925rem;font-weight:500;color:var(--ink);padding:0}
+.ass .choice__row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.ass .choice__chip{
+  position:relative;display:inline-flex;align-items:center;cursor:pointer;
+  padding:9px 16px;border-radius:999px;border:1px solid var(--line-strong);
+  background:var(--surface);color:var(--ink-2);font-size:.92rem;
+  transition:background-color .15s ease,color .15s ease,border-color .15s ease;
+}
+.ass .choice__chip:hover{border-color:var(--ink-3);color:var(--ink)}
+.ass .choice__chip input{position:absolute;opacity:0;width:0;height:0}
+.ass .choice__chip[data-on="true"]{background:var(--btn-bg);color:var(--btn-ink);border-color:var(--btn-bg)}
+.ass .choice__chip:focus-within{outline:2px solid var(--accent);outline-offset:3px}
+
+/* Melding in een kader */
+.ass .callout{
+  display:flex;gap:12px;align-items:flex-start;
+  padding:16px 20px;border-radius:14px;background:var(--brand-50);color:var(--ink-2);
+}
+.ass .callout i{color:var(--accent);font-size:1.25rem;margin-top:1px;flex:0 0 auto}
+.ass .callout p{font-size:.95rem}
+.ass .callout a{color:var(--accent);font-weight:500}
+.ass .callout--tight{margin-bottom:20px;padding:12px 16px}
+.ass .callout--plain{background:var(--surface);border:1px solid var(--line)}
+
+/* Tweeluik: Spa Pilot groot, warmtepomp ernaast */
+.ass .energie{display:grid;gap:16px}
+@media (min-width:980px){.ass .energie{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);align-items:stretch}}
+.ass .energie .promo{height:100%}
+.ass .sidecard{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-surface);
+  padding:clamp(24px,3vw,32px);display:flex;flex-direction:column;gap:12px;
+}
+.ass .sidecard i{font-size:1.8rem;color:var(--accent)}
+.ass .sidecard h3{font-size:1.25rem}
+.ass .sidecard p{color:var(--ink-2);font-size:.975rem}
+.ass .sidecard .btn{align-self:flex-start;margin-top:auto}
+
+/* Tarieven en garantie */
+.ass .rates{display:grid;gap:16px;grid-template-columns:1fr}
+@media (min-width:760px){.ass .rates{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:1080px){
+  .ass .rates{grid-template-columns:repeat(4,1fr)}
+  .ass .rates__note{grid-column:span 2}
+}
+.ass .rates article{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-surface);
+  padding:24px;display:flex;flex-direction:column;gap:8px;
+}
+.ass .rates i{font-size:1.6rem;color:var(--accent)}
+.ass .rates h3{font-size:1rem;color:var(--ink-3);font-weight:500}
+.ass .rates strong{font-size:2rem;font-weight:600;letter-spacing:-.02em;line-height:1}
+.ass .rates p{color:var(--ink-2);font-size:.925rem}
+
+/* Spa Pilot */
+.ass .pilothero{position:relative;isolation:isolate;overflow:hidden;padding-block:clamp(56px,10vw,120px)}
+.ass .pilothero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
+.ass .pilothero::after{
+  content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(100deg,rgba(9,14,28,.94) 0%,rgba(9,14,28,.8) 50%,rgba(9,14,28,.42) 100%);
+}
+.ass .pilothero__body{color:#fff}
+.ass .pilothero h1{font-size:clamp(2.1rem,4.6vw,3.4rem);letter-spacing:-.035em;max-width:20ch;color:#fff}
+.ass .pilothero p{margin-top:18px;color:#dfe4f0;max-width:56ch;font-size:1.05rem}
+.ass .pilothero__cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
+.ass .btn--ghostlight{border-color:rgba(255,255,255,.45);color:#fff}
+.ass .btn--ghostlight:hover{background:rgba(255,255,255,.12);border-color:#fff}
+
+.ass .eisen{display:grid;gap:16px;grid-template-columns:1fr}
+@media (min-width:860px){.ass .eisen{grid-template-columns:repeat(3,1fr)}}
+.ass .eisen article{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-surface);
+  padding:26px;display:flex;flex-direction:column;gap:10px;
+}
+.ass .eisen i{font-size:1.7rem;color:var(--accent)}
+.ass .eisen h3{font-size:1.08rem;line-height:1.3}
+.ass .eisen p{color:var(--ink-2);font-size:.95rem}
+
+.ass .pilotprice{
+  display:grid;gap:24px;padding:clamp(26px,4vw,40px);
+  border-radius:var(--r-surface);background:var(--surface-2);border:1px solid var(--line);
+}
+@media (min-width:860px){.ass .pilotprice{grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:48px}}
+.ass .pilotprice h2{font-size:clamp(1.6rem,3vw,2.2rem)}
+.ass .pilotprice p{margin-top:12px;color:var(--ink-2);max-width:52ch}
+.ass .pilotprice dl{display:flex;flex-wrap:wrap;gap:28px}
+.ass .pilotprice dt{font-size:.9rem;color:var(--ink-3)}
+.ass .pilotprice dd{margin:4px 0 0;font-size:1.5rem;font-weight:600;letter-spacing:-.02em;white-space:nowrap}
+
+.ass .brandsearch{position:relative;max-width:420px;margin-bottom:22px}
+.ass .brandsearch label{display:block;font-size:.925rem;font-weight:500;margin-bottom:8px}
+.ass .brandsearch i{position:absolute;left:16px;bottom:15px;font-size:1.15rem;color:var(--ink-3);pointer-events:none}
+.ass .brandsearch input{
+  width:100%;font:inherit;font-size:1rem;color:var(--ink);
+  background:var(--surface);border:1px solid var(--line-strong);border-radius:999px;
+  padding:13px 18px 13px 44px;transition:border-color .16s ease,box-shadow .16s ease;
+}
+.ass .brandsearch input::placeholder{color:var(--ink-3)}
+.ass .brandsearch input:focus{
+  outline:none;border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(39,66,141,.22);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}

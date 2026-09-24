@@ -1,26 +1,34 @@
 import { useEffect, useRef, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useLocation, useSearchParams } from "react-router";
+import { Cover } from "./Cover";
 import { Home } from "./Home";
-import { Shop, useCart } from "./Shop";
+import { Parts } from "./Parts";
+import { SpaPilot } from "./SpaPilot";
 import { IMG, Logo, MAIL, TEL, TEL_LABEL } from "./shared";
 import "./aqua.css";
+import "./pages.css";
 
 /**
  * Demo voor Aqua Spa Service, onafhankelijke spa-technieker uit Verrebroek.
  *
- * Eén demo met drie weergaven, gekozen via ?p=:
- *   (leeg)      de homepage
- *   webshop     de webshop voor onderdelen
- *   brandkit    het brand kit-bord, bedoeld om aan de klant te tonen
+ * Eén demo met meerdere weergaven, gekozen via ?p=:
+ *   (leeg)       de homepage
+ *   onderdelen   onderdelen aanvragen (?p=webshop komt hier ook uit)
+ *   cover        het coverformulier
+ *   spapilot     Spa Pilot: uitleg, vereisten en een vraag stellen
+ *   brandkit     het brand kit-bord, bedoeld om aan de klant te tonen
+ *
+ * Bijgewerkt na het gesprek van 24-09-2026: de webshop is eruit. Arjan wil geen
+ * winkelmand en geen prijzen, maar aanvragen die hij zelf opzoekt en waarna hij
+ * een offerte of factuur stuurt.
  *
  * Alle bedrijfsgegevens komen van aquaspaservice.be, het KBO en de Gouden Gids.
  * Het logo is het echte woordmerk, als masker zodat het in licht en donker
- * meekleurt. De foto's zijn die van hun huidige site. De webshop gebruikt
- * voorbeeldproducten en voorbeeldprijzen; dat staat ook op de pagina zelf.
+ * meekleurt.
  */
 
-type View = "home" | "shop" | "brandkit";
+type View = "home" | "onderdelen" | "cover" | "spapilot" | "brandkit";
 type Theme = "light" | "dark";
 
 const THEME_KEY = "ass-theme";
@@ -29,13 +37,20 @@ export function AquaSpaServiceDemo() {
   const [params] = useSearchParams();
   const location = useLocation();
   const p = params.get("p");
-  const view: View = p === "webshop" ? "shop" : p === "brandkit" ? "brandkit" : "home";
+  const view: View =
+    p === "onderdelen" || p === "webshop"
+      ? "onderdelen"
+      : p === "cover"
+        ? "cover"
+        : p === "spapilot"
+          ? "spapilot"
+          : p === "brandkit"
+            ? "brandkit"
+            : "home";
 
   const [theme, setTheme] = useState<Theme | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [ready, setReady] = useState(false);
-  const [cartOpen, setCartOpen] = useState(false);
-  const { cart, setCart, count } = useCart();
   const root = useRef<HTMLDivElement>(null);
   const menuBtn = useRef<HTMLButtonElement>(null);
 
@@ -116,19 +131,21 @@ export function AquaSpaServiceDemo() {
 
   const navItems = [
     { label: "Wat we doen", to: section("#diensten") },
+    { label: "Onderdelen", to: { search: "?p=onderdelen", hash: "" }, current: view === "onderdelen" },
+    { label: "Spa Pilot", to: { search: "?p=spapilot", hash: "" }, current: view === "spapilot" },
     { label: "Reviews", to: section("#reviews") },
-    { label: "Merken", to: section("#merken") },
     { label: "Vragen", to: section("#vragen") },
-    { label: "Webshop", to: { search: "?p=webshop", hash: "" }, current: view === "shop" },
     { label: "Contact", to: section("#contact") },
   ];
 
-  const title =
-    view === "shop"
-      ? "Webshop onderdelen | Aqua Spa Service"
-      : view === "brandkit"
-        ? "Brand kit | Aqua Spa Service"
-        : "Aqua Spa Service | Herstelling en onderhoud van jacuzzi's, spa's en sauna's";
+  const TITLES: Record<View, string> = {
+    home: "Aqua Spa Service | Herstelling en onderhoud van jacuzzi's, spa's en sauna's",
+    onderdelen: "Onderdelen aanvragen | Aqua Spa Service",
+    cover: "Cover op maat | Aqua Spa Service",
+    spapilot: "Spa Pilot | Aqua Spa Service",
+    brandkit: "Brand kit | Aqua Spa Service",
+  };
+  const title = TITLES[view];
 
   return (
     <div
@@ -169,22 +186,6 @@ export function AquaSpaServiceDemo() {
               <i className="ph ph-sun" aria-hidden="true" />
               <i className="ph ph-moon" aria-hidden="true" />
             </button>
-            {view === "shop" && (
-              <button
-                className="iconbtn cartbtn"
-                type="button"
-                aria-haspopup="dialog"
-                aria-label={`Winkelmand openen, ${count} ${count === 1 ? "artikel" : "artikelen"}`}
-                onClick={() => setCartOpen(true)}
-              >
-                <i className="ph ph-shopping-cart-simple" aria-hidden="true" />
-                {count > 0 && (
-                  <span className="cartbtn__count bump" key={count}>
-                    {count}
-                  </span>
-                )}
-              </button>
-            )}
             <a className="btn btn--primary btn--sm" href={TEL}>
               <i className="ph ph-phone" aria-hidden="true" />
               Bel {TEL_LABEL}
@@ -220,7 +221,9 @@ export function AquaSpaServiceDemo() {
 
       <main id="ass-main">
         {view === "home" && <Home />}
-        {view === "shop" && <Shop cart={cart} setCart={setCart} cartOpen={cartOpen} setCartOpen={setCartOpen} />}
+        {view === "onderdelen" && <Parts />}
+        {view === "cover" && <Cover />}
+        {view === "spapilot" && <SpaPilot />}
         {view === "brandkit" && (
           <section className="brandkit">
             <div className="wrap">

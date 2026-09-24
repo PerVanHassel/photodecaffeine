@@ -1,12 +1,20 @@
 import { useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router";
-import { Field, IMG, MAIL, Stars, SubmitButton, TEL, TEL_LABEL, mailto, settle, useValidation } from "./shared";
-
-const SPA_BRANDS = [
-  "Aquamarine", "Balbao Spa", "Aquavia", "Nordic Hot Tub", "PDC Spa", "Beachcomber", "Platinum Spa",
-  "Caldera", "Reflections", "Charisma", "Sunbelt", "Sundance", "Dimension One", "Coleman", "Gulf Coast",
-  "Sun Spa", "Hydro Spa", "Thermo Spa", "Hydropool", "US Spa", "Portcril", "Jacuzzi", "Omni Hot Tub", "Jazzi",
-];
+import { RATES, SPA_BRANDS } from "./data";
+import {
+  ChoiceChips,
+  DonePanel,
+  Field,
+  IMG,
+  MAIL,
+  Stars,
+  SubmitButton,
+  TEL,
+  TEL_LABEL,
+  mailto,
+  settle,
+  useValidation,
+} from "./shared";
 
 /*
  * Reviews: Google-bedrijfsprofiel, overgenomen via hennax.fr/aqua-spa-service
@@ -60,7 +68,8 @@ export function Home() {
       <Flow />
       <Reviews />
       <Brands />
-      <HeatPump />
+      <Energie />
+      <Tarieven />
       <Faq />
       <Contact />
     </>
@@ -216,21 +225,24 @@ function Services() {
             <i className="ph ph-square-half" aria-hidden="true" />
             <h3>Covers op maat</h3>
             <p>Voor elke spa en zwemspa, op uw afmetingen. Ook coverlifts, trapjes en leuningen.</p>
+            <Link className="cell__link" to={{ search: "?p=cover" }}>
+              Geef uw maten door <i className="ph ph-arrow-right" aria-hidden="true" />
+            </Link>
           </article>
 
           <article className="cell" data-reveal>
             <i className="ph ph-gear-six" aria-hidden="true" />
             <h3>Onderdelen en producten</h3>
             <p>Pompen, besturingen, verwarmingselementen, jets, pvc en onderhoudsproducten.</p>
-            <Link className="cell__link" to={{ search: "?p=webshop" }}>
-              Naar de webshop <i className="ph ph-arrow-right" aria-hidden="true" />
+            <Link className="cell__link" to={{ search: "?p=onderdelen" }}>
+              Vraag een onderdeel aan <i className="ph ph-arrow-right" aria-hidden="true" />
             </Link>
           </article>
 
           <article className="cell cell--outline" data-reveal>
             <i className="ph ph-warning-circle" aria-hidden="true" />
             <h3>Wat we niet doen</h3>
-            <p>Opblaasbare spa's herstellen wij niet. Onderdelen kunnen wij er wel voor leveren.</p>
+            <p>Opblaasbare spa's herstellen wij niet, en wij leveren er ook geen onderdelen meer voor.</p>
           </article>
         </div>
       </div>
@@ -333,48 +345,27 @@ function Brands() {
       </div>
 
       <div className="wrap">
-        <div className="groups" data-reveal>
-          <div>
-            <h3>Sauna</h3>
-            <ul className="chips">
-              {["Tylo", "Harvia", "Jacuzzi"].map((b) => (
-                <li key={b}>{b}</li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h3>Hammam</h3>
-            <ul className="chips">
-              {["Tylo", "Harvia", "Jacuzzi", "Effegibi"].map((b) => (
-                <li key={b}>{b}</li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h3>Componenten</h3>
-            <ul className="chips">
-              {["Balboa", "Gecko", "Aqua-Flo", "Laing", "Espa", "Sam", "Waterway", "LX", "Pentair", "Dimension One"].map(
-                (b) => (
-                  <li key={b}>{b}</li>
-                )
-              )}
-            </ul>
-          </div>
-        </div>
+        <p className="brandsnote" data-reveal>
+          Ook voor sauna's en hammams van Tylo, Harvia, Jacuzzi en Effegibi, en voor componenten van Balboa, Gecko,
+          Waterway, Laing, Pentair en LX.{" "}
+          <Link to={{ search: "?p=onderdelen" }}>
+            Bekijk wat wij leveren <i className="ph ph-arrow-right" aria-hidden="true" />
+          </Link>
+        </p>
       </div>
     </section>
   );
 }
 
-function HeatPump() {
+function Energie() {
   return (
     <section className="section" style={{ paddingTop: 0 }}>
-      <div className="wrap">
+      <div className="wrap energie">
         <div className="promo" data-reveal>
           <img
             src={`${IMG}/meer-1024.jpg`}
             srcSet={`${IMG}/meer-1024.jpg 1024w, ${IMG}/meer-1536.jpg 1536w`}
-            sizes="100vw"
+            sizes="(max-width: 979px) 100vw, 62vw"
             width={1024}
             height={683}
             loading="lazy"
@@ -382,13 +373,61 @@ function HeatPump() {
             alt="Twee mensen ontspannen in een buitenjacuzzi aan een meer."
           />
           <div className="promo__body">
-            <h2>Warmtepomp op uw spa aansluiten?</h2>
-            <p>Wij sluiten warmtepompen aan op spa's en jacuzzi's. Bel ons vrijblijvend voor de mogelijkheden op uw toestel.</p>
-            <a className="btn btn--onimage" href={TEL}>
-              <i className="ph ph-phone" aria-hidden="true" />
-              Bel {TEL_LABEL}
-            </a>
+            <h2>Laat uw spa verwarmen wanneer stroom goedkoop is</h2>
+            <p>
+              Spa Pilot gaat op uw bestaande Balboa- of Gecko-besturing en volgt de stroomprijs per kwartier. U stelt de
+              grenzen zelf in.
+            </p>
+            <Link className="btn btn--onimage" to={{ search: "?p=spapilot" }}>
+              <i className="ph ph-lightning" aria-hidden="true" />
+              Bekijk Spa Pilot
+            </Link>
           </div>
+        </div>
+
+        <aside className="sidecard" data-reveal>
+          <i className="ph ph-thermometer-hot" aria-hidden="true" />
+          <h3>Warmtepomp aansluiten</h3>
+          <p>
+            Ook mogelijk op uw spa of jacuzzi. Het is meer werk dan een kastje bijplaatsen, dus dat bekijken wij samen.
+            Bel ons voor de mogelijkheden op uw toestel.
+          </p>
+          <a className="btn btn--ghost btn--sm" href={TEL}>
+            <i className="ph ph-phone" aria-hidden="true" />
+            Bel {TEL_LABEL}
+          </a>
+        </aside>
+      </div>
+    </section>
+  );
+}
+
+/** Zijn eigen tarieven, zoals afgesproken: niet groot in beeld, wel vooraf duidelijk. */
+function Tarieven() {
+  return (
+    <section className="section" id="tarieven" style={{ paddingTop: 0 }}>
+      <div className="wrap">
+        <div className="section__head" data-reveal>
+          <h2>Wat een interventie kost</h2>
+          <p>Zodat u het weet voor u belt. Wat de herstelling zelf kost, zeggen wij pas na de diagnose.</p>
+        </div>
+        <div className="rates" data-reveal>
+          {RATES.map((r) => (
+            <article key={r.title}>
+              <i className={`ph ${r.icon}`} aria-hidden="true" />
+              <h3>{r.title}</h3>
+              <strong>{r.price}</strong>
+              <p>{r.note}</p>
+            </article>
+          ))}
+          <article className="rates__note">
+            <i className="ph ph-shield-check" aria-hidden="true" />
+            <h3>Garantie</h3>
+            <p>
+              Op een nieuw toestel geldt twee jaar wettelijke garantie. Op een onderdeel dat wij vervangen geldt een
+              kortere termijn. Wij zeggen vooraf welke termijn op uw herstelling van toepassing is.
+            </p>
+          </article>
         </div>
       </div>
     </section>
@@ -421,8 +460,11 @@ function Faq() {
   );
 }
 
+const SOORTEN = ["Serviceaanvraag", "Algemene vraag", "Offerteaanvraag"];
+
 function Contact() {
   const v = useValidation(CONTACT_RULES);
+  const [soort, setSoort] = useState(SOORTEN[0]);
   const [busy, setBusy] = useState(false);
   const [href, setHref] = useState<string | null>(null);
   const doneTitle = useRef<HTMLHeadingElement>(null);
@@ -435,7 +477,8 @@ function Contact() {
     await settle();
     const d = new FormData(form);
     setHref(
-      mailto(`Serviceaanvraag van ${d.get("naam")}`, [
+      mailto(`${soort} van ${d.get("naam")}`, [
+        `Soort aanvraag: ${soort}`,
         `Naam: ${d.get("naam")}`,
         `Telefoon: ${d.get("telefoon")}`,
         `E-mail: ${d.get("email") || "niet opgegeven"}`,
@@ -462,6 +505,23 @@ function Contact() {
           <div className="panel" data-reveal>
             {href === null ? (
               <form noValidate onSubmit={submit}>
+                <ChoiceChips
+                  label="Waarover gaat het?"
+                  name="soort"
+                  options={SOORTEN}
+                  value={soort}
+                  onChange={setSoort}
+                />
+                {soort === "Offerteaanvraag" && (
+                  <div className="callout callout--tight">
+                    <i className="ph ph-info" aria-hidden="true" />
+                    <p>
+                      Voor een herstelling kunnen wij zelden op afstand een prijs geven: daar hoort eerst een diagnose
+                      bij. Gaat het om een cover, gebruik dan{" "}
+                      <Link to={{ search: "?p=cover" }}>het coverformulier</Link>, daar kan het wel.
+                    </p>
+                  </div>
+                )}
                 <div className="row2">
                   <Field v={v} id="c-naam" name="naam" label="Naam" required autoComplete="name" error="Vul uw naam in." />
                   <Field v={v} id="c-tel" name="telefoon" label="Telefoon" required type="tel" inputMode="tel" autoComplete="tel" error="Vul een telefoonnummer in waarop wij u bereiken." />
@@ -489,26 +549,12 @@ function Contact() {
                 </div>
               </form>
             ) : (
-              <div className="done" data-show="true" role="status" aria-live="polite">
-                <i className="ph ph-check-circle mark-ok" aria-hidden="true" />
-                <h3 ref={doneTitle} tabIndex={-1}>
-                  Uw aanvraag staat klaar
-                </h3>
-                <p>
-                  Dit is een demo zonder server, dus er is nog niets verstuurd. Open de aanvraag in uw e-mailprogramma, of
-                  bel ons meteen. Op de echte site gaat dit formulier rechtstreeks naar {MAIL}.
-                </p>
-                <div className="actions">
-                  <a className="btn btn--primary" href={href}>
-                    <i className="ph ph-envelope-simple" aria-hidden="true" />
-                    Open in e-mailprogramma
-                  </a>
-                  <a className="btn btn--ghost" href={TEL}>
-                    <i className="ph ph-phone" aria-hidden="true" />
-                    Bel {TEL_LABEL}
-                  </a>
-                </div>
-              </div>
+              <DonePanel
+                titleRef={doneTitle}
+                title="Uw aanvraag staat klaar"
+                body={`Dit is een demo zonder server, dus er is nog niets verstuurd. Open de aanvraag in uw e-mailprogramma, of bel ons meteen. Op de echte site gaat dit formulier rechtstreeks naar ${MAIL}.`}
+                href={href}
+              />
             )}
           </div>
 

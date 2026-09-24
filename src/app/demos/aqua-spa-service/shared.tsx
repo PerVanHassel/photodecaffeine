@@ -160,6 +160,71 @@ export function mailto(subject: string, lines: string[]) {
 /** Een korte vertraging, zodat de laadstatus zichtbaar is voor de bevestiging. */
 export const settle = (ms = 550) => new Promise<void>((r) => window.setTimeout(r, ms));
 
+/** Keuze uit een handvol opties, als chips. Leest sneller dan een uitklapmenu. */
+export function ChoiceChips({
+  label,
+  name,
+  options,
+  value,
+  onChange,
+  hint,
+}: {
+  label: string;
+  name: string;
+  options: string[];
+  value: string;
+  onChange: (v: string) => void;
+  hint?: string;
+}) {
+  return (
+    <fieldset className="field choice">
+      <legend>{label}</legend>
+      {hint && <span className="hint">{hint}</span>}
+      <div className="choice__row">
+        {options.map((o) => (
+          <label key={o} className="choice__chip" data-on={value === o ? "true" : "false"}>
+            <input type="radio" name={name} value={o} checked={value === o} onChange={() => onChange(o)} />
+            {o}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+/** De bevestiging na een verzonden formulier. Zegt eerlijk dat dit een demo is. */
+export function DonePanel({
+  title,
+  body,
+  href,
+  titleRef,
+}: {
+  title: string;
+  body: string;
+  href: string;
+  titleRef: React.RefObject<HTMLHeadingElement>;
+}) {
+  return (
+    <div className="done" data-show="true" role="status" aria-live="polite">
+      <i className="ph ph-check-circle mark-ok" aria-hidden="true" />
+      <h3 ref={titleRef} tabIndex={-1}>
+        {title}
+      </h3>
+      <p>{body}</p>
+      <div className="actions">
+        <a className="btn btn--primary" href={href}>
+          <i className="ph ph-envelope-simple" aria-hidden="true" />
+          Open in e-mailprogramma
+        </a>
+        <a className="btn btn--ghost" href={TEL}>
+          <i className="ph ph-phone" aria-hidden="true" />
+          Bel {TEL_LABEL}
+        </a>
+      </div>
+    </div>
+  );
+}
+
 /** Het woordmerk. Zonder label is het decoratief, omdat de link eromheen de naam al draagt. */
 export function Logo({ label }: { label?: string }) {
   return label ? (
