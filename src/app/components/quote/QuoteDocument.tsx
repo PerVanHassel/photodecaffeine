@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 /**
  * A price quote, laid out the way the client sees it.
  *
@@ -18,6 +20,14 @@ export interface QuoteTerm {
   text: string;
 }
 
+/**
+ * What the amounts in a quote mean. Stored per quote, because a quote to a
+ * company is normally written excluding VAT and one to a private client
+ * including it. The viewer can flip between the two; this says which side the
+ * stored numbers are on, so the conversion goes the right way.
+ */
+export type VatBasis = "excl" | "incl";
+
 export interface QuoteDoc {
   number?: string;
   type?: "photo" | "web";
@@ -31,6 +41,8 @@ export interface QuoteDoc {
   terms: QuoteTerm[];
   notes?: string;
   validUntil?: string;
+  vatBasis?: VatBasis;
+  vatRate?: number;
 }
 
 const ACCENT = "#c8905a";
@@ -44,6 +56,16 @@ export function euro(amount: number): string {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   })}`;
+}
+
+export const DEFAULT_VAT_RATE = 21;
+
+/** Converts one stored amount to the side the reader is looking at. */
+export function convertVat(amount: number, basis: VatBasis, tonen: VatBasis, rate: number): number {
+  const n = Number(amount) || 0;
+  if (basis === tonen || !rate) return n;
+  const factor = 1 + rate / 100;
+  return Math.round((tonen === "incl" ? n * factor : n / factor) * 100) / 100;
 }
 
 export function quoteSum(lines: QuoteLine[]): number {
@@ -62,14 +84,21 @@ function LineBlock({
   lines,
   totalLabel,
   perMonth,
+  basis,
+  tonen,
+  rate,
 }: {
   label: string;
   lines: QuoteLine[];
   totalLabel: string;
   perMonth?: boolean;
+  basis: VatBasis;
+  tonen: VatBasis;
+  rate: number;
 }) {
   if (!lines || lines.length === 0) return null;
-  const total = quoteSum(lines);
+  const toon = (n: number) => convertVat(n, basis, tonen, rate);
+  const total = toon(quoteSum(lines));
 
   return (
     <section
@@ -122,7 +151,7 @@ function LineBlock({
                 fontVariantNumeric: "tabular-nums",
               }}
             >
-              {euro(l.amount)}
+              {euro(toon(l.amount))}
             </div>
           </div>
         ))}
@@ -166,6 +195,11 @@ export function QuoteDocument({ quote }: { quote: QuoteDoc }) {
   const oneTime = quote.oneTime || [];
   const included = quote.included || [];
   const terms = quote.terms || [];
+  const basis: VatBasis = quote.vatBasis === "incl" ? "incl" : "excl";
+  const rate = typeof quote.vatRate === "number" && quote.vatRate >= 0 ? quote.vatRate : DEFAULT_VAT_RATE;
+  // Begin op de kant waarop de offerte is opgesteld; die bedragen zijn exact.
+  const [tonen, setTonen] = useState<VatBasis>(basis);
+  const heeftBedragen = monthly.length > 0 || oneTime.length > 0;
 
   return (
     <article
@@ -215,8 +249,46 @@ export function QuoteDocument({ quote }: { quote: QuoteDoc }) {
         ) : null}
       </header>
 
-      <LineBlock label="Maandelijks" lines={monthly} totalLabel="Totaal per maand" perMonth />
-      <LineBlock label="Eenmalig" lines={oneTime} totalLabel="Totaal eenmalig" />
+      {heeftBedragen && rate > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+          <span style={{ color: "rgba(255,251,224,0.3)", fontSize: "11.5px" }}>Bedragen tonen</span>
+          <div style={{ display: "inline-flex", border: "1px solid rgba(255,251,224,0.14)" }}>
+            {(["excl", "incl"] as VatBasis[]).map((keuze) => {
+              const actief = tonen === keuze;
+              return (
+                <button
+                  key={keuze}
+                  type="button"
+                  onClick={() => setTonen(keuze)}
+                  aria-pressed={actief}
+                  style={{
+                    background: actief ? ACCENT : "transparent",
+                    color: actief ? "#0d0703" : "rgba(255,251,224,0.55)",
+                    border: "none",
+                    padding: "7px 14px",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    fontFamily: "'Inter', sans-serif",
+                  }}
+                >
+                  {keuze === "excl" ? `Excl. ${rate}% btw` : `Incl. ${rate}% btw`}
+                </button>
+              );
+            })}
+          </div>
+          {tonen !== basis && (
+            <span style={{ color: "rgba(255,251,224,0.28)", fontSize: "11.5px" }}>
+              omgerekend, afgerond op centen
+            </span>
+          )}
+        </div>
+      )}
+
+      <LineBlock label="Maandelijks" lines={monthly} totalLabel="Totaal per maand" perMonth basis={basis} tonen={tonen} rate={rate} />
+      <LineBlock label="Eenmalig" lines={oneTime} totalLabel="Totaal eenmalig" basis={basis} tonen={tonen} rate={rate} />
 
       {included.length > 0 && (
         <section

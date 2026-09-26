@@ -3755,8 +3755,15 @@ async function nextQuoteNumber(): Promise<string> {
 
 /** Everything an admin may set on a quote, cleaned up. */
 function quoteFields(body: any) {
+  // Een offerte aan een bedrijf schrijf je normaal exclusief btw, aan een
+  // particulier inclusief. Het bedrag in de regel blijft precies wat er is
+  // ingevuld; dit zegt alleen aan welke kant het staat, zodat de pagina de
+  // andere kant kan uitrekenen.
+  const rawRate = Number(body.vatRate);
   return {
     type: body.type === "photo" ? "photo" : "web",
+    vatBasis: body.vatBasis === "incl" ? "incl" : "excl",
+    vatRate: Number.isFinite(rawRate) && rawRate >= 0 && rawRate <= 100 ? Math.round(rawRate * 100) / 100 : 21,
     title: String(body.title ?? "").trim(),
     subtitle: String(body.subtitle ?? "").trim(),
     clientId: String(body.clientId ?? "").trim(),
@@ -3790,6 +3797,8 @@ function publicQuote(quote: any) {
     terms: quoteTerms(quote.terms),
     notes: quote.notes || "",
     validUntil: quote.validUntil || "",
+    vatBasis: quote.vatBasis === "incl" ? "incl" : "excl",
+    vatRate: typeof quote.vatRate === "number" ? quote.vatRate : 21,
     status: quote.status || "draft",
     sentAt: quote.sentAt || "",
     respondedAt: quote.respondedAt || "",
@@ -3949,6 +3958,11 @@ function quoteEmailRows(quote: any, message: string): string {
     </tr>
     ${block("Maandelijks", monthly, "Totaal per maand", true)}
     ${block("Eenmalig", oneTime, "Totaal eenmalig", false)}
+    ${
+      monthly.length > 0 || oneTime.length > 0
+        ? `<tr><td style="padding:10px 36px 0;"><span style="color:${faint};font-size:12px;">Alle bedragen zijn ${quote.vatBasis === "incl" ? "inclusief" : "exclusief"} ${Number(quote.vatRate ?? 21)}% btw. Op de offertepagina kun je wisselen tussen beide weergaves.</span></td></tr>`
+        : ""
+    }
     ${includedBlock}
     ${termsBlock}
     ${

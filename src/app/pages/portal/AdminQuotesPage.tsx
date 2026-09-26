@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { portalFetch } from "../../../lib/supabase";
 import { Select } from "../../components/portal/Select";
-import { QuoteDocument, euro, quoteSum } from "../../components/quote/QuoteDocument";
+import { QuoteDocument, euro, quoteSum, type VatBasis } from "../../components/quote/QuoteDocument";
 import { useMobile } from "../../hooks/useMobile";
 import {
   FileText, Plus, Trash2, Send, Save, X, Check, Link2, Pencil, Mail, Copy,
@@ -26,6 +26,8 @@ interface Quote {
   id: string;
   number: string;
   type: QuoteType;
+  vatBasis?: VatBasis;
+  vatRate?: number;
   title: string;
   subtitle: string;
   clientId: string;
@@ -58,6 +60,8 @@ interface DraftLine {
 interface Draft {
   id: string | null;
   type: QuoteType;
+  vatBasis: VatBasis;
+  vatRate: number;
   title: string;
   subtitle: string;
   clientId: string;
@@ -87,7 +91,7 @@ const STATUS_STYLE: Record<QuoteStatus, { label: string; color: string; border: 
 };
 
 /** Starting points, so a standard offer is a few edits rather than a blank page. */
-const TEMPLATES: Record<QuoteType, Omit<Draft, "id" | "clientId" | "clientName" | "clientEmail" | "type">> = {
+const TEMPLATES: Record<QuoteType, Omit<Draft, "id" | "clientId" | "clientName" | "clientEmail" | "type" | "vatBasis" | "vatRate">> = {
   web: {
     title: "Prijsindicatie website",
     subtitle: "Website + admin-paneel",
@@ -148,6 +152,8 @@ function emptyDraft(type: QuoteType): Draft {
   return {
     id: null,
     type,
+    vatBasis: "excl",
+    vatRate: 21,
     clientId: "",
     clientName: "",
     clientEmail: "",
@@ -163,6 +169,8 @@ function toDraft(q: Quote): Draft {
   return {
     id: q.id,
     type: q.type,
+    vatBasis: q.vatBasis === "incl" ? "incl" : "excl",
+    vatRate: typeof q.vatRate === "number" ? q.vatRate : 21,
     title: q.title,
     subtitle: q.subtitle,
     clientId: q.clientId || "",
@@ -191,6 +199,8 @@ function draftLines(lines: DraftLine[]): Line[] {
 function draftToBody(d: Draft) {
   return {
     type: d.type,
+    vatBasis: d.vatBasis,
+    vatRate: d.vatRate,
     title: d.title.trim(),
     subtitle: d.subtitle.trim(),
     clientId: d.clientId,
@@ -605,6 +615,21 @@ export function AdminQuotesPage() {
                   { value: "photo", label: "Foto / video", hint: "meestal alleen eenmalig" },
                 ]}
               />
+            </Field>
+
+            <Field label="Bedragen">
+              <Select
+                value={draft.vatBasis}
+                onChange={(v) => setDraft({ ...draft, vatBasis: v as VatBasis })}
+                ariaLabel="Zijn de bedragen inclusief of exclusief btw"
+                options={[
+                  { value: "excl", label: `Exclusief ${draft.vatRate}% btw`, hint: "gebruikelijk bij bedrijven" },
+                  { value: "incl", label: `Inclusief ${draft.vatRate}% btw`, hint: "gebruikelijk bij particulieren" },
+                ]}
+              />
+              <div style={{ color: fg(0.4), fontSize: "12px", marginTop: "6px" }}>
+                De bedragen die je hieronder invult staan op deze kant. De klant kan op de offertepagina zelf wisselen.
+              </div>
             </Field>
 
             <Field label="Titel">
