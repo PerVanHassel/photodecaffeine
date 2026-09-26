@@ -225,11 +225,17 @@ export function DonePanel({
   );
 }
 
-/** Het woordmerk. Zonder label is het decoratief, omdat de link eromheen de naam al draagt. */
+/**
+ * Het logo van vanAnouk, september 2026. Twee bestanden, want het is een
+ * tekening in kleur: op donker wordt het navy wit, de druppel blijft.
+ * Zonder label is het decoratief, omdat de link eromheen de naam al draagt.
+ */
 export function Logo({ label }: { label?: string }) {
-  return label ? (
-    <span className="mark" role="img" aria-label={label} />
-  ) : (
-    <span className="mark" aria-hidden="true" />
+  const alt = label ?? "";
+  return (
+    <>
+      <img className="logo--light" src={`${IMG}/logo-full.svg`} width={76} height={44} alt={alt} />
+      <img className="logo--dark" src={`${IMG}/logo-full-dark.svg`} width={76} height={44} alt={alt} aria-hidden={label ? undefined : true} />
+    </>
   );
 }

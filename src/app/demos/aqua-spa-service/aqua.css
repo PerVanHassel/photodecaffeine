@@ -1,6 +1,6 @@
 /* Demo: Aqua Spa Service, spa-technieker uit Verrebroek.
    Alles staat onder .ass zodat niets lekt naar de PDC-site of de admin,
-   die dezelfde bundel delen. Eén accent (merknavy #27428d uit het logo),
+   die dezelfde bundel delen. Eén accent (merknavy #253081 uit het nieuwe logo),
    één radiusregel: knoppen pill, vlakken 18px, velden 10px.
    Licht en donker volgen het systeem, met een eigen schakelaar. */
 
@@ -8,10 +8,10 @@
 .ass{
   color-scheme: light dark;
 
-  --brand:#27428d;
-  --brand-700:#1d3470;
-  --brand-300:#93b4f5;
-  --brand-50:#e8eefb;
+  --brand:#253081;
+  --brand-700:#1b2560;
+  --brand-300:#90d3f4;
+  --brand-50:#e7f0fb;
 
   --bg:#f6f7fa;
   --surface:#ffffff;
@@ -135,9 +135,14 @@
   height:var(--nav-h);display:flex;align-items:center;gap:20px;
 }
 .ass .logo{display:inline-flex;align-items:center;color:var(--brand);flex:0 0 auto}
-.ass[data-theme="dark"] .logo{color:var(--brand-300)}
-@media (prefers-color-scheme: dark){.ass:not([data-theme="light"]) .logo{color:var(--brand-300)}}
-.ass .logo .mark{height:36px;width:auto;aspect-ratio:234.75 / 56.25;display:block}
+.ass[data-theme="dark"] .logo .logo--light{display:none}
+.ass[data-theme="dark"] .logo .logo--dark{display:block}
+@media (prefers-color-scheme: dark){
+  .ass:not([data-theme="light"]) .logo .logo--light{display:none}
+  .ass:not([data-theme="light"]) .logo .logo--dark{display:block}
+}
+.ass .logo img{height:44px;width:auto;display:block}
+.ass .logo .logo--dark{display:none}
 .ass .nav__links{display:none;gap:4px;margin-left:auto;align-items:center}
 .ass .nav__links a{
   text-decoration:none;color:var(--ink-2);font-size:.95rem;font-weight:500;
@@ -401,7 +406,7 @@
 .ass .field input::placeholder,.ass .field textarea::placeholder{color:var(--ink-3)}
 .ass .field input:focus,.ass .field textarea:focus{
   outline:none;border-color:var(--accent);
-  box-shadow:0 0 0 3px rgba(39,66,141,.22);
+  box-shadow:0 0 0 3px rgba(37,48,129,.22);
   box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
 }
 .ass .field textarea{min-height:128px;resize:vertical}
@@ -482,12 +487,7 @@
    oppervlakken 18px, formuliervelden 10px.
    --------------------------------------------------------------- */
 
-/* Het logo is een masker, zodat het de tekstkleur volgt in licht en donker. */
+/* Het logo is een tekening in kleur, dus twee bestanden: een voor licht, een voor donker. */
 .ass{min-height:100vh}
-.ass .mark{
-  background-color:currentColor;
-  -webkit-mask:url("/demos/aqua-spa-service/logo.svg") center/contain no-repeat;
-  mask:url("/demos/aqua-spa-service/logo.svg") center/contain no-repeat;
-}
 .ass .brandkit{padding:clamp(20px,4vw,48px) 0 clamp(40px,6vw,80px)}
 .ass .brandkit img{width:100%;height:auto;border-radius:var(--r-surface);box-shadow:var(--shadow-md)}
