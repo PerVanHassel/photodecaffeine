@@ -199,6 +199,11 @@ export function QuoteDocument({ quote }: { quote: QuoteDoc }) {
   const rate = typeof quote.vatRate === "number" && quote.vatRate >= 0 ? quote.vatRate : DEFAULT_VAT_RATE;
   // Begin op de kant waarop de offerte is opgesteld; die bedragen zijn exact.
   const [tonen, setTonen] = useState<VatBasis>(basis);
+  // Zonder vatBasis weten we niet aan welke kant de bedragen staan — een
+  // oudere offerte, of een server die het veld nog niet meestuurt. Dan tonen
+  // we ze zoals ze zijn opgeslagen en laten we de schakelaar weg, want
+  // omrekenen vanaf een onbekende kant levert een verkeerd bedrag op.
+  const kantBekend = quote.vatBasis === "incl" || quote.vatBasis === "excl";
   const heeftBedragen = monthly.length > 0 || oneTime.length > 0;
 
   return (
@@ -249,7 +254,7 @@ export function QuoteDocument({ quote }: { quote: QuoteDoc }) {
         ) : null}
       </header>
 
-      {heeftBedragen && rate > 0 && (
+      {kantBekend && heeftBedragen && rate > 0 && (
         <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
           <span style={{ color: "rgba(255,251,224,0.3)", fontSize: "11.5px" }}>Bedragen tonen</span>
           <div style={{ display: "inline-flex", border: "1px solid rgba(255,251,224,0.14)" }}>
