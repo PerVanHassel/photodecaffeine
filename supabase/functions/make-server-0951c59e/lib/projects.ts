@@ -120,6 +120,13 @@ export function projectToApi(row: ProjectRow, sign: (img: any) => string, opts: 
   const demos = projectDemos(row);
   const images = sortedImages(row).map((g) => ({ id: g.id, url: sign(g), fileName: g.file_name }));
   const meeting = primaryMeeting(row);
+  // Private images have short-lived URLs, so the cover is remembered by image
+  // id and turned into a fresh URL here.
+  const gallerySettings = { ...(row.gallery_settings || {}) };
+  if (gallerySettings.coverImageId) {
+    const cover = images.find((i) => i.id === gallerySettings.coverImageId);
+    if (cover) gallerySettings.coverUrl = cover.url;
+  }
   const events = (row.events || [])
     .filter((e: any) => !opts.forClient || e.client_visible)
     .sort((a: any, b: any) => a.starts_at.localeCompare(b.starts_at))
@@ -135,7 +142,7 @@ export function projectToApi(row: ProjectRow, sign: (img: any) => string, opts: 
     description: row.description,
     dueDate: row.due_date || "",
     deliverables: row.deliverables || [],
-    gallerySettings: row.gallery_settings || {},
+    gallerySettings,
     galleryUrls: images.map((i) => i.url),
     gallery: images,
     meeting: meeting

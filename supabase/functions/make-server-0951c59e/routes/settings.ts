@@ -22,11 +22,21 @@ r.get("/make-server-0951c59e/settings", async (c) => {
         },
       });
     }
-    return c.json({ settings: JSON.parse(settingsStr) });
+    // Who edited last and the invoice details are for the admin only.
+    const { updatedBy: _by, business: _business, ...publicSettings } = JSON.parse(settingsStr);
+    return c.json({ settings: publicSettings });
   } catch (err) {
     console.log("Get settings error:", err);
     return c.json({ error: `Failed to fetch settings: ${err}` }, 500);
   }
+});
+
+// --- GET /admin/settings — everything, including the invoice details ---
+r.get("/make-server-0951c59e/admin/settings", async (c) => {
+  const admin = await verifyAdmin(c.req.header("Authorization"));
+  if (!admin) return c.json({ error: "Unauthorized" }, 401);
+  const settingsStr = await kv.get("site:settings");
+  return c.json({ settings: settingsStr ? JSON.parse(settingsStr) : {} });
 });
 
 // --- PUT /admin/settings — update site settings ---

@@ -13,19 +13,22 @@ const AdminThemeContext = createContext<{
 // blocks in src/styles/theme.css key off. Scoped to the admin panel only —
 // the public site and client portal never reference var(--admin-*), so the
 // attribute is harmless outside /admin.
-export function AdminThemeProvider({ children }: { children: ReactNode }) {
+// `forced` pins the theme (the new studio shell is light only) and leaves the
+// stored preference alone.
+export function AdminThemeProvider({ children, forced }: { children: ReactNode; forced?: AdminTheme }) {
   const [theme, setTheme] = useState<AdminTheme>(() => {
+    if (forced) return forced;
     if (typeof window === "undefined") return "dark";
     return (localStorage.getItem(STORAGE_KEY) as AdminTheme) || "dark";
   });
 
   useEffect(() => {
     document.documentElement.setAttribute("data-admin-theme", theme);
-    localStorage.setItem(STORAGE_KEY, theme);
+    if (!forced) localStorage.setItem(STORAGE_KEY, theme);
     return () => {
       document.documentElement.removeAttribute("data-admin-theme");
     };
-  }, [theme]);
+  }, [theme, forced]);
 
   function toggleTheme() {
     setTheme((t) => (t === "dark" ? "light" : "dark"));

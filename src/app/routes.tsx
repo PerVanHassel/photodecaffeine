@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router";
 import { Root } from "./Root";
 import { appRoutes } from "./mobile/routes";
+import { portalRoutes, PublicInvoice, studioRoutes } from "./studio/routes";
 import { Home } from "./pages/Home";
 
 // Marketing pages — loaded eagerly (they're the public site, often the first visit)
@@ -12,34 +13,8 @@ const AutomotivePage = lazy(() => import("./pages/AutomotivePage").then(m => ({ 
 const SocialMediaPage = lazy(() => import("./pages/SocialMediaPage").then(m => ({ default: m.SocialMediaPage })));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage").then(m => ({ default: m.NotFoundPage })));
 
-// Portal pages — never needed by regular visitors
-const PortalLayout = lazy(() => import("./components/portal/PortalLayout").then(m => ({ default: m.PortalLayout })));
-const PortalLoginPage = lazy(() => import("./pages/portal/PortalLoginPage").then(m => ({ default: m.PortalLoginPage })));
-const PortalDashboardPage = lazy(() => import("./pages/portal/PortalDashboardPage").then(m => ({ default: m.PortalDashboardPage })));
-const PortalProjectPage = lazy(() => import("./pages/portal/PortalProjectPage").then(m => ({ default: m.PortalProjectPage })));
-const PortalGalleryPage = lazy(() => import("./pages/portal/PortalGalleryPage").then(m => ({ default: m.PortalGalleryPage })));
-const PortalFeedbackPage = lazy(() => import("./pages/portal/PortalFeedbackPage").then(m => ({ default: m.PortalFeedbackPage })));
 
-// Admin pages — never needed by regular visitors
-const AdminLayout = lazy(() => import("./components/portal/AdminLayout").then(m => ({ default: m.AdminLayout })));
-const AdminLoginPage = lazy(() => import("./pages/portal/AdminLoginPage").then(m => ({ default: m.AdminLoginPage })));
-const AdminDashboardPage = lazy(() => import("./pages/portal/AdminDashboardPage").then(m => ({ default: m.AdminDashboardPage })));
-const AdminClientsPage = lazy(() => import("./pages/portal/AdminClientsPage").then(m => ({ default: m.AdminClientsPage })));
-const AdminClientDetailPage = lazy(() => import("./pages/portal/AdminClientDetailPage").then(m => ({ default: m.AdminClientDetailPage })));
-const AdminProjectPage = lazy(() => import("./pages/portal/AdminProjectPage").then(m => ({ default: m.AdminProjectPage })));
-const AdminGalleryPreviewPage = lazy(() => import("./pages/portal/AdminGalleryPreviewPage").then(m => ({ default: m.AdminGalleryPreviewPage })));
-const AdminInquiriesPage = lazy(() => import("./pages/portal/AdminInquiriesPage").then(m => ({ default: m.AdminInquiriesPage })));
-const AdminReviewsPage = lazy(() => import("./pages/portal/AdminReviewsPage").then(m => ({ default: m.AdminReviewsPage })));
-const AdminDemosPage = lazy(() => import("./pages/portal/AdminDemosPage").then(m => ({ default: m.AdminDemosPage })));
 const DemoPage = lazy(() => import("./pages/demo/DemoPage").then(m => ({ default: m.DemoPage })));
-const AdminPortfolioPage = lazy(() => import("./pages/portal/AdminPortfolioPage").then(m => ({ default: m.AdminPortfolioPage })));
-const AdminRemindersPage = lazy(() => import("./pages/portal/AdminRemindersPage").then(m => ({ default: m.AdminRemindersPage })));
-const AdminSettingsPage = lazy(() => import("./pages/portal/AdminSettingsPage").then(m => ({ default: m.AdminSettingsPage })));
-const AdminAutomotiveGalleryPage = lazy(() => import("./pages/portal/AdminAutomotiveGalleryPage").then(m => ({ default: m.AdminAutomotiveGalleryPage })));
-const AdminAdsPage = lazy(() => import("./pages/portal/AdminAdsPage").then(m => ({ default: m.AdminAdsPage })));
-const AdminTeamPage = lazy(() => import("./pages/portal/AdminTeamPage").then(m => ({ default: m.AdminTeamPage })));
-const AdminDeclarationsPage = lazy(() => import("./pages/portal/AdminDeclarationsPage").then(m => ({ default: m.AdminDeclarationsPage })));
-const AdminQuotesPage = lazy(() => import("./pages/portal/AdminQuotesPage").then(m => ({ default: m.AdminQuotesPage })));
 const QuotePage = lazy(() => import("./pages/QuotePage").then(m => ({ default: m.QuotePage })));
 
 function PageLoader() {
@@ -68,31 +43,7 @@ const LazyAboutPage = wrap(AboutPage);
 const LazyAutomotivePage = wrap(AutomotivePage);
 const LazySocialMediaPage = wrap(SocialMediaPage);
 const LazyNotFoundPage = wrap(NotFoundPage);
-const LazyPortalLayout = wrap(PortalLayout);
-const LazyPortalLoginPage = wrap(PortalLoginPage);
-const LazyPortalDashboardPage = wrap(PortalDashboardPage);
-const LazyPortalProjectPage = wrap(PortalProjectPage);
-const LazyPortalGalleryPage = wrap(PortalGalleryPage);
-const LazyPortalFeedbackPage = wrap(PortalFeedbackPage);
-const LazyAdminLayout = wrap(AdminLayout);
-const LazyAdminLoginPage = wrap(AdminLoginPage);
-const LazyAdminDashboardPage = wrap(AdminDashboardPage);
-const LazyAdminClientsPage = wrap(AdminClientsPage);
-const LazyAdminClientDetailPage = wrap(AdminClientDetailPage);
-const LazyAdminProjectPage = wrap(AdminProjectPage);
-const LazyAdminGalleryPreviewPage = wrap(AdminGalleryPreviewPage);
-const LazyAdminInquiriesPage = wrap(AdminInquiriesPage);
-const LazyAdminReviewsPage = wrap(AdminReviewsPage);
-const LazyAdminDemosPage = wrap(AdminDemosPage);
 const LazyDemoPage = wrap(DemoPage);
-const LazyAdminPortfolioPage = wrap(AdminPortfolioPage);
-const LazyAdminRemindersPage = wrap(AdminRemindersPage);
-const LazyAdminSettingsPage = wrap(AdminSettingsPage);
-const LazyAdminAutomotiveGalleryPage = wrap(AdminAutomotiveGalleryPage);
-const LazyAdminAdsPage = wrap(AdminAdsPage);
-const LazyAdminTeamPage = wrap(AdminTeamPage);
-const LazyAdminDeclarationsPage = wrap(AdminDeclarationsPage);
-const LazyAdminQuotesPage = wrap(AdminQuotesPage);
 const LazyQuotePage = wrap(QuotePage);
 
 export const router = createBrowserRouter([
@@ -108,53 +59,14 @@ export const router = createBrowserRouter([
       { path: "services/social-media", Component: LazySocialMediaPage },
     ],
   },
-  {
-    path: "/portal",
-    children: [
-      { index: true, element: <Navigate to="/portal/login" replace /> },
-      { path: "login", Component: LazyPortalLoginPage },
-      {
-        Component: LazyPortalLayout,
-        children: [
-          { path: "dashboard", Component: LazyPortalDashboardPage },
-          { path: "project/:id", Component: LazyPortalProjectPage },
-          { path: "project/:id/gallery", Component: LazyPortalGalleryPage },
-          { path: "project/:id/feedback", Component: LazyPortalFeedbackPage },
-        ],
-      },
-    ],
-  },
-  {
-    path: "/admin",
-    children: [
-      { path: "login", Component: LazyAdminLoginPage },
-      {
-        Component: LazyAdminLayout,
-        children: [
-          { path: "dashboard", Component: LazyAdminDashboardPage },
-          { path: "clients", Component: LazyAdminClientsPage },
-          { path: "client/:id", Component: LazyAdminClientDetailPage },
-          { path: "project/:id", Component: LazyAdminProjectPage },
-          { path: "project/:id/gallery", Component: LazyAdminGalleryPreviewPage },
-          { path: "inquiries", Component: LazyAdminInquiriesPage },
-          { path: "reviews", Component: LazyAdminReviewsPage },
-          { path: "demos", Component: LazyAdminDemosPage },
-          { path: "portfolio", Component: LazyAdminPortfolioPage },
-          { path: "services/automotive", Component: LazyAdminAutomotiveGalleryPage },
-          { path: "ads", Component: LazyAdminAdsPage },
-          { path: "team", Component: LazyAdminTeamPage },
-          { path: "quotes", Component: LazyAdminQuotesPage },
-          { path: "declarations", Component: LazyAdminDeclarationsPage },
-          { path: "reminders", Component: LazyAdminRemindersPage },
-          { path: "settings", Component: LazyAdminSettingsPage },
-        ],
-      },
-    ],
-  },
+  portalRoutes,
+  studioRoutes,
   { path: "/demo/:slug", Component: LazyDemoPage },
   // A price quote the client opens from the emailed link — the token in the
   // query string is what stands in for a login.
   { path: "/offerte/:id", Component: LazyQuotePage },
+  // The client's copy of an invoice, by token like the quote page.
+  { path: "/factuur/:id", Component: PublicInvoice },
   // The mobile admin app. Its whole subtree is lazily loaded (see
   // src/app/mobile/routes.tsx), so the public site never pays for it.
   appRoutes,
