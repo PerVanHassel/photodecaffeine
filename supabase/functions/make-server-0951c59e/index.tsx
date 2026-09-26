@@ -4169,6 +4169,50 @@ app.post("/make-server-0951c59e/admin/quotes/:id/send", async (c) => {
 });
 
 // --- GET /quote/:id?t=token — the client's own copy, no login ---
+// --- GET /portal/quotes — de prijsopgaves van de ingelogde klant ---
+// Quotes horen bij een klant via clientId, maar oudere staan er soms alleen
+// met een e-mailadres in; daarom matchen we op allebei. Concepten blijven
+// onzichtbaar tot ze verstuurd zijn.
+app.get("/make-server-0951c59e/portal/quotes", async (c) => {
+  try {
+    const user = await verifyAuth(c.req.header("Authorization"));
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+    const idsStr = await kv.get("quotes:quoteIds");
+    if (!idsStr) return c.json({ quotes: [] });
+
+    const ids = JSON.parse(idsStr) as string[];
+    const values = await Promise.all(ids.map((id) => kv.get(`quotes:quote:${id}`)));
+    const email = String(user.email || "").toLowerCase();
+
+    const quotes = values
+      .filter(Boolean)
+      .map((v) => JSON.parse(v as string))
+      .filter((q) => q.status !== "draft")
+      .filter((q) => q.clientId === user.id || String(q.clientEmail || "").toLowerCase() === email)
+      .sort((a, b) => String(b.sentAt || "").localeCompare(String(a.sentAt || "")))
+      .map((q) => ({
+        id: q.id,
+        number: q.number || "",
+        title: q.title || "",
+        subtitle: q.subtitle || "",
+        status: q.status,
+        sentAt: q.sentAt || "",
+        respondedAt: q.respondedAt || "",
+        response: q.response || "",
+        validUntil: q.validUntil || "",
+        totals: { monthly: quoteSum(quoteLines(q.monthly)), oneTime: quoteSum(quoteLines(q.oneTime)) },
+        // De pagina zelf werkt op token, ook voor ingelogde klanten.
+        token: q.token || "",
+      }));
+
+    return c.json({ quotes });
+  } catch (err) {
+    console.log("Get portal quotes error:", err);
+    return c.json({ error: `Prijsopgaves ophalen mislukt: ${err}` }, 500);
+  }
+});
+
 app.get("/make-server-0951c59e/quote/:id", async (c) => {
   try {
     const id = c.req.param("id");

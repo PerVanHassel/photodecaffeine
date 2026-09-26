@@ -266,6 +266,28 @@ function ProjectCard({ project, onClick }: { project: Project; onClick: () => vo
   );
 }
 
+interface PortalQuote {
+  id: string;
+  number: string;
+  title: string;
+  subtitle: string;
+  status: "sent" | "accepted" | "declined";
+  sentAt: string;
+  validUntil: string;
+  totals: { monthly: number; oneTime: number };
+  token: string;
+}
+
+const QUOTE_STATUS: Record<string, { label: string; color: string }> = {
+  sent: { label: "Nog te bekijken", color: "#c8905a" },
+  accepted: { label: "Akkoord", color: "#7a9a6a" },
+  declined: { label: "Afgewezen", color: "rgba(255,251,224,0.4)" },
+};
+
+function euroKort(n: number) {
+  return new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR", minimumFractionDigits: 2 }).format(n);
+}
+
 export function PortalDashboardPage() {
   const { user, session } = useAuth();
   const navigate = useNavigate();
@@ -274,6 +296,7 @@ export function PortalDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+  const [quotes, setQuotes] = useState<PortalQuote[]>([]);
 
   const name = user?.user_metadata?.name || user?.email || "Client";
   const firstName = name.split(" ")[0];
@@ -298,6 +321,16 @@ export function PortalDashboardPage() {
 
   useEffect(() => {
     loadProjects();
+  }, [session]);
+
+  // Prijsopgaves hangen aan de klant, niet aan een project: ze komen vaak
+  // binnen voordat er iets loopt. Een lege lijst is normaal, dus een fout
+  // hier mag de rest van het dashboard niet in de weg zitten.
+  useEffect(() => {
+    if (!session) return;
+    portalFetch("/portal/quotes", {}, session.access_token)
+      .then((data) => setQuotes(data.quotes || []))
+      .catch(() => setQuotes([]));
   }, [session]);
 
   return (
@@ -348,6 +381,58 @@ export function PortalDashboardPage() {
           </p>
         )}
       </div>
+
+      {/* Prijsopgaves — staan boven de projecten, want ze vragen om een antwoord */}
+      {quotes.length > 0 && (
+        <div style={{ marginBottom: "56px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "20px" }}>
+            <span style={{ color: "rgba(255,251,224,0.25)", fontSize: "9px", fontWeight: 500, letterSpacing: "0.3em", textTransform: "uppercase" }}>
+              Prijsopgaves
+            </span>
+            <div style={{ flex: 1, height: "1px", backgroundColor: "rgba(255,251,224,0.05)" }} />
+          </div>
+
+          <div style={{ display: "grid", gap: "12px" }}>
+            {quotes.map((q) => {
+              const st = QUOTE_STATUS[q.status] || QUOTE_STATUS.sent;
+              return (
+                <button
+                  key={q.id}
+                  onClick={() => navigate(`/offerte/${q.id}?t=${encodeURIComponent(q.token)}`)}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    cursor: "pointer",
+                    backgroundColor: "rgba(200,144,90,0.05)",
+                    border: "1px solid rgba(200,144,90,0.2)",
+                    padding: isMobile ? "18px" : "22px 26px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "16px",
+                    fontFamily: "'Inter', sans-serif",
+                  }}
+                >
+                  <span style={{ minWidth: 0 }}>
+                    <span style={{ display: "block", color: st.color, fontSize: "9px", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase" }}>
+                      {q.number ? `${q.number} · ` : ""}{st.label}
+                    </span>
+                    <span style={{ display: "block", color: "#fffbe0", fontSize: isMobile ? "15px" : "17px", fontWeight: 600, marginTop: "7px" }}>
+                      {q.title}
+                    </span>
+                    <span style={{ display: "block", color: "rgba(255,251,224,0.4)", fontSize: "13px", marginTop: "5px" }}>
+                      {q.totals.oneTime > 0 ? `${euroKort(q.totals.oneTime)} eenmalig` : ""}
+                      {q.totals.oneTime > 0 && q.totals.monthly > 0 ? " · " : ""}
+                      {q.totals.monthly > 0 ? `${euroKort(q.totals.monthly)} per maand` : ""}
+                    </span>
+                  </span>
+                  <ArrowRight size={18} style={{ color: "#c8905a", flexShrink: 0 }} />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Section label */}
       <div
