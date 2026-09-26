@@ -14,6 +14,8 @@ export function PortalLoginPage() {
   // Set by the invitation email (/portal?invite=<address>): open on the sign-up
   // tab with the invited address filled in, so the client only picks a password.
   const invitedEmail = searchParams.get("invite")?.trim() || "";
+  // Proves the link came from the invitation email, not just the address.
+  const inviteToken = searchParams.get("token")?.trim() || "";
   const [tab, setTab] = useState<Tab>(invitedEmail ? "signup" : "signin");
 
   // Sign in form
@@ -70,6 +72,7 @@ export function PortalLoginPage() {
           password: suPassword,
           name: suName,
           company: suCompany,
+          token: inviteToken,
         }),
       });
       // Auto sign in after signup
@@ -241,8 +244,8 @@ export function PortalLoginPage() {
               Invitation Only
             </div>
             <div style={{ color: "rgba(255,251,224,0.5)", fontSize: "12px", lineHeight: 1.6 }}>
-              Accounts are opened by invitation. If PDC has invited you, use the link in that
-              email — or sign up below with the address it was sent to.
+              Accounts are opened by invitation. If PDC has invited you, open the link in that
+              email to activate your account.
             </div>
           </div>
         )}

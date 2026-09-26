@@ -182,10 +182,15 @@ async function passwordProblem(password: string): Promise<string> {
 
 
 
+/** 32 hex characters from the platform CSPRNG; for links that stand in for a login. */
+function randomToken(): string {
+  return crypto.randomUUID().replace(/-/g, "");
+}
+
 // Escapes values interpolated into email HTML so a stray quote or angle
 // bracket in a name or address can't break out of the surrounding markup.
-function escapeHtml(str: string): string {
-  return str
+function escapeHtml(value: unknown): string {
+  return String(value ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
@@ -234,6 +239,13 @@ function projectDemos(project: any): { slug: string; live: boolean }[] {
 function projectClientIds(project: any): string[] {
   if (Array.isArray(project?.clientIds) && project.clientIds.length > 0) return project.clientIds;
   return project?.clientId ? [project.clientId] : [];
+}
+
+// What a client gets to see of a project. The briefing holds the studio's own
+// intake notes and is never meant for the client.
+function clientProjectView(project: any) {
+  const { briefing: _briefing, ...rest } = project || {};
+  return rest;
 }
 
 function clientCanSeeProject(project: any, userId: string): boolean {
@@ -315,7 +327,7 @@ async function getRole(roleId: string | undefined | null): Promise<any | null> {
 // Everyone else needs a roleId pointing at a role that grants it.
 async function hasPermission(user: any, permission: string): Promise<boolean> {
   if (user.email === OWNER_EMAIL) return true;
-  const role = await getRole(user.user_metadata?.roleId);
+  const role = await getRole(roleIdOf(user));
   return !!role?.permissions?.[permission];
 }
 
@@ -445,17 +457,19 @@ async function getPromoPortfolioArticle() {
 }
 
 // --- Auth helpers ---
+// Admin status and role live in app_metadata. user_metadata is writable by the
+// user themselves (supabase.auth.updateUser), so nothing there may grant access.
+function isAdminUser(user: any): boolean {
+  return user?.app_metadata?.role === "admin" || user?.email === OWNER_EMAIL;
+}
+
+function roleIdOf(user: any): string | null {
+  return user?.app_metadata?.roleId || null;
+}
+
 async function verifyAuth(authHeader: string | null) {
-  if (!authHeader) {
-    console.log("verifyAuth: no auth header");
-    return null;
-  }
-  const token = authHeader.split(" ")[1];
-  if (!token) {
-    console.log("verifyAuth: no token in header");
-    return null;
-  }
-  console.log("verifyAuth: token received (first 20 chars):", token.substring(0, 20) + "...");
+  const token = authHeader?.split(" ")[1];
+  if (!token) return null;
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_ANON_KEY")!
@@ -464,35 +478,17 @@ async function verifyAuth(authHeader: string | null) {
     data: { user },
     error,
   } = await supabase.auth.getUser(token);
-  if (error) {
-    console.log("verifyAuth: getUser error:", JSON.stringify(error));
-    return null;
-  }
-  if (!user) {
-    console.log("verifyAuth: no user returned");
-    return null;
-  }
-  console.log("verifyAuth: user returned, id:", user.id);
-  console.log("verifyAuth: user_metadata:", JSON.stringify(user.user_metadata));
-  console.log("verifyAuth: role from metadata:", user.user_metadata?.role);
+  if (error || !user) return null;
   return user;
 }
 
 async function verifyAdmin(authHeader: string | null) {
   const user = await verifyAuth(authHeader);
-  if (!user) {
-    console.log("verifyAdmin: auth failed - no user from verifyAuth");
-    return null;
-  }
-  const userRole = user.user_metadata?.role;
-  console.log("verifyAdmin: checking role, found:", userRole, "expected: admin");
-  if (userRole !== "admin" && user.email !== OWNER_EMAIL) {
-    console.log("verifyAdmin: FAILED - user is not admin");
-    return null;
-  }
-  console.log("verifyAdmin: SUCCESS - user is admin");
-  return user;
+  return user && isAdminUser(user) ? user : null;
 }
+
+// The only buckets the admin UI writes to.
+const UPLOAD_BUCKETS = ["portfolio-images-0951c59e", "declaration-files-0951c59e"];
 
 // --- Storage bucket setup ---
 app.post("/make-server-0951c59e/admin/storage/ensure-bucket", async (c) => {
@@ -502,6 +498,7 @@ app.post("/make-server-0951c59e/admin/storage/ensure-bucket", async (c) => {
 
     const { bucketName } = await c.req.json();
     if (!bucketName) return c.json({ error: "bucketName is required" }, 400);
+    if (!UPLOAD_BUCKETS.includes(bucketName)) return c.json({ error: "Onbekende bucket" }, 400);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -585,6 +582,9 @@ app.post("/make-server-0951c59e/admin/storage/upload", async (c) => {
     if (!file || !bucketName) {
       return c.json({ error: "file and bucketName are required" }, 400);
     }
+    if (!UPLOAD_BUCKETS.includes(bucketName)) {
+      return c.json({ error: "Onbekende bucket" }, 400);
+    }
 
     // Sanitize the original filename to remove problematic characters
     const sanitizedOriginalName = sanitizeFileName(file.name);
@@ -627,14 +627,15 @@ app.post("/make-server-0951c59e/admin/storage/upload", async (c) => {
 // --- POST /portal/signup ---
 app.post("/make-server-0951c59e/portal/signup", async (c) => {
   try {
-    const { email, password, name, company } = await c.req.json();
+    const { email, password, name, company, token } = await c.req.json();
 
     // An account is made for someone we invited, not for whoever finds this
-    // address. Without a standing invitation there is nothing to activate.
+    // address. Without a standing invitation there is nothing to activate, and
+    // the token from the email proves the link was actually received.
     const inviteEmail = String(email || "").trim().toLowerCase();
     const inviteStr = await kv.get(`portal:invite:${inviteEmail}`);
     const invite = inviteStr ? JSON.parse(inviteStr) : null;
-    if (!invite || invite.usedAt) {
+    if (!invite || invite.usedAt || !invite.token || invite.token !== String(token || "")) {
       return c.json(
         { error: "Voor dit e-mailadres staat geen uitnodiging klaar. Vraag PhotoDeCaffeine om een uitnodiging." },
         403
@@ -695,7 +696,7 @@ app.post("/make-server-0951c59e/portal/signup", async (c) => {
           <td style="padding:32px 36px 0;">
             <span style="color:#c8905a;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;">Nieuwe Klant</span>
             <div style="height:10px;line-height:10px;font-size:0;">&nbsp;</div>
-            <span style="display:block;color:#fffbe0;font-size:22px;font-weight:800;letter-spacing:-0.01em;">${name || email}</span>
+            <span style="display:block;color:#fffbe0;font-size:22px;font-weight:800;letter-spacing:-0.01em;">${escapeHtml(name || email)}</span>
           </td>
         </tr>
         <tr>
@@ -703,9 +704,9 @@ app.post("/make-server-0951c59e/portal/signup", async (c) => {
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
               <tr>
                 <td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);width:88px;color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;vertical-align:top;">E-mail</td>
-                <td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);color:#fffbe0;font-size:13px;">${email}</td>
+                <td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);color:#fffbe0;font-size:13px;">${escapeHtml(email)}</td>
               </tr>
-              ${company ? `<tr><td style="padding:9px 0;color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;vertical-align:top;">Bedrijf</td><td style="padding:9px 0;color:#fffbe0;font-size:13px;">${company}</td></tr>` : ""}
+              ${company ? `<tr><td style="padding:9px 0;color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;vertical-align:top;">Bedrijf</td><td style="padding:9px 0;color:#fffbe0;font-size:13px;">${escapeHtml(company)}</td></tr>` : ""}
             </table>
           </td>
         </tr>
@@ -746,7 +747,7 @@ app.get("/make-server-0951c59e/portal/projects", async (c) => {
     );
     const projects = projectValues
       .filter(Boolean)
-      .map((v) => JSON.parse(v as string));
+      .map((v) => clientProjectView(JSON.parse(v as string)));
 
     return c.json({ projects });
   } catch (err) {
@@ -770,7 +771,7 @@ app.get("/make-server-0951c59e/portal/project/:id", async (c) => {
     if (!clientCanSeeProject(project, user.id))
       return c.json({ error: "Unauthorized" }, 403);
 
-    return c.json({ project });
+    return c.json({ project: clientProjectView(project) });
   } catch (err) {
     console.log("Get project error:", err);
     return c.json({ error: `Failed to fetch project: ${err}` }, 500);
@@ -847,14 +848,14 @@ app.post("/make-server-0951c59e/portal/project/:id/messages", async (c) => {
           <td style="padding:32px 36px 0;">
             <span style="color:#c8905a;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;">Klant Reactie</span>
             <div style="height:10px;line-height:10px;font-size:0;">&nbsp;</div>
-            <span style="display:block;color:#fffbe0;font-size:22px;font-weight:800;letter-spacing:-0.01em;">${newMessage.senderName}</span>
-            <span style="display:block;color:rgba(255,251,224,0.3);font-size:12px;margin-top:4px;">${project.title}</span>
+            <span style="display:block;color:#fffbe0;font-size:22px;font-weight:800;letter-spacing:-0.01em;">${escapeHtml(newMessage.senderName)}</span>
+            <span style="display:block;color:rgba(255,251,224,0.3);font-size:12px;margin-top:4px;">${escapeHtml(project.title)}</span>
           </td>
         </tr>
         <tr>
           <td style="padding:20px 36px 0;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:rgba(255,251,224,0.03);border-left:2px solid #c8905a;">
-              <tr><td style="padding:16px 18px;color:rgba(255,251,224,0.65);font-size:13.5px;line-height:1.7;">${newMessage.content.replace(/\n/g, "<br>")}</td></tr>
+              <tr><td style="padding:16px 18px;color:rgba(255,251,224,0.65);font-size:13.5px;line-height:1.7;">${escapeHtml(newMessage.content).replace(/\n/g, "<br>")}</td></tr>
             </table>
           </td>
         </tr>
@@ -884,50 +885,6 @@ app.post("/make-server-0951c59e/portal/project/:id/messages", async (c) => {
 // ADMIN ROUTES
 // =============================================================
 
-// --- POST /admin/signup — create admin account (requires ADMIN_SECRET) ---
-app.post("/make-server-0951c59e/admin/signup", async (c) => {
-  try {
-    const { email, password, name, adminSecret } = await c.req.json();
-    const expectedSecret = Deno.env.get("ADMIN_SECRET");
-    if (!expectedSecret || adminSecret !== expectedSecret) {
-      return c.json({ error: "Invalid admin secret key" }, 403);
-    }
-
-    const adminPwProblem = await passwordProblem(password);
-    if (adminPwProblem) return c.json({ error: adminPwProblem }, 400);
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-    // Use REST API directly to avoid SDK version parsing issues
-    const createRes = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${serviceKey}`,
-        apikey: serviceKey,
-      },
-      body: JSON.stringify({
-        email,
-        password,
-        user_metadata: { name: name || email, role: "admin" },
-        email_confirm: true,
-      }),
-    });
-
-    const createData = await createRes.json();
-    if (!createRes.ok) {
-      console.log("Admin signup error:", JSON.stringify(createData));
-      return c.json({ error: createData.message || createData.msg || "Admin signup failed" }, 400);
-    }
-
-    return c.json({ success: true, userId: createData.id });
-  } catch (err) {
-    console.log("Admin signup unexpected error:", err);
-    return c.json({ error: `Internal error during admin signup: ${err}` }, 500);
-  }
-});
-
 // --- GET /admin/clients — list all non-admin users ---
 app.get("/make-server-0951c59e/admin/clients", async (c) => {
   try {
@@ -942,9 +899,7 @@ app.get("/make-server-0951c59e/admin/clients", async (c) => {
     const { data, error } = await supabase.auth.admin.listUsers({ perPage: 200 });
     if (error) return c.json({ error: `Failed to list users: ${error.message}` }, 500);
 
-    const clients = data.users.filter(
-      (u) => u.user_metadata?.role !== "admin"
-    );
+    const clients = data.users.filter((u) => !isAdminUser(u));
 
     const clientsWithMeta = await Promise.all(
       clients.map(async (client) => {
@@ -1009,7 +964,8 @@ app.post("/make-server-0951c59e/admin/clients/invite", async (c) => {
       }
     }
 
-    const inviteLink = `${SITE_URL}/portal/login?invite=${encodeURIComponent(email)}`;
+    const inviteToken = randomToken();
+    const inviteLink = `${SITE_URL}/portal/login?invite=${encodeURIComponent(email)}&token=${inviteToken}`;
     const greeting = name ? `Hallo ${escapeHtml(name.split(" ")[0])},` : "Hallo,";
 
     const sent = await sendEmail({
@@ -1041,7 +997,7 @@ app.post("/make-server-0951c59e/admin/clients/invite", async (c) => {
         </tr>
         <tr>
           <td style="padding:18px 36px 28px;border-top:1px solid rgba(255,251,224,0.06);">
-            <span style="color:rgba(255,251,224,0.2);font-size:11px;">Werkt de knop niet? Ga naar ${SITE_URL}/portal/login en meld je aan met dit e-mailadres. Vragen? Antwoord gerust op deze mail.</span>
+            <span style="color:rgba(255,251,224,0.2);font-size:11px;">Werkt de knop niet? Kopieer deze link in je browser: ${inviteLink}. Vragen? Antwoord gerust op deze mail.</span>
           </td>
         </tr>
       `),
@@ -1058,6 +1014,7 @@ app.post("/make-server-0951c59e/admin/clients/invite", async (c) => {
       JSON.stringify({
         email,
         name,
+        token: inviteToken,
         invitedBy: { id: admin.id, name: admin.user_metadata?.name || admin.email },
         createdAt: new Date().toISOString(),
         expiresAt: new Date(Date.now() + INVITE_VALID_DAYS * 86400000).toISOString(),
@@ -1072,331 +1029,11 @@ app.post("/make-server-0951c59e/admin/clients/invite", async (c) => {
   }
 });
 
-// --- GET /admin/auth/test — test endpoint to verify auth is working ---
-app.get("/make-server-0951c59e/admin/auth/test", async (c) => {
-  try {
-    const authHeader = c.req.header("Authorization");
-    console.log("=== AUTH TEST ENDPOINT ===");
-    console.log("Auth header present:", !!authHeader);
-
-    if (!authHeader) {
-      return c.json({ error: "No auth header", authenticated: false }, 200);
-    }
-
-    const user = await verifyAuth(authHeader);
-    if (!user) {
-      return c.json({ error: "Token invalid", authenticated: false }, 200);
-    }
-
-    return c.json({
-      authenticated: true,
-      userId: user.id,
-      email: user.email,
-      role: user.user_metadata?.role,
-      isAdmin: user.user_metadata?.role === "admin",
-      fullMetadata: user.user_metadata,
-    });
-  } catch (err) {
-    console.log("Auth test error:", err);
-    return c.json({ error: String(err), authenticated: false }, 200);
-  }
-});
-
-// --- POST /admin/auth/check-user — check user status by email (requires ADMIN_SECRET) ---
-app.post("/make-server-0951c59e/admin/auth/check-user", async (c) => {
-  try {
-    console.log("=== CHECK USER REQUEST ===");
-
-    const { adminSecret, email } = await c.req.json();
-    console.log("Email received:", email);
-    console.log("Secret provided:", !!adminSecret);
-
-    const expectedSecret = Deno.env.get("ADMIN_SECRET");
-    console.log("Expected secret exists:", !!expectedSecret);
-
-    if (!expectedSecret) {
-      console.log("ERROR: ADMIN_SECRET not set in environment!");
-      return c.json({ error: "Server configuration error: ADMIN_SECRET not set" }, 500);
-    }
-
-    if (!adminSecret || adminSecret !== expectedSecret) {
-      console.log("ERROR: Secret mismatch");
-      return c.json({ error: "Invalid admin secret key" }, 403);
-    }
-
-    if (!email) {
-      console.log("ERROR: No email provided");
-      return c.json({ error: "Email is required" }, 400);
-    }
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-    console.log("Supabase URL:", supabaseUrl);
-    console.log("Service key exists:", !!serviceKey);
-
-    // List all users and find by email
-    console.log("Fetching users from Supabase...");
-    const listRes = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
-      headers: {
-        Authorization: `Bearer ${serviceKey}`,
-        apikey: serviceKey,
-      },
-    });
-
-    console.log("List users response status:", listRes.status);
-
-    const listData = await listRes.json();
-    if (!listRes.ok) {
-      console.log("List users error:", JSON.stringify(listData));
-
-      // Geef specifieke foutmelding bij 401
-      if (listRes.status === 401) {
-        return c.json({
-          error: "Server configuratie fout: SUPABASE_SERVICE_ROLE_KEY is niet correct ingesteld. Controleer je Supabase Edge Function environment variables.",
-          details: listData
-        }, 500);
-      }
-
-      return c.json({ error: "Failed to list users from Supabase", details: listData }, 500);
-    }
-
-    console.log("Total users found:", listData.users?.length);
-
-    const user = listData.users?.find((u: any) => u.email === email);
-    if (!user) {
-      console.log("User not found with email:", email);
-      const allEmails = listData.users?.map((u: any) => u.email).join(", ");
-      console.log("Available emails:", allEmails);
-      return c.json({ error: `User not found with email: ${email}`, found: false }, 404);
-    }
-
-    console.log("User found:", user.id);
-    console.log("User role:", user.user_metadata?.role);
-    console.log("Is admin:", user.user_metadata?.role === "admin");
-
-    return c.json({
-      found: true,
-      userId: user.id,
-      email: user.email,
-      role: user.user_metadata?.role,
-      isAdmin: user.user_metadata?.role === "admin",
-      metadata: user.user_metadata,
-      createdAt: user.created_at,
-    });
-  } catch (err) {
-    console.log("Check user error:", err);
-    console.error("Full error:", err);
-    return c.json({ error: `Failed to check user: ${err}` }, 500);
-  }
-});
-
-// --- POST /admin/auth/fix-my-role — fix your own admin role using your session (requires ADMIN_SECRET) ---
-app.post("/make-server-0951c59e/admin/auth/fix-my-role", async (c) => {
-  try {
-    console.log("=== FIX MY ROLE REQUEST ===");
-
-    const authHeader = c.req.header("Authorization");
-    if (!authHeader) {
-      return c.json({ error: "No authorization header" }, 401);
-    }
-
-    // Verify the user is authenticated
-    const user = await verifyAuth(authHeader);
-    if (!user) {
-      return c.json({ error: "Invalid session token" }, 401);
-    }
-
-    console.log("Authenticated user:", user.id, user.email);
-    console.log("Current role:", user.user_metadata?.role);
-
-    const { adminSecret } = await c.req.json();
-    const expectedSecret = Deno.env.get("ADMIN_SECRET");
-
-    console.log("Secret provided:", !!adminSecret);
-    console.log("Expected secret exists:", !!expectedSecret);
-
-    if (!expectedSecret || adminSecret !== expectedSecret) {
-      console.log("Secret mismatch!");
-      return c.json({ error: "Invalid admin secret key" }, 403);
-    }
-
-    // Update this user's metadata to add admin role
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-    console.log("Updating user", user.id, "to admin...");
-
-    const updateRes = await fetch(`${supabaseUrl}/auth/v1/admin/users/${user.id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${serviceKey}`,
-        apikey: serviceKey,
-      },
-      body: JSON.stringify({
-        user_metadata: {
-          ...user.user_metadata,
-          name: user.user_metadata?.name || user.email,
-          role: "admin",
-        },
-      }),
-    });
-
-    console.log("Update response status:", updateRes.status);
-
-    const updateData = await updateRes.json();
-    if (!updateRes.ok) {
-      console.log("Update error:", JSON.stringify(updateData));
-
-      if (updateRes.status === 401) {
-        return c.json({
-          error: "Server configuratie fout: Neem contact op met de ontwikkelaar om de Supabase credentials te controleren.",
-          technical: "SUPABASE_SERVICE_ROLE_KEY is niet correct ingesteld"
-        }, 500);
-      }
-
-      return c.json({ error: updateData.message || "Failed to update role" }, 400);
-    }
-
-    console.log("✅ Role successfully updated to admin!");
-    console.log("New metadata:", JSON.stringify(updateData.user_metadata));
-
-    return c.json({
-      success: true,
-      message: "Je account heeft nu admin rechten. Log opnieuw in om de wijzigingen te zien.",
-      userId: user.id,
-      email: user.email,
-      oldRole: user.user_metadata?.role,
-      newRole: updateData.user_metadata?.role,
-    });
-  } catch (err) {
-    console.log("Fix my role error:", err);
-    return c.json({ error: `Failed to fix role: ${err}` }, 500);
-  }
-});
-
-// --- POST /admin/auth/fix-role — fix admin role by email (requires ADMIN_SECRET) ---
-app.post("/make-server-0951c59e/admin/auth/fix-role", async (c) => {
-  try {
-    const { adminSecret, email } = await c.req.json();
-    const expectedSecret = Deno.env.get("ADMIN_SECRET");
-
-    console.log("=== FIX ROLE REQUEST ===");
-    console.log("Email:", email);
-    console.log("Secret provided:", !!adminSecret);
-    console.log("Expected secret exists:", !!expectedSecret);
-
-    if (!expectedSecret || adminSecret !== expectedSecret) {
-      console.log("Secret mismatch!");
-      return c.json({ error: "Invalid admin secret key" }, 403);
-    }
-
-    if (!email) {
-      return c.json({ error: "Email is required" }, 400);
-    }
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-    console.log("Listing users to find:", email);
-
-    // List all users and find by email
-    const listRes = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
-      headers: {
-        Authorization: `Bearer ${serviceKey}`,
-        apikey: serviceKey,
-      },
-    });
-
-    console.log("List response status:", listRes.status);
-
-    const listData = await listRes.json();
-    if (!listRes.ok) {
-      console.log("List users error:", JSON.stringify(listData));
-
-      if (listRes.status === 401) {
-        return c.json({
-          error: "Server configuratie fout: SUPABASE_SERVICE_ROLE_KEY is niet correct. Neem contact op met de ontwikkelaar om de environment variables te controleren.",
-          details: listData
-        }, 500);
-      }
-
-      return c.json({ error: "Failed to list users", details: listData }, 500);
-    }
-
-    console.log("Total users found:", listData.users?.length);
-
-    const user = listData.users?.find((u: any) => u.email === email);
-    if (!user) {
-      console.log("User not found with email:", email);
-      return c.json({ error: `User not found with email: ${email}` }, 404);
-    }
-
-    console.log("Found user:", user.id);
-    console.log("Current metadata:", JSON.stringify(user.user_metadata));
-    console.log("Current role:", user.user_metadata?.role);
-
-    // Update user metadata to set role=admin
-    console.log("Updating user metadata...");
-    const updateRes = await fetch(`${supabaseUrl}/auth/v1/admin/users/${user.id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${serviceKey}`,
-        apikey: serviceKey,
-      },
-      body: JSON.stringify({
-        user_metadata: {
-          name: user.user_metadata?.name || user.email,
-          role: "admin"
-        },
-      }),
-    });
-
-    console.log("Update response status:", updateRes.status);
-
-    const updateData = await updateRes.json();
-    if (!updateRes.ok) {
-      console.log("Fix role error:", JSON.stringify(updateData));
-      return c.json({ error: updateData.message || "Failed to update role" }, 400);
-    }
-
-    console.log("✅ Admin role fixed successfully!");
-    console.log("New metadata:", JSON.stringify(updateData.user_metadata));
-
-    return c.json({
-      success: true,
-      message: "Role updated to admin. Please sign out and sign in again for changes to take effect.",
-      userId: user.id,
-      email: user.email,
-      oldRole: user.user_metadata?.role,
-      newRole: updateData.user_metadata?.role,
-      newMetadata: updateData.user_metadata,
-    });
-  } catch (err) {
-    console.log("Fix role error:", err);
-    return c.json({ error: `Failed to fix role: ${err}` }, 500);
-  }
-});
-
 // --- GET /admin/client/:id — get client info + their projects ---
 app.get("/make-server-0951c59e/admin/client/:id", async (c) => {
   try {
-    const authHeader = c.req.header("Authorization");
-    console.log("=== ADMIN CLIENT DETAIL REQUEST ===");
-    console.log("Admin client request - auth header present:", !!authHeader);
-    console.log("Client ID requested:", c.req.param("id"));
-
-    const admin = await verifyAdmin(authHeader);
-    console.log("Admin verification result:", admin ? "success" : "failed");
-    if (admin) {
-      console.log("Admin user ID:", admin.id, "role:", admin.user_metadata?.role);
-    } else {
-      console.log("AUTHORIZATION FAILED - returning 401");
-    }
-
-    if (!admin) return c.json({ error: "Unauthorized - admin verification failed" }, 401);
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
 
     const clientId = c.req.param("id");
     const supabase = createClient(
@@ -1714,9 +1351,9 @@ app.put("/make-server-0951c59e/admin/project/:id", async (c) => {
       // Everyone on the project hears about it, not only the first client.
       const clientUsers = (await Promise.all(afterClients.map((id) => getPortalUser(id)))).filter(Boolean);
       for (const clientUser of clientUsers as { email: string; name: string }[]) {
-        const firstName = clientUser.name.split(" ")[0];
+        const firstName = escapeHtml(clientUser.name.split(" ")[0]);
         const gs = updated.gallerySettings || {};
-        const galleryTitle = gs.title || updated.title;
+        const galleryTitle = escapeHtml(gs.title || updated.title);
         const accent = gs.accentColor || "#c8905a";
         const coverUrl = gs.coverUrl || updated.galleryUrls?.[0];
         const galleryLink = `${SITE_URL}/portal/project/${projectId}/gallery`;
@@ -1760,7 +1397,7 @@ app.put("/make-server-0951c59e/admin/project/:id", async (c) => {
               ${glassImageCard({
                 imageUrl: coverUrl,
                 eyebrow: "Project Afgerond",
-                title: updated.title,
+                title: escapeHtml(updated.title),
                 accentColor: "#c8905a",
                 linkUrl: galleryLink,
                 topSpace: 150,
@@ -1795,7 +1432,7 @@ app.put("/make-server-0951c59e/admin/project/:id", async (c) => {
                 <td style="padding:32px 36px 0;">
                   <span style="color:#c8905a;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;">Meeting Ingepland</span>
                   <div style="height:10px;line-height:10px;font-size:0;">&nbsp;</div>
-                  <span style="display:block;color:#fffbe0;font-size:22px;font-weight:800;letter-spacing:-0.01em;">${updated.title}</span>
+                  <span style="display:block;color:#fffbe0;font-size:22px;font-weight:800;letter-spacing:-0.01em;">${escapeHtml(updated.title)}</span>
                 </td>
               </tr>
               <tr>
@@ -1806,7 +1443,7 @@ app.put("/make-server-0951c59e/admin/project/:id", async (c) => {
                         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                           <tr><td style="padding-bottom:14px;color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;">Wanneer</td></tr>
                           <tr><td style="padding-bottom:${updated.meeting.location ? "16px" : "0"};color:#fffbe0;font-size:15px;font-weight:600;">${meetingDate}</td></tr>
-                          ${updated.meeting.location ? `<tr><td style="padding-bottom:8px;color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;">Locatie</td></tr><tr><td style="color:rgba(255,251,224,0.7);font-size:13px;">${updated.meeting.location}</td></tr>` : ""}
+                          ${updated.meeting.location ? `<tr><td style="padding-bottom:8px;color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;">Locatie</td></tr><tr><td style="color:rgba(255,251,224,0.7);font-size:13px;">${escapeHtml(updated.meeting.location)}</td></tr>` : ""}
                         </table>
                       </td>
                     </tr>
@@ -1920,7 +1557,7 @@ app.post("/make-server-0951c59e/admin/project/:id/messages", async (c) => {
                   </td>
                   <td style="padding-left:12px;">
                     <span style="display:block;color:#c8905a;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">PDC Studio</span>
-                    <span style="display:block;color:rgba(255,251,224,0.3);font-size:11px;">over ${project.title}</span>
+                    <span style="display:block;color:rgba(255,251,224,0.3);font-size:11px;">over ${escapeHtml(project.title)}</span>
                   </td>
                 </tr></table>
               </td>
@@ -1928,7 +1565,7 @@ app.post("/make-server-0951c59e/admin/project/:id/messages", async (c) => {
             <tr>
               <td style="padding:20px 36px 0;">
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:rgba(200,144,90,0.06);border:1px solid rgba(200,144,90,0.12);">
-                  <tr><td style="padding:18px 20px;color:rgba(255,251,224,0.75);font-size:14px;line-height:1.7;">${newMessage.content.replace(/\n/g, "<br>")}</td></tr>
+                  <tr><td style="padding:18px 20px;color:rgba(255,251,224,0.75);font-size:14px;line-height:1.7;">${escapeHtml(newMessage.content).replace(/\n/g, "<br>")}</td></tr>
                 </table>
               </td>
             </tr>
@@ -1999,12 +1636,42 @@ app.delete("/make-server-0951c59e/admin/inquiry/:id", async (c) => {
   }
 });
 
+const CONTACT_LIMIT_PER_HOUR = 5;
+
+/** Counts a contact submission for this IP; false once the hourly limit is reached. */
+async function withinContactLimit(forwardedFor: string | undefined): Promise<boolean> {
+  const ip = String(forwardedFor || "").split(",")[0].trim();
+  if (!ip) return true;
+  const key = `ratelimit:contact:${ip}`;
+  const now = Date.now();
+  const str = await kv.get(key);
+  const entry = str ? JSON.parse(str) : null;
+  const fresh = !entry || now - entry.windowStart > 3600_000;
+  const next = fresh ? { windowStart: now, count: 1 } : { ...entry, count: entry.count + 1 };
+  if (next.count > CONTACT_LIMIT_PER_HOUR) return false;
+  await kv.set(key, JSON.stringify(next));
+  return true;
+}
+
 // --- POST /contact — public contact form submission ---
 app.post("/make-server-0951c59e/contact", async (c) => {
   try {
     const { name, email, phone, brand, message, package: pkg } = await c.req.json();
     if (!name?.trim() || !email?.trim() || !message?.trim()) {
       return c.json({ error: "Name, email, and message are required" }, 400);
+    }
+    if (name !== AD_VISIT_MARKER) {
+      if (!EMAIL_RE.test(String(email).trim())) {
+        return c.json({ error: "Vul een geldig e-mailadres in." }, 400);
+      }
+      if (String(message).length > 5000 || String(name).length > 200) {
+        return c.json({ error: "Je bericht is te lang." }, 400);
+      }
+      // The form mails a confirmation to whatever address is typed in, so it
+      // must not be usable as a free mail cannon.
+      if (!(await withinContactLimit(c.req.header("x-forwarded-for")))) {
+        return c.json({ error: "Je hebt net al een paar berichten gestuurd. Probeer het over een uur opnieuw." }, 429);
+      }
     }
 
     const id = crypto.randomUUID();
@@ -2051,7 +1718,7 @@ app.post("/make-server-0951c59e/contact", async (c) => {
           <td style="padding:32px 36px 0;">
             <span style="color:#c8905a;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;">Nieuwe Aanvraag</span>
             <div style="height:12px;line-height:12px;font-size:0;">&nbsp;</div>
-            <span style="display:block;color:#fffbe0;font-size:24px;font-weight:800;letter-spacing:-0.01em;line-height:1.2;">${inquiry.name}</span>
+            <span style="display:block;color:#fffbe0;font-size:24px;font-weight:800;letter-spacing:-0.01em;line-height:1.2;">${escapeHtml(inquiry.name)}</span>
           </td>
         </tr>
         <tr>
@@ -2061,9 +1728,9 @@ app.post("/make-server-0951c59e/contact", async (c) => {
                 <td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);width:88px;color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;vertical-align:top;">E-mail</td>
                 <td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);"><a href="mailto:${inquiry.email}" style="color:#c8905a;font-size:13px;text-decoration:none;">${inquiry.email}</a></td>
               </tr>
-              ${inquiry.phone ? `<tr><td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;vertical-align:top;">Telefoon</td><td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);color:#fffbe0;font-size:13px;">${inquiry.phone}</td></tr>` : ""}
-              ${inquiry.brand ? `<tr><td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;vertical-align:top;">Merk</td><td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);color:#fffbe0;font-size:13px;">${inquiry.brand}</td></tr>` : ""}
-              ${inquiry.package ? `<tr><td style="padding:9px 0;color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;vertical-align:top;">Pakket</td><td style="padding:9px 0;color:#fffbe0;font-size:13px;">${inquiry.package}</td></tr>` : ""}
+              ${inquiry.phone ? `<tr><td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;vertical-align:top;">Telefoon</td><td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);color:#fffbe0;font-size:13px;">${escapeHtml(inquiry.phone)}</td></tr>` : ""}
+              ${inquiry.brand ? `<tr><td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;vertical-align:top;">Merk</td><td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);color:#fffbe0;font-size:13px;">${escapeHtml(inquiry.brand)}</td></tr>` : ""}
+              ${inquiry.package ? `<tr><td style="padding:9px 0;color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;vertical-align:top;">Pakket</td><td style="padding:9px 0;color:#fffbe0;font-size:13px;">${escapeHtml(inquiry.package)}</td></tr>` : ""}
             </table>
           </td>
         </tr>
@@ -2073,7 +1740,7 @@ app.post("/make-server-0951c59e/contact", async (c) => {
         <tr>
           <td style="padding:10px 36px 0;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:rgba(255,251,224,0.03);border-left:2px solid #c8905a;">
-              <tr><td style="padding:16px 18px;color:rgba(255,251,224,0.65);font-size:13.5px;line-height:1.7;">${inquiry.message.replace(/\n/g, "<br>")}</td></tr>
+              <tr><td style="padding:16px 18px;color:rgba(255,251,224,0.65);font-size:13.5px;line-height:1.7;">${escapeHtml(inquiry.message).replace(/\n/g, "<br>")}</td></tr>
             </table>
           </td>
         </tr>
@@ -2114,7 +1781,7 @@ app.post("/make-server-0951c59e/contact", async (c) => {
           <td style="padding:40px 36px 0;text-align:center;">
             <span style="color:#c8905a;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;">Bericht Ontvangen</span>
             <div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div>
-            <span style="display:block;color:#fffbe0;font-size:30px;font-weight:800;letter-spacing:-0.02em;line-height:1.15;text-transform:uppercase;">Bedankt, ${inquiry.name.split(" ")[0]}.</span>
+            <span style="display:block;color:#fffbe0;font-size:30px;font-weight:800;letter-spacing:-0.02em;line-height:1.15;text-transform:uppercase;">Bedankt, ${escapeHtml(inquiry.name.split(" ")[0])}.</span>
           </td>
         </tr>
         <tr>
@@ -2126,7 +1793,7 @@ app.post("/make-server-0951c59e/contact", async (c) => {
         <tr>
           <td style="padding:10px 36px 0;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:rgba(255,251,224,0.03);border-left:2px solid #c8905a;">
-              <tr><td style="padding:16px 18px;color:rgba(255,251,224,0.55);font-size:13.5px;line-height:1.7;font-style:italic;">"${inquiry.message.replace(/\n/g, "<br>")}"</td></tr>
+              <tr><td style="padding:16px 18px;color:rgba(255,251,224,0.55);font-size:13.5px;line-height:1.7;font-style:italic;">"${escapeHtml(inquiry.message).replace(/\n/g, "<br>")}"</td></tr>
             </table>
           </td>
         </tr>
@@ -2506,7 +2173,7 @@ app.get("/make-server-0951c59e/admin/workers", async (c) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     // Get all users via REST API
-    const res = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
+    const res = await fetch(`${supabaseUrl}/auth/v1/admin/users?per_page=1000`, {
       headers: {
         Authorization: `Bearer ${serviceKey}`,
         apikey: serviceKey,
@@ -2525,10 +2192,10 @@ app.get("/make-server-0951c59e/admin/workers", async (c) => {
 
     // Filter only admin users (owner included even if their metadata role tag ever drifts)
     const workers = users
-      .filter((u: any) => u.user_metadata?.role === "admin" || u.email === OWNER_EMAIL)
+      .filter((u: any) => isAdminUser(u))
       .map((u: any) => {
         const isOwner = u.email === OWNER_EMAIL;
-        const role = isOwner ? null : roleById.get(u.user_metadata?.roleId);
+        const role = isOwner ? null : roleById.get(roleIdOf(u));
         return {
           id: u.id,
           email: u.email,
@@ -2536,7 +2203,7 @@ app.get("/make-server-0951c59e/admin/workers", async (c) => {
           createdAt: u.created_at,
           lastSignIn: u.last_sign_in_at,
           isOwner,
-          roleId: isOwner ? null : (u.user_metadata?.roleId || null),
+          roleId: isOwner ? null : roleIdOf(u),
           roleName: isOwner ? "Eigenaar" : (role?.name || "Geen rol"),
           permissions: isOwner ? null : (role?.permissions || {}),
         };
@@ -2581,7 +2248,8 @@ app.post("/make-server-0951c59e/admin/workers", async (c) => {
       body: JSON.stringify({
         email: email.trim(),
         password,
-        user_metadata: { name: name?.trim() || email.trim(), role: "admin", roleId },
+        user_metadata: { name: name?.trim() || email.trim() },
+        app_metadata: { role: "admin", roleId },
         email_confirm: true,
       }),
     });
@@ -2632,7 +2300,7 @@ app.put("/make-server-0951c59e/admin/workers/:id/role", async (c) => {
         apikey: serviceKey,
       },
       body: JSON.stringify({
-        user_metadata: { ...target.user_metadata, role: "admin", roleId },
+        app_metadata: { role: "admin", roleId },
       }),
     });
     const updateData = await updateRes.json();
@@ -2666,10 +2334,9 @@ app.delete("/make-server-0951c59e/admin/workers/:id", async (c) => {
       return c.json({ error: "De eigenaar kan niet worden verwijderd" }, 403);
     }
 
-    // Revoke admin access by dropping the role/roleId tags — keeps the auth
+    // Revoke admin access by clearing the role/roleId tags — keeps the auth
     // account intact (they simply become a regular, non-admin user) rather
-    // than destructively deleting it.
-    const { role: _role, roleId: _roleId, ...rest } = target.user_metadata || {};
+    // than destructively deleting it. app_metadata is merged, so null clears.
     const updateRes = await fetch(`${supabaseUrl}/auth/v1/admin/users/${targetId}`, {
       method: "PUT",
       headers: {
@@ -2677,7 +2344,7 @@ app.delete("/make-server-0951c59e/admin/workers/:id", async (c) => {
         Authorization: `Bearer ${serviceKey}`,
         apikey: serviceKey,
       },
-      body: JSON.stringify({ user_metadata: rest }),
+      body: JSON.stringify({ app_metadata: { role: null, roleId: null } }),
     });
     if (!updateRes.ok) {
       const errData = await updateRes.json();
@@ -2788,11 +2455,11 @@ app.delete("/make-server-0951c59e/admin/roles/:id", async (c) => {
     // reassignment first so nobody silently ends up with no permissions.
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const listRes = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
+    const listRes = await fetch(`${supabaseUrl}/auth/v1/admin/users?per_page=1000`, {
       headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey },
     });
     const listData = await listRes.json();
-    const inUse = (listData.users || []).some((u: any) => u.user_metadata?.roleId === id);
+    const inUse = (listData.users || []).some((u: any) => roleIdOf(u) === id);
     if (inUse) {
       return c.json({ error: "Deze rol is nog toegewezen aan een admin. Wijs eerst een andere rol toe." }, 400);
     }

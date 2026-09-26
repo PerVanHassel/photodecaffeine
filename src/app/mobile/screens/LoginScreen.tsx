@@ -3,6 +3,7 @@ import { ArrowRight, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router";
 import { useAuth } from "../../context/AuthContext";
+import { isAdmin } from "../../../lib/supabase";
 import { MobileThemeProvider } from "../useMobileTheme";
 import { applyAppMeta, isIOS, isStandalone } from "../pwa";
 import { c, GUTTER, radius, safeBottom, safeTop, spring } from "../theme";
@@ -45,7 +46,7 @@ function LoginInner() {
   }, []);
 
   // Already signed in as an admin — skip straight through.
-  if (!loading && session && user?.user_metadata?.role === "admin") {
+  if (!loading && session && isAdmin(user)) {
     return <Navigate to={state.from && state.from !== "/app/login" ? state.from : "/app"} replace />;
   }
 

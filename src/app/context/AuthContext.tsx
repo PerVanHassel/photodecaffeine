@@ -27,9 +27,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
+    supabase.auth.getSession().then(async ({ data }) => {
+      let s = data.session;
+      // Sessions saved before the admin role moved to app_metadata still carry
+      // the old copy. Refresh those once so admins are not sent to the client login.
+      if (s && s.user.user_metadata?.role === "admin" && !s.user.app_metadata?.role) {
+        const refreshed = await supabase.auth.refreshSession().catch(() => null);
+        s = refreshed?.data.session ?? s;
+      }
+      setSession(s);
+      setUser(s?.user ?? null);
       setLoading(false);
     });
 
@@ -62,8 +69,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
     });
     if (error) return { error: error.message };
-    console.log("SignIn successful - user metadata:", data.user?.user_metadata);
-    console.log("SignIn successful - user role:", data.user?.user_metadata?.role);
     setSession(data.session);
     setUser(data.user);
     return { error: null };

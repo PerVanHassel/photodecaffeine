@@ -23,10 +23,6 @@ const PortalFeedbackPage = lazy(() => import("./pages/portal/PortalFeedbackPage"
 // Admin pages — never needed by regular visitors
 const AdminLayout = lazy(() => import("./components/portal/AdminLayout").then(m => ({ default: m.AdminLayout })));
 const AdminLoginPage = lazy(() => import("./pages/portal/AdminLoginPage").then(m => ({ default: m.AdminLoginPage })));
-const AdminSelfFixPage = lazy(() => import("./pages/portal/AdminSelfFixPage").then(m => ({ default: m.AdminSelfFixPage })));
-const AdminQuickFixPage = lazy(() => import("./pages/portal/AdminQuickFixPage").then(m => ({ default: m.AdminQuickFixPage })));
-const AdminRoleFixPage = lazy(() => import("./pages/portal/AdminRoleFixPage").then(m => ({ default: m.AdminRoleFixPage })));
-const AdminDiagnosticPage = lazy(() => import("./pages/portal/AdminDiagnosticPage").then(m => ({ default: m.AdminDiagnosticPage })));
 const AdminDashboardPage = lazy(() => import("./pages/portal/AdminDashboardPage").then(m => ({ default: m.AdminDashboardPage })));
 const AdminClientsPage = lazy(() => import("./pages/portal/AdminClientsPage").then(m => ({ default: m.AdminClientsPage })));
 const AdminClientDetailPage = lazy(() => import("./pages/portal/AdminClientDetailPage").then(m => ({ default: m.AdminClientDetailPage })));
@@ -80,10 +76,6 @@ const LazyPortalGalleryPage = wrap(PortalGalleryPage);
 const LazyPortalFeedbackPage = wrap(PortalFeedbackPage);
 const LazyAdminLayout = wrap(AdminLayout);
 const LazyAdminLoginPage = wrap(AdminLoginPage);
-const LazyAdminSelfFixPage = wrap(AdminSelfFixPage);
-const LazyAdminQuickFixPage = wrap(AdminQuickFixPage);
-const LazyAdminRoleFixPage = wrap(AdminRoleFixPage);
-const LazyAdminDiagnosticPage = wrap(AdminDiagnosticPage);
 const LazyAdminDashboardPage = wrap(AdminDashboardPage);
 const LazyAdminClientsPage = wrap(AdminClientsPage);
 const LazyAdminClientDetailPage = wrap(AdminClientDetailPage);
@@ -135,11 +127,7 @@ export const router = createBrowserRouter([
   {
     path: "/admin",
     children: [
-      { path: "self-fix", Component: LazyAdminSelfFixPage },
-      { path: "fix", Component: LazyAdminQuickFixPage },
       { path: "login", Component: LazyAdminLoginPage },
-      { path: "fix-role", Component: LazyAdminRoleFixPage },
-      { path: "diagnostic", Component: LazyAdminDiagnosticPage },
       {
         Component: LazyAdminLayout,
         children: [

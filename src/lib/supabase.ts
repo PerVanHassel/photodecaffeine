@@ -6,6 +6,14 @@ export const supabase = createClient(
   publicAnonKey
 );
 
+/**
+ * Whether this user may use the admin side. Read from app_metadata, which only
+ * the server can set; user_metadata is editable by the user themselves.
+ */
+export function isAdmin(user: { app_metadata?: Record<string, unknown> } | null | undefined): boolean {
+  return user?.app_metadata?.role === "admin";
+}
+
 const BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-server-0951c59e`;
 
 export async function portalFetch(
@@ -14,7 +22,6 @@ export async function portalFetch(
   accessToken?: string
 ) {
   const token = accessToken || publicAnonKey;
-  console.log("portalFetch: path=", path, "has accessToken:", !!accessToken);
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
     headers: {
@@ -24,7 +31,6 @@ export async function portalFetch(
     },
   });
   const data = await res.json();
-  console.log("portalFetch: response status=", res.status, "ok=", res.ok);
   if (!res.ok) {
     // A 401 on a call we sent a real token with means that token is no longer
     // good — the session lapsed while the tab sat there. That is not a server
@@ -33,7 +39,6 @@ export async function portalFetch(
       window.dispatchEvent(new CustomEvent("pdc:session-expired"));
       throw new Error("Je sessie is verlopen. Log opnieuw in.");
     }
-    console.error("portalFetch error:", data.error || "Request failed");
     throw new Error(data.error || "Request failed");
   }
   return data;

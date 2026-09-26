@@ -49,7 +49,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       user,
       loading,
-      isAdmin: user?.user_metadata?.role === "admin",
+      // Only the server can set app_metadata; user_metadata is user-editable.
+      isAdmin: user?.app_metadata?.role === "admin",
       async signIn(email, password) {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) return { error: error.message };

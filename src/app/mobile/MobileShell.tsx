@@ -3,6 +3,7 @@ import { RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
 import { useAuth } from "../context/AuthContext";
+import { isAdmin } from "../../lib/supabase";
 import { AppDataProvider, useAppData } from "./AppData";
 import { Splash } from "./Splash";
 import { TabBar, TABS } from "./TabBar";
@@ -76,7 +77,7 @@ function AuthGate() {
     return <Navigate to="/app/login" replace state={{ from: location.pathname }} />;
   }
 
-  if (user?.user_metadata?.role !== "admin") {
+  if (!isAdmin(user)) {
     // Signed in, but not as an admin. Sending them to the app's own login (which
     // explains it) beats bouncing to the client portal they didn't ask for.
     return <Navigate to="/app/login" replace state={{ denied: true }} />;

@@ -1,6 +1,7 @@
 import image_PDClogo2_0_12_1 from '@/imports/PDClogo2.0-12-1.png';
 import { Outlet, Navigate, useNavigate, useLocation } from "react-router";
 import { useAuth } from "../../context/AuthContext";
+import { isAdmin } from "../../../lib/supabase";
 import { AdminThemeProvider, useAdminTheme } from "../../context/AdminThemeContext";
 import { LayoutDashboard, Users, LogOut, ChevronRight, Menu, X, Mail, Images, Settings, Car, Megaphone, Receipt, Shield, Sun, Moon, Star, Globe, FileText, ListChecks } from "lucide-react";
 import { useState } from "react";
@@ -104,7 +105,7 @@ function AdminLayoutInner() {
   }
 
   if (!session) return <Navigate to="/admin/login" replace />;
-  if (user?.user_metadata?.role !== "admin") return <Navigate to="/portal/login" replace />;
+  if (!isAdmin(user)) return <Navigate to="/portal/login" replace />;
 
   async function handleSignOut() {
     setSigningOut(true);
