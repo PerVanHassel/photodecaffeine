@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent } from "react";
-import { ChoiceChips, DonePanel, Field, SubmitButton, TEL, TEL_LABEL, mailto, settle, useValidation } from "./shared";
+import { BELMOMENT_OPTIES, ChoiceChips, DonePanel, Field, SubmitButton, TEL, TEL_LABEL, mailto, settle, useValidation } from "./shared";
 
 const RULES = {
   lengte: { required: true },
@@ -29,6 +29,7 @@ export function Cover() {
   const [opent, setOpent] = useState(OPENT[0]);
   const [hoek, setHoek] = useState(HOEKMATEN[0]);
   const [kleur, setKleur] = useState(KLEUREN[0]);
+  const [belmoment, setBelmoment] = useState(BELMOMENT_OPTIES[3]);
   const [busy, setBusy] = useState(false);
   const [href, setHref] = useState<string | null>(null);
   const doneTitle = useRef<HTMLHeadingElement>(null);
@@ -58,6 +59,7 @@ export function Cover() {
         `Telefoon: ${d.get("telefoon")}`,
         `E-mail: ${d.get("email")}`,
         `Postcode en gemeente: ${d.get("plaats")}`,
+        `Voorkeur belmoment: ${belmoment}`,
         `Opmerking: ${d.get("opmerking") || "geen"}`,
       ])
     );
@@ -146,6 +148,13 @@ export function Cover() {
                   <Field v={v} id="cv-plaats" name="plaats" label="Postcode en gemeente" required autoComplete="postal-code" error="Vul uw postcode en gemeente in." />
                 </div>
                 <Field v={v} id="cv-opm" name="opmerking" label="Opmerking" textarea minHeight={90} />
+                <ChoiceChips
+                  label="Wanneer kunnen wij u het beste bellen?"
+                  name="belmoment"
+                  options={BELMOMENT_OPTIES}
+                  value={belmoment}
+                  onChange={setBelmoment}
+                />
 
                 <div className="formfoot">
                   <SubmitButton busy={busy} icon="ph-paper-plane-tilt">

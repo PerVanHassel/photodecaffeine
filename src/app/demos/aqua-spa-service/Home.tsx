@@ -2,6 +2,7 @@ import { useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { RATES, SPA_BRANDS } from "./data";
 import {
+  BELMOMENT_OPTIES,
   ChoiceChips,
   DonePanel,
   Field,
@@ -465,6 +466,7 @@ const SOORTEN = ["Serviceaanvraag", "Algemene vraag", "Offerteaanvraag"];
 function Contact() {
   const v = useValidation(CONTACT_RULES);
   const [soort, setSoort] = useState(SOORTEN[0]);
+  const [belmoment, setBelmoment] = useState(BELMOMENT_OPTIES[3]);
   const [busy, setBusy] = useState(false);
   const [href, setHref] = useState<string | null>(null);
   const doneTitle = useRef<HTMLHeadingElement>(null);
@@ -484,6 +486,7 @@ function Contact() {
         `E-mail: ${d.get("email") || "niet opgegeven"}`,
         `Postcode en gemeente: ${d.get("plaats")}`,
         `Merk en type: ${d.get("toestel") || "niet opgegeven"}`,
+        `Voorkeur belmoment: ${belmoment}`,
         "",
         "Klacht:",
         String(d.get("klacht") ?? ""),
@@ -540,6 +543,13 @@ function Contact() {
                   textarea
                   hint="Bijvoorbeeld: verwarmt niet meer, jets slaan niet aan, lekkage onder het paneel, foutcode op het display."
                   error="Beschrijf kort wat er misgaat."
+                />
+                <ChoiceChips
+                  label="Wanneer kunnen wij u het beste bellen?"
+                  name="belmoment"
+                  options={BELMOMENT_OPTIES}
+                  value={belmoment}
+                  onChange={setBelmoment}
                 />
                 <div className="formfoot">
                   <SubmitButton busy={busy} icon="ph-paper-plane-tilt">

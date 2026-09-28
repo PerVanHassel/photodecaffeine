@@ -55,7 +55,7 @@ export const PART_GROUPS: PartGroup[] = [
     id: "sauna",
     icon: "ph-fire",
     label: "Sauna en hammam",
-    body: "Onderdelen voor saunakachels, stoomgeneratoren en hun besturingen.",
+    body: "Onderdelen voor saunakachels, stoomgeneratoren en hun besturingen. Ook complete renovaties, en het inbouwen van infrarood in een bestaande sauna.",
     brands: ["Tylo", "Harvia", "Jacuzzi", "Effegibi"],
   },
 ];

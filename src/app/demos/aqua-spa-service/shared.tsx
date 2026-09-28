@@ -5,6 +5,9 @@ export const TEL = "tel:+32486842105";
 export const TEL_LABEL = "0486 84 21 05";
 export const MAIL = "info@aquaspaservice.be";
 
+/** Optie op elk aanvraagformulier: wanneer kunnen wij het beste bellen. */
+export const BELMOMENT_OPTIES = ["Ochtend", "Middag", "Avond", "Geen voorkeur"];
+
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export interface Rule {

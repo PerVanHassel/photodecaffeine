@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type FormEvent } from "react";
 import { SPA_BRANDS } from "./data";
-import { DonePanel, Field, IMG, SubmitButton, TEL, TEL_LABEL, mailto, settle, useValidation } from "./shared";
+import { BELMOMENT_OPTIES, ChoiceChips, DonePanel, Field, IMG, SubmitButton, TEL, TEL_LABEL, mailto, settle, useValidation } from "./shared";
 
 const RULES = {
   naam: { required: true },
@@ -30,6 +30,7 @@ const EISEN = [
 export function SpaPilot() {
   const v = useValidation(RULES);
   const [q, setQ] = useState("");
+  const [belmoment, setBelmoment] = useState(BELMOMENT_OPTIES[3]);
   const [busy, setBusy] = useState(false);
   const [href, setHref] = useState<string | null>(null);
   const doneTitle = useRef<HTMLHeadingElement>(null);
@@ -54,6 +55,7 @@ export function SpaPilot() {
         `Merk en type spa: ${d.get("toestel")}`,
         `Besturing: ${d.get("besturing") || "onbekend"}`,
         `Dynamisch tarief: ${d.get("tarief") || "niet opgegeven"}`,
+        `Voorkeur belmoment: ${belmoment}`,
         "",
         `Naam: ${d.get("naam")}`,
         `Telefoon: ${d.get("telefoon")}`,
@@ -212,6 +214,13 @@ export function SpaPilot() {
                   <Field v={v} id="sp-tarief" name="tarief" label="Heeft u een dynamisch tarief?" hint="Ja, nee, of weet ik niet." />
                 </div>
                 <Field v={v} id="sp-vraag" name="vraag" label="Uw vraag" textarea minHeight={90} />
+                <ChoiceChips
+                  label="Wanneer kunnen wij u het beste bellen?"
+                  name="belmoment"
+                  options={BELMOMENT_OPTIES}
+                  value={belmoment}
+                  onChange={setBelmoment}
+                />
                 <div className="formfoot">
                   <SubmitButton busy={busy} icon="ph-paper-plane-tilt">
                     Verstuur uw vraag
