@@ -9,9 +9,11 @@ import { useAction } from "../queries";
 import type { GalleryImage, Project } from "../types";
 import { Button, Empty, ErrorState, isVideo, Modal, Photo, Segmented, Skeleton, TextAreaField } from "../ui";
 import { pkeys, saveFile, usePortalProject } from "./data";
+import { useT } from "./i18n";
 
 export function PortalGallery() {
   const { id = "" } = useParams();
+  const t = useT();
   const qc = useQueryClient();
   const data = usePortalProject(id);
   const [filter, setFilter] = useState<"all" | "fav">("all");
@@ -74,7 +76,7 @@ export function PortalGallery() {
       }
       const blob = await downloadZip(files()).blob();
       saveFile(`${(p.gallerySettings.title || p.title).replace(/[^\w-]+/g, "-").toLowerCase()}.zip`, blob, "application/zip");
-      toast.success("Download gestart");
+      toast.success(t.downloadStarted);
     } catch (err) {
       toast.error(errorMessage(err));
     } finally {
@@ -89,29 +91,29 @@ export function PortalGallery() {
     <main className="p-main">
       <Link to={`/portal/project/${p.id}`} className="s-back"><ArrowLeft size={14} /> {p.title}</Link>
       <div className="p-hello">
-        <p className="s-eyebrow">{p.gallerySettings.subtitle || `${p.gallery.length} foto's`}</p>
-        <h1>{delivered ? p.gallerySettings.title || "Je foto's" : "Kies je favorieten"}</h1>
-        <p>{delivered ? "Download ze los of allemaal tegelijk." : "Tik op het hartje bij de foto's die je het mooist vindt. Klaar? Geef je keuze door, dan gaan we ze bewerken."}</p>
+        <p className="s-eyebrow">{p.gallerySettings.subtitle || t.photosCount(p.gallery.length)}</p>
+        <h1>{delivered ? p.gallerySettings.title || t.galleryPhotosTitle : t.galleryChooseTitle}</h1>
+        <p>{delivered ? t.galleryDownloadIntro : t.galleryChooseIntro}</p>
       </div>
-      {p.gallery.length === 0 ? <Empty title="Nog geen foto's">Zodra de foto's klaarstaan, krijg je een mail.</Empty> : (
+      {p.gallery.length === 0 ? <Empty title={t.noPhotos}>{t.noPhotosHint}</Empty> : (
         <>
           <div className="p-proof-bar">
             <div className="s-row" style={{ gap: 14 }}>
-              <Segmented<"all" | "fav"> label="Filter" value={filter} onChange={setFilter} options={[{ value: "all", label: `Alles (${p.gallery.length})` }, { value: "fav", label: `Favorieten (${favs.size})` }]} />
+              <Segmented<"all" | "fav"> label="Filter" value={filter} onChange={setFilter} options={[{ value: "all", label: t.all(p.gallery.length) }, { value: "fav", label: t.favorites(favs.size) }]} />
             </div>
             <div className="s-row">
               <Button icon={<Download />} loading={!!zip} onClick={() => downloadAll(filter === "fav" ? shown : p.gallery)}>
-                {zip ? `${zip.done} van ${zip.total}…` : filter === "fav" ? "Favorieten downloaden" : "Alles downloaden"}
+                {zip ? t.zipping(zip.done, zip.total) : filter === "fav" ? t.downloadFavorites : t.downloadAll}
               </Button>
-              {!delivered && <Button variant="primary" icon={<Send />} disabled={!favs.size} onClick={() => setSubmitting(true)}>Keuze doorgeven</Button>}
+              {!delivered && <Button variant="primary" icon={<Send />} disabled={!favs.size} onClick={() => setSubmitting(true)}>{t.submitChoice}</Button>}
             </div>
           </div>
-          {shown.length === 0 ? <Empty icon={<Heart />} title="Nog geen favorieten">Tik op het hartje bij een foto.</Empty> : (
+          {shown.length === 0 ? <Empty icon={<Heart />} title={t.noFavorites}>{t.noFavoritesHint}</Empty> : (
             <div className="p-proof">
               {shown.map((g) => (
                 <Photo key={g.id} src={g.url} video={isVideo(g.fileName || g.url)} alt={g.fileName} onClick={() => setOpen(p.gallery.indexOf(g))}>
                   <div className="corner">
-                    <button type="button" className={`s-fav ${favs.has(g.id) ? "on" : ""}`} aria-pressed={favs.has(g.id)} aria-label={favs.has(g.id) ? "Uit favorieten" : "Favoriet"}
+                    <button type="button" className={`s-fav ${favs.has(g.id) ? "on" : ""}`} aria-pressed={favs.has(g.id)} aria-label={favs.has(g.id) ? t.unfavorite : t.favorite}
                       onClick={(e) => { e.stopPropagation(); toggle(g); }}>
                       <Heart fill={favs.has(g.id) ? "currentColor" : "none"} />
                     </button>
@@ -131,6 +133,7 @@ export function PortalGallery() {
 function Lightbox({ project: p, index, setIndex, favs, onToggle, onDownload }: {
   project: Project; index: number; setIndex: (i: number | null) => void; favs: Set<string>; onToggle: (g: GalleryImage) => void; onDownload: (g: GalleryImage) => void;
 }) {
+  const t = useT();
   const img = p.gallery[index];
   const go = useCallback((d: number) => setIndex((index + d + p.gallery.length) % p.gallery.length), [index, p.gallery.length, setIndex]);
   useEffect(() => {
@@ -149,40 +152,41 @@ function Lightbox({ project: p, index, setIndex, favs, onToggle, onDownload }: {
   const [touchX, setTouchX] = useState<number | null>(null);
 
   return (
-    <div className="p-lightbox" role="dialog" aria-modal="true" aria-label={`Foto ${index + 1} van ${p.gallery.length}`}
+    <div className="p-lightbox" role="dialog" aria-modal="true" aria-label={`${index + 1} / ${p.gallery.length}`}
       onTouchStart={(e) => setTouchX(e.touches[0].clientX)}
       onTouchEnd={(e) => { if (touchX === null) return; const dx = e.changedTouches[0].clientX - touchX; if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1); setTouchX(null); }}>
       <div className="bar">
         <span className="s-mono s-small">{index + 1} / {p.gallery.length}</span>
         <div className="s-row">
           <button type="button" className={`s-btn ${favs.has(img.id) ? "on" : ""}`} onClick={() => onToggle(img)} aria-pressed={favs.has(img.id)}>
-            <Heart size={15} fill={favs.has(img.id) ? "currentColor" : "none"} />{favs.has(img.id) ? "Favoriet" : "Favoriet maken"}
+            <Heart size={15} fill={favs.has(img.id) ? "currentColor" : "none"} />{favs.has(img.id) ? t.favorite : t.makeFavorite}
           </button>
-          <button type="button" className="s-btn" onClick={() => onDownload(img)}><Download size={15} />Download</button>
-          <button type="button" className="s-btn icon" onClick={() => setIndex(null)} aria-label="Sluiten"><X size={16} /></button>
+          <button type="button" className="s-btn" onClick={() => onDownload(img)}><Download size={15} />{t.download}</button>
+          <button type="button" className="s-btn icon" onClick={() => setIndex(null)} aria-label={t.close}><X size={16} /></button>
         </div>
       </div>
       <div className="stage">
         {isVideo(img.fileName || img.url) ? <video src={img.url} controls autoPlay playsInline /> : <img src={img.url} alt={img.fileName} />}
-        <button type="button" className="nav prev" onClick={() => go(-1)} aria-label="Vorige"><ChevronLeft /></button>
-        <button type="button" className="nav next" onClick={() => go(1)} aria-label="Volgende"><ChevronRight /></button>
+        <button type="button" className="nav prev" onClick={() => go(-1)} aria-label={t.previous}><ChevronLeft /></button>
+        <button type="button" className="nav next" onClick={() => go(1)} aria-label={t.next}><ChevronRight /></button>
       </div>
-      <div style={{ padding: 10, textAlign: "center" }} className="s-small s-faint">Pijltjestoetsen om te bladeren · F voor favoriet</div>
+      <div style={{ padding: 10, textAlign: "center" }} className="s-small s-faint">{t.lightboxHint}</div>
     </div>
   );
 }
 
 function SubmitDialog({ project: p, open, onClose, count }: { project: Project; open: boolean; onClose: () => void; count: number }) {
+  const t = useT();
   const [note, setNote] = useState("");
   const submit = useAction({
     fn: () => post(`/portal/project/${p.id}/favorites/submit`, { note }),
-    success: "Je keuze is doorgegeven. We gaan aan de slag!",
+    success: t.submitted,
     onSuccess: onClose,
   });
   return (
-    <Modal open={open} onOpenChange={(o) => !o && onClose()} title={`${count} favorieten doorgeven?`} description="Je kunt daarna nog steeds hartjes aanpassen; laat het ons dan even weten."
-      footer={<><Button onClick={onClose}>Nog even kijken</Button><Button variant="primary" icon={<Send />} loading={submit.isPending} onClick={() => submit.mutate()}>Doorgeven</Button></>}>
-      <TextAreaField label="Opmerking (optioneel)" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Bijv. graag iets warmer bewerken" />
+    <Modal open={open} onOpenChange={(o) => !o && onClose()} title={t.submitTitle(count)} description={t.submitIntro}
+      footer={<><Button onClick={onClose}>{t.keepLooking}</Button><Button variant="primary" icon={<Send />} loading={submit.isPending} onClick={() => submit.mutate()}>{t.submit}</Button></>}>
+      <TextAreaField label={t.noteOptional} rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t.notePlaceholder} />
     </Modal>
   );
 }

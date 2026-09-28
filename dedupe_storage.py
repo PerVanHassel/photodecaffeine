@@ -54,6 +54,13 @@ TIMESTAMP_PREFIX = re.compile(r"^(?P<stamp>\d{10,})-(?P<rest>.+)$")
 LIST_PAGE_SIZE = 100
 KV_PAGE_SIZE = 500
 DEFAULT_KV_TABLE = "kv_store_0951c59e"
+
+# Studio tables that can point at files in a bucket, with the columns to scan.
+STUDIO_REFERENCES = [
+    ("gallery_images", "url,storage_path"),
+    ("location_photos", "url"),
+    ("projects", "gallery_settings"),
+]
 DEFAULT_MANIFEST = "cleanup-manifest.json"
 
 
@@ -170,26 +177,31 @@ class StorageClient:
             offset += LIST_PAGE_SIZE
 
     def in_use_names(self, bucket: str, table: str = DEFAULT_KV_TABLE) -> set[str]:
-        """Object names the site links to, read from the key-value table.
+        """Object names anything links to.
 
-        Every portfolio item, project and setting lives in that one table, so
-        scanning its values catches every reference the site can render.
+        Portfolio items and site settings live in the key-value table; client
+        galleries, scouting photos and project covers live in the studio's
+        Postgres tables. Both are scanned, because a file that is only
+        referenced from a gallery is very much in use.
         """
         found: set[str] = set()
-        offset = 0
-        while True:
-            response = self.session.get(
-                f"{self.base}/rest/v1/{table}",
-                params={"select": "value", "limit": KV_PAGE_SIZE, "offset": offset},
-                timeout=self.timeout,
-            )
-            check(response)
-            rows = response.json()
-            for row in rows:
-                found |= extract_names(json.dumps(row.get("value")), bucket)
-            if len(rows) < KV_PAGE_SIZE:
-                return found
-            offset += KV_PAGE_SIZE
+        sources = [(table, "value")] + STUDIO_REFERENCES
+        for source, columns in sources:
+            offset = 0
+            while True:
+                response = self.session.get(
+                    f"{self.base}/rest/v1/{source}",
+                    params={"select": columns, "limit": KV_PAGE_SIZE, "offset": offset},
+                    timeout=self.timeout,
+                )
+                check(response)
+                rows = response.json()
+                for row in rows:
+                    found |= extract_names(json.dumps(row), bucket)
+                if len(rows) < KV_PAGE_SIZE:
+                    break
+                offset += KV_PAGE_SIZE
+        return found
 
     def kv_rows(self, table: str = DEFAULT_KV_TABLE) -> list[dict[str, Any]]:
         """Every key/value row, paged."""

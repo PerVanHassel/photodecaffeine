@@ -1,4 +1,5 @@
 import { Hono } from "npm:hono";
+import { requireAdmin, requirePermission } from "../lib/http.ts";
 import * as kv from "../kv_store.tsx";
 import { verifyAdmin, verifyAuth } from "../lib/auth.ts";
 import { clientForUser, projectIdsForClient, projectRecipients } from "../lib/clients.ts";
@@ -6,10 +7,29 @@ import { EMAIL_ADMIN_NOTIFY, SITE_URL } from "../lib/config.ts";
 import { emailWrap, escapeHtml, sendEmail } from "../lib/email.ts";
 import { notify } from "../lib/notify.ts";
 import { clientIdsOf, gallerySigner, loadProject, projectToApi } from "../lib/projects.ts";
-import { imageKey } from "../lib/storage.ts";
+import { db } from "../lib/db.ts";
+import { imageKey, signPaths } from "../lib/storage.ts";
+
+/** Feedback keeps gallery image ids; turn them into URLs that work right now. */
+async function withFreshPhotos(entries: any[]): Promise<any[]> {
+  const ids = [...new Set(entries.flatMap((e) => (e.items || []).flatMap((i: any) => i.photoIds || [])))];
+  if (!ids.length) return entries;
+  const { data } = await db.from("gallery_images").select("id, url, storage_path").in("id", ids);
+  const signed = await signPaths((data || []).map((g: any) => g.storage_path));
+  const urlOf = new Map((data || []).map((g: any) => [g.id, g.storage_path ? signed.get(g.storage_path) || "" : g.url]));
+  return entries.map((e) => ({
+    ...e,
+    items: (e.items || []).map((i: any) => (i.photoIds?.length ? { ...i, photoUrls: i.photoIds.map((id: string) => urlOf.get(id)).filter(Boolean) } : i)),
+  }));
+}
 
 const r = new Hono();
 export default r;
+
+// Publishing reviews is part of the public site, like the portfolio.
+r.use("/make-server-0951c59e/admin/reviews", requireAdmin as any, requirePermission("managePortfolio", "reviews") as any);
+r.use("/make-server-0951c59e/admin/reviews/*", requireAdmin as any, requirePermission("managePortfolio", "reviews") as any);
+r.use("/make-server-0951c59e/admin/feedback", requireAdmin as any, requirePermission("managePortfolio", "reviews") as any);
 
 // ============================================================================
 // REVIEWS & FEEDBACK
@@ -155,7 +175,7 @@ r.get("/make-server-0951c59e/admin/project/:id/engagement", async (c) => {
     const review = reviewIdStr ? JSON.parse((await kv.get(`review:${reviewIdStr}`)) || "null") : null;
     const feedbackIds: string[] = feedbackIdsStr ? JSON.parse(feedbackIdsStr) : [];
     const feedbackValues = await Promise.all(feedbackIds.map((id) => kv.get(`feedback:${id}`)));
-    const feedback = feedbackValues.filter(Boolean).map((v) => JSON.parse(v as string));
+    const feedback = await withFreshPhotos(feedbackValues.filter(Boolean).map((v) => JSON.parse(v as string)));
 
     return c.json({
       reviewRequest: reviewReqStr ? JSON.parse(reviewReqStr) : null,
@@ -267,7 +287,7 @@ r.get("/make-server-0951c59e/admin/feedback", async (c) => {
       .map((v) => JSON.parse(v as string))
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    return c.json({ feedback });
+    return c.json({ feedback: await withFreshPhotos(feedback) });
   } catch (err) {
     console.log("Get feedback error:", err);
     return c.json({ error: `Failed to fetch feedback: ${err}` }, 500);
@@ -422,18 +442,27 @@ r.post("/make-server-0951c59e/portal/project/:id/feedback", async (c) => {
 
     const body = await c.req.json();
     const rawItems = Array.isArray(body.items) ? body.items : [];
-    const galleryKeys = new Set<string>((project.galleryUrls || []).map((u: string) => imageKey(u)));
+    // Photos are referenced by gallery image id (newer screens) or by URL
+    // (older ones); only images that belong to this gallery are accepted. The
+    // id is what is kept, because private image URLs expire.
+    const gallery: { id: string; url: string }[] = project.gallery || [];
+    const byKey = new Map(gallery.map((g) => [imageKey(g.url), g]));
+    const byId = new Map(gallery.map((g) => [g.id, g]));
 
     const items = rawItems
       .map((item: any) => {
         const text = String(item?.text || "").trim();
         if (!text) return null;
-        // Only accept photo references that actually belong to this gallery.
-        const photoUrls = (Array.isArray(item?.photoUrls) ? item.photoUrls : [])
-          .filter((u: any) => typeof u === "string" && galleryKeys.has(imageKey(u)));
+        const picked = [
+          ...(Array.isArray(item?.photoIds) ? item.photoIds : []).map((id: any) => byId.get(String(id))),
+          ...(Array.isArray(item?.photoUrls) ? item.photoUrls : []).map((u: any) => (typeof u === "string" ? byKey.get(imageKey(u)) : undefined)),
+        ].filter(Boolean) as { id: string; url: string }[];
+        const unique = [...new Map(picked.map((g) => [g.id, g])).values()];
+        const photoUrls = unique.map((g) => g.url);
         return {
           id: crypto.randomUUID(),
           scope: photoUrls.length > 0 ? "photos" : GENERAL_FEEDBACK_SCOPE,
+          photoIds: unique.map((g) => g.id),
           photoUrls,
           category: photoUrls.length > 0 ? "" : String(item?.category || "").trim() || "Algemeen",
           text,

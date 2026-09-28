@@ -1,13 +1,13 @@
 import { Hono } from "npm:hono";
 import { db, found, must } from "../lib/db.ts";
-import { type Env, isoDateTime, readBody, requireAdmin, text, uuid, z } from "../lib/http.ts";
+import { type Env, isoDateTime, readBody, requireAdmin, requirePermission, text, uuid, z } from "../lib/http.ts";
 
 const r = new Hono<Env>();
 export default r;
 
 const A = "/make-server-0951c59e/admin";
-r.use(`${A}/tasks`, requireAdmin);
-r.use(`${A}/tasks/*`, requireAdmin);
+r.use(`${A}/tasks`, requireAdmin, requirePermission("manageClients", "projecten en planning"));
+r.use(`${A}/tasks/*`, requireAdmin, requirePermission("manageClients", "projecten en planning"));
 r.use(`${A}/reminders`, requireAdmin);
 r.use(`${A}/reminders/*`, requireAdmin);
 

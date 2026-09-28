@@ -5,7 +5,7 @@ import { clientToApi } from "../lib/clients.ts";
 import { db, found, must, nextDocumentNumber } from "../lib/db.ts";
 import { emailWrap, escapeHtml, getPromoPortfolioArticle, glassImageCard, sendEmail } from "../lib/email.ts";
 import { EMAIL_ADMIN_NOTIFY } from "../lib/config.ts";
-import { type Env, fail, readBody, requireAdmin, text, uuid, z } from "../lib/http.ts";
+import { type Env, fail, readBody, requireAdmin, requirePermission, text, uuid, z } from "../lib/http.ts";
 import { notify } from "../lib/notify.ts";
 
 const r = new Hono<Env>();
@@ -191,10 +191,10 @@ r.post("/make-server-0951c59e/contact", async (c) => {
 // ---------------------------------------------------------------------------
 
 const A = "/make-server-0951c59e/admin";
-r.use(`${A}/inquiries`, requireAdmin);
-r.use(`${A}/inquiry/*`, requireAdmin);
-r.use(`${A}/ads`, requireAdmin);
-r.use(`${A}/ads/*`, requireAdmin);
+r.use(`${A}/inquiries`, requireAdmin, requirePermission("manageInquiries", "aanvragen"));
+r.use(`${A}/inquiry/*`, requireAdmin, requirePermission("manageInquiries", "aanvragen"));
+r.use(`${A}/ads`, requireAdmin, requirePermission("manageAds", "advertenties"));
+r.use(`${A}/ads/*`, requireAdmin, requirePermission("manageAds", "advertenties"));
 
 function inquiryToApi(i: any) {
   return {
@@ -327,11 +327,16 @@ r.post(`${A}/inquiry/:id/convert`, async (c) => {
 
 r.get(`${A}/ads`, async (c) => {
   const since = new Date(Date.now() - 365 * 86400000).toISOString();
-  const [visits, campaigns] = await Promise.all([
+  const [visits, campaigns, tagged] = await Promise.all([
     db.from("ad_visits").select("ref, page, created_at").gte("created_at", since).order("created_at"),
     db.from("ad_campaigns").select("*"),
+    // The contact form tags a message with [ref:campaign] when the visitor came from an ad.
+    db.from("inquiries").select("id, name, message, created_at").ilike("message", "%[ref:%").gte("created_at", since),
   ]);
   return c.json({
+    leads: (must(tagged) || []).map((i: any) => ({
+      id: i.id, name: i.name, createdAt: i.created_at, ref: (/\[ref:([^\]]+)\]/.exec(i.message) || [])[1] || "",
+    })).filter((l: any) => l.ref),
     visits: (must(visits) || []).map((v: any) => ({ ref: v.ref, page: v.page, createdAt: v.created_at })),
     campaigns: (must(campaigns) || []).map((x: any) => ({ ref: x.ref, label: x.label, active: x.active, hidden: x.hidden })),
   });

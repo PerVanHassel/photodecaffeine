@@ -1,9 +1,17 @@
 import { differenceInCalendarDays, format, formatDistanceToNowStrict, isSameDay, isToday, isTomorrow, isYesterday, parseISO } from "date-fns";
-import { nl } from "date-fns/locale";
+import { enGB, nl } from "date-fns/locale";
 import type { EventKind, LocationKind, ProjectType, Stage } from "./types";
 
 // Dates in the admin read the way people say them: "morgen 18:15",
 // "za 3 okt", "3 dagen geleden". Everything is shown in the viewer's timezone.
+
+// The admin is Dutch; the portal switches to English when the client does.
+let locale = nl;
+let lang: "nl" | "en" = "nl";
+export function setDateLocale(next: "nl" | "en") {
+  lang = next;
+  locale = next === "en" ? enGB : nl;
+}
 
 export function toDate(value: string | Date | null | undefined): Date | null {
   if (!value) return null;
@@ -13,7 +21,7 @@ export function toDate(value: string | Date | null | undefined): Date | null {
 
 export function fmt(value: string | Date | null | undefined, pattern: string): string {
   const d = toDate(value);
-  return d ? format(d, pattern, { locale: nl }) : "";
+  return d ? format(d, pattern, { locale }) : "";
 }
 
 export const fmtDate = (v: string | Date | null | undefined) => fmt(v, "d MMM yyyy");
@@ -25,17 +33,17 @@ export const fmtDateTime = (v: string | Date | null | undefined) => fmt(v, "EEE 
 export function dayLabel(value: string | Date | null | undefined): string {
   const d = toDate(value);
   if (!d) return "";
-  if (isToday(d)) return "vandaag";
-  if (isTomorrow(d)) return "morgen";
-  if (isYesterday(d)) return "gisteren";
-  return format(d, "EEE d MMM", { locale: nl });
+  if (isToday(d)) return lang === "en" ? "today" : "vandaag";
+  if (isTomorrow(d)) return lang === "en" ? "tomorrow" : "morgen";
+  if (isYesterday(d)) return lang === "en" ? "yesterday" : "gisteren";
+  return format(d, "EEE d MMM", { locale });
 }
 
 export function ago(value: string | Date | null | undefined): string {
   const d = toDate(value);
   if (!d) return "";
-  if (Math.abs(Date.now() - d.getTime()) < 60_000) return "zojuist";
-  const s = formatDistanceToNowStrict(d, { locale: nl, addSuffix: true });
+  if (Math.abs(Date.now() - d.getTime()) < 60_000) return lang === "en" ? "just now" : "zojuist";
+  const s = formatDistanceToNowStrict(d, { locale, addSuffix: true });
   return s;
 }
 

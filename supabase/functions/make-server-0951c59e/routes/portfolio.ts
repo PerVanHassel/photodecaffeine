@@ -1,10 +1,16 @@
 import { Hono } from "npm:hono";
+import { requireAdmin, requirePermission } from "../lib/http.ts";
 import * as kv from "../kv_store.tsx";
 import { verifyAdmin } from "../lib/auth.ts";
 
 
 const r = new Hono();
 export default r;
+
+// Portfolio, the automotive gallery and the text helper need the portfolio right.
+r.use("/make-server-0951c59e/admin/portfolio", requireAdmin as any, requirePermission("managePortfolio", "het portfolio") as any);
+r.use("/make-server-0951c59e/admin/portfolio/*", requireAdmin as any, requirePermission("managePortfolio", "het portfolio") as any);
+r.use("/make-server-0951c59e/admin/ai/*", requireAdmin as any, requirePermission("managePortfolio", "het portfolio") as any);
 
 // ============================================================================
 // PORTFOLIO ENDPOINTS

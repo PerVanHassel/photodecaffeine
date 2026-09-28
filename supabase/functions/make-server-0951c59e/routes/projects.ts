@@ -3,7 +3,7 @@ import { BRIEFING_MAX_CHARS, SITE_URL } from "../lib/config.ts";
 import { projectRecipients } from "../lib/clients.ts";
 import { db, found, must } from "../lib/db.ts";
 import { sendEmail } from "../lib/email.ts";
-import { type Env, fail, isoDate, nameOf, readBody, requireAdmin, text, uuid, z } from "../lib/http.ts";
+import { type Env, fail, isoDate, nameOf, readBody, requireAdmin, requirePermission, text, uuid, z } from "../lib/http.ts";
 import {
   gallerySigner,
   loadProject,
@@ -27,10 +27,10 @@ const r = new Hono<Env>();
 export default r;
 
 const P = "/make-server-0951c59e/admin";
-r.use(`${P}/project/*`, requireAdmin);
-r.use(`${P}/project`, requireAdmin);
-r.use(`${P}/projects`, requireAdmin);
-r.use(`${P}/shots/*`, requireAdmin);
+r.use(`${P}/project/*`, requireAdmin, requirePermission("manageClients", "projecten en planning"));
+r.use(`${P}/project`, requireAdmin, requirePermission("manageClients", "projecten en planning"));
+r.use(`${P}/projects`, requireAdmin, requirePermission("manageClients", "projecten en planning"));
+r.use(`${P}/shots/*`, requireAdmin, requirePermission("manageClients", "projecten en planning"));
 
 async function respond(id: string) {
   const row = await loadProject(id);
@@ -355,6 +355,32 @@ r.delete(`${P}/project/:id/gallery/:imageId`, async (c) => {
   must(await db.from("gallery_images").delete().eq("id", img.id));
   await removePrivate([img.storage_path]);
   return c.json({ project: await respond(id) });
+});
+
+// Galleries uploaded before private storage still point at the public
+// bucket. This copies them into the private bucket and forgets the public
+// URL, so the public copy can be cleaned up with prune_unused.py afterwards.
+r.post(`${P}/project/:id/gallery/privatize`, async (c) => {
+  const id = c.req.param("id");
+  const rows = must(await db.from("gallery_images").select("*").eq("project_id", id).eq("storage_path", "")) as any[];
+  let moved = 0;
+  const failed: string[] = [];
+  for (const img of rows) {
+    try {
+      const res = await fetch(img.url);
+      if (!res.ok) throw new Error(String(res.status));
+      const blob = await res.blob();
+      const name = img.file_name || img.url.split("?")[0].split("/").pop() || "foto.jpg";
+      const file = new File([blob], name, { type: blob.type || "image/jpeg" });
+      const path = await uploadPrivate(`galleries/${id}`, file, { allowVideo: true });
+      must(await db.from("gallery_images").update({ storage_path: path, url: "" }).eq("id", img.id));
+      moved++;
+    } catch (err) {
+      console.error("privatize failed:", img.id, err);
+      failed.push(img.file_name || img.id);
+    }
+  }
+  return c.json({ moved, failed, project: await respond(id) });
 });
 
 // Uploading in batches would otherwise mail the client once per batch; the

@@ -1,14 +1,14 @@
 import { Hono } from "npm:hono";
 import { db, found, must } from "../lib/db.ts";
-import { type Env, fail, readBody, requireAdmin, text, z } from "../lib/http.ts";
+import { type Env, fail, readBody, requireAdmin, requirePermission, text, z } from "../lib/http.ts";
 import { removePrivate, signPaths, uploadPrivate } from "../lib/storage.ts";
 
 const r = new Hono<Env>();
 export default r;
 
 const A = "/make-server-0951c59e/admin/locations";
-r.use(A, requireAdmin);
-r.use(`${A}/*`, requireAdmin);
+r.use(A, requireAdmin, requirePermission("manageClients", "projecten en planning"));
+r.use(`${A}/*`, requireAdmin, requirePermission("manageClients", "projecten en planning"));
 
 const KINDS = ["urban", "nature", "beach", "indoor", "studio", "other"] as const;
 const LIGHT = ["", "morning", "midday", "evening", "night", "any"] as const;

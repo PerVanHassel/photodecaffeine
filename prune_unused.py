@@ -121,6 +121,13 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
 
+    # The private bucket stores bare paths that the reference scan cannot
+    # match, so everything in it would look unused. It is cleaned by the
+    # edge function when a gallery image or project is deleted, never here.
+    if args.bucket.startswith("studio-private"):
+        print("De privé-bucket wordt niet door dit script opgeruimd.", file=sys.stderr)
+        return 2
+
     url = os.environ.get("SUPABASE_URL")
     key = os.environ.get("SUPABASE_SERVICE_KEY")
     if not url or not key:

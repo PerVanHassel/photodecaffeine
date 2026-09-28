@@ -1,7 +1,7 @@
 import { Hono } from "npm:hono";
 import { SITE_URL } from "../lib/config.ts";
 import { db, found, must } from "../lib/db.ts";
-import { type Env, isoDateTime, readBody, requireAdmin, text, uuid, z } from "../lib/http.ts";
+import { type Env, isoDateTime, readBody, requireAdmin, requirePermission, text, uuid, z } from "../lib/http.ts";
 import { toIcs } from "../lib/ics.ts";
 import { eventToApi } from "../lib/projects.ts";
 
@@ -9,8 +9,8 @@ const r = new Hono<Env>();
 export default r;
 
 const A = "/make-server-0951c59e/admin";
-r.use(`${A}/events`, requireAdmin);
-r.use(`${A}/events/*`, requireAdmin);
+r.use(`${A}/events`, requireAdmin, requirePermission("manageClients", "projecten en planning"));
+r.use(`${A}/events/*`, requireAdmin, requirePermission("manageClients", "projecten en planning"));
 r.use(`${A}/calendar-feed`, requireAdmin);
 
 const SELECT = "*, projects ( id, title, stage, project_clients ( clients ( name ) ) ), locations ( id, name, address, lat, lng )";

@@ -8,12 +8,11 @@ import { useEffect, useState } from "react";
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { Toaster } from "sonner";
 import { isAdmin } from "../../lib/supabase";
-import { AdminThemeProvider } from "../context/AdminThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { CommandPalette } from "./CommandPalette";
 import { StudioFonts } from "./fonts";
 import { initials } from "./format";
-import { queryClient, useOverview } from "./queries";
+import { queryClient, useMe, useOverview } from "./queries";
 import "./studio.css";
 import { Button, ConfirmProvider } from "./ui";
 
@@ -37,6 +36,9 @@ function Shell() {
   const location = useLocation();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const overview = useOverview();
+  const me = useMe();
+  // Until the role is known everything shows; the server checks each request anyway.
+  const can = (perm?: string) => !perm || !me.data || me.data.permissions[perm] !== false;
   const o = overview.data;
 
   useEffect(() => {
@@ -70,37 +72,37 @@ function Shell() {
           <nav className="s-nav" aria-label="Werk">
             <span className="s-eyebrow">Werk</span>
             <NavItem to="/admin" end icon={<Sun />} label="Vandaag" dot={waiting || undefined} />
-            <NavItem to="/admin/pipeline" icon={<Kanban />} label="Pijplijn" />
-            <NavItem to="/admin/planning" icon={<CalendarDays />} label="Planning" />
-            <NavItem to="/admin/locations" icon={<MapPin />} label="Locaties" />
-            <NavItem to="/admin/tasks" icon={<CheckSquare />} label="Taken" count={o?.tasks.length || undefined} />
+            <NavItem show={can("manageClients")} to="/admin/pipeline" icon={<Kanban />} label="Pijplijn" />
+            <NavItem show={can("manageClients")} to="/admin/planning" icon={<CalendarDays />} label="Planning" />
+            <NavItem show={can("manageClients")} to="/admin/locations" icon={<MapPin />} label="Locaties" />
+            <NavItem show={can("manageClients")} to="/admin/tasks" icon={<CheckSquare />} label="Taken" count={o?.tasks.length || undefined} />
           </nav>
           <nav className="s-nav" aria-label="Relaties">
             <span className="s-eyebrow">Relaties</span>
-            <NavItem to="/admin/clients" icon={<Users />} label="Klanten" />
-            <NavItem to="/admin/inquiries" icon={<Inbox />} label="Aanvragen" dot={o?.newInquiries.length || undefined} />
-            <NavItem to="/admin/quotes" icon={<FileText />} label="Offertes" />
-            <NavItem to="/admin/invoices" icon={<Euro />} label="Facturen" />
+            <NavItem show={can("manageClients")} to="/admin/clients" icon={<Users />} label="Klanten" />
+            <NavItem show={can("manageInquiries")} to="/admin/inquiries" icon={<Inbox />} label="Aanvragen" dot={o?.newInquiries.length || undefined} />
+            <NavItem show={can("manageQuotes")} to="/admin/quotes" icon={<FileText />} label="Offertes" />
+            <NavItem show={can("manageQuotes")} to="/admin/invoices" icon={<Euro />} label="Facturen" />
           </nav>
           <nav className="s-nav secondary" aria-label="Website">
             <span className="s-eyebrow">Website</span>
-            <NavItem to="/admin/portfolio" icon={<Images />} label="Portfolio" />
-            <NavItem to="/admin/services/automotive" icon={<Layers />} label="Automotive" />
-            <NavItem to="/admin/reviews" icon={<Star />} label="Reviews" />
-            <NavItem to="/admin/ads" icon={<Megaphone />} label="Advertenties" />
-            <NavItem to="/admin/demos" icon={<Globe />} label="Webdemo's" />
-            <NavItem to="/admin/settings" icon={<Settings />} label="Instellingen" />
+            <NavItem show={can("managePortfolio")} to="/admin/portfolio" icon={<Images />} label="Portfolio" />
+            <NavItem show={can("managePortfolio")} to="/admin/services/automotive" icon={<Layers />} label="Automotive" />
+            <NavItem show={can("managePortfolio")} to="/admin/reviews" icon={<Star />} label="Reviews" />
+            <NavItem show={can("manageAds")} to="/admin/ads" icon={<Megaphone />} label="Advertenties" />
+            <NavItem show={can("manageClients")} to="/admin/demos" icon={<Globe />} label="Webdemo's" />
+            <NavItem show={can("manageSettings")} to="/admin/settings" icon={<Settings />} label="Instellingen" />
           </nav>
           <nav className="s-nav secondary" aria-label="Beheer">
             <span className="s-eyebrow">Beheer</span>
-            <NavItem to="/admin/team" icon={<Shield />} label="Team & rollen" />
+            <NavItem show={can("manageAdmins")} to="/admin/team" icon={<Shield />} label="Team & rollen" />
             <NavItem to="/admin/declarations" icon={<Receipt />} label="Declaraties" />
           </nav>
           <div className="s-rail-foot">
             <div className="s-avatar" aria-hidden="true">{initials(name)}</div>
             <div style={{ minWidth: 0, flex: 1 }}>
               <b className="s-truncate" style={{ fontSize: 13, display: "block" }}>{name}</b>
-              <span className="s-faint" style={{ fontSize: 11.5 }}>Admin</span>
+              <span className="s-faint" style={{ fontSize: 11.5 }}>{me.data?.roleName || "Admin"}</span>
             </div>
             <Button
               variant="ghost"
@@ -114,10 +116,7 @@ function Shell() {
           </div>
         </aside>
         <main className="s-main">
-          {/* Pages not yet rebuilt still read the old admin theme tokens. */}
-          <AdminThemeProvider forced="light">
-            <Outlet />
-          </AdminThemeProvider>
+          <Outlet />
         </main>
       </div>
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
@@ -126,9 +125,10 @@ function Shell() {
   );
 }
 
-function NavItem({ to, icon, label, count, dot, end }: {
-  to: string; icon: React.ReactNode; label: string; count?: number; dot?: number; end?: boolean;
+function NavItem({ to, icon, label, count, dot, end, show = true }: {
+  to: string; icon: React.ReactNode; label: string; count?: number; dot?: number; end?: boolean; show?: boolean;
 }) {
+  if (!show) return null;
   return (
     <NavLink to={to} end={end} className={({ isActive }) => (isActive ? "active" : undefined)}>
       {icon}

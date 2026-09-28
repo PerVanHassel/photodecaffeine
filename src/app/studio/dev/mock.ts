@@ -200,8 +200,36 @@ export async function mockApi(path: string, method: string, body: Json): Promise
       };
     }
     if (p === "/admin/calendar-feed") return { url: "https://www.photodecaffeine.com/api/calendar/0123456789abcdef0123456789abcdef0123456789abcdef.ics" };
-    if (p === "/admin/settings") return { settings: { business: { name: "PhotoDeCaffeine Productions" } } };
+    if (p === "/admin/settings") return { settings: { heroImageUrl: PHOTOS[0], heroImageMobileUrl: "", frameImageUrl: PHOTOS[6], studioName: "PhotoDeCaffeine", contactEmail: "contact@photodecaffeine.com", sections: { workProcess: true, portfolio: true, about: true, services: true, socialProof: false, customCTA: true }, business: { name: "PhotoDeCaffeine Productions" } } };
     if (p === "/admin/notifications") return { notifications: [], unread: 0, readAt: "" };
+    if (p === "/admin/me") return { id: id(999), email: "per@example.nl", name: "Per van Hassel", isOwner: true, roleName: "Eigenaar", permissions: Object.fromEntries(["manageClients", "manageQuotes", "manageInquiries", "managePortfolio", "manageAds", "manageSettings", "manageDeclarations", "viewAllDeclarations", "manageAdmins"].map((k) => [k, true])) };
+    if (p === "/admin/portfolio") return { articles: [
+      { id: id(401), title: "BMW 320i Touring", category: "Automotive", coverUrl: PHOTOS[0], coverType: "image", description: "Avondshoot in de haven.", galleryUrls: PHOTOS.slice(0, 5), published: true, featured: true, createdAt: iso(-40), updatedAt: iso(-3) },
+      { id: id(402), title: "Studio Veldhuis team", category: "Portret", coverUrl: PHOTOS[6], coverType: "image", description: "", galleryUrls: PHOTOS.slice(6, 9), published: true, featured: false, createdAt: iso(-30), updatedAt: iso(-10) },
+      { id: id(403), title: "Café Maas zomer", category: "Horeca", coverUrl: PHOTOS[9], coverType: "image", description: "", galleryUrls: [], published: false, featured: false, createdAt: iso(-5), updatedAt: iso(-1) },
+      { id: id(404), title: "__automotive_gallery__", category: "_automotive-gallery", coverUrl: PHOTOS[1], coverType: "image", description: "", galleryUrls: PHOTOS.slice(0, 6), published: true, featured: false, createdAt: iso(-90), updatedAt: iso(-2) },
+    ] };
+    if (p === "/admin/reviews") return { reviews: [
+      { id: id(411), projectId: id(55), projectTitle: "Zomerterras", clientName: "Café Maas", rating: 5, text: "Prachtige foto's, snel geleverd en heel prettig samengewerkt.", portfolioArticleId: id(403), published: true, createdAt: iso(-12) },
+      { id: id(412), projectId: id(52), projectTitle: "Teamfoto's 2026", clientName: "Sanne Veldhuis", rating: 4, text: "Mooi resultaat, iedereen blij.", portfolioArticleId: null, published: false, createdAt: iso(-1) },
+    ] };
+    if (p === "/admin/feedback") return { feedback: [{ id: id(421), projectId: id(52), projectTitle: "Teamfoto's 2026", clientName: "Sanne Veldhuis", createdAt: iso(-1), items: [{ id: id(422), scope: "photos", photoUrls: PHOTOS.slice(4, 6), category: "", text: "Kan de achtergrond hier iets warmer?" }] }] };
+    if (p === "/admin/workers") return { workers: [
+      { id: id(999), email: "per@example.nl", name: "Per van Hassel", lastSignIn: iso(0, 9), isOwner: true, roleId: null, roleName: "Eigenaar" },
+      { id: id(998), email: "majd@example.nl", name: "Majd", lastSignIn: iso(-2), isOwner: false, roleId: id(431), roleName: "CEO" },
+    ], roles: [
+      { id: id(431), name: "CEO", permissions: { manageClients: true, managePortfolio: true, manageInquiries: true, manageAds: true, manageSettings: true, manageDeclarations: true } },
+      { id: id(432), name: "CFO", permissions: { manageClients: true, manageQuotes: true, manageInquiries: true, manageDeclarations: true, viewAllDeclarations: true } },
+    ] };
+    if (p === "/admin/declarations") return { canViewAll: true, declarations: [
+      { id: id(441), adminId: id(999), adminName: "Per van Hassel", amount: 121, vatRate: 21, vatAmount: 21, date: dateOnly(-10), category: "Apparatuur", description: "SD-kaarten 128 GB", receiptUrl: "", receiptRef: "", createdAt: iso(-10) },
+      { id: id(442), adminId: id(998), adminName: "Majd", amount: 38.5, vatRate: 21, vatAmount: 6.68, date: dateOnly(-3), category: "Reiskosten", description: "Parkeren Maasboulevard", receiptUrl: PHOTOS[3], receiptRef: "private:x", createdAt: iso(-3) },
+    ], totals: { amount: 159.5, vatAmount: 27.68, count: 2, byCategory: {} } };
+    if (p === "/admin/ads") return {
+      visits: Array.from({ length: 60 }, (_, i) => ({ ref: i % 3 ? "insta-automotive-1" : "fb-portret", page: i % 3 ? "/services/automotive" : "/", createdAt: iso(-(i % 28), 12) })),
+      leads: [{ id: id(451), name: "Marco", ref: "insta-automotive-1", createdAt: iso(-3) }],
+      campaigns: [{ ref: "insta-automotive-1", label: "Insta automotive september", active: true, hidden: false }],
+    };
     // portal
     if (p === "/portal/projects") return { projects: projects.filter((x) => x.clientIds.includes(id(2)) || x.clientIds.includes(id(1))).map((x) => ({ ...x, briefing: undefined })), locations: Object.fromEntries(locations.map((l) => [l.id, l])) };
     if ((r = m(/^\/portal\/project\/([^/]+)$/))) return { project: projects.find((x) => x.id === r![1]), locations: Object.fromEntries(locations.map((l) => [l.id, l])) };

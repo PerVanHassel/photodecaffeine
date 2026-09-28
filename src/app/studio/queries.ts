@@ -111,6 +111,9 @@ export const useSearch = (q: string) =>
     placeholderData: keepPreviousData,
   });
 
+export type Me = { id: string; email: string; name: string; isOwner: boolean; roleName: string; permissions: Record<string, boolean> };
+export const useMe = () => useQuery({ queryKey: ["me"], queryFn: ({ signal }) => get<Me>("/admin/me", signal), staleTime: 5 * 60_000 });
+
 export const useCalendarFeed = (enabled: boolean) =>
   useQuery({ queryKey: keys.feed, queryFn: ({ signal }) => get<{ url: string }>("/admin/calendar-feed", signal).then((r) => r.url), enabled });
 

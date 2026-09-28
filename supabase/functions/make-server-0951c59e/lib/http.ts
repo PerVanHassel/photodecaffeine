@@ -1,6 +1,6 @@
 import type { Context, MiddlewareHandler } from "npm:hono";
 import { z } from "npm:zod@3";
-import { verifyAdmin, verifyAuth } from "./auth.ts";
+import { hasPermission, verifyAdmin, verifyAuth } from "./auth.ts";
 
 export { z };
 
@@ -59,4 +59,17 @@ export const text = (max = 2000) => z.string().trim().max(max, `Maximaal ${max} 
 /** Display name of whoever is signed in. */
 export function nameOf(user: any): string {
   return user?.user_metadata?.name || user?.email || "PDC Studio";
+}
+
+/**
+ * After requireAdmin: the signed-in admin's role must grant `permission`.
+ * The owner always passes (see hasPermission).
+ */
+export function requirePermission(permission: string, what: string): MiddlewareHandler<Env> {
+  return async (c, next) => {
+    if (!(await hasPermission(c.get("user"), permission))) {
+      return c.json({ error: `Je rol geeft geen toegang tot ${what}. Vraag de eigenaar om dit aan te zetten bij Team & rollen.` }, 403);
+    }
+    await next();
+  };
 }

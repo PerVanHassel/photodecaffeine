@@ -15,6 +15,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import dedupe_storage  # noqa: E402
 from dedupe_storage import (  # noqa: E402
     Group,
     StorageObject,
@@ -386,3 +387,58 @@ def test_a_healthy_response_passes_through():
     response = FakeResponse(200)
     check(response)
     assert response.raised
+
+
+# --- in_use_names: the studio tables count as references too ---
+
+
+class _Response:
+    def __init__(self, rows):
+        self._rows = rows
+        self.status_code = 200
+        self.ok = True
+
+    def json(self):
+        return self._rows
+
+    def raise_for_status(self):
+        pass
+
+
+class _Session:
+    """Answers each table with fixed rows, whatever the paging asks."""
+
+    def __init__(self, tables):
+        self.tables = tables
+        self.asked = []
+
+    def get(self, url, params=None, timeout=None):
+        table = url.rsplit("/", 1)[-1]
+        self.asked.append(table)
+        return _Response(self.tables.get(table, []) if params.get("offset", 0) == 0 else [])
+
+
+def _client(tables):
+    client = dedupe_storage.StorageClient("https://x.supabase.co", "key")
+    client.session = _Session(tables)
+    return client
+
+
+BUCKET = "portfolio-images-0951c59e"
+BASE = f"https://x.supabase.co/storage/v1/object/public/{BUCKET}"
+
+
+def test_in_use_counts_a_photo_that_only_a_client_gallery_uses():
+    client = _client({
+        "kv_store_0951c59e": [{"value": {"coverUrl": f"{BASE}/cover.jpg"}}],
+        "gallery_images": [{"url": f"{BASE}/1700000000000-client.jpg", "storage_path": ""}],
+    })
+    found = client.in_use_names(BUCKET)
+    assert "cover.jpg" in found
+    assert "1700000000000-client.jpg" in found
+
+
+def test_in_use_reads_every_studio_table():
+    client = _client({})
+    client.in_use_names(BUCKET)
+    assert set(client.session.asked) >= {"kv_store_0951c59e", "gallery_images", "location_photos", "projects"}

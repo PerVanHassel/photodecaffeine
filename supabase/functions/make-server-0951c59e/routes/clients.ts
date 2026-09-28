@@ -5,7 +5,7 @@ import { clientToApi, type ClientRow } from "../lib/clients.ts";
 import { EMAIL_ADMIN_NOTIFY, EMAIL_RE, INVITE_VALID_DAYS, SITE_URL } from "../lib/config.ts";
 import { db, found, must } from "../lib/db.ts";
 import { emailWrap, escapeHtml, sendEmail } from "../lib/email.ts";
-import { type Env, fail, readBody, requireAdmin, text, z } from "../lib/http.ts";
+import { type Env, fail, readBody, requireAdmin, requirePermission, text, z } from "../lib/http.ts";
 import { notify } from "../lib/notify.ts";
 import { passwordProblem } from "../lib/passwords.ts";
 import { gallerySigner, loadProjects, projectToApi } from "../lib/projects.ts";
@@ -14,6 +14,8 @@ import { randomToken } from "../lib/util.ts";
 
 const r = new Hono<Env>();
 export default r;
+
+r.use("/make-server-0951c59e/admin/clients/*", requireAdmin, requirePermission("manageClients", "klanten en projecten"));
 
 /** Finds the client with this email or makes one; used when inviting. */
 async function upsertClientByEmail(email: string, name: string): Promise<ClientRow> {
@@ -255,9 +257,9 @@ r.post("/make-server-0951c59e/admin/clients/invite", async (c) => {
 // ---------------------------------------------------------------------------
 
 const A = "/make-server-0951c59e/admin";
-r.use(`${A}/clients`, requireAdmin);
-r.use(`${A}/client/*`, requireAdmin);
-r.use(`${A}/client`, requireAdmin);
+r.use(`${A}/clients`, requireAdmin, requirePermission("manageClients", "klanten en projecten"));
+r.use(`${A}/client/*`, requireAdmin, requirePermission("manageClients", "klanten en projecten"));
+r.use(`${A}/client`, requireAdmin, requirePermission("manageClients", "klanten en projecten"));
 
 /** Last sign-in per login, for the client list. One call covers everyone. */
 async function lastSignIns(): Promise<Map<string, string>> {

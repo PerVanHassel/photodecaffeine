@@ -40,26 +40,15 @@ const Quotes = page(() => import("./pages/Money"), "QuotesPage");
 const Invoices = page(() => import("./pages/Invoices"), "InvoicesPage");
 const Invoice = page(() => import("./pages/Invoices"), "InvoicePage");
 
-// Not rebuilt yet: the old pages, shown inside the new shell.
-const legacyPage = <K extends string>(load: () => Promise<Record<K, ComponentType>>, name: K) =>
-  lazy(async () => {
-    const [m, { legacy }] = await Promise.all([load(), import("./pages/Legacy")]);
-    return { default: legacy(m[name]) };
-  });
-const Portfolio = legacyPage(() => import("../pages/portal/AdminPortfolioPage"), "AdminPortfolioPage");
-const Automotive = legacyPage(() => import("../pages/portal/AdminAutomotiveGalleryPage"), "AdminAutomotiveGalleryPage");
-const Reviews = legacyPage(() => import("../pages/portal/AdminReviewsPage"), "AdminReviewsPage");
-const Ads = legacyPage(() => import("../pages/portal/AdminAdsPage"), "AdminAdsPage");
-const Demos = legacyPage(() => import("../pages/portal/AdminDemosPage"), "AdminDemosPage");
-const Team = legacyPage(() => import("../pages/portal/AdminTeamPage"), "AdminTeamPage");
-const Declarations = legacyPage(() => import("../pages/portal/AdminDeclarationsPage"), "AdminDeclarationsPage");
-const GalleryPreview = legacyPage(() => import("../pages/portal/AdminGalleryPreviewPage"), "AdminGalleryPreviewPage");
-const Settings = lazy(async () => {
-  const [m, { legacy, BusinessSettings }] = await Promise.all([import("../pages/portal/AdminSettingsPage"), import("./pages/Legacy")]);
-  const Old = legacy(m.AdminSettingsPage);
-  return { default: () => <><BusinessSettings /><Old /></> };
-});
-
+const Portfolio = page(() => import("./pages/Content"), "PortfolioPage");
+const Automotive = page(() => import("./pages/Content"), "AutomotivePage");
+const Reviews = page(() => import("./pages/Reviews"), "ReviewsPage");
+const Ads = page(() => import("./pages/Ads"), "AdsPage");
+const Demos = page(() => import("./pages/Demos"), "DemosPage");
+const Team = page(() => import("./pages/Team"), "TeamPage");
+const Declarations = page(() => import("./pages/Declarations"), "DeclarationsPage");
+const GalleryPreview = page(() => import("./pages/GalleryPreview"), "GalleryPreviewPage");
+const Settings = page(() => import("./pages/Settings"), "SettingsPage");
 
 export const studioRoutes: RouteObject = {
   path: "/admin",
@@ -108,7 +97,7 @@ const PortalGallery = page(() => import("./portal/Gallery"), "PortalGallery");
 const PortalDocuments = page(() => import("./portal/Pages"), "PortalDocuments");
 const PortalMessages = page(() => import("./portal/Pages"), "PortalMessages");
 const PortalAccount = page(() => import("./portal/Pages"), "PortalAccount");
-const PortalFeedback = page(() => import("../pages/portal/PortalFeedbackPage"), "PortalFeedbackPage");
+const PortalFeedback = page(() => import("./portal/Feedback"), "PortalFeedbackPage");
 const Login = lazy(() => import("./portal/Auth").then((m) => ({ default: () => <m.LoginPage /> })));
 const ResetPassword = page(() => import("./portal/Auth"), "ResetPasswordPage");
 export const PublicInvoice = wrap(page(() => import("./portal/PublicInvoice"), "PublicInvoicePage"));

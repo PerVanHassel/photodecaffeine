@@ -2,7 +2,9 @@ import { Hono } from "npm:hono";
 import * as kv from "../kv_store.tsx";
 import { hasPermission, verifyAdmin } from "../lib/auth.ts";
 import { getPortalUser } from "../lib/people.ts";
-import { computeQuarter, computeVatAmount } from "../lib/util.ts";
+import { computeQuarter, computeVatAmount, sanitizeFileName } from "../lib/util.ts";
+import { db } from "../lib/db.ts";
+import { PRIVATE_BUCKET, signPaths } from "../lib/storage.ts";
 
 
 const r = new Hono();
@@ -44,8 +46,13 @@ r.get("/make-server-0951c59e/admin/declarations", async (c) => {
 
     declarations.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+    // Receipts uploaded since the move to private storage are stored as
+    // "private:<path>" and get a short-lived link here.
+    const signed = await signPaths(declarations.map((d) => String(d.receiptUrl || "")).filter((u) => u.startsWith(PRIVATE_PREFIX)).map((u) => u.slice(PRIVATE_PREFIX.length)));
     declarations = declarations.map((d) => ({
       ...d,
+      receiptRef: d.receiptUrl || "",
+      receiptUrl: String(d.receiptUrl || "").startsWith(PRIVATE_PREFIX) ? signed.get(d.receiptUrl.slice(PRIVATE_PREFIX.length)) || "" : d.receiptUrl || "",
       vatRate: d.vatRate ?? 21,
       vatAmount: computeVatAmount(Number(d.amount) || 0, d.vatRate ?? 21),
     }));
@@ -66,6 +73,24 @@ r.get("/make-server-0951c59e/admin/declarations", async (c) => {
     console.log("Get declarations error:", err);
     return c.json({ error: `Failed to fetch declarations: ${err}` }, 500);
   }
+});
+
+const PRIVATE_PREFIX = "private:";
+
+// --- POST /admin/declarations/receipt — store a receipt privately ---
+r.post("/make-server-0951c59e/admin/declarations/receipt", async (c) => {
+  const admin = await verifyAdmin(c.req.header("Authorization"));
+  if (!admin) return c.json({ error: "Unauthorized" }, 401);
+  const form = await c.req.formData();
+  const file = form.get("file");
+  if (!(file instanceof File)) return c.json({ error: "Kies een bestand." }, 400);
+  if (!["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"].includes(file.type)) {
+    return c.json({ error: "Upload een foto of pdf van het bonnetje." }, 400);
+  }
+  const path = `receipts/${admin.id}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}-${sanitizeFileName(file.name)}`;
+  const { error } = await db.storage.from(PRIVATE_BUCKET).upload(path, file, { contentType: file.type });
+  if (error) return c.json({ error: "Het bonnetje kon niet worden opgeslagen." }, 500);
+  return c.json({ receiptRef: PRIVATE_PREFIX + path });
 });
 
 // --- POST /admin/declarations — submit a declaration ---
@@ -149,6 +174,11 @@ r.put("/make-server-0951c59e/admin/declarations/:id", async (c) => {
       createdAt: existing.createdAt,
       updatedAt: new Date().toISOString(),
     };
+    // A short-lived signed link sent back by a screen must not replace the
+    // stored reference to a private receipt; neither may the listing's extras.
+    if (typeof updates.receiptUrl === "string" && updates.receiptUrl.includes("/object/sign/")) updated.receiptUrl = existing.receiptUrl;
+    delete updated.receiptRef;
+    delete updated.vatAmount;
     if (updates.amount !== undefined) updated.amount = Number(updates.amount);
     if (updates.vatRate !== undefined) updated.vatRate = Number(updates.vatRate);
     await kv.set(`declarations:declaration:${id}`, JSON.stringify(updated));

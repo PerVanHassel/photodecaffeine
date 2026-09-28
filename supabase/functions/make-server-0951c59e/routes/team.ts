@@ -2,7 +2,7 @@ import { Hono } from "npm:hono";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import * as kv from "../kv_store.tsx";
 import { ensureDefaultRoles, getRole, hasPermission, isAdminUser, roleIdOf, verifyAdmin } from "../lib/auth.ts";
-import { OWNER_EMAIL } from "../lib/config.ts";
+import { DEFAULT_ROLES, OWNER_EMAIL } from "../lib/config.ts";
 import { passwordProblem } from "../lib/passwords.ts";
 
 
@@ -328,3 +328,23 @@ r.delete("/make-server-0951c59e/admin/roles/:id", async (c) => {
   }
 });
 
+
+// --- GET /admin/me — who is signed in and what their role allows ---
+// The admin uses this to hide what a role cannot open; the server still
+// checks every request on its own.
+r.get("/make-server-0951c59e/admin/me", async (c) => {
+  const admin = await verifyAdmin(c.req.header("Authorization"));
+  if (!admin) return c.json({ error: "Unauthorized" }, 401);
+  const isOwner = admin.email === OWNER_EMAIL;
+  const role = isOwner ? null : await getRole(roleIdOf(admin));
+  const all = Object.keys(DEFAULT_ROLES[0].permissions);
+  const permissions = Object.fromEntries(all.map((p) => [p, isOwner || !!role?.permissions?.[p]]));
+  return c.json({
+    id: admin.id,
+    email: admin.email,
+    name: admin.user_metadata?.name || admin.email,
+    isOwner,
+    roleName: isOwner ? "Eigenaar" : role?.name || "Geen rol",
+    permissions,
+  });
+});

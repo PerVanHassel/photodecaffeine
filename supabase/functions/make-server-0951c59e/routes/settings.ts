@@ -1,10 +1,13 @@
 import { Hono } from "npm:hono";
+import { requireAdmin, requirePermission } from "../lib/http.ts";
 import * as kv from "../kv_store.tsx";
 import { verifyAdmin } from "../lib/auth.ts";
 
 
 const r = new Hono();
 export default r;
+
+r.use("/make-server-0951c59e/admin/settings", requireAdmin as any, requirePermission("manageSettings", "de site-instellingen") as any);
 
 // ============================================================================
 // SITE SETTINGS ENDPOINTS

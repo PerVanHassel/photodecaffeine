@@ -8,10 +8,12 @@ import { api, errorMessage } from "../api";
 import { StudioFonts } from "../fonts";
 import "../studio.css";
 import { Button, Segmented, TextField } from "../ui";
+import { texts, usePortalLanguage, type PortalText } from "./i18n";
 
 type Mode = "signin" | "activate" | "forgot";
 
-function Frame({ tag, children }: { tag: string; children: React.ReactNode }) {
+function Frame({ tag, children, t, showLanguage }: { tag: string; children: React.ReactNode; t: PortalText; showLanguage?: boolean }) {
+  const { language, choose } = usePortalLanguage();
   return (
     <div className="studio" style={{ display: "grid", placeItems: "center", padding: "40px 16px", background: "var(--sunken)" }}>
       <StudioFonts />
@@ -22,17 +24,25 @@ function Frame({ tag, children }: { tag: string; children: React.ReactNode }) {
         </div>
         {children}
       </div>
-      <Link to="/" className="s-small s-muted" style={{ marginTop: 20 }}>Terug naar photodecaffeine.com</Link>
+      <div className="s-row" style={{ marginTop: 20 }}>
+        <Link to="/" className="s-small s-muted">{t.backToSite}</Link>
+        {showLanguage && (
+          <div className="s-seg" role="group" aria-label={t.language}>
+            <button type="button" aria-pressed={language === "nl"} onClick={() => choose("nl")}>NL</button>
+            <button type="button" aria-pressed={language === "en"} onClick={() => choose("en")}>EN</button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-function PasswordField({ label, value, onChange, autoComplete, error }: { label: string; value: string; onChange: (v: string) => void; autoComplete: string; error?: string | null }) {
+function PasswordField({ label, value, onChange, autoComplete, error, t }: { label: string; value: string; onChange: (v: string) => void; autoComplete: string; error?: string | null; t: PortalText }) {
   const [show, setShow] = useState(false);
   return (
     <div style={{ position: "relative" }}>
       <TextField label={label} type={show ? "text" : "password"} autoComplete={autoComplete} value={value} onChange={(e) => onChange(e.target.value)} error={error} style={{ paddingRight: 42 }} />
-      <button type="button" onClick={() => setShow((s) => !s)} aria-label={show ? "Wachtwoord verbergen" : "Wachtwoord tonen"}
+      <button type="button" onClick={() => setShow((s) => !s)} aria-label={show ? t.hidePassword : t.showPassword}
         style={{ position: "absolute", right: 10, top: 31, border: 0, background: "none", color: "var(--faint)", padding: 4 }}>
         {show ? <EyeOff size={16} /> : <Eye size={16} />}
       </button>
@@ -43,6 +53,8 @@ function PasswordField({ label, value, onChange, autoComplete, error }: { label:
 /** Sign-in for clients (/portal/login) and for the studio (/admin/login). */
 export function LoginPage({ admin = false }: { admin?: boolean }) {
   const { signIn, signOut, session, user } = useAuth();
+  const { language } = usePortalLanguage();
+  const t = texts[admin || language !== "en" ? "nl" : "en"];
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const invitedEmail = params.get("invite")?.trim() || "";
@@ -69,7 +81,7 @@ export function LoginPage({ admin = false }: { admin?: boolean }) {
     try {
       if (mode === "signin") {
         const r = await signIn(email.trim(), password);
-        if (r.error) setError(r.error === "Invalid login credentials" ? "E-mailadres of wachtwoord klopt niet." : r.error);
+        if (r.error) setError(r.error === "Invalid login credentials" ? t.wrongLogin : r.error);
       } else if (mode === "activate") {
         await api("/portal/signup", { method: "POST", anonymous: true, body: { email: email.trim(), password, name: name.trim(), company: company.trim(), token: inviteToken } });
         const r = await signIn(email.trim(), password);
@@ -88,7 +100,7 @@ export function LoginPage({ admin = false }: { admin?: boolean }) {
 
   if (session && !isAdmin(user) && admin) {
     return (
-      <Frame tag="Studio">
+      <Frame tag="Studio" t={t}>
         <p className="s-small" style={{ textAlign: "center" }}>Je bent ingelogd als {user?.email}, maar dat account heeft geen toegang tot de studio.</p>
         <Button variant="primary" onClick={() => signOut()}>Uitloggen</Button>
       </Frame>
@@ -96,44 +108,44 @@ export function LoginPage({ admin = false }: { admin?: boolean }) {
   }
 
   return (
-    <Frame tag={admin ? "Studio" : "Klantportaal"}>
+    <Frame tag={admin ? "Studio" : t.portal} t={t} showLanguage={!admin}>
       {!admin && (
         <Segmented<Mode> label="Kies" value={mode} onChange={(m) => { setMode(m); setError(null); setSent(false); }} options={[
-          { value: "signin", label: "Inloggen" },
-          { value: "activate", label: "Account activeren" },
+          { value: "signin", label: t.signIn },
+          { value: "activate", label: t.activate },
         ]} />
       )}
       {sent ? (
         <div className="s-stack" style={{ alignItems: "center", textAlign: "center" }}>
           <MailCheck size={28} style={{ color: "var(--ok)" }} />
-          <b>Kijk in je mail</b>
-          <p className="s-small s-muted">Als {email} bij ons bekend is, staat er een link klaar om een nieuw wachtwoord te kiezen.</p>
-          <Button onClick={() => { setMode("signin"); setSent(false); }}>Terug naar inloggen</Button>
+          <b>{t.checkMail}</b>
+          <p className="s-small s-muted">{t.checkMailBody(email)}</p>
+          <Button onClick={() => { setMode("signin"); setSent(false); }}>{t.backToSignIn}</Button>
         </div>
       ) : (
         <form className="s-stack" onSubmit={submit}>
           {mode === "activate" && (
             invitedEmail && inviteToken
-              ? <p className="s-small s-muted">Welkom! Kies een wachtwoord voor <b>{invitedEmail}</b>, dan staat je portaal klaar.</p>
-              : <p className="s-small s-muted">Je opent een account met de link uit de uitnodigingsmail. Geen mail gehad? Vraag ons om een nieuwe.</p>
+              ? <p className="s-small s-muted">{t.activateWelcome(invitedEmail)}</p>
+              : <p className="s-small s-muted">{t.activateNeedsLink}</p>
           )}
-          {mode === "forgot" && <p className="s-small s-muted">Vul je e-mailadres in. Je krijgt een link om een nieuw wachtwoord te kiezen.</p>}
+          {mode === "forgot" && <p className="s-small s-muted">{t.forgotIntro}</p>}
           {mode === "activate" && (
             <div className="s-form-grid">
-              <TextField label="Naam" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
-              <TextField label="Bedrijf (optioneel)" autoComplete="organization" value={company} onChange={(e) => setCompany(e.target.value)} />
+              <TextField label={t.name} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
+              <TextField label={t.companyOptional} autoComplete="organization" value={company} onChange={(e) => setCompany(e.target.value)} />
             </div>
           )}
-          <TextField label="E-mail" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} readOnly={mode === "activate" && !!invitedEmail} required />
+          <TextField label={t.email} type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} readOnly={mode === "activate" && !!invitedEmail} required />
           {mode !== "forgot" && (
-            <PasswordField label={mode === "activate" ? "Kies een wachtwoord" : "Wachtwoord"} autoComplete={mode === "activate" ? "new-password" : "current-password"} value={password} onChange={setPassword} />
+            <PasswordField t={t} label={mode === "activate" ? t.choosePassword : t.password} autoComplete={mode === "activate" ? "new-password" : "current-password"} value={password} onChange={setPassword} />
           )}
           {error && <p className="s-small" role="alert" style={{ color: "var(--bad)" }}>{error}</p>}
           <Button type="submit" variant="primary" loading={busy} disabled={!email || (mode !== "forgot" && !password) || (mode === "activate" && (!inviteToken || !name.trim()))}>
-            {mode === "signin" ? "Inloggen" : mode === "activate" ? "Account activeren" : "Stuur link"}
+            {mode === "signin" ? t.signIn : mode === "activate" ? t.activate : t.sendLink}
           </Button>
-          {mode === "signin" && !admin && <button type="button" className="s-btn ghost sm" onClick={() => { setMode("forgot"); setError(null); }}>Wachtwoord vergeten?</button>}
-          {mode === "forgot" && <button type="button" className="s-btn ghost sm" onClick={() => setMode("signin")}>Terug naar inloggen</button>}
+          {mode === "signin" && !admin && <button type="button" className="s-btn ghost sm" onClick={() => { setMode("forgot"); setError(null); }}>{t.forgot}</button>}
+          {mode === "forgot" && <button type="button" className="s-btn ghost sm" onClick={() => setMode("signin")}>{t.backToSignIn}</button>}
         </form>
       )}
     </Frame>
@@ -144,13 +156,15 @@ export function LoginPage({ admin = false }: { admin?: boolean }) {
 export function ResetPasswordPage() {
   const { session, loading } = useAuth();
   const navigate = useNavigate();
+  const { language } = usePortalLanguage();
+  const t = texts[language === "en" ? "en" : "nl"];
   const [pw, setPw] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (pw.length < 8) return setError("Kies minstens 8 tekens.");
+    if (pw.length < 8) return setError(t.passwordTooShort);
     setBusy(true);
     const { error: err } = await supabase.auth.updateUser({ password: pw });
     setBusy(false);
@@ -159,17 +173,17 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <Frame tag="Klantportaal">
-      {loading ? <p className="s-small s-muted">Even geduld…</p> : !session ? (
+    <Frame tag={t.portal} t={t} showLanguage>
+      {loading ? <p className="s-small s-muted">{t.wait}</p> : !session ? (
         <div className="s-stack">
-          <p className="s-small">Deze link is verlopen of al gebruikt.</p>
-          <Link className="s-btn" to="/portal/login">Vraag een nieuwe aan</Link>
+          <p className="s-small">{t.resetExpired}</p>
+          <Link className="s-btn" to="/portal/login">{t.resetAgain}</Link>
         </div>
       ) : (
         <form className="s-stack" onSubmit={submit}>
-          <b>Kies een nieuw wachtwoord</b>
-          <PasswordField label="Nieuw wachtwoord" autoComplete="new-password" value={pw} onChange={setPw} error={error} />
-          <Button type="submit" variant="primary" loading={busy}>Opslaan en inloggen</Button>
+          <b>{t.resetTitle}</b>
+          <PasswordField t={t} label={t.newPassword} autoComplete="new-password" value={pw} onChange={setPw} error={error} />
+          <Button type="submit" variant="primary" loading={busy}>{t.resetSave}</Button>
         </form>
       )}
     </Frame>

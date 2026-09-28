@@ -81,9 +81,23 @@ export function GalleryTab({ project: p }: { project: Project }) {
   });
 
   const shown = onlyFavorites ? p.gallery.filter((g) => favorites[g.id]) : p.gallery;
+  const publicCount = p.gallery.filter((g) => g.url.includes("/object/public/")).length;
+  const privatize = useAction({
+    fn: () => post<{ moved: number; failed: string[] }>(`/admin/project/${p.id}/gallery/privatize`),
+    invalidate: () => [keys.project(p.id), keys.projects],
+    success: (r) => (r.failed.length ? `${r.moved} verplaatst, ${r.failed.length} mislukt` : `${r.moved} foto's staan nu privé`),
+  });
 
   return (
     <div className="s-stack lg">
+      {publicCount > 0 && (
+        <div className="s-card" style={{ background: "var(--warn-soft)", borderColor: "transparent" }}>
+          <div className="s-card-body s-row between">
+            <span className="s-small">{publicCount} {publicCount === 1 ? "foto staat" : "foto's staan"} nog in de openbare opslag, van vóór de privé-galerijen. Iedereen met de link kan ze zien.</span>
+            <Button size="sm" loading={privatize.isPending} onClick={() => privatize.mutate()}>Privé maken</Button>
+          </div>
+        </div>
+      )}
       <div
         className={`s-dropzone ${over ? "over" : ""}`}
         onDragOver={(e) => { e.preventDefault(); setOver(true); }}
