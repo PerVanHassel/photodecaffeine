@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router";
 import { Root } from "./Root";
+import { AppError } from "./components/AppError";
 import { appRoutes } from "./mobile/routes";
 import { portalRoutes, PublicInvoice, studioRoutes } from "./studio/routes";
 import { Home } from "./pages/Home";
@@ -48,30 +49,37 @@ const LazyQuotePage = wrap(QuotePage);
 
 export const router = createBrowserRouter([
   {
-    path: "/",
-    Component: Root,
+    // Pathless wrapper so every page shares one error screen instead of the
+    // router's developer default.
+    ErrorBoundary: AppError,
     children: [
-      { index: true, Component: Home },
-      { path: "portfolio", Component: LazyPortfolioPage },
-      { path: "portfolio/:id", Component: LazyPortfolioDetailPage },
-      { path: "about", Component: LazyAboutPage },
-      { path: "services/automotive", Component: LazyAutomotivePage },
-      { path: "services/social-media", Component: LazySocialMediaPage },
+      {
+        path: "/",
+        Component: Root,
+        children: [
+          { index: true, Component: Home },
+          { path: "portfolio", Component: LazyPortfolioPage },
+          { path: "portfolio/:id", Component: LazyPortfolioDetailPage },
+          { path: "about", Component: LazyAboutPage },
+          { path: "services/automotive", Component: LazyAutomotivePage },
+          { path: "services/social-media", Component: LazySocialMediaPage },
+        ],
+      },
+      portalRoutes,
+      studioRoutes,
+      { path: "/demo/:slug", Component: LazyDemoPage },
+      // A price quote the client opens from the emailed link — the token in the
+      // query string is what stands in for a login.
+      { path: "/offerte/:id", Component: LazyQuotePage },
+      // The client's copy of an invoice, by token like the quote page.
+      { path: "/factuur/:id", Component: PublicInvoice },
+      // The mobile admin app. Its whole subtree is lazily loaded (see
+      // src/app/mobile/routes.tsx), so the public site never pays for it.
+      appRoutes,
+      {
+        path: "*",
+        Component: LazyNotFoundPage,
+      },
     ],
-  },
-  portalRoutes,
-  studioRoutes,
-  { path: "/demo/:slug", Component: LazyDemoPage },
-  // A price quote the client opens from the emailed link — the token in the
-  // query string is what stands in for a login.
-  { path: "/offerte/:id", Component: LazyQuotePage },
-  // The client's copy of an invoice, by token like the quote page.
-  { path: "/factuur/:id", Component: PublicInvoice },
-  // The mobile admin app. Its whole subtree is lazily loaded (see
-  // src/app/mobile/routes.tsx), so the public site never pays for it.
-  appRoutes,
-  {
-    path: "*",
-    Component: LazyNotFoundPage,
   },
 ]);
