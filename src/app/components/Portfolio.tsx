@@ -1,115 +1,20 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { Link } from "react-router";
 import { useLanguage } from "../context/LanguageContext";
-import { usePortfolio, type PortfolioArticle } from "../lib/siteData";
+import { usePortfolio, visibleArticles } from "../lib/siteData";
+import { PortfolioTile } from "./PortfolioTile";
 
-function PortfolioItem({ item, onClick }: { item: PortfolioArticle; onClick: () => void }) {
-  const [hovered, setHovered] = useState(false);
-
-  return (
-    <div
-      style={{
-        position: "relative",
-        overflow: "hidden",
-        cursor: "pointer",
-        height: "100%",
-      }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onClick={onClick}
-    >
-      {item.coverType === "video" ? (
-        <video
-          src={item.coverUrl}
-          autoPlay
-          loop
-          muted
-          playsInline
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            filter: "contrast(1.05) saturate(0.75)",
-            transition: "transform 0.6s ease, filter 0.4s ease",
-            transform: hovered ? "scale(1.04)" : "scale(1)",
-          }}
-        />
-      ) : (
-        <ImageWithFallback
-          src={item.coverUrl}
-          alt={item.title}
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            transition: "transform 0.6s ease",
-            transform: hovered ? "scale(1.04)" : "scale(1)",
-          }}
-        />
-      )}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          backgroundColor: "rgba(10, 5, 1, 0.78)",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "flex-end",
-          padding: "28px 28px",
-          transition: "opacity 0.35s ease",
-          opacity: hovered ? 1 : 0,
-        }}
-      >
-        <span
-          style={{
-            color: "rgba(255,251,224,0.4)",
-            fontSize: "9px",
-            fontWeight: 500,
-            letterSpacing: "0.28em",
-            textTransform: "uppercase",
-            fontFamily: "'Courier New', monospace",
-            marginBottom: "8px",
-            display: "block",
-          }}
-        >
-          {item.category}
-        </span>
-        <span
-          style={{
-            color: "#fffbe0",
-            fontSize: "20px",
-            fontWeight: 800,
-            letterSpacing: "0.05em",
-            textTransform: "uppercase",
-            fontFamily: "'Courier New', monospace",
-            display: "block",
-          }}
-        >
-          {item.title}
-        </span>
-        <div
-          style={{
-            marginTop: "16px",
-            width: "32px",
-            height: "1px",
-            backgroundColor: "#c8905a",
-          }}
-        />
-      </div>
-    </div>
-  );
-}
+const SLOTS = 6;
 
 export function Portfolio() {
-  const navigate = useNavigate();
   const { t } = useLanguage();
   const portfolio = usePortfolio();
   const articles = portfolio.data ?? [];
   const loading = portfolio.data === undefined && !portfolio.error;
 
-  const featuredArticles = articles.filter(a => a.featured);
-  const displayItems = featuredArticles.slice(0, 6);
+  // Featured work first; the rest of the portfolio fills any open places, so
+  // the mosaic never shows an empty tile while there is work to show.
+  const visible = visibleArticles(articles) ?? [];
+  const displayItems = [...visible.filter((a) => a.featured), ...visible.filter((a) => !a.featured)].slice(0, SLOTS);
 
   if (loading) {
     return (
@@ -126,7 +31,7 @@ export function Portfolio() {
         }}
       >
         <div style={{ color: "rgba(255,251,224,0.3)", fontSize: "12px", letterSpacing: "0.2em" }}>
-          Loading portfolio...
+          {t.portfolio.loading}
         </div>
       </section>
     );
@@ -158,7 +63,7 @@ export function Portfolio() {
               textTransform: "uppercase",
             }}
           >
-            No portfolio work available yet
+            {t.portfolio.empty}
           </span>
         </div>
       </section>
@@ -221,6 +126,7 @@ export function Portfolio() {
             </h2>
           </div>
           <p
+            className="pdc-hover-hint"
             style={{
               color: "rgba(255,251,224,0.35)",
               fontSize: "12px",
@@ -252,28 +158,19 @@ export function Portfolio() {
             }}
           >
             {displayItems[0] && (
-              <PortfolioItem
-                item={displayItems[0]}
-                onClick={() => navigate(`/portfolio/${displayItems[0].id}`)}
-              />
+              <PortfolioTile item={displayItems[0]} layout="fill" />
             )}
           </div>
 
           <div style={{ gridColumn: "2", gridRow: "1", overflow: "hidden" }}>
             {displayItems[1] && (
-              <PortfolioItem
-                item={displayItems[1]}
-                onClick={() => navigate(`/portfolio/${displayItems[1].id}`)}
-              />
+              <PortfolioTile item={displayItems[1]} layout="fill" />
             )}
           </div>
 
           <div style={{ gridColumn: "2", gridRow: "2", overflow: "hidden" }}>
             {displayItems[2] && (
-              <PortfolioItem
-                item={displayItems[2]}
-                onClick={() => navigate(`/portfolio/${displayItems[2].id}`)}
-              />
+              <PortfolioTile item={displayItems[2]} layout="fill" />
             )}
           </div>
 
@@ -285,10 +182,7 @@ export function Portfolio() {
             }}
           >
             {displayItems[3] && (
-              <PortfolioItem
-                item={displayItems[3]}
-                onClick={() => navigate(`/portfolio/${displayItems[3].id}`)}
-              />
+              <PortfolioTile item={displayItems[3]} layout="fill" />
             )}
           </div>
         </div>
@@ -303,52 +197,24 @@ export function Portfolio() {
         >
           <div style={{ overflow: "hidden", height: "280px" }}>
             {displayItems[4] && (
-              <PortfolioItem
-                item={displayItems[4]}
-                onClick={() => navigate(`/portfolio/${displayItems[4].id}`)}
-              />
+              <PortfolioTile item={displayItems[4]} layout="fill" />
             )}
           </div>
           <div style={{ overflow: "hidden", height: "280px" }}>
             {displayItems[5] && (
-              <PortfolioItem
-                item={displayItems[5]}
-                onClick={() => navigate(`/portfolio/${displayItems[5].id}`)}
-              />
+              <PortfolioTile item={displayItems[5]} layout="fill" />
             )}
           </div>
         </div>
 
         <div style={{ textAlign: "center", marginTop: "64px" }}>
-          <button
-            onClick={() => {
-              navigate("/portfolio");
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            style={{
-              backgroundColor: "transparent",
-              color: "rgba(255,251,224,0.6)",
-              border: "1px solid rgba(255,251,224,0.15)",
-              padding: "16px 48px",
-              fontSize: "10px",
-              fontWeight: 600,
-              letterSpacing: "0.25em",
-              textTransform: "uppercase",
-              cursor: "pointer",
-              fontFamily: "'Inter', sans-serif",
-              transition: "all 0.25s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = "rgba(255,251,224,0.4)";
-              e.currentTarget.style.color = "#fffbe0";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = "rgba(255,251,224,0.15)";
-              e.currentTarget.style.color = "rgba(255,251,224,0.6)";
-            }}
+          <Link
+            to="/portfolio"
+            className="pdc-btn pdc-btn-quiet"
+            style={{ padding: "16px 48px", fontSize: "10px", fontWeight: 600, letterSpacing: "0.25em" }}
           >
             {t.portfolio.viewFull}
-          </button>
+          </Link>
         </div>
       </div>
     </section>

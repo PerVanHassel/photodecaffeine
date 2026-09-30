@@ -1,114 +1,18 @@
 import { Helmet } from "react-helmet-async";
-import { useState } from "react";
-import { useNavigate } from "react-router";
-import { ImageWithFallback } from "../components/figma/ImageWithFallback";
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router";
+import { PortfolioTile } from "../components/PortfolioTile";
 import { useLanguage } from "../context/LanguageContext";
-import { usePortfolio, visibleArticles, type PortfolioArticle } from "../lib/siteData";
+import { usePortfolio, visibleArticles } from "../lib/siteData";
 
-function PortfolioCard({ item, onClick }: { item: PortfolioArticle; onClick: () => void }) {
-  const [hovered, setHovered] = useState(false);
-
-  return (
-    <div
-      style={{
-        position: "relative",
-        overflow: "hidden",
-        cursor: "pointer",
-        breakInside: "avoid",
-        marginBottom: "3px",
-      }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onClick={onClick}
-    >
-      {item.coverType === "video" ? (
-        <video
-          src={item.coverUrl}
-          autoPlay
-          loop
-          muted
-          playsInline
-          style={{
-            width: "100%",
-            height: "auto",
-            display: "block",
-            transition: "transform 0.6s ease",
-            transform: hovered ? "scale(1.04)" : "scale(1)",
-          }}
-        />
-      ) : (
-        <ImageWithFallback
-          src={item.coverUrl}
-          alt={item.title}
-          style={{
-            width: "100%",
-            height: "auto",
-            display: "block",
-            transition: "transform 0.6s ease",
-            transform: hovered ? "scale(1.04)" : "scale(1)",
-          }}
-        />
-      )}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          backgroundColor: "rgba(10, 5, 1, 0.78)",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "flex-end",
-          padding: "28px",
-          transition: "opacity 0.35s ease",
-          opacity: hovered ? 1 : 0,
-        }}
-      >
-        <span
-          style={{
-            color: "rgba(255,251,224,0.4)",
-            fontSize: "9px",
-            fontWeight: 500,
-            letterSpacing: "0.28em",
-            textTransform: "uppercase",
-            fontFamily: "'Courier New', monospace",
-            marginBottom: "8px",
-            display: "block",
-          }}
-        >
-          {item.category}
-        </span>
-        <span
-          style={{
-            color: "#fffbe0",
-            fontSize: "20px",
-            fontWeight: 800,
-            letterSpacing: "0.05em",
-            textTransform: "uppercase",
-            fontFamily: "'Courier New', monospace",
-            display: "block",
-          }}
-        >
-          {item.title}
-        </span>
-        <div
-          style={{
-            marginTop: "16px",
-            width: "32px",
-            height: "1px",
-            backgroundColor: "#c8905a",
-          }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function SkeletonGrid() {
+function SkeletonGrid({ label }: { label: string }) {
   const heights = [320, 480, 260, 400, 340, 560, 300, 420, 380];
   return (
-    <div className="portfolio-masonry" style={{ columnCount: 3, columnGap: "3px" }}>
+    <div className="portfolio-masonry" role="status" aria-label={label} style={{ columnCount: 3, columnGap: "3px" }}>
       {heights.map((h, i) => (
         <div
           key={i}
+          className="pdc-skeleton"
           style={{
             width: "100%",
             height: `${h}px`,
@@ -124,22 +28,31 @@ function SkeletonGrid() {
   );
 }
 
+const ALL = "All";
+
 export function PortfolioPage() {
-  const navigate = useNavigate();
   const { t } = useLanguage();
   const portfolio = usePortfolio();
   const articles = visibleArticles(portfolio.data) ?? [];
   const loading = portfolio.data === undefined && !portfolio.error;
   const error = portfolio.error;
-  const [activeCategory, setActiveCategory] = useState("All");
+  // The chosen category lives in the address (?categorie=…), so it survives a
+  // reload and can be shared. The prerendered HTML shows every category, so
+  // the address is read only after hydration.
+  const [params, setParams] = useSearchParams();
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+  const activeCategory = (hydrated && params.get("categorie")) || ALL;
+  const setActiveCategory = (cat: string) =>
+    setParams(cat === ALL ? {} : { categorie: cat }, { replace: true, preventScrollReset: true });
 
   const categories = [
-    "All",
+    ALL,
     ...Array.from(new Set(articles.map((a) => a.category).filter(Boolean))).sort(),
   ];
 
   const filtered =
-    activeCategory === "All"
+    activeCategory === ALL
       ? articles
       : articles.filter((a) => a.category === activeCategory);
 
@@ -180,30 +93,9 @@ export function PortfolioPage() {
         }}
       >
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-          <button
-            onClick={() => navigate("/")}
-            style={{
-              background: "none",
-              border: "none",
-              color: "rgba(255,251,224,0.35)",
-              fontSize: "10px",
-              fontWeight: 500,
-              letterSpacing: "0.22em",
-              textTransform: "uppercase",
-              cursor: "pointer",
-              fontFamily: "'Inter', sans-serif",
-              padding: 0,
-              marginBottom: "40px",
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              transition: "color 0.2s ease",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,251,224,0.7)")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,251,224,0.35)")}
-          >
+          <Link to="/" className="pdc-back-link">
             {t.portfolioPage.backToHome}
-          </button>
+          </Link>
 
           <div
             style={{
@@ -293,31 +185,12 @@ export function PortfolioPage() {
             return (
               <button
                 key={cat}
+                type="button"
+                className="pdc-filter"
+                aria-pressed={isActive}
                 onClick={() => setActiveCategory(cat)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  borderBottom: isActive ? "2px solid #c8905a" : "2px solid transparent",
-                  color: isActive ? "#fffbe0" : "rgba(255,251,224,0.35)",
-                  fontSize: "10px",
-                  fontWeight: isActive ? 600 : 400,
-                  letterSpacing: "0.2em",
-                  textTransform: "uppercase",
-                  cursor: "pointer",
-                  padding: "20px 24px",
-                  fontFamily: "'Inter', sans-serif",
-                  transition: "all 0.2s ease",
-                  whiteSpace: "nowrap",
-                  flexShrink: 0,
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) e.currentTarget.style.color = "rgba(255,251,224,0.7)";
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) e.currentTarget.style.color = "rgba(255,251,224,0.35)";
-                }}
               >
-                {cat}
+                {(t.portfolioPage.categories as Record<string, string>)[cat] ?? cat}
               </button>
             );
           })}
@@ -332,7 +205,7 @@ export function PortfolioPage() {
         }}
       >
         {loading ? (
-          <SkeletonGrid />
+          <SkeletonGrid label={t.portfolio.loading} />
         ) : error ? (
           <div
             style={{
@@ -348,22 +221,10 @@ export function PortfolioPage() {
               {t.portfolioPage.loadError}
             </span>
             <button
+              type="button"
               onClick={portfolio.retry}
-              style={{
-                background: "none",
-                border: "1px solid rgba(255,251,224,0.15)",
-                color: "rgba(255,251,224,0.55)",
-                fontSize: "10px",
-                fontWeight: 600,
-                letterSpacing: "0.2em",
-                textTransform: "uppercase",
-                cursor: "pointer",
-                padding: "12px 28px",
-                fontFamily: "'Inter', sans-serif",
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(255,251,224,0.4)"; e.currentTarget.style.color = "#fffbe0"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,251,224,0.15)"; e.currentTarget.style.color = "rgba(255,251,224,0.55)"; }}
+              className="pdc-btn pdc-btn-quiet"
+              style={{ padding: "12px 28px", fontSize: "10px", fontWeight: 600, letterSpacing: "0.2em" }}
             >
               {t.portfolioPage.retry}
             </button>
@@ -391,11 +252,7 @@ export function PortfolioPage() {
           >
 
             {filtered.map((item) => (
-              <PortfolioCard
-                key={item.id}
-                item={item}
-                onClick={() => navigate(`/portfolio/${item.id}`)}
-              />
+              <PortfolioTile key={item.id} item={item} layout="masonry" />
             ))}
           </div>
         )}
@@ -410,7 +267,7 @@ export function PortfolioPage() {
             alignItems: "center",
           }}
         >
-          {activeCategory !== "All" && (
+          {activeCategory !== ALL && (
             <span
               style={{
                 color: "rgba(255,251,224,0.2)",
@@ -423,32 +280,13 @@ export function PortfolioPage() {
               {t.portfolioPage.showingOf(filtered.length, articles.length)}
             </span>
           )}
-          <button
-            onClick={() => navigate("/", { state: { scrollTo: "contact" } })}
-            style={{
-              backgroundColor: "transparent",
-              color: "#fffbe0",
-              border: "1px solid rgba(255,251,224,0.2)",
-              padding: "14px 36px",
-              fontSize: "10px",
-              fontWeight: 600,
-              letterSpacing: "0.22em",
-              textTransform: "uppercase",
-              cursor: "pointer",
-              fontFamily: "'Inter', sans-serif",
-              transition: "all 0.25s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#fffbe0";
-              e.currentTarget.style.color = "#1a0c04";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "transparent";
-              e.currentTarget.style.color = "#fffbe0";
-            }}
+          <Link
+            to="/#contact"
+            className="pdc-btn pdc-btn-invert"
+            style={{ padding: "14px 36px", fontSize: "10px", fontWeight: 600, letterSpacing: "0.22em" }}
           >
             {t.portfolioPage.bookShoot}
-          </button>
+          </Link>
         </div>
       </div>
     </div>

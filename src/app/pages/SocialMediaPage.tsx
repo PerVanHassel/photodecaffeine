@@ -4,7 +4,9 @@ import { useNavigate } from "react-router";
 import { portalFetch } from "../../lib/supabase";
 import { useAdTracking, getStoredAdRef } from "../hooks/useAdTracking";
 import { ArrowLeft } from "lucide-react";
-import heroImage from "@/imports/IMG_9694.jpg";
+import heroSmall from "@/assets/web/majd-800.webp";
+import heroImage from "@/assets/web/majd-1365.webp";
+import { HIGH_PRIORITY } from "../lib/images";
 
 const INCLUDED = [
   "Contentplanning afgestemd op jouw merk",
@@ -206,6 +208,11 @@ export function SocialMediaPage() {
       <div className="pdc-svc-hero" style={{ position: "relative", minHeight: "320px", overflow: "hidden" }}>
         <img
           src={heroImage}
+          srcSet={`${heroSmall} 800w, ${heroImage} 1365w`}
+          sizes="100vw"
+          width={1365}
+          height={2048}
+          {...HIGH_PRIORITY}
           alt="Social media contentproductie op locatie — PhotoDeCaffeine"
           style={{
             width: "100%",

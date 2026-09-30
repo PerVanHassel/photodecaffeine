@@ -289,3 +289,163 @@
 @media (max-width: 767px) {
   .pdc-desktop-only { display: none !important; }
 }
+
+/* ── Skip link, main landmark, section anchors ────────────────────────── */
+
+.pdc-skip-link {
+  position: absolute; left: 16px; top: 16px; z-index: 200;
+  transform: translateY(-200%);
+  background: #fffbe0; color: #1a0c04; padding: 12px 20px;
+  font: 600 12px/1 'Inter', sans-serif; letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none;
+}
+.pdc-skip-link:focus { transform: none; }
+/* Focus lands here from the skip link; the whole page needs no ring. */
+#main:focus, #main:focus-visible { outline: none; }
+/* Sections reached by a link sit below the fixed 72px menu, not under it. */
+#work, #portfolio, #about, #services, #reviews, #contact, #contact-form { scroll-margin-top: 72px; }
+
+/* ── Navigation ───────────────────────────────────────────────────────── */
+
+.pdc-nav-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: none; border: 0; padding: 0; cursor: pointer; text-decoration: none;
+  font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 500; line-height: 1.5;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(255,251,224,0.55);
+  transition: color 0.2s ease;
+}
+.pdc-nav-link:hover, .pdc-nav-link[aria-expanded="true"] { color: #fffbe0; }
+.pdc-nav-link[aria-current="page"], .pdc-nav-link.is-active { color: #fffbe0; font-weight: 600; }
+/* The client portal link is deliberately quieter, but still readable (5:1). */
+.pdc-nav-quiet { color: rgba(255,251,224,0.5); }
+.pdc-nav-quiet:hover { color: rgba(255,251,224,0.85); }
+
+.pdc-nav-sublink {
+  display: block; width: 100%; padding: 12px 24px; text-align: left; text-decoration: none;
+  font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 500; line-height: 1.5;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(255,251,224,0.6);
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+.pdc-nav-sublink:hover { color: #fffbe0; background-color: rgba(255,251,224,0.05); }
+.pdc-nav-sublink[aria-current="page"] { color: #fffbe0; font-weight: 600; }
+
+.pdc-nav-cta {
+  display: inline-block; padding: 10px 22px; text-align: center; text-decoration: none;
+  border: 1px solid rgba(255,251,224,0.3); background: none; color: #fffbe0;
+  font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600; line-height: 1.5;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+.pdc-nav-cta:hover { background-color: #fffbe0; color: #1a0c04; }
+.pdc-nav-cta-block { padding: 13px 22px; width: 100%; align-self: flex-start; }
+
+.pdc-nav-mobile {
+  background: none; border: 0; padding: 0; cursor: pointer; text-align: left; text-decoration: none;
+  font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; line-height: 1.5;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(255,251,224,0.7);
+}
+.pdc-nav-mobile.pdc-nav-quiet { color: rgba(255,251,224,0.55); }
+.pdc-nav-mobile-sub { font-size: 12px; color: rgba(255,251,224,0.55); }
+.pdc-nav-mobile[aria-current="page"] { color: #fffbe0; }
+
+.pdc-nav-lang {
+  background: none; border: 0; cursor: pointer; padding: 7px 11px;
+  font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 400; line-height: 1;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: rgba(255,251,224,0.55);
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+.pdc-nav-lang:hover { color: rgba(255,251,224,0.85); }
+.pdc-nav-lang[aria-pressed="true"] { background: rgba(255,251,224,0.1); color: #fffbe0; font-weight: 700; }
+
+/* ── Public buttons and links that look like buttons ──────────────────── */
+
+.pdc-btn {
+  display: inline-block; text-align: center; text-decoration: none; cursor: pointer;
+  font-family: 'Inter', sans-serif; text-transform: uppercase; line-height: 1.5;
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+.pdc-btn-solid { background-color: #fffbe0; color: #1a0c04; border: none; }
+.pdc-btn-solid:hover { background-color: #c8905a; color: #fffbe0; }
+.pdc-btn-outline { background-color: transparent; color: rgba(255,251,224,0.7); border: 1px solid rgba(255,251,224,0.2); }
+.pdc-btn-outline:hover { border-color: rgba(255,251,224,0.5); color: #fffbe0; }
+.pdc-btn-quiet { background-color: transparent; color: rgba(255,251,224,0.6); border: 1px solid rgba(255,251,224,0.15); }
+.pdc-btn-quiet:hover { border-color: rgba(255,251,224,0.4); color: #fffbe0; }
+
+/* ── Portfolio tiles (home mosaic and portfolio page) ─────────────────── */
+
+.pdc-tile { position: relative; display: block; overflow: hidden; color: inherit; text-decoration: none; }
+.pdc-tile--fill { height: 100%; }
+.pdc-tile--masonry { break-inside: avoid; margin-bottom: 3px; }
+.pdc-tile img, .pdc-tile video { display: block; width: 100%; transition: transform 0.6s ease; }
+.pdc-tile--fill img, .pdc-tile--fill video { height: 100%; object-fit: cover; }
+.pdc-tile--masonry img, .pdc-tile--masonry video { height: auto; }
+.pdc-tile--fill video { filter: contrast(1.05) saturate(0.75); }
+.pdc-tile:hover img, .pdc-tile:hover video,
+.pdc-tile:focus-visible img, .pdc-tile:focus-visible video { transform: scale(1.04); }
+.pdc-tile-caption {
+  position: absolute; inset: 0; padding: 28px;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  background-color: rgba(10,5,1,0.78);
+  opacity: 0; transition: opacity 0.35s ease;
+}
+.pdc-tile:hover .pdc-tile-caption, .pdc-tile:focus-visible .pdc-tile-caption { opacity: 1; }
+.pdc-tile-category {
+  display: block; margin-bottom: 8px; color: rgba(255,251,224,0.6);
+  font: 500 9px/1.5 'Courier New', monospace; letter-spacing: 0.28em; text-transform: uppercase;
+}
+.pdc-tile-title {
+  display: block; color: #fffbe0;
+  font: 800 20px/1.5 'Courier New', monospace; letter-spacing: 0.05em; text-transform: uppercase;
+}
+.pdc-tile-rule { display: block; margin-top: 16px; width: 32px; height: 1px; background-color: #c8905a; }
+
+/* Touch screens have no hover: keep each title readable on a soft shade. */
+@media (hover: none) {
+  .pdc-tile-caption {
+    opacity: 1; padding: 20px;
+    background: linear-gradient(to top, rgba(10,5,1,0.85) 0%, rgba(10,5,1,0.35) 45%, rgba(10,5,1,0) 70%);
+  }
+  .pdc-hover-hint { display: none; }
+}
+.pdc-btn-invert { background-color: transparent; color: #fffbe0; border: 1px solid rgba(255,251,224,0.2); }
+.pdc-btn-invert:hover { background-color: #fffbe0; color: #1a0c04; }
+
+/* "← Back" links at the top of the inner pages. */
+.pdc-back-link {
+  display: flex; align-items: center; gap: 10px; width: fit-content; margin-bottom: 40px;
+  font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 500; line-height: 1.5;
+  letter-spacing: 0.22em; text-transform: uppercase; text-decoration: none;
+  color: rgba(255,251,224,0.55); transition: color 0.2s ease;
+}
+.pdc-back-link:hover { color: #fffbe0; }
+
+/* Portfolio page category filter. */
+.pdc-filter {
+  background: none; border: 0; border-bottom: 2px solid transparent; cursor: pointer;
+  padding: 20px 24px; white-space: nowrap; flex-shrink: 0;
+  font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 400; line-height: 1.5;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(255,251,224,0.55); transition: color 0.2s ease, border-color 0.2s ease;
+}
+.pdc-filter:hover { color: rgba(255,251,224,0.85); }
+.pdc-filter[aria-pressed="true"] { color: #fffbe0; font-weight: 600; border-bottom-color: #c8905a; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pdc-skeleton { animation: none !important; }
+  .pdc-tile img, .pdc-tile video, .pdc-tile-caption { transition: none; }
+}
+
+/* A link whose click area covers its whole card (the card is position: relative). */
+.pdc-stretched-link { color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 7px; }
+.pdc-stretched-link::after { content: ""; position: absolute; inset: 0; }
+
+/* Small uppercase text links ("Meer over ons →"). */
+.pdc-text-link {
+  font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 500; line-height: 1.5;
+  letter-spacing: 0.22em; text-transform: uppercase; text-decoration: none;
+  color: rgba(255,251,224,0.55); transition: color 0.2s ease;
+}
+.pdc-text-link:hover { color: #fffbe0; }

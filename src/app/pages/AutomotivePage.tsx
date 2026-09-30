@@ -6,7 +6,9 @@ import { useLanguage } from "../context/LanguageContext";
 import { AUTOMOTIVE_GALLERY_TITLE, usePortfolio } from "../lib/siteData";
 import { useAdTracking, getStoredAdRef } from "../hooks/useAdTracking";
 import { ArrowLeft } from "lucide-react";
-import heroImage from "@/imports/_DSC0893.jpg";
+import heroSmall from "@/assets/web/automotive-hero-1000.webp";
+import heroImage from "@/assets/web/automotive-hero-1920.webp";
+import { HIGH_PRIORITY } from "../lib/images";
 
 export function AutomotivePage() {
   useAdTracking("/services/automotive");
@@ -211,6 +213,11 @@ export function AutomotivePage() {
       <div className="pdc-svc-hero" style={{ position: "relative", minHeight: "320px", overflow: "hidden" }}>
         <img
           src={heroImage}
+          srcSet={`${heroSmall} 1000w, ${heroImage} 1920w`}
+          sizes="100vw"
+          width={1920}
+          height={2891}
+          {...HIGH_PRIORITY}
           alt="Automotive fotograaf — buitenshoot sportwagen"
           style={{
             width: "100%",

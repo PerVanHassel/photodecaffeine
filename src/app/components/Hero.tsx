@@ -1,8 +1,9 @@
-import image__MAJ2869_1_ from '@/imports/_MAJ2869_1_.jpeg'
+import image__MAJ2869_1_ from "@/assets/web/hero-frame-800.webp";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import { useNavigate } from "react-router";
+import { Link } from "react-router";
 import { useLanguage } from "../context/LanguageContext";
 import { useSiteSettings } from "../lib/siteData";
+import { HIGH_PRIORITY } from "../lib/images";
 
 const DEFAULT_HERO_BG =
   "https://images.unsplash.com/photo-1613158556069-e7d8eae76214?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkYXJrJTIwY2luZW1hdGljJTIwZXNwcmVzc28lMjBjb2ZmZWUlMjBzdHVkaW8lMjBtb29keXxlbnwxfHx8fDE3NzY1OTY2NTB8MA&ixlib=rb-4.1.0&q=80&w=1080";
@@ -10,19 +11,9 @@ const DEFAULT_HERO_BG =
 // Phone and desktop layouts live in src/styles/site.css (.pdc-hero-*), so the
 // prerendered HTML is already right for either screen before any script runs.
 
-/** The hero photo is the page's largest paint. React 18 does not know the
- *  camelCase prop yet, so the plain attribute is passed through. */
-export const HIGH_PRIORITY = { fetchpriority: "high" } as {};
-
 export function Hero() {
-  const navigate = useNavigate();
   const { t } = useLanguage();
   const { data: settings } = useSiteSettings();
-
-  const scrollToPortfolio = () => {
-    navigate("/portfolio");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
 
   const heroImageUrl = settings?.heroImageUrl || DEFAULT_HERO_BG;
   const heroImageMobileUrl = settings?.heroImageMobileUrl || heroImageUrl;
@@ -127,35 +118,20 @@ export function Hero() {
 
             {/* CTAs */}
             <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
-              <button
-                className="pdc-hero-cta"
-                onClick={scrollToPortfolio}
-                style={{
-                  backgroundColor: "#fffbe0", color: "#1a0c04", border: "none",
-                  fontSize: "11px", fontWeight: 700, letterSpacing: "0.18em",
-                  textTransform: "uppercase", cursor: "pointer",
-                  fontFamily: "'Inter', sans-serif", transition: "all 0.25s ease",
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#c8905a"; e.currentTarget.style.color = "#fffbe0"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#fffbe0"; e.currentTarget.style.color = "#1a0c04"; }}
+              <Link
+                to="/portfolio"
+                className="pdc-btn pdc-btn-solid pdc-hero-cta"
+                style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.18em" }}
               >
                 {t.hero.viewPortfolio}
-              </button>
-              <button
-                className="pdc-hero-cta"
-                onClick={() => { const el = document.getElementById("contact"); if (el) el.scrollIntoView({ behavior: "smooth" }); }}
-                style={{
-                  backgroundColor: "transparent", color: "rgba(255,251,224,0.7)",
-                  border: "1px solid rgba(255,251,224,0.2)",
-                  fontSize: "11px", fontWeight: 600, letterSpacing: "0.18em",
-                  textTransform: "uppercase", cursor: "pointer",
-                  fontFamily: "'Inter', sans-serif", transition: "all 0.25s ease",
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(255,251,224,0.5)"; e.currentTarget.style.color = "#fffbe0"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,251,224,0.2)"; e.currentTarget.style.color = "rgba(255,251,224,0.7)"; }}
+              </Link>
+              <Link
+                to="/#contact"
+                className="pdc-btn pdc-btn-outline pdc-hero-cta"
+                style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.18em" }}
               >
                 {t.hero.bookShoot}
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -176,7 +152,7 @@ export function Hero() {
               </div>
               <ImageWithFallback
                 src={frameImageUrl}
-                alt="Recent shoot showcase"
+                alt={t.hero.frameAlt}
                 loading="lazy"
                 style={{
                   width: "360px",
@@ -191,7 +167,7 @@ export function Hero() {
                   <div key={i} style={{ flex: 1, height: "6px", backgroundColor: "rgba(255,251,224,0.12)", border: "1px solid rgba(255,251,224,0.06)" }} />
                 ))}
               </div>
-              <div style={{ position: "absolute", bottom: "22px", left: "16px", right: "16px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+              <div aria-hidden="true" style={{ position: "absolute", bottom: "22px", left: "16px", right: "16px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
                 <span style={{ color: "rgba(255,251,224,0.25)", fontSize: "8px", fontWeight: 500, letterSpacing: "0.25em", textTransform: "uppercase", fontFamily: "'Courier New', monospace" }}>PDC — 2026</span>
                 <span style={{ color: "rgba(255,251,224,0.25)", fontSize: "8px", fontFamily: "'Courier New', monospace", letterSpacing: "0.15em" }}>35mm / ƒ1.4</span>
               </div>

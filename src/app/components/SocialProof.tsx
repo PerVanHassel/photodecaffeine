@@ -1,11 +1,10 @@
-import { useNavigate } from "react-router";
+import { Link } from "react-router";
 import { Star, ArrowRight } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 import { useReviews } from "../lib/siteData";
 
 export function SocialProof() {
-  const { t, language } = useLanguage();
-  const navigate = useNavigate();
+  const { t } = useLanguage();
   // Only reviews an admin has published come back from the public endpoint.
   const reviews = useReviews().data ?? [];
 
@@ -13,7 +12,6 @@ export function SocialProof() {
   // section stays out of the page entirely rather than rendering an empty shell.
   if (reviews.length === 0) return null;
 
-  const viewWork = language === "nl" ? "Bekijk het werk" : "View the work";
   // Cards stretch to equal height and bottom-align their footer, so a footer
   // without the "view the work" row starts lower and its divider line breaks
   // the row. Reserve the row on every card as soon as any review is linked.
@@ -68,12 +66,12 @@ export function SocialProof() {
               <article
                 key={review.id}
                 className="pdc-review"
-                onClick={linked ? () => navigate(`/portfolio/${review.portfolioArticleId}`) : undefined}
                 style={{
+                  // The "view the work" link stretches over the whole card.
+                  position: "relative",
                   border: "1px solid rgba(255,251,224,0.08)",
                   display: "flex",
                   flexDirection: "column",
-                  cursor: linked ? "pointer" : "default",
                   transition: "border-color 0.25s ease, background-color 0.25s ease",
                 }}
                 onMouseEnter={(e) => {
@@ -88,8 +86,9 @@ export function SocialProof() {
                 }}
               >
                 <div
+                  role="img"
+                  aria-label={t.socialProof.rating(review.rating)}
                   style={{ display: "flex", gap: "3px", marginBottom: "22px" }}
-                  aria-label={`${review.rating}/5`}
                 >
                   {[1, 2, 3, 4, 5].map((n) => (
                     <Star
@@ -98,6 +97,7 @@ export function SocialProof() {
                       color="#c8905a"
                       fill={n <= review.rating ? "#c8905a" : "none"}
                       strokeWidth={2}
+                      aria-hidden="true"
                     />
                   ))}
                 </div>
@@ -147,9 +147,9 @@ export function SocialProof() {
                       }}
                     >
                       {linked && (
-                        <>
-                          {viewWork} <ArrowRight size={12} />
-                        </>
+                        <Link to={`/portfolio/${review.portfolioArticleId}`} className="pdc-stretched-link">
+                          {t.socialProof.viewWork} <ArrowRight size={12} aria-hidden="true" />
+                        </Link>
                       )}
                     </div>
                   )}

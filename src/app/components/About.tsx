@@ -1,22 +1,15 @@
 import { useLanguage } from "../context/LanguageContext";
-import image_IMG_0114_TIF from "@/imports/IMG_0114_TIF.jpg";
-import IMG_9694 from "@/imports/IMG_9694.jpg";
-import image_IMG_0115_TIF from "@/imports/IMG_0115_TIF.jpg";
+import image_IMG_0114_TIF from "@/assets/web/per-1600.webp";
+import IMG_9694 from "@/assets/web/majd-800.webp";
+import image_IMG_0115_TIF from "@/assets/web/ryan-1000.webp";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import { useNavigate } from "react-router";
-
-const STUDIO =
-  "https://images.unsplash.com/photo-1761701390293-27a1d3fa9df5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmaWxtJTIwY2FtZXJhJTIwcGhvdG9ncmFwaHklMjBzdHVkaW8lMjBkYXJrJTIwZHJhbWF0aWN8ZW58MXx8fHwxNzc2NTk2NjU3fDA&ixlib=rb-4.1.0&q=80&w=1080";
-
-const MAJD_PORTRAIT =
-  "https://images.unsplash.com/photo-1621024994278-e409544f4085?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwzfHxwcm9mZXNzaW9uYWwlMjBwaG90b2dyYXBoZXIlMjBwb3J0cmFpdCUyMHN0dWRpbyUyMGRhcmslMjBkcmFtYXRpYyUyMGNpbmVtYXRpY3xlbnwxfHx8fDE3ODA1MjAyNTh8MA&ixlib=rb-4.1.0&q=80&w=1080";
+import { Link } from "react-router";
 
 const RYAN_PORTRAIT =
   "https://images.unsplash.com/photo-1532170579297-281918c8ae72?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw4fHxwcm9mZXNzaW9uYWwlMjBwaG90b2dyYXBoZXIlMjBwb3J0cmFpdCUyMHN0dWRpbyUyMGRhcmslMjBkcmFtYXRpYyUyMGNpbmVtYXRpY3xlbnwxfHx8fDE3ODA1MjAyNTh8MA&ixlib=rb-4.1.0&q=80&w=1080";
 
 export function About() {
   const { t } = useLanguage();
-  const navigate = useNavigate();
 
   return (
     <section
@@ -406,35 +399,9 @@ export function About() {
 
           {/* CTA */}
           <div style={{ textAlign: "center" }}>
-            <button
-              onClick={() => {
-                navigate("/about");
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }}
-              style={{
-                background: "none",
-                border: "none",
-                color: "rgba(255,251,224,0.35)",
-                fontSize: "10px",
-                fontWeight: 500,
-                letterSpacing: "0.22em",
-                textTransform: "uppercase",
-                cursor: "pointer",
-                padding: 0,
-                fontFamily: "'Inter', sans-serif",
-                transition: "color 0.2s ease",
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.color =
-                  "rgba(255,251,224,0.7)")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.color =
-                  "rgba(255,251,224,0.35)")
-              }
-            >
+            <Link to="/about" className="pdc-text-link">
               {t.about.learnMore}
-            </button>
+            </Link>
           </div>
         </div>
       </div>

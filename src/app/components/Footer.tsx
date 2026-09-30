@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { Instagram, Linkedin, X, MapPin, Mail, Phone } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useLanguage } from "../context/LanguageContext";
-import pdcLogo from "@/imports/PDClogo2.0-12-1.png";
+import pdcLogo from "@/assets/web/pdc-logo-light.webp";
 
 function TikTokIcon({ className }: { className?: string }) {
   return (

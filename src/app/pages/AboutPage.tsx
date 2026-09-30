@@ -1,15 +1,12 @@
 import { Helmet } from "react-helmet-async";
 import { useState, useRef } from "react";
-import image_IMG_0114_TIF from "@/imports/IMG_0114_TIF.jpg";
-import image_IMG_9694 from "@/imports/IMG_9694.jpg";
-import image_IMG_0115_TIF from "@/imports/IMG_0115_TIF.jpg";
+import image_IMG_0114_TIF from "@/assets/web/per-1600.webp";
+import image_IMG_9694 from "@/assets/web/majd-800.webp";
+import image_IMG_0115_TIF from "@/assets/web/ryan-1000.webp";
 import { useNavigate } from "react-router";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { useLanguage } from "../context/LanguageContext";
-import DARKROOM from "@/imports/webContent/shared124.jpeg";
-
-const STUDIO_IMG =
-  "https://images.unsplash.com/photo-1761701390293-27a1d3fa9df5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmaWxtJTIwY2FtZXJhJTIwcGhvdG9ncmFwaHklMjBzdHVkaW8lMjBkYXJrJTIwZHJhbWF0aWN8ZW58MXx8fHwxNzc2NTk2NjU3fDA&ixlib=rb-4.1.0&q=80&w=1080";
+import DARKROOM from "@/assets/web/darkroom-1200.webp";
 
 const BEHIND_CAMERA =
   "https://images.unsplash.com/photo-1604272986062-67ef7145f0ef?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwaG90b2dyYXBoZXIlMjBiZWhpbmQlMjBjYW1lcmElMjBjaW5lbWF0aWMlMjBzdHVkaW8lMjBkYXJrfGVufDF8fHx8MTc3NzU4MjEyM3ww&ixlib=rb-4.1.0&q=80&w=1080";

@@ -9,8 +9,18 @@ export const translations = {
       portfolio: "Portfolio",
       about: "About",
       bookShoot: "Book a Shoot",
+      automotive: "Automotive",
+      socialMedia: "Social Media Management",
+      clientPortal: "Client Portal",
+      home: "PhotoDeCaffeine home",
+      openMenu: "Open menu",
+      closeMenu: "Close menu",
+      language: "Language",
+      skipToContent: "Skip to content",
+      label: "Main",
     },
     hero: {
+      frameAlt: "A recent PhotoDeCaffeine shoot",
       label: "Visual Content Studio — Est. 2025",
       headline1: "Where",
       headline2: "Your",
@@ -63,6 +73,8 @@ export const translations = {
       titleLine2: "Portfolio.",
       hoverReveal: "Hover to reveal",
       viewFull: "View Full Portfolio →",
+      loading: "Loading portfolio…",
+      empty: "No work to show yet",
     },
     about: {
       label: "The Founders",
@@ -190,6 +202,8 @@ export const translations = {
       ],
     },
     socialProof: {
+      viewWork: "View the work",
+      rating: (stars: number) => `${stars} out of 5 stars`,
       label: "Client Words",
       testimonialsLabel: "Testimonials",
       testimonials: [
@@ -433,8 +447,18 @@ export const translations = {
       portfolio: "Portfolio",
       about: "Over ons",
       bookShoot: "Boek een Shoot",
+      automotive: "Automotive",
+      socialMedia: "Social Media Beheer",
+      clientPortal: "Klantportaal",
+      home: "PhotoDeCaffeine, naar home",
+      openMenu: "Menu openen",
+      closeMenu: "Menu sluiten",
+      language: "Taal",
+      skipToContent: "Naar de inhoud",
+      label: "Hoofdmenu",
     },
     hero: {
+      frameAlt: "Recente shoot van PhotoDeCaffeine",
       label: "Visuele Content Studio — Opg. 2025",
       headline1: "Waar",
       headline2: "Jouw",
@@ -489,6 +513,8 @@ export const translations = {
       titleLine2: "Portfolio.",
       hoverReveal: "Hover om te onthullen",
       viewFull: "Bekijk Volledig Portfolio →",
+      loading: "Portfolio laden…",
+      empty: "Nog geen werk om te laten zien",
     },
     about: {
       label: "De Oprichters",
@@ -615,6 +641,8 @@ export const translations = {
       ],
     },
     socialProof: {
+      viewWork: "Bekijk het werk",
+      rating: (stars: number) => `${stars} van de 5 sterren`,
       label: "Klantwoorden",
       testimonialsLabel: "Reviews",
       testimonials: [
