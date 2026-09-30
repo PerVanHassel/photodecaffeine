@@ -1,10 +1,9 @@
-import { RouterProvider } from "react-router";
+import { RouterProvider, type createBrowserRouter } from "react-router";
 import { HelmetProvider } from "react-helmet-async";
-import { router } from "./routes";
 import { LanguageProvider } from "./context/LanguageContext";
 import { AuthProvider } from "./context/AuthContext";
 
-export default function App() {
+export default function App({ router }: { router: ReturnType<typeof createBrowserRouter> }) {
   return (
     <HelmetProvider>
       <AuthProvider>

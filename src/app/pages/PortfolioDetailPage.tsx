@@ -2,35 +2,19 @@ import { Helmet } from "react-helmet-async";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
-import { projectId, publicAnonKey } from "/utils/supabase/info";
 import { ArrowLeft, X, ChevronLeft, ChevronRight } from "lucide-react";
-import { useMobile } from "../hooks/useMobile";
-
-type PortfolioArticle = {
-  id: string;
-  title: string;
-  category: string;
-  coverUrl: string;
-  coverType: "image" | "video";
-  description: string;
-  galleryUrls: string[];
-  published: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
+import { usePortfolio } from "../lib/siteData";
 
 export function PortfolioDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const isMobile = useMobile();
-  const [article, setArticle] = useState<PortfolioArticle | null>(null);
-  const [loading, setLoading] = useState(true);
+  // The article comes from the shared portfolio list, which the prerender
+  // bakes into the page; unpublished or unknown ids are simply not in it.
+  const portfolio = usePortfolio();
+  const article = portfolio.data?.find((a) => a.id === id) ?? null;
+  const loading = portfolio.data === undefined && !portfolio.error;
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const touchStartX = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (id) fetchArticle(id);
-  }, [id]);
 
   const closeLightbox = useCallback(() => setLightboxIndex(null), []);
 
@@ -60,25 +44,6 @@ export function PortfolioDetailPage() {
       window.removeEventListener("keydown", onKey);
     };
   }, [lightboxIndex, closeLightbox, goNext, goPrev]);
-
-  async function fetchArticle(articleId: string) {
-    try {
-      const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-0951c59e/portfolio/${articleId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${publicAnonKey}`,
-          },
-        }
-      );
-      const data = await res.json();
-      setArticle(data.article);
-    } catch (err) {
-      console.error("Failed to fetch article:", err);
-    } finally {
-      setLoading(false);
-    }
-  }
 
 
   if (loading) {
@@ -304,8 +269,8 @@ export function PortfolioDetailPage() {
           </div>
         ) : (
           <div
+            className="pdc-detail-masonry"
             style={{
-              columns: isMobile ? 1 : 3,
               columnGap: "3px",
             }}
           >
@@ -434,99 +399,97 @@ export function PortfolioDetailPage() {
             <X size={24} />
           </button>
 
-          {isMobile ? (
-            <div
+          <div
+            className="pdc-phone-only"
+            style={{
+              position: "absolute",
+              bottom: "64px",
+              display: "flex",
+              gap: "16px",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              aria-label="Previous image"
+              onClick={(e) => { e.stopPropagation(); goPrev(); }}
+              style={{
+                background: "rgba(255,251,224,0.1)",
+                border: "1px solid rgba(255,251,224,0.2)",
+                color: "#fffbe0",
+                width: "52px",
+                height: "52px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+              }}
+            >
+              <ChevronLeft size={24} />
+            </button>
+            <button
+              aria-label="Next image"
+              onClick={(e) => { e.stopPropagation(); goNext(); }}
+              style={{
+                background: "rgba(255,251,224,0.1)",
+                border: "1px solid rgba(255,251,224,0.2)",
+                color: "#fffbe0",
+                width: "52px",
+                height: "52px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+              }}
+            >
+              <ChevronRight size={24} />
+            </button>
+          </div>
+          <div className="pdc-desktop-only" style={{ display: "contents" }}>
+            <button
+              aria-label="Previous image"
+              onClick={(e) => { e.stopPropagation(); goPrev(); }}
               style={{
                 position: "absolute",
-                bottom: "64px",
+                left: "24px",
+                background: "rgba(255,251,224,0.1)",
+                border: "1px solid rgba(255,251,224,0.2)",
+                color: "#fffbe0",
+                width: "48px",
+                height: "48px",
                 display: "flex",
-                gap: "16px",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
               }}
-              onClick={(e) => e.stopPropagation()}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(255,251,224,0.2)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "rgba(255,251,224,0.1)"; }}
             >
-              <button
-                aria-label="Previous image"
-                onClick={(e) => { e.stopPropagation(); goPrev(); }}
-                style={{
-                  background: "rgba(255,251,224,0.1)",
-                  border: "1px solid rgba(255,251,224,0.2)",
-                  color: "#fffbe0",
-                  width: "52px",
-                  height: "52px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                }}
-              >
-                <ChevronLeft size={24} />
-              </button>
-              <button
-                aria-label="Next image"
-                onClick={(e) => { e.stopPropagation(); goNext(); }}
-                style={{
-                  background: "rgba(255,251,224,0.1)",
-                  border: "1px solid rgba(255,251,224,0.2)",
-                  color: "#fffbe0",
-                  width: "52px",
-                  height: "52px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                }}
-              >
-                <ChevronRight size={24} />
-              </button>
-            </div>
-          ) : (
-            <>
-              <button
-                aria-label="Previous image"
-                onClick={(e) => { e.stopPropagation(); goPrev(); }}
-                style={{
-                  position: "absolute",
-                  left: "24px",
-                  background: "rgba(255,251,224,0.1)",
-                  border: "1px solid rgba(255,251,224,0.2)",
-                  color: "#fffbe0",
-                  width: "48px",
-                  height: "48px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(255,251,224,0.2)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "rgba(255,251,224,0.1)"; }}
-              >
-                <ChevronLeft size={24} />
-              </button>
-              <button
-                aria-label="Next image"
-                onClick={(e) => { e.stopPropagation(); goNext(); }}
-                style={{
-                  position: "absolute",
-                  right: "24px",
-                  background: "rgba(255,251,224,0.1)",
-                  border: "1px solid rgba(255,251,224,0.2)",
-                  color: "#fffbe0",
-                  width: "48px",
-                  height: "48px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(255,251,224,0.2)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "rgba(255,251,224,0.1)"; }}
-              >
-                <ChevronRight size={24} />
-              </button>
-            </>
-          )}
+              <ChevronLeft size={24} />
+            </button>
+            <button
+              aria-label="Next image"
+              onClick={(e) => { e.stopPropagation(); goNext(); }}
+              style={{
+                position: "absolute",
+                right: "24px",
+                background: "rgba(255,251,224,0.1)",
+                border: "1px solid rgba(255,251,224,0.2)",
+                color: "#fffbe0",
+                width: "48px",
+                height: "48px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(255,251,224,0.2)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "rgba(255,251,224,0.1)"; }}
+            >
+              <ChevronRight size={24} />
+            </button>
+          </div>
 
           <img
             src={article.galleryUrls[lightboxIndex]}

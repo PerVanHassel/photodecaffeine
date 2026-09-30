@@ -1,22 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useLanguage } from "../context/LanguageContext";
-import { projectId, publicAnonKey } from "/utils/supabase/info";
-
-type PortfolioArticle = {
-  id: string;
-  title: string;
-  category: string;
-  coverUrl: string;
-  coverType: "image" | "video";
-  description: string;
-  galleryUrls: string[];
-  published: boolean;
-  featured: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
+import { usePortfolio, type PortfolioArticle } from "../lib/siteData";
 
 function PortfolioItem({ item, onClick }: { item: PortfolioArticle; onClick: () => void }) {
   const [hovered, setHovered] = useState(false);
@@ -118,31 +104,9 @@ function PortfolioItem({ item, onClick }: { item: PortfolioArticle; onClick: () 
 export function Portfolio() {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const [articles, setArticles] = useState<PortfolioArticle[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchPortfolio();
-  }, []);
-
-  async function fetchPortfolio() {
-    try {
-      const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-0951c59e/portfolio`,
-        {
-          headers: {
-            Authorization: `Bearer ${publicAnonKey}`,
-          },
-        }
-      );
-      const data = await res.json();
-      setArticles(data.articles || []);
-    } catch (err) {
-      console.error("Failed to fetch portfolio:", err);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const portfolio = usePortfolio();
+  const articles = portfolio.data ?? [];
+  const loading = portfolio.data === undefined && !portfolio.error;
 
   const featuredArticles = articles.filter(a => a.featured);
   const displayItems = featuredArticles.slice(0, 6);
@@ -280,21 +244,6 @@ export function Portfolio() {
             gap: "2px",
           }}
         >
-          <style>{`
-            @media (max-width: 768px) {
-              .portfolio-grid-main {
-                grid-template-columns: 1fr !important;
-                grid-template-rows: auto !important;
-                gap: 3px !important;
-              }
-              .portfolio-grid-main > div {
-                grid-column: 1 !important;
-                grid-row: auto !important;
-                height: 340px !important;
-              }
-            }
-          `}</style>
-
           <div
             style={{
               gridColumn: "1",

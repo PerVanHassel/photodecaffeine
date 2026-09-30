@@ -110,16 +110,22 @@ async function htmlFiles(dir) {
   return found;
 }
 
+/** The share picture every page starts with: the one in the untouched shell. */
+async function fallbackShareImage() {
+  const shell = await readFile(path.join(distDir, "app-shell.html"), "utf-8").catch(() => "");
+  return shell.match(/<meta[^>]*property="og:image"[^>]*content="([^"]*)"/)?.[1] || "";
+}
+
 /** Point the share tags and the structured data at the hero set in the admin. */
 async function applyShareImage(heroUrl) {
   const files = await htmlFiles(distDir);
+  const fallback = await fallbackShareImage();
   let touched = 0;
   for (const file of files) {
     const html = await readFile(file, "utf-8");
-    // Only the fallback tags from index.html; a page that sets its own
+    // Only the fallback picture from index.html; a page that sets its own
     // og:image through Helmet (a portfolio article) keeps its own picture.
-    const replaceable = (url) =>
-      url.includes("/storage/v1/object/public/") || url.endsWith("og-image.jpg");
+    const replaceable = (url) => (fallback && url === fallback) || url.endsWith("og-image.jpg");
 
     const next = html
       .replace(
@@ -143,10 +149,12 @@ async function applyShareImage(heroUrl) {
 
 async function main() {
   try {
-    const [{ articles = [] }, settings] = await Promise.all([
+    const [{ articles: all = [] }, settings] = await Promise.all([
       api("/portfolio"),
       api("/settings").catch(() => null),
     ]);
+    // The automotive page's photo strip is stored as an article but is not a page.
+    const articles = all.filter((a) => a.title !== "__automotive_gallery__");
 
     await writeFile(path.join(distDir, "sitemap.xml"), buildSitemap(articles), "utf-8");
     console.log(`sitemap: ${STATIC_ROUTES.length} pagina's + ${articles.length} portfolio-items`);
@@ -163,7 +171,7 @@ async function main() {
   }
 }
 
-export { buildSitemap, applyShareImage, lastmod };
+export { api, buildSitemap, applyShareImage, lastmod };
 
 // Only run when this is the script being executed, so the helpers above can be
 // exercised on their own.

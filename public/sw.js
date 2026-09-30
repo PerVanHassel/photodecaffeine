@@ -16,13 +16,14 @@
  *   Supabase / API    — never cached; admin data must not be served stale.
  */
 
-const VERSION = "pdc-admin-v1";
+const VERSION = "pdc-admin-v2";
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 
-// The SPA entry. Every /app route resolves to this document, so caching it once
+// The client-only shell (see vercel.json); every /app route resolves to this
+// document. Not /index.html: that is the prerendered homepage. Caching it once
 // is enough to boot the whole app offline.
-const SHELL_URL = "/index.html";
+const SHELL_URL = "/app-shell.html";
 
 const PRECACHE = [SHELL_URL, "/icons/icon-192.png", "/icons/icon-512.png", "/manifest.webmanifest"];
 

@@ -1,32 +1,13 @@
-import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Star, ArrowRight } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
-import { useMobile } from "../hooks/useMobile";
-import { portalFetch } from "../../lib/supabase";
-
-interface PublicReview {
-  id: string;
-  clientName: string;
-  rating: number;
-  text: string;
-  projectTitle: string;
-  portfolioArticleId: string | null;
-  createdAt: string;
-}
+import { useReviews } from "../lib/siteData";
 
 export function SocialProof() {
   const { t, language } = useLanguage();
-  const isMobile = useMobile();
   const navigate = useNavigate();
-  const [reviews, setReviews] = useState<PublicReview[]>([]);
-
-  useEffect(() => {
-    // Public endpoint — only reviews an admin has published come back.
-    portalFetch("/reviews")
-      .then((data) => setReviews(data.reviews || []))
-      .catch(() => setReviews([]));
-  }, []);
+  // Only reviews an admin has published come back from the public endpoint.
+  const reviews = useReviews().data ?? [];
 
   // Until a review is published there is nothing honest to show, so the
   // section stays out of the page entirely rather than rendering an empty shell.
@@ -41,14 +22,14 @@ export function SocialProof() {
   return (
     <section
       id="reviews"
+      className="pdc-section"
       style={{
         backgroundColor: "#0d0703",
-        padding: isMobile ? "80px 0" : "120px 0",
         fontFamily: "'Inter', sans-serif",
         boxShadow: "inset 0 1px 0 rgba(255,251,224,0.06)",
       }}
     >
-      <div style={{ maxWidth: "1400px", margin: "0 auto", padding: isMobile ? "0 20px" : "0 40px" }}>
+      <div className="pdc-wrap" style={{ maxWidth: "1400px", margin: "0 auto" }}>
         {/* Section label */}
         <div style={{ marginBottom: "48px", textAlign: "center" }}>
           <span
@@ -80,22 +61,16 @@ export function SocialProof() {
           {t.socialProof.testimonialsLabel}
         </h2>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(320px, 1fr))",
-            gap: isMobile ? "20px" : "28px",
-          }}
-        >
+        <div className="pdc-reviews">
           {reviews.map((review) => {
             const linked = !!review.portfolioArticleId;
             return (
               <article
                 key={review.id}
+                className="pdc-review"
                 onClick={linked ? () => navigate(`/portfolio/${review.portfolioArticleId}`) : undefined}
                 style={{
                   border: "1px solid rgba(255,251,224,0.08)",
-                  padding: isMobile ? "26px 22px" : "34px 30px",
                   display: "flex",
                   flexDirection: "column",
                   cursor: linked ? "pointer" : "default",
@@ -128,9 +103,9 @@ export function SocialProof() {
                 </div>
 
                 <blockquote
+                  className="pdc-review-text"
                   style={{
                     color: "rgba(255,251,224,0.72)",
-                    fontSize: isMobile ? "15px" : "16px",
                     fontWeight: 300,
                     lineHeight: 1.8,
                     margin: "0 0 26px",

@@ -1,3 +1,11 @@
 {
-  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/admin/:path*", "destination": "/app-shell.html" },
+    { "source": "/portal/:path*", "destination": "/app-shell.html" },
+    { "source": "/app/:path*", "destination": "/app-shell.html" },
+    { "source": "/demo/:path*", "destination": "/app-shell.html" },
+    { "source": "/offerte/:path*", "destination": "/app-shell.html" },
+    { "source": "/factuur/:path*", "destination": "/app-shell.html" },
+    { "source": "/portfolio/:id", "destination": "/app-shell.html" }
+  ]
 }

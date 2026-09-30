@@ -1,10 +1,9 @@
+import { Helmet } from "react-helmet-async";
 import { useNavigate } from "react-router";
 import { Home, ArrowLeft, Camera } from "lucide-react";
-import { useMobile } from "../hooks/useMobile";
 
 export function NotFoundPage() {
   const navigate = useNavigate();
-  const isMobile = useMobile();
 
   return (
     <div
@@ -20,6 +19,10 @@ export function NotFoundPage() {
         overflow: "hidden",
       }}
     >
+      <Helmet>
+        <title>Pagina niet gevonden | PhotoDeCaffeine</title>
+        <meta name="robots" content="noindex" />
+      </Helmet>
       {/* Background decorative elements */}
       <div
         style={{
@@ -50,33 +53,31 @@ export function NotFoundPage() {
       >
         {/* Icon */}
         <div
+          className="pdc-404-icon"
           style={{
-            marginBottom: isMobile ? "32px" : "48px",
             display: "flex",
             justifyContent: "center",
           }}
         >
           <div
             style={{
-              width: isMobile ? "80px" : "120px",
-              height: isMobile ? "80px" : "120px",
               borderRadius: "50%",
               backgroundColor: "rgba(200,144,90,0.08)",
               border: "1px solid rgba(200,144,90,0.2)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              animation: "pulse 2s ease-in-out infinite",
+              animation: "pdc-icon-pulse 2s ease-in-out infinite",
             }}
           >
-            <Camera size={isMobile ? 36 : 48} color="#c8905a" strokeWidth={1.5} />
+            <Camera size={48} color="#c8905a" strokeWidth={1.5} />
           </div>
         </div>
 
         {/* 404 Number */}
         <div
+          className="pdc-404-number"
           style={{
-            fontSize: isMobile ? "120px" : "180px",
             fontWeight: 900,
             letterSpacing: "-0.05em",
             lineHeight: 0.9,
@@ -92,9 +93,9 @@ export function NotFoundPage() {
 
         {/* Title */}
         <h1
+          className="pdc-404-title"
           style={{
             color: "#fffbe0",
-            fontSize: isMobile ? "28px" : "42px",
             fontWeight: 800,
             letterSpacing: "-0.02em",
             margin: "0 0 16px 0",
@@ -106,9 +107,9 @@ export function NotFoundPage() {
 
         {/* Subtitle */}
         <p
+          className="pdc-404-text"
           style={{
             color: "rgba(255,251,224,0.4)",
-            fontSize: isMobile ? "14px" : "16px",
             fontWeight: 300,
             lineHeight: 1.7,
             margin: "0 0 48px 0",
@@ -132,14 +133,15 @@ export function NotFoundPage() {
 
         {/* Buttons */}
         <div
+          className="pdc-404-actions"
           style={{
             display: "flex",
             gap: "16px",
             justifyContent: "center",
-            flexDirection: isMobile ? "column" : "row",
           }}
         >
           <button
+            className="pdc-404-btn"
             onClick={() => navigate(-1)}
             style={{
               display: "flex",
@@ -149,7 +151,6 @@ export function NotFoundPage() {
               backgroundColor: "transparent",
               border: "1px solid rgba(255,251,224,0.15)",
               color: "rgba(255,251,224,0.6)",
-              padding: isMobile ? "14px 24px" : "16px 32px",
               fontSize: "11px",
               fontWeight: 600,
               letterSpacing: "0.15em",
@@ -174,6 +175,7 @@ export function NotFoundPage() {
           </button>
 
           <button
+            className="pdc-404-btn"
             onClick={() => navigate("/")}
             style={{
               display: "flex",
@@ -183,7 +185,6 @@ export function NotFoundPage() {
               backgroundColor: "#c8905a",
               border: "none",
               color: "#060301",
-              padding: isMobile ? "14px 24px" : "16px 32px",
               fontSize: "11px",
               fontWeight: 700,
               letterSpacing: "0.15em",
@@ -264,19 +265,6 @@ export function NotFoundPage() {
         </div>
       </div>
 
-      {/* Pulse animation */}
-      <style>{`
-        @keyframes pulse {
-          0%, 100% {
-            transform: scale(1);
-            opacity: 1;
-          }
-          50% {
-            transform: scale(1.05);
-            opacity: 0.8;
-          }
-        }
-      `}</style>
     </div>
   );
 }

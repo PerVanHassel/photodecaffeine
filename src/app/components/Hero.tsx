@@ -1,55 +1,32 @@
 import image__MAJ2869_1_ from '@/imports/_MAJ2869_1_.jpeg'
-import image__DSC0019 from '@/imports/_DSC0019.jpg'
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useNavigate } from "react-router";
 import { useLanguage } from "../context/LanguageContext";
-import { useMobile } from "../hooks/useMobile";
-import { useState, useEffect } from "react";
-import { projectId, publicAnonKey } from "/utils/supabase/info";
+import { useSiteSettings } from "../lib/siteData";
 
 const DEFAULT_HERO_BG =
   "https://images.unsplash.com/photo-1613158556069-e7d8eae76214?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkYXJrJTIwY2luZW1hdGljJTIwZXNwcmVzc28lMjBjb2ZmZWUlMjBzdHVkaW8lMjBtb29keXxlbnwxfHx8fDE3NzY1OTY2NTB8MA&ixlib=rb-4.1.0&q=80&w=1080";
 
-type SiteSettings = {
-  heroImageUrl: string;
-  heroImageMobileUrl: string;
-  frameImageUrl: string;
-};
+// Phone and desktop layouts live in src/styles/site.css (.pdc-hero-*), so the
+// prerendered HTML is already right for either screen before any script runs.
+
+/** The hero photo is the page's largest paint. React 18 does not know the
+ *  camelCase prop yet, so the plain attribute is passed through. */
+export const HIGH_PRIORITY = { fetchpriority: "high" } as {};
 
 export function Hero() {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const isMobile = useMobile();
-  const [settings, setSettings] = useState<SiteSettings | null>(null);
-
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  async function fetchSettings() {
-    try {
-      const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-0951c59e/settings`,
-        {
-          cache: "no-store",
-          headers: { Authorization: `Bearer ${publicAnonKey}` },
-        }
-      );
-      const data = await res.json();
-      setSettings(data.settings);
-    } catch (err) {
-      console.error("Failed to fetch settings:", err);
-    }
-  }
+  const { data: settings } = useSiteSettings();
 
   const scrollToPortfolio = () => {
     navigate("/portfolio");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const heroImageUrl = isMobile
-    ? (settings?.heroImageMobileUrl || settings?.heroImageUrl || DEFAULT_HERO_BG)
-    : (settings?.heroImageUrl || DEFAULT_HERO_BG);
+  const heroImageUrl = settings?.heroImageUrl || DEFAULT_HERO_BG;
+  const heroImageMobileUrl = settings?.heroImageMobileUrl || heroImageUrl;
+  const frameImageUrl = settings?.frameImageUrl || image__MAJ2869_1_;
 
   return (
     <section
@@ -64,24 +41,17 @@ export function Hero() {
       }}
     >
       {/* Background Image */}
-      <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
-        <ImageWithFallback
-          src={heroImageUrl}
-          alt="Hero background"
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            objectPosition: "center",
-            opacity: isMobile ? 0.45 : 0.35
-          }}
-        />
-        <div style={{
-          position: "absolute", inset: 0,
-          background: isMobile
-            ? "linear-gradient(to bottom, rgba(10,5,1,0.7) 0%, rgba(10,5,1,0.85) 60%, rgba(10,5,1,0.95) 100%)"
-            : "linear-gradient(135deg, rgba(10,5,1,0.92) 0%, rgba(30,15,5,0.78) 50%, rgba(10,5,1,0.85) 100%)",
-        }} />
+      <div className="pdc-hero-bg" style={{ position: "absolute", inset: 0, zIndex: 0 }}>
+        <picture>
+          <source media="(max-width: 767px)" srcSet={heroImageMobileUrl} />
+          <img
+            src={heroImageUrl}
+            alt=""
+            {...HIGH_PRIORITY}
+            style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
+          />
+        </picture>
+        <div className="pdc-hero-shade" style={{ position: "absolute", inset: 0 }} />
       </div>
 
       {/* Grain texture overlay */}
@@ -91,41 +61,33 @@ export function Hero() {
         opacity: 0.4, pointerEvents: "none",
       }} />
 
-      {/* Mobile: frame photo fills top portion of hero */}
-      {isMobile && (
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "55vh", zIndex: 1, overflow: "hidden" }}>
-          <ImageWithFallback
-            src={settings?.frameImageUrl || image__MAJ2869_1_}
-            alt=""
-            style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 20%" }}
-          />
-          <div style={{
-            position: "absolute", inset: 0,
-            background: "linear-gradient(to bottom, rgba(8,4,1,0.15) 0%, rgba(8,4,1,0) 30%, rgba(8,4,1,0.85) 80%, rgba(8,4,1,1) 100%)"
-          }} />
-        </div>
-      )}
+      {/* Phone: the frame photo fills the top of the hero */}
+      <div className="pdc-hero-phone-photo" style={{ position: "absolute", top: 0, left: 0, right: 0, height: "55vh", zIndex: 1, overflow: "hidden" }}>
+        <ImageWithFallback
+          src={frameImageUrl}
+          alt=""
+          style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 20%" }}
+        />
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "linear-gradient(to bottom, rgba(8,4,1,0.15) 0%, rgba(8,4,1,0) 30%, rgba(8,4,1,0.85) 80%, rgba(8,4,1,1) 100%)"
+        }} />
+      </div>
 
       {/* Content */}
-      <div style={{
+      <div className="pdc-hero-content" style={{
         position: "relative", zIndex: 2,
         maxWidth: "1400px", margin: "0 auto",
-        padding: isMobile ? "0 24px" : "0 40px",
         height: "100vh",
         display: "flex", flexDirection: "column",
-        justifyContent: isMobile ? "flex-end" : "center",
-        paddingBottom: isMobile ? "60px" : "0",
       }}>
 
-        {/* Desktop layout: grid with text + frame */}
-        <div style={isMobile
-          ? { display: "flex", flexDirection: "column" }
-          : { display: "grid", gridTemplateColumns: "1fr auto", gap: "60px", alignItems: "center" }
-        }>
+        {/* Desktop: text and film frame side by side */}
+        <div className="pdc-hero-grid">
           {/* Left — Text */}
           <div style={{ maxWidth: "680px" }}>
             {/* Label */}
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: isMobile ? "20px" : "28px" }}>
+            <div className="pdc-hero-label" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <div style={{ width: "32px", height: "1px", backgroundColor: "rgba(255,251,224,0.35)" }} />
               <span style={{
                 color: "rgba(255,251,224,0.4)", fontSize: "10px", fontWeight: 500,
@@ -134,16 +96,12 @@ export function Hero() {
             </div>
 
             {/* Headline */}
-            <h1 style={{
+            <h1 className="pdc-hero-title" style={{
               color: "#fffbe0",
-              fontSize: isMobile ? "clamp(36px, 11vw, 64px)" : "clamp(48px, 7vw, 96px)",
               fontWeight: 900,
               lineHeight: 0.92,
               letterSpacing: "-0.03em",
-              margin: 0,
-              marginBottom: isMobile ? "18px" : "24px",
               textTransform: "uppercase",
-              textShadow: isMobile ? "0 2px 12px rgba(0,0,0,0.6)" : "none",
             }}>
               {t.hero.headline1}
               <br />
@@ -157,13 +115,10 @@ export function Hero() {
             </h1>
 
             {/* Tagline */}
-            <p style={{
-              color: isMobile ? "rgba(255,251,224,0.75)" : "rgba(255,251,224,0.5)",
+            <p className="pdc-hero-tagline" style={{
               fontSize: "clamp(13px, 1.5vw, 18px)",
               fontWeight: 300, lineHeight: 1.75, letterSpacing: "0.02em",
-              margin: 0, marginBottom: isMobile ? "28px" : "52px",
               maxWidth: "440px",
-              textShadow: isMobile ? "0 1px 8px rgba(0,0,0,0.5)" : "none",
             }}>
               {t.hero.tagline}
               <br />
@@ -173,14 +128,13 @@ export function Hero() {
             {/* CTAs */}
             <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
               <button
+                className="pdc-hero-cta"
                 onClick={scrollToPortfolio}
                 style={{
                   backgroundColor: "#fffbe0", color: "#1a0c04", border: "none",
-                  padding: isMobile ? "14px 28px" : "16px 40px",
                   fontSize: "11px", fontWeight: 700, letterSpacing: "0.18em",
                   textTransform: "uppercase", cursor: "pointer",
                   fontFamily: "'Inter', sans-serif", transition: "all 0.25s ease",
-                  flex: isMobile ? 1 : "none",
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#c8905a"; e.currentTarget.style.color = "#fffbe0"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#fffbe0"; e.currentTarget.style.color = "#1a0c04"; }}
@@ -188,15 +142,14 @@ export function Hero() {
                 {t.hero.viewPortfolio}
               </button>
               <button
+                className="pdc-hero-cta"
                 onClick={() => { const el = document.getElementById("contact"); if (el) el.scrollIntoView({ behavior: "smooth" }); }}
                 style={{
                   backgroundColor: "transparent", color: "rgba(255,251,224,0.7)",
                   border: "1px solid rgba(255,251,224,0.2)",
-                  padding: isMobile ? "14px 28px" : "16px 40px",
                   fontSize: "11px", fontWeight: 600, letterSpacing: "0.18em",
                   textTransform: "uppercase", cursor: "pointer",
                   fontFamily: "'Inter', sans-serif", transition: "all 0.25s ease",
-                  flex: isMobile ? 1 : "none",
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(255,251,224,0.5)"; e.currentTarget.style.color = "#fffbe0"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,251,224,0.2)"; e.currentTarget.style.color = "rgba(255,251,224,0.7)"; }}
@@ -206,11 +159,10 @@ export function Hero() {
             </div>
           </div>
 
-          {/* Right — Film Frame — desktop only (mobile has full-width version above) */}
-          {!isMobile && <div style={{
+          {/* Right — Film Frame — desktop only (phones show the photo above) */}
+          <div className="pdc-hero-frame" style={{
             position: "relative",
             flexShrink: 0,
-            display: "flex",
             justifyContent: "center",
           }}>
             <div style={{
@@ -223,11 +175,12 @@ export function Hero() {
                 ))}
               </div>
               <ImageWithFallback
-                src={settings?.frameImageUrl || image__MAJ2869_1_}
+                src={frameImageUrl}
                 alt="Recent shoot showcase"
+                loading="lazy"
                 style={{
-                  width: isMobile ? "200px" : "360px",
-                  height: isMobile ? "267px" : "480px",
+                  width: "360px",
+                  height: "480px",
                   objectFit: "cover",
                   display: "block",
                   filter: "contrast(1.05) saturate(0.85)",
@@ -243,34 +196,9 @@ export function Hero() {
                 <span style={{ color: "rgba(255,251,224,0.25)", fontSize: "8px", fontFamily: "'Courier New', monospace", letterSpacing: "0.15em" }}>35mm / ƒ1.4</span>
               </div>
             </div>
-          </div>}
-        </div>
-
-        {/* Bottom row — stats + scroll indicator */}
-        <div style={{
-          position: "absolute",
-          bottom: isMobile ? "20px" : "40px",
-          left: isMobile ? "20px" : "40px",
-          right: isMobile ? "20px" : "40px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-end",
-        }}>
-          
-
-          {/* Scroll indicator — hide on mobile */}
-          {!isMobile && (
-            null
-          )}
+          </div>
         </div>
       </div>
-
-      <style>{`
-        @keyframes scrollDot {
-          0% { top: -40%; }
-          100% { top: 100%; }
-        }
-      `}</style>
     </section>
   );
 }

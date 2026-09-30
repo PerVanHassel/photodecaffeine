@@ -28,14 +28,6 @@ export function CustomCTA() {
             alignItems: "center",
           }}
         >
-          <style>{`
-            @media (min-width: 1024px) {
-              .custom-cta-grid {
-                grid-template-columns: 1.2fr 1fr !important;
-                gap: 64px !important;
-              }
-            }
-          `}</style>
 
           {/* Left side: headline and text */}
           <div>

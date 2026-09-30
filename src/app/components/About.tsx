@@ -1,5 +1,4 @@
 import { useLanguage } from "../context/LanguageContext";
-import { useMobile } from "../hooks/useMobile";
 import image_IMG_0114_TIF from "@/imports/IMG_0114_TIF.jpg";
 import IMG_9694 from "@/imports/IMG_9694.jpg";
 import image_IMG_0115_TIF from "@/imports/IMG_0115_TIF.jpg";
@@ -17,24 +16,23 @@ const RYAN_PORTRAIT =
 
 export function About() {
   const { t } = useLanguage();
-  const isMobile = useMobile();
   const navigate = useNavigate();
 
   return (
     <section
       id="about"
+      className="pdc-section"
       style={{
         backgroundColor: "#0d0703",
-        padding: isMobile ? "80px 0" : "120px 0",
         fontFamily: "'Inter', sans-serif",
         boxShadow: "inset 0 1px 0 rgba(255,251,224,0.06)",
       }}
     >
       <div
+        className="pdc-wrap"
         style={{
           maxWidth: "1400px",
           margin: "0 auto",
-          padding: isMobile ? "0 20px" : "0 40px",
         }}
       >
         {/* Section label */}
@@ -88,11 +86,9 @@ export function About() {
 
         {/* Three owner portraits */}
         <div
+          className="pdc-owners"
           style={{
             display: "grid",
-            gridTemplateColumns: isMobile
-              ? "1fr"
-              : "repeat(3, 1fr)",
             gap: "2px",
             marginBottom: "72px",
           }}
@@ -107,7 +103,7 @@ export function About() {
               alt="Per van Hassel — Co-Founder of PDC"
               style={{
                 width: "100%",
-                height: isMobile ? "500px" : "580px",
+                height: "var(--pdc-owner-h)",
                 objectFit: "cover",
                 objectPosition: "right top",
                 filter:
@@ -172,7 +168,7 @@ export function About() {
               alt="Majd Tawashe — Co-Founder of PDC"
               style={{
                 width: "100%",
-                height: isMobile ? "500px" : "580px",
+                height: "var(--pdc-owner-h)",
                 objectFit: "cover",
                 objectPosition: "center center",
                 filter:
@@ -237,7 +233,7 @@ export function About() {
               alt="Ryan Chantre — Co-Founder of PDC"
               style={{
                 width: "100%",
-                height: isMobile ? "500px" : "580px",
+                height: "var(--pdc-owner-h)",
                 objectFit: "cover",
                 objectPosition: "center center",
                 filter:
@@ -369,13 +365,11 @@ export function About() {
 
           {/* Credentials */}
           <div
+            className="pdc-credentials"
             style={{
               borderTop: "1px solid rgba(255,251,224,0.08)",
               paddingTop: "40px",
               display: "grid",
-              gridTemplateColumns: isMobile
-                ? "1fr 1fr"
-                : "repeat(4, 1fr)",
               gap: "32px",
               marginBottom: "48px",
             }}

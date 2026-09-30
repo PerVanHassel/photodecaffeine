@@ -3,7 +3,6 @@ import { useParams, useSearchParams } from "react-router";
 import { Helmet } from "react-helmet-async";
 import { portalFetch } from "../../lib/supabase";
 import { QuoteDocument, type QuoteDoc } from "../components/quote/QuoteDocument";
-import { useMobile } from "../hooks/useMobile";
 
 interface Quote extends QuoteDoc {
   id: string;
@@ -25,7 +24,6 @@ export function QuotePage() {
   const { id } = useParams();
   const [params] = useSearchParams();
   const token = params.get("t") || "";
-  const isMobile = useMobile();
 
   const [quote, setQuote] = useState<Quote | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,10 +86,10 @@ export function QuotePage() {
 
   return (
     <div
+      className="pdc-quote-page"
       style={{
         minHeight: "100vh",
         backgroundColor: "#080401",
-        padding: isMobile ? "28px 16px 60px" : "56px 24px 90px",
         fontFamily: "'Inter', sans-serif",
       }}
     >

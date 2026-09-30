@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Select } from "./portal/Select";
 import { useLanguage } from "../context/LanguageContext";
-import { useMobile } from "../hooks/useMobile";
 import { portalFetch } from "../../lib/supabase";
 import { getStoredAdRef } from "../hooks/useAdTracking";
 
@@ -19,7 +18,6 @@ export function Contact() {
   const [error, setError] = useState<string | null>(null);
   const [focused, setFocused] = useState<string | null>(null);
   const { t } = useLanguage();
-  const isMobile = useMobile();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,9 +72,9 @@ export function Contact() {
     >
       {/* Top CTA band */}
       <div
+        className="pdc-contact-band"
         style={{
           backgroundColor: "#1a0c04",
-          padding: isMobile ? "64px 20px" : "100px 40px",
           textAlign: "center",
           borderBottom: "1px solid rgba(255,251,224,0.06)",
         }}
@@ -95,11 +93,9 @@ export function Contact() {
           {t.contact.readyLabel}
         </span>
         <h2
+          className="pdc-contact-title"
           style={{
             color: "#fffbe0",
-            fontSize: isMobile
-              ? "clamp(36px, 10vw, 60px)"
-              : "clamp(40px, 6vw, 80px)",
             fontWeight: 900,
             letterSpacing: "-0.04em",
             lineHeight: 0.9,
@@ -142,11 +138,11 @@ export function Contact() {
               .getElementById("contact-form")
               ?.scrollIntoView({ behavior: "smooth" });
           }}
+          className="pdc-contact-cta"
           style={{
             display: "inline-block",
             backgroundColor: "#fffbe0",
             color: "#1a0c04",
-            padding: isMobile ? "16px 36px" : "18px 56px",
             fontSize: "11px",
             fontWeight: 800,
             letterSpacing: "0.22em",
@@ -177,18 +173,16 @@ export function Contact() {
       {/* Form section */}
       <div
         id="contact-form"
+        className="pdc-contact-body"
         style={{
           maxWidth: "1400px",
           margin: "0 auto",
-          padding: isMobile ? "60px 20px" : "100px 40px",
           display: "grid",
-          gridTemplateColumns: isMobile ? "1fr" : "1fr 1.6fr",
-          gap: isMobile ? "48px" : "80px",
           alignItems: "start",
         }}
       >
         {/* Left — Info (shown after the form on mobile, since the CTA above scrolls straight to this section) */}
-        <div style={{ order: isMobile ? 2 : 0 }}>
+        <div className="pdc-contact-info">
           <h3
             style={{
               color: "#fffbe0",
@@ -234,19 +228,6 @@ export function Contact() {
               gap: "32px",
             }}
           >
-            <style>{`
-              @media (max-width: 767px) {
-                .contact-info-list {
-                  gap: 20px !important;
-                }
-                .contact-info-item {
-                  padding-bottom: 16px !important;
-                }
-                .contact-info-label {
-                  margin-bottom: 6px !important;
-                }
-              }
-            `}</style>
             {[
               {
                 label: "Email",
@@ -332,7 +313,7 @@ export function Contact() {
         </div>
 
         {/* Right — Form */}
-        <div style={{ order: isMobile ? 1 : 0 }}>
+        <div className="pdc-contact-form">
           {submitted ? (
             <div
               style={{
@@ -384,15 +365,7 @@ export function Contact() {
                 gap: "32px",
               }}
             >
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: isMobile
-                    ? "1fr"
-                    : "1fr 1fr",
-                  gap: "32px",
-                }}
-              >
+              <div className="pdc-form-row">
                 <div>
                   <label
                     style={{
@@ -455,15 +428,7 @@ export function Contact() {
                 </div>
               </div>
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: isMobile
-                    ? "1fr"
-                    : "1fr 1fr",
-                  gap: "32px",
-                }}
-              >
+              <div className="pdc-form-row">
                 <div>
                   <label
                     style={{
@@ -604,6 +569,7 @@ export function Contact() {
 
               <button
                 type="submit"
+                className="pdc-contact-submit"
                 disabled={loading}
                 style={{
                   backgroundColor: loading ? "#6b5a3e" : "#fffbe0",
@@ -617,7 +583,6 @@ export function Contact() {
                   cursor: loading ? "not-allowed" : "pointer",
                   fontFamily: "'Inter', sans-serif",
                   transition: "all 0.25s ease",
-                  alignSelf: isMobile ? "stretch" : "flex-start",
                 }}
                 onMouseEnter={(e) => {
                   if (!loading) {

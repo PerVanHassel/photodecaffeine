@@ -1,22 +1,9 @@
 import { Helmet } from "react-helmet-async";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { useLanguage } from "../context/LanguageContext";
-import { projectId, publicAnonKey } from "/utils/supabase/info";
-
-type PortfolioArticle = {
-  id: string;
-  title: string;
-  category: string;
-  coverUrl: string;
-  coverType: "image" | "video";
-  description: string;
-  galleryUrls: string[];
-  published: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
+import { usePortfolio, visibleArticles, type PortfolioArticle } from "../lib/siteData";
 
 function PortfolioCard({ item, onClick }: { item: PortfolioArticle; onClick: () => void }) {
   const [hovered, setHovered] = useState(false);
@@ -128,17 +115,11 @@ function SkeletonGrid() {
             backgroundColor: "rgba(255,251,224,0.04)",
             marginBottom: "3px",
             breakInside: "avoid",
-            animation: "pulse 1.6s ease-in-out infinite",
+            animation: "pdc-skeleton-pulse 1.6s ease-in-out infinite",
             animationDelay: `${i * 0.1}s`,
           }}
         />
       ))}
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 0.4; }
-          50% { opacity: 0.8; }
-        }
-      `}</style>
     </div>
   );
 }
@@ -146,36 +127,11 @@ function SkeletonGrid() {
 export function PortfolioPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const [articles, setArticles] = useState<PortfolioArticle[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const portfolio = usePortfolio();
+  const articles = visibleArticles(portfolio.data) ?? [];
+  const loading = portfolio.data === undefined && !portfolio.error;
+  const error = portfolio.error;
   const [activeCategory, setActiveCategory] = useState("All");
-
-  useEffect(() => {
-    fetchPortfolio();
-  }, []);
-
-  async function fetchPortfolio() {
-    setError(false);
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-0951c59e/portfolio`,
-        {
-          headers: {
-            Authorization: `Bearer ${publicAnonKey}`,
-          },
-        }
-      );
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setArticles((data.articles || []).filter((a: PortfolioArticle) => a.title !== "__automotive_gallery__"));
-    } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   const categories = [
     "All",
@@ -392,7 +348,7 @@ export function PortfolioPage() {
               {t.portfolioPage.loadError}
             </span>
             <button
-              onClick={fetchPortfolio}
+              onClick={portfolio.retry}
               style={{
                 background: "none",
                 border: "1px solid rgba(255,251,224,0.15)",
@@ -433,22 +389,6 @@ export function PortfolioPage() {
               columnGap: "3px",
             }}
           >
-            <style>{`
-              .portfolio-masonry {
-                column-count: 3;
-                column-gap: 3px;
-              }
-              @media (max-width: 768px) {
-                .portfolio-masonry {
-                  column-count: 1 !important;
-                }
-              }
-              @media (min-width: 769px) and (max-width: 1024px) {
-                .portfolio-masonry {
-                  column-count: 2 !important;
-                }
-              }
-            `}</style>
 
             {filtered.map((item) => (
               <PortfolioCard

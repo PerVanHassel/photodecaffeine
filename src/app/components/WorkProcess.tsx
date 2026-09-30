@@ -1,9 +1,7 @@
 import { useLanguage } from "../context/LanguageContext";
-import { useMobile } from "../hooks/useMobile";
 
 export function WorkProcess() {
   const { t } = useLanguage();
-  const isMobile = useMobile();
   const steps = t.workProcess.steps.map((s, i) => ({
     ...s,
     icon: ["📍", "🎬", "🎞️"][i],
@@ -12,17 +10,17 @@ export function WorkProcess() {
   return (
     <section
       id="work"
+      className="pdc-section"
       style={{
         backgroundColor: "#0a0501",
-        padding: isMobile ? "80px 0" : "120px 0",
         fontFamily: "'Inter', sans-serif",
       }}
     >
       <div
+        className="pdc-wrap"
         style={{
           maxWidth: "1400px",
           margin: "0 auto",
-          padding: isMobile ? "0 20px" : "0 40px",
         }}
       >
         {/* Section header */}
@@ -93,23 +91,13 @@ export function WorkProcess() {
         />
 
         {/* Steps grid */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(280px, 1fr))",
-            gap: "0",
-          }}
-        >
-          {steps.map((step, index) => (
+        <div className="pdc-steps">
+          {steps.map((step) => (
             <div
               key={step.number}
+              className="pdc-step"
               style={{
-                borderRight:
-                  (!isMobile && index < steps.length - 1)
-                    ? "1px solid rgba(255,251,224,0.08)"
-                    : "none",
                 borderBottom: "1px solid rgba(255,251,224,0.08)",
-                padding: isMobile ? "36px 20px" : "52px 40px",
                 position: "relative",
                 transition: "background-color 0.3s ease",
                 cursor: "default",

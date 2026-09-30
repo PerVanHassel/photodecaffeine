@@ -7,9 +7,9 @@ import { SocialProof } from "../components/SocialProof";
 import { Contact } from "../components/Contact";
 import { Hero } from "../components/Hero";
 import { CustomCTA } from "../components/CustomCTA";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useLocation } from "react-router";
-import { projectId, publicAnonKey } from "/utils/supabase/info";
+import { useSiteSettings, type SectionKey } from "../lib/siteData";
 
 const Divider = () => (
   <div
@@ -21,16 +21,7 @@ const Divider = () => (
   />
 );
 
-type Sections = {
-  workProcess: boolean;
-  portfolio: boolean;
-  about: boolean;
-  services: boolean;
-  socialProof: boolean;
-  customCTA: boolean;
-};
-
-const DEFAULT_SECTIONS: Sections = {
+const DEFAULT_SECTIONS: Record<SectionKey, boolean> = {
   workProcess: true,
   portfolio: true,
   about: true,
@@ -40,8 +31,8 @@ const DEFAULT_SECTIONS: Sections = {
 };
 
 export function Home() {
-  const [sections, setSections] = useState<Sections>(DEFAULT_SECTIONS);
   const location = useLocation();
+  const sections = { ...DEFAULT_SECTIONS, ...useSiteSettings().data?.sections };
 
   useEffect(() => {
     if (location.state?.scrollTo) {
@@ -49,20 +40,6 @@ export function Home() {
       if (el) el.scrollIntoView({ behavior: "smooth" });
     }
   }, [location.state]);
-
-  useEffect(() => {
-    fetch(
-      `https://${projectId}.supabase.co/functions/v1/make-server-0951c59e/settings`,
-      { cache: "no-store", headers: { Authorization: `Bearer ${publicAnonKey}` } }
-    )
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.settings?.sections) {
-          setSections({ ...DEFAULT_SECTIONS, ...data.settings.sections });
-        }
-      })
-      .catch(() => {});
-  }, []);
 
   return (
     <div style={{ backgroundColor: "#080401", fontFamily: "'Inter', sans-serif", overflowX: "hidden" }}>

@@ -1,0 +1,291 @@
+/*
+ * Public site layout rules that differ between phone and desktop.
+ *
+ * These used to be picked in JavaScript (useMobile), which meant the
+ * prerendered HTML always carried the desktop layout: phones showed it until
+ * the scripts ran, and hydration broke on the difference. As media queries
+ * the HTML is right for every screen from the first paint.
+ *
+ * Phone = up to 767px, the same breakpoint the JavaScript used.
+ * Only the properties that change per screen live here; the rest of each
+ * element's look stays inline next to its markup.
+ */
+
+/* ── Hero ─────────────────────────────────────────────────────────────── */
+
+.pdc-hero-bg picture { display: block; width: 100%; height: 100%; }
+.pdc-hero-bg img { opacity: 0.35; }
+.pdc-hero-shade { background: linear-gradient(135deg, rgba(10,5,1,0.92) 0%, rgba(30,15,5,0.78) 50%, rgba(10,5,1,0.85) 100%); }
+.pdc-hero-phone-photo { display: none; }
+.pdc-hero-content { padding: 0 40px; justify-content: center; }
+.pdc-hero-grid { display: grid; grid-template-columns: 1fr auto; gap: 60px; align-items: center; }
+.pdc-hero-label { margin-bottom: 28px; }
+.pdc-hero-title { font-size: clamp(48px, 7vw, 96px); margin: 0 0 24px; }
+.pdc-hero-tagline { color: rgba(255,251,224,0.5); margin: 0 0 52px; }
+.pdc-hero-cta { padding: 16px 40px; flex: none; }
+.pdc-hero-frame { display: flex; }
+
+@media (max-width: 767px) {
+  .pdc-hero-bg img { opacity: 0.45; }
+  .pdc-hero-shade { background: linear-gradient(to bottom, rgba(10,5,1,0.7) 0%, rgba(10,5,1,0.85) 60%, rgba(10,5,1,0.95) 100%); }
+  .pdc-hero-phone-photo { display: block; }
+  .pdc-hero-content { padding: 0 24px 60px; justify-content: flex-end; }
+  .pdc-hero-grid { display: flex; flex-direction: column; gap: 0; align-items: stretch; }
+  .pdc-hero-label { margin-bottom: 20px; }
+  .pdc-hero-title { font-size: clamp(36px, 11vw, 64px); margin-bottom: 18px; text-shadow: 0 2px 12px rgba(0,0,0,0.6); }
+  .pdc-hero-tagline { color: rgba(255,251,224,0.75); margin-bottom: 28px; text-shadow: 0 1px 8px rgba(0,0,0,0.5); }
+  .pdc-hero-cta { padding: 14px 28px; flex: 1; }
+  .pdc-hero-frame { display: none; }
+}
+
+/* ── Shared section rhythm ────────────────────────────────────────────── */
+
+.pdc-section { padding: 120px 0; }
+.pdc-wrap { padding: 0 40px; }
+
+@media (max-width: 767px) {
+  .pdc-section { padding: 80px 0; }
+  .pdc-wrap { padding: 0 20px; }
+}
+
+/* ── Home: work process ───────────────────────────────────────────────── */
+
+.pdc-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0; }
+.pdc-step { padding: 52px 40px; }
+.pdc-step:not(:last-child) { border-right: 1px solid rgba(255,251,224,0.08); }
+
+@media (max-width: 767px) {
+  .pdc-steps { grid-template-columns: 1fr; }
+  .pdc-step { padding: 36px 20px; }
+  .pdc-step:not(:last-child) { border-right: none; }
+}
+
+/* ── Home: about ──────────────────────────────────────────────────────── */
+
+.pdc-owners { grid-template-columns: repeat(3, 1fr); --pdc-owner-h: 580px; }
+.pdc-credentials { grid-template-columns: repeat(4, 1fr); }
+
+@media (max-width: 767px) {
+  .pdc-owners { grid-template-columns: 1fr; --pdc-owner-h: 500px; }
+  .pdc-credentials { grid-template-columns: 1fr 1fr; }
+}
+
+/* ── Home: reviews ────────────────────────────────────────────────────── */
+
+.pdc-reviews { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 28px; }
+.pdc-review { padding: 34px 30px; }
+.pdc-review-text { font-size: 16px; }
+
+@media (max-width: 767px) {
+  .pdc-reviews { grid-template-columns: 1fr; gap: 20px; }
+  .pdc-review { padding: 26px 22px; }
+  .pdc-review-text { font-size: 15px; }
+}
+
+/* ── Home: contact ────────────────────────────────────────────────────── */
+
+.pdc-contact-band { padding: 100px 40px; }
+.pdc-contact-title { font-size: clamp(40px, 6vw, 80px); }
+.pdc-contact-cta { padding: 18px 56px; }
+.pdc-contact-body { padding: 100px 40px; grid-template-columns: 1fr 1.6fr; gap: 80px; }
+.pdc-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+.pdc-contact-submit { align-self: flex-start; }
+
+@media (max-width: 767px) {
+  .pdc-contact-band { padding: 64px 20px; }
+  .pdc-contact-title { font-size: clamp(36px, 10vw, 60px); }
+  .pdc-contact-cta { padding: 16px 36px; }
+  .pdc-contact-body { padding: 60px 20px; grid-template-columns: 1fr; gap: 48px; }
+  /* The CTA above scrolls to the form, so on a phone it comes before the details. */
+  .pdc-contact-info { order: 2; }
+  .pdc-contact-form { order: 1; }
+  .pdc-form-row { grid-template-columns: 1fr; }
+  .pdc-contact-submit { align-self: stretch; }
+  /* These beat the inline spacing of the contact details list. */
+  .contact-info-list { gap: 20px !important; }
+  .contact-info-item { padding-bottom: 16px !important; }
+  .contact-info-label { margin-bottom: 6px !important; }
+}
+
+/* ── Home: packages and custom projects ───────────────────────────────── */
+
+@media (max-width: 1024px) and (min-width: 768px) {
+  .pricing-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .pricing-grid > div:last-child { grid-column: 1 / -1; }
+}
+@media (max-width: 767px) {
+  .pricing-grid { grid-template-columns: 1fr !important; }
+}
+@media (min-width: 1024px) {
+  .custom-cta-grid { grid-template-columns: 1.2fr 1fr !important; gap: 64px !important; }
+}
+
+/* ── Home: featured work ──────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .portfolio-grid-main { grid-template-columns: 1fr !important; grid-template-rows: auto !important; gap: 3px !important; }
+  .portfolio-grid-main > div { grid-column: 1 !important; grid-row: auto !important; height: 340px !important; }
+}
+
+/* ── Service pages (automotive, social media) ─────────────────────────── */
+
+.pdc-svc-head { padding: 80px 40px 64px; }
+.pdc-svc-title { font-size: clamp(48px, 7vw, 88px); }
+.pdc-svc-title--social { font-size: clamp(44px, 6vw, 76px); }
+.pdc-svc-hero { height: 65vh; }
+.pdc-svc-intro { padding: 72px 40px 0; }
+.pdc-svc-body { padding: 100px 40px; grid-template-columns: 1fr 1fr; gap: 100px; }
+.pdc-svc-price { font-size: 80px; }
+.pdc-svc-form-title { font-size: clamp(28px, 3vw, 40px); }
+.pdc-svc-submit { width: auto; }
+.pdc-svc-gallery { padding: 0 40px 80px; grid-template-columns: repeat(3, 1fr); }
+.pdc-svc-cta { padding: 80px 40px; }
+.pdc-svc-cta-title { font-size: clamp(28px, 4vw, 52px); }
+
+@media (max-width: 767px) {
+
+  .pdc-svc-head { padding: 60px 20px 48px; }
+  .pdc-svc-title { font-size: clamp(40px, 12vw, 72px); }
+  .pdc-svc-title--social { font-size: clamp(36px, 10vw, 64px); }
+  .pdc-svc-hero { height: 60vw; }
+  .pdc-svc-intro { padding: 48px 20px 0; }
+  .pdc-svc-body { padding: 60px 20px; grid-template-columns: 1fr; gap: 56px; }
+  .pdc-svc-price { font-size: 64px; }
+  .pdc-svc-form-title { font-size: 28px; }
+  .pdc-svc-submit { width: 100%; }
+  .pdc-svc-gallery { padding: 0 20px 60px; grid-template-columns: 1fr; }
+  .pdc-svc-cta { padding: 60px 20px; }
+  .pdc-svc-cta-title { font-size: clamp(28px, 8vw, 48px); }
+}
+
+/* ── About page: values slider ───────────────────────────────────────── */
+
+.pdc-values-track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  gap: 2px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 2px;
+}
+.pdc-values-track::-webkit-scrollbar { display: none; }
+.pdc-values-card {
+  flex: 0 0 80vw;
+  scroll-snap-align: start;
+}
+.pdc-slider-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background-color: rgba(255,251,224,0.05);
+  border: 1px solid rgba(255,251,224,0.1);
+  color: #fffbe0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.pdc-slider-arrow:hover {
+  background-color: rgba(255,251,224,0.1);
+  border-color: rgba(255,251,224,0.2);
+}
+.pdc-slider-arrow:active {
+  background-color: rgba(255,251,224,0.15);
+}
+@media (min-width: 768px) {
+  .pdc-values-track {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    overflow-x: visible;
+    scroll-snap-type: none;
+  }
+  .pdc-values-card {
+    flex: unset;
+  }
+  .pdc-slider-arrow {
+    display: none;
+  }
+}
+
+/* ── Portfolio page: masonry and loading skeleton ────────────────────── */
+
+@keyframes pdc-skeleton-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.portfolio-masonry {
+  column-count: 3;
+  column-gap: 3px;
+}
+@media (max-width: 768px) {
+  .portfolio-masonry {
+    column-count: 1 !important;
+  }
+}
+@media (min-width: 769px) and (max-width: 1024px) {
+  .portfolio-masonry {
+    column-count: 2 !important;
+  }
+}
+
+/* ── 404 page: icon pulse ──────────────────────────────────────────────── */
+
+@keyframes pdc-icon-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+/* ── Portfolio article ────────────────────────────────────────────────── */
+
+.pdc-detail-masonry { columns: 3; }
+
+@media (max-width: 767px) {
+  .pdc-detail-masonry { columns: 1; }
+}
+
+/* ── 404 page ─────────────────────────────────────────────────────────── */
+
+.pdc-404-icon { margin-bottom: 48px; }
+.pdc-404-icon > div { width: 120px; height: 120px; }
+.pdc-404-number { font-size: 180px; }
+.pdc-404-title { font-size: 42px; }
+.pdc-404-text { font-size: 16px; }
+.pdc-404-actions { flex-direction: row; }
+.pdc-404-btn { padding: 16px 32px; }
+
+@media (max-width: 767px) {
+  .pdc-404-icon { margin-bottom: 32px; }
+  .pdc-404-icon > div { width: 80px; height: 80px; }
+  .pdc-404-icon svg { width: 36px; height: 36px; }
+  .pdc-404-number { font-size: 120px; }
+  .pdc-404-title { font-size: 28px; }
+  .pdc-404-text { font-size: 14px; }
+  .pdc-404-actions { flex-direction: column; }
+  .pdc-404-btn { padding: 14px 24px; }
+}
+
+/* ── Quote page (client-rendered) ─────────────────────────────────────── */
+
+.pdc-quote-page { padding: 56px 24px 90px; }
+
+@media (max-width: 767px) {
+  .pdc-quote-page { padding: 28px 16px 60px; }
+}
+
+/* ── Show on one screen size only ─────────────────────────────────────── */
+
+@media (min-width: 768px) {
+  .pdc-phone-only { display: none !important; }
+}
+@media (max-width: 767px) {
+  .pdc-desktop-only { display: none !important; }
+}

@@ -496,56 +496,6 @@ export function AboutPage() {
         }}
       >
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-          <style>{`
-            .pdc-values-track {
-              display: flex;
-              overflow-x: auto;
-              scroll-snap-type: x mandatory;
-              -webkit-overflow-scrolling: touch;
-              gap: 2px;
-              scrollbar-width: none;
-              -ms-overflow-style: none;
-              padding-bottom: 2px;
-            }
-            .pdc-values-track::-webkit-scrollbar { display: none; }
-            .pdc-values-card {
-              flex: 0 0 80vw;
-              scroll-snap-align: start;
-            }
-            .pdc-slider-arrow {
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              width: 48px;
-              height: 48px;
-              background-color: rgba(255,251,224,0.05);
-              border: 1px solid rgba(255,251,224,0.1);
-              color: #fffbe0;
-              cursor: pointer;
-              transition: all 0.3s ease;
-            }
-            .pdc-slider-arrow:hover {
-              background-color: rgba(255,251,224,0.1);
-              border-color: rgba(255,251,224,0.2);
-            }
-            .pdc-slider-arrow:active {
-              background-color: rgba(255,251,224,0.15);
-            }
-            @media (min-width: 768px) {
-              .pdc-values-track {
-                display: grid;
-                grid-template-columns: repeat(4, 1fr);
-                overflow-x: visible;
-                scroll-snap-type: none;
-              }
-              .pdc-values-card {
-                flex: unset;
-              }
-              .pdc-slider-arrow {
-                display: none;
-              }
-            }
-          `}</style>
 
           <div style={{ marginBottom: "64px" }}>
             <span

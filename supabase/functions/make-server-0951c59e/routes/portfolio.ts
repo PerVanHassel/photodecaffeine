@@ -16,6 +16,16 @@ r.use("/make-server-0951c59e/admin/ai/*", requireAdmin as any, requirePermission
 // PORTFOLIO ENDPOINTS
 // ============================================================================
 
+/**
+ * What a visitor may see of an article. The stored record also names the admin
+ * who created and last edited it (id, name and e-mail), which must not leave
+ * the admin side.
+ */
+function publicArticle(a: Record<string, unknown>) {
+  const { createdBy: _createdBy, updatedBy: _updatedBy, ...rest } = a;
+  return rest;
+}
+
 // --- GET /portfolio — list all published portfolio articles ---
 r.get("/make-server-0951c59e/portfolio", async (c) => {
   try {
@@ -31,7 +41,8 @@ r.get("/make-server-0951c59e/portfolio", async (c) => {
       .filter(Boolean)
       .map((v) => JSON.parse(v as string))
       .filter((a) => a.published)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .map(publicArticle);
 
     return c.json({ articles });
   } catch (err) {
@@ -50,7 +61,7 @@ r.get("/make-server-0951c59e/portfolio/:id", async (c) => {
     const article = JSON.parse(articleStr);
     if (!article.published) return c.json({ error: "Article not found" }, 404);
 
-    return c.json({ article });
+    return c.json({ article: publicArticle(article) });
   } catch (err) {
     console.log("Get portfolio article error:", err);
     return c.json({ error: `Failed to fetch article: ${err}` }, 500);

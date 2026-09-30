@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
 
+// The contact form is prerendered; a plain useLayoutEffect warns on the server.
+const useClientLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
+
 export interface SelectOption {
   value: string;
   label: string;
@@ -91,7 +94,7 @@ export function Select({
   }
 
   // Opening downwards into the fold is worse than opening upwards.
-  useLayoutEffect(() => {
+  useClientLayoutEffect(() => {
     if (!open || !buttonRef.current) return;
     const box = buttonRef.current.getBoundingClientRect();
     setDropUp(window.innerHeight - box.bottom < 240 && box.top > 240);

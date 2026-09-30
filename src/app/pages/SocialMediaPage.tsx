@@ -2,7 +2,6 @@ import { Helmet } from "react-helmet-async";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { portalFetch } from "../../lib/supabase";
-import { useMobile } from "../hooks/useMobile";
 import { useAdTracking, getStoredAdRef } from "../hooks/useAdTracking";
 import { ArrowLeft } from "lucide-react";
 import heroImage from "@/imports/IMG_9694.jpg";
@@ -18,7 +17,6 @@ export function SocialMediaPage() {
   useAdTracking("/services/social-media");
 
   const navigate = useNavigate();
-  const isMobile = useMobile();
 
   const [form, setForm] = useState({ name: "", email: "", phone: "", company: "", message: "" });
   const [focused, setFocused] = useState<string | null>(null);
@@ -106,10 +104,10 @@ export function SocialMediaPage() {
       </Helmet>
       {/* ── Header ── */}
       <div
+        className="pdc-svc-head"
         style={{
           backgroundColor: "#0d0703",
           borderBottom: "1px solid rgba(255,251,224,0.06)",
-          padding: isMobile ? "60px 20px 48px" : "80px 40px 64px",
         }}
       >
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
@@ -160,9 +158,9 @@ export function SocialMediaPage() {
                 Diensten
               </span>
               <h1
+                className="pdc-svc-title pdc-svc-title--social"
                 style={{
                   color: "#fffbe0",
-                  fontSize: isMobile ? "clamp(36px, 10vw, 64px)" : "clamp(44px, 6vw, 76px)",
                   fontWeight: 900,
                   letterSpacing: "-0.03em",
                   lineHeight: 0.92,
@@ -186,27 +184,26 @@ export function SocialMediaPage() {
                 </em>
               </h1>
             </div>
-            {!isMobile && (
-              <p
-                style={{
-                  color: "rgba(255,251,224,0.35)",
-                  fontSize: "14px",
-                  fontWeight: 300,
-                  lineHeight: 1.7,
-                  margin: 0,
-                  maxWidth: "320px",
-                  textAlign: "right",
-                }}
-              >
-                Consistente, professionele content voor je automotive merk — van shoot tot geplaatste post.
-              </p>
-            )}
+            <p
+              className="pdc-desktop-only"
+              style={{
+                color: "rgba(255,251,224,0.35)",
+                fontSize: "14px",
+                fontWeight: 300,
+                lineHeight: 1.7,
+                margin: 0,
+                maxWidth: "320px",
+                textAlign: "right",
+              }}
+            >
+              Consistente, professionele content voor je automotive merk — van shoot tot geplaatste post.
+            </p>
           </div>
         </div>
       </div>
 
       {/* ── Hero image ── */}
-      <div style={{ position: "relative", height: isMobile ? "60vw" : "65vh", minHeight: "320px", overflow: "hidden" }}>
+      <div className="pdc-svc-hero" style={{ position: "relative", minHeight: "320px", overflow: "hidden" }}>
         <img
           src={heroImage}
           alt="Social media contentproductie op locatie — PhotoDeCaffeine"
@@ -222,10 +219,10 @@ export function SocialMediaPage() {
 
       {/* ── Keyword intro ── */}
       <div
+        className="pdc-svc-intro"
         style={{
           maxWidth: "800px",
           margin: "0 auto",
-          padding: isMobile ? "48px 20px 0" : "72px 40px 0",
           textAlign: "center",
         }}
       >
@@ -249,13 +246,11 @@ export function SocialMediaPage() {
 
       {/* ── What's included + form ── */}
       <div
+        className="pdc-svc-body"
         style={{
           maxWidth: "1400px",
           margin: "0 auto",
-          padding: isMobile ? "60px 20px" : "100px 40px",
           display: "grid",
-          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
-          gap: isMobile ? "56px" : "100px",
           alignItems: "start",
         }}
       >
@@ -361,9 +356,9 @@ export function SocialMediaPage() {
             Vraag een voorstel aan
           </span>
           <h2
+            className="pdc-svc-form-title"
             style={{
               color: "#fffbe0",
-              fontSize: isMobile ? "28px" : "clamp(28px, 3vw, 40px)",
               fontWeight: 900,
               letterSpacing: "-0.02em",
               lineHeight: 1.05,
@@ -544,6 +539,7 @@ export function SocialMediaPage() {
 
               <button
                 type="submit"
+                className="pdc-svc-submit"
                 disabled={loading}
                 style={{
                   backgroundColor: loading ? "#6b5a3e" : "#fffbe0",
@@ -558,7 +554,6 @@ export function SocialMediaPage() {
                   fontFamily: "'Inter', sans-serif",
                   transition: "all 0.25s ease",
                   alignSelf: "flex-start",
-                  width: isMobile ? "100%" : "auto",
                 }}
                 onMouseEnter={(e) => {
                   if (!loading) {
@@ -582,10 +577,10 @@ export function SocialMediaPage() {
 
       {/* ── Custom CTA ── */}
       <div
+        className="pdc-svc-cta"
         style={{
           borderTop: "1px solid rgba(255,251,224,0.06)",
           backgroundColor: "#0d0703",
-          padding: isMobile ? "60px 20px" : "80px 40px",
           textAlign: "center",
         }}
       >
@@ -603,9 +598,9 @@ export function SocialMediaPage() {
           Ook losse shoot nodig?
         </span>
         <h2
+          className="pdc-svc-cta-title"
           style={{
             color: "#fffbe0",
-            fontSize: isMobile ? "clamp(28px, 8vw, 48px)" : "clamp(28px, 4vw, 52px)",
             fontWeight: 900,
             letterSpacing: "-0.03em",
             lineHeight: 0.95,

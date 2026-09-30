@@ -24,15 +24,6 @@ export function Services() {
             gap: "2px",
           }}
         >
-          <style>{`
-            @media (max-width: 1024px) and (min-width: 768px) {
-              .pricing-grid { grid-template-columns: repeat(2, 1fr) !important; }
-              .pricing-grid > div:last-child { grid-column: 1 / -1; }
-            }
-            @media (max-width: 767px) {
-              .pricing-grid { grid-template-columns: 1fr !important; }
-            }
-          `}</style>
 
           {ts.packages.map((pkg) => (
             <div
