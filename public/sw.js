@@ -16,7 +16,7 @@
  *   Supabase / API    — never cached; admin data must not be served stale.
  */
 
-const VERSION = "pdc-admin-v2";
+const VERSION = "pdc-admin-v3";
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 

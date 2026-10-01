@@ -25,7 +25,7 @@
       "package": "com.photodecaffeine.admin",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#070301"
+        "backgroundColor": "#3e250a"
       },
       "edgeToEdgeEnabled": true
     },
