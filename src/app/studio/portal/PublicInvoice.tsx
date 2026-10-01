@@ -38,7 +38,7 @@ function Inner() {
           <>
             <div className="s-row between no-print">
               <Pill tone={inv.status === "paid" ? "ok" : inv.overdue ? "bad" : "info"}>{inv.status === "paid" ? "Betaald" : inv.overdue ? "Te laat" : inv.status === "void" ? "Vervallen" : "Open"}</Pill>
-              <Button icon={<Printer />} onClick={() => window.print()}>Printen of opslaan als PDF · Print or save as PDF</Button>
+              <Button icon={<Printer />} onClick={() => window.print()}>Printen of opslaan als PDF</Button>
             </div>
             <InvoiceDocument invoice={inv} business={data.data!.business} />
           </>

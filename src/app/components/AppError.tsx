@@ -27,26 +27,18 @@ export function reloadOnce() {
 export function AppError() {
   const error = useRouteError();
   const stale = isStaleChunk(error);
-  const english = typeof navigator !== "undefined" && !navigator.language?.toLowerCase().startsWith("nl");
 
   useEffect(() => {
     if (stale) reloadOnce();
     else console.error(error);
   }, [stale, error]);
 
-  const t = english
-    ? {
-        title: stale ? "There's a new version" : "Something went wrong",
-        body: stale ? "The site was updated while this page was open. Refresh to load the latest version." : "This page ran into a problem. Refreshing usually fixes it.",
-        refresh: "Refresh",
-        home: "Go to home",
-      }
-    : {
-        title: stale ? "Er staat een nieuwe versie klaar" : "Er ging iets mis",
-        body: stale ? "De site is bijgewerkt terwijl deze pagina openstond. Ververs om de nieuwste versie te laden." : "Deze pagina liep vast. Verversen lost het meestal op.",
-        refresh: "Verversen",
-        home: "Naar home",
-      };
+  const t = {
+    title: stale ? "Er staat een nieuwe versie klaar" : "Er ging iets mis",
+    body: stale ? "De site is bijgewerkt terwijl deze pagina openstond. Ververs om de nieuwste versie te laden." : "Deze pagina liep vast. Verversen lost het meestal op.",
+    refresh: "Verversen",
+    home: "Naar home",
+  };
 
   const detail = isRouteErrorResponse(error) ? `${error.status} ${error.statusText}` : error instanceof Error ? error.message : "";
 

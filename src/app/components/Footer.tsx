@@ -21,206 +21,104 @@ type PolicyDoc = {
   sections: PolicySection[];
 };
 
-const policyContent: Record<"en" | "nl", { privacy: PolicyDoc; terms: PolicyDoc; cookie: PolicyDoc }> = {
-  en: {
-    cookie: {
-      title: "Cookie Policy",
-      lastUpdated: "Last updated: June 2026",
-      sections: [
-        {
-          heading: "1. What Are Cookies",
-          body: "Cookies are small text files placed on your device when you visit a website. They are widely used to make websites work, improve performance, and provide information to site owners.",
-        },
-        {
-          heading: "2. Cookies We Use",
-          body: "We use strictly necessary cookies only. These are session cookies required to keep you logged in to the Client Portal and Admin Portal. We do not use advertising, analytics, or tracking cookies.",
-        },
-        {
-          heading: "3. Third-Party Cookies",
-          body: "We do not embed third-party scripts (e.g. Google Analytics, Meta Pixel) that set cookies. If this changes, this policy will be updated and a consent banner will be displayed.",
-        },
-        {
-          heading: "4. Managing Cookies",
-          body: "You can delete or block cookies at any time via your browser settings. Note that disabling session cookies will prevent you from logging into the Client or Admin Portal.",
-        },
-        {
-          heading: "5. Contact",
-          body: "Questions about our use of cookies? Email us at hello@photodecaffeine.com.",
-        },
-      ],
-    },
-    privacy: {
-      title: "Privacy Policy",
-      lastUpdated: "Last updated: June 2026",
-      sections: [
-        {
-          heading: "1. Who We Are",
-          body: "Photo De Caffeine (PDC) is a visual content studio registered in the Netherlands. KvK: 94948933. Address: Middenstraat 47, Roosendaal. We are responsible for processing your personal data as described in this policy.",
-        },
-        {
-          heading: "2. Data We Collect",
-          body: "When you submit a contact form on our website, we collect your name, email address, company name, and the content of your message. We do not collect sensitive personal data, track you across sites, or use advertising cookies.",
-        },
-        {
-          heading: "3. How We Use Your Data",
-          body: "We use your data solely to respond to your inquiry and, where relevant, to manage our client relationship. We do not sell, share, or rent your data to third parties.",
-        },
-        {
-          heading: "4. Data Retention",
-          body: "We retain contact inquiries for a maximum of 2 years from receipt. Client project data is retained for 7 years to comply with Dutch accounting regulations.",
-        },
-        {
-          heading: "5. Your Rights (AVG / GDPR)",
-          body: "You have the right to access, correct, or delete your personal data. To exercise these rights, email us at hello@photodecaffeine.com. We will respond within 30 days.",
-        },
-        {
-          heading: "6. Security",
-          body: "We take reasonable technical and organisational measures to protect your personal data. Our systems use encrypted connections and access-controlled storage.",
-        },
-        {
-          heading: "7. Contact",
-          body: "Questions about this policy? Reach us at hello@photodecaffeine.com or Middenstraat 47, Roosendaal, Netherlands.",
-        },
-      ],
-    },
-    terms: {
-      title: "Terms & Conditions",
-      lastUpdated: "Last updated: June 2026",
-      sections: [
-        {
-          heading: "1. Applicability",
-          body: "These terms apply to all offers, agreements, and deliveries by Photo De Caffeine (PDC), KvK 94948933, Middenstraat 47, Roosendaal.",
-        },
-        {
-          heading: "2. Quotations & Agreements",
-          body: "All quotations are valid for 30 days. An agreement is established upon written confirmation (email) by both parties. Any changes must be confirmed in writing.",
-        },
-        {
-          heading: "3. Payment",
-          body: "A 50% deposit is required before the shoot date. The remaining balance is due within 14 days of final file delivery. Overdue invoices accrue statutory interest under Dutch law.",
-        },
-        {
-          heading: "4. Intellectual Property",
-          body: "PDC retains full copyright of all images until payment is received in full. Upon full payment, the client receives a non-exclusive usage licence as specified in the quotation. PDC retains the right to use images for portfolio and promotional purposes unless agreed otherwise in writing.",
-        },
-        {
-          heading: "5. Delivery",
-          body: "Final files are delivered via a secure download link within the timeframe specified in the project agreement. Standard delivery is within 14 working days after the shoot.",
-        },
-        {
-          heading: "6. Cancellation",
-          body: "Cancellations within 7 days of the shoot date forfeit the deposit. Cancellations with more than 14 days notice will receive a full deposit refund.",
-        },
-        {
-          heading: "7. Liability",
-          body: "PDC's liability is limited to the invoice value of the relevant project. PDC is not liable for indirect or consequential damages.",
-        },
-        {
-          heading: "8. Governing Law",
-          body: "These terms are governed by Dutch law. Disputes shall be submitted to the competent court in Breda, Netherlands.",
-        },
-      ],
-    },
+const policies: { privacy: PolicyDoc; terms: PolicyDoc; cookie: PolicyDoc } = {
+  cookie: {
+    title: "Cookiebeleid",
+    lastUpdated: "Laatst bijgewerkt: oktober 2026",
+    sections: [
+      {
+        heading: "1. Wat zijn cookies",
+        body: "Cookies zijn kleine tekstbestanden die op uw apparaat worden geplaatst wanneer u een website bezoekt. Ze worden gebruikt om websites te laten werken, de prestaties te verbeteren en informatie aan website-eigenaren te verstrekken.",
+      },
+      {
+        heading: "2. Cookies die wij gebruiken",
+        body: "Wij gebruiken uitsluitend strikt noodzakelijke cookies. Dit zijn sessiecookies die nodig zijn om u ingelogd te houden in het klantportaal en de beheeromgeving. Wij gebruiken geen advertentie-, analyse- of trackingcookies.",
+      },
+      {
+        heading: "3. Cookies van derden",
+        body: "Wij gebruiken geen scripts van derden die cookies plaatsen, zoals Google Analytics of Meta Pixel. Als dat verandert, passen we dit beleid aan en tonen we een toestemmingsbanner.",
+      },
+      {
+        heading: "4. Cookies beheren",
+        body: "U kunt cookies op elk moment verwijderen of blokkeren via uw browserinstellingen. Let op: zonder sessiecookies kunt u niet inloggen in het klantportaal of de beheeromgeving.",
+      },
+      {
+        heading: "5. Contact",
+        body: "Vragen over ons cookiegebruik? Stuur een e-mail naar contact@photodecaffeine.com.",
+      },
+    ],
   },
-  nl: {
-    cookie: {
-      title: "Cookiebeleid",
-      lastUpdated: "Laatst bijgewerkt: juni 2026",
-      sections: [
-        {
-          heading: "1. Wat zijn cookies",
-          body: "Cookies zijn kleine tekstbestanden die op uw apparaat worden geplaatst wanneer u een website bezoekt. Ze worden gebruikt om websites te laten werken, de prestaties te verbeteren en informatie aan site-eigenaren te verstrekken.",
-        },
-        {
-          heading: "2. Cookies die wij gebruiken",
-          body: "Wij gebruiken uitsluitend strikt noodzakelijke cookies. Dit zijn sessiecookies die nodig zijn om u ingelogd te houden op het Clientportaal en Adminportaal. Wij maken geen gebruik van advertentie-, analyse- of trackingcookies.",
-        },
-        {
-          heading: "3. Cookies van derden",
-          body: "Wij embedden geen scripts van derden (bijv. Google Analytics, Meta Pixel) die cookies plaatsen. Als dit verandert, wordt dit beleid bijgewerkt en wordt er een toestemmingsbanner getoond.",
-        },
-        {
-          heading: "4. Cookies beheren",
-          body: "U kunt cookies op elk moment verwijderen of blokkeren via uw browserinstellingen. Let op: het uitschakelen van sessiecookies voorkomt dat u kunt inloggen op het Client- of Adminportaal.",
-        },
-        {
-          heading: "5. Contact",
-          body: "Vragen over ons cookiegebruik? Stuur een e-mail naar hello@photodecaffeine.com.",
-        },
-      ],
-    },
-    privacy: {
-      title: "Privacybeleid",
-      lastUpdated: "Laatst bijgewerkt: juni 2026",
-      sections: [
-        {
-          heading: "1. Wie zijn wij",
-          body: "Photo De Caffeine (PDC) is een visuele contentstudio geregistreerd in Nederland. KvK: 94948933. Adres: Middenstraat 47, Roosendaal. Wij zijn verantwoordelijk voor de verwerking van uw persoonsgegevens zoals beschreven in dit beleid.",
-        },
-        {
-          heading: "2. Gegevens die wij verzamelen",
-          body: "Wanneer u een contactformulier op onze website invult, verzamelen wij uw naam, e-mailadres, bedrijfsnaam en de inhoud van uw bericht. Wij verzamelen geen gevoelige persoonsgegevens en maken geen gebruik van advertentiecookies.",
-        },
-        {
-          heading: "3. Hoe wij uw gegevens gebruiken",
-          body: "Wij gebruiken uw gegevens uitsluitend om uw aanvraag te beantwoorden en, waar relevant, om onze klantrelatie te beheren. Wij verkopen, delen of verhuren uw gegevens niet aan derden.",
-        },
-        {
-          heading: "4. Bewaartermijn",
-          body: "Contactaanvragen bewaren wij maximaal 2 jaar na ontvangst. Klantprojectgegevens bewaren wij 7 jaar ter naleving van de Nederlandse boekhoudregelgeving.",
-        },
-        {
-          heading: "5. Uw rechten (AVG / GDPR)",
-          body: "U heeft het recht op inzage, correctie of verwijdering van uw persoonsgegevens. Stuur uw verzoek naar hello@photodecaffeine.com. Wij reageren binnen 30 dagen.",
-        },
-        {
-          heading: "6. Beveiliging",
-          body: "Wij nemen redelijke technische en organisatorische maatregelen om uw persoonsgegevens te beschermen. Onze systemen maken gebruik van versleutelde verbindingen en toegangsgecontroleerde opslag.",
-        },
-        {
-          heading: "7. Contact",
-          body: "Vragen over dit beleid? Neem contact op via hello@photodecaffeine.com of Middenstraat 47, Roosendaal, Nederland.",
-        },
-      ],
-    },
-    terms: {
-      title: "Algemene Voorwaarden",
-      lastUpdated: "Laatst bijgewerkt: juni 2026",
-      sections: [
-        {
-          heading: "1. Toepasselijkheid",
-          body: "Deze voorwaarden zijn van toepassing op alle aanbiedingen, overeenkomsten en leveringen van Photo De Caffeine (PDC), KvK 94948933, Middenstraat 47, Roosendaal.",
-        },
-        {
-          heading: "2. Offertes & Overeenkomsten",
-          body: "Alle offertes zijn 30 dagen geldig. Een overeenkomst komt tot stand na schriftelijke bevestiging (e-mail) door beide partijen. Wijzigingen dienen schriftelijk te worden bevestigd.",
-        },
-        {
-          heading: "3. Betaling",
-          body: "Een aanbetaling van 50% is vereist vóór de shootdatum. Het resterende saldo dient binnen 14 dagen na de definitieve bestandslevering te worden voldaan. Achterstallige facturen worden verhoogd met de wettelijke rente.",
-        },
-        {
-          heading: "4. Intellectueel Eigendom",
-          body: "PDC behoudt het volledige auteursrecht op alle beelden totdat de volledige betaling is ontvangen. Na volledige betaling ontvangt de opdrachtgever een niet-exclusieve gebruikslicentie zoals gespecificeerd in de offerte. PDC behoudt het recht om beelden te gebruiken voor portfolio- en promotionele doeleinden, tenzij schriftelijk anders overeengekomen.",
-        },
-        {
-          heading: "5. Levering",
-          body: "Definitieve bestanden worden geleverd via een beveiligde downloadlink binnen de in de projectovereenkomst gespecificeerde termijn. Standaard levering is binnen 14 werkdagen na de shoot.",
-        },
-        {
-          heading: "6. Annulering",
-          body: "Annuleringen binnen 7 dagen voor de shootdatum vervallen de aanbetaling. Bij annulering meer dan 14 dagen van tevoren wordt de aanbetaling volledig terugbetaald.",
-        },
-        {
-          heading: "7. Aansprakelijkheid",
-          body: "De aansprakelijkheid van PDC is beperkt tot de factuurwaarde van het betreffende project. PDC is niet aansprakelijk voor indirecte of gevolgschade.",
-        },
-        {
-          heading: "8. Toepasselijk Recht",
-          body: "Deze voorwaarden worden beheerst door Nederlands recht. Geschillen worden voorgelegd aan de bevoegde rechter in Breda, Nederland.",
-        },
-      ],
-    },
+  privacy: {
+    title: "Privacybeleid",
+    lastUpdated: "Laatst bijgewerkt: oktober 2026",
+    sections: [
+      {
+        heading: "1. Wie zijn wij",
+        body: "Photo De Caffeine (PDC) is een visuele contentstudio, ingeschreven in Nederland onder KvK-nummer 94948933. Adres: Middenstraat 47, Roosendaal. Wij zijn verantwoordelijk voor de verwerking van uw persoonsgegevens zoals beschreven in dit beleid.",
+      },
+      {
+        heading: "2. Gegevens die wij verzamelen",
+        body: "Wanneer u een contactformulier op onze website invult, verzamelen wij uw naam, e-mailadres, telefoonnummer, bedrijfsnaam en de inhoud van uw bericht. Wij verzamelen geen gevoelige persoonsgegevens en gebruiken geen advertentiecookies.",
+      },
+      {
+        heading: "3. Hoe wij uw gegevens gebruiken",
+        body: "Wij gebruiken uw gegevens uitsluitend om uw aanvraag te beantwoorden en, waar nodig, om onze klantrelatie te beheren. Wij verkopen, delen of verhuren uw gegevens niet aan derden.",
+      },
+      {
+        heading: "4. Bewaartermijn",
+        body: "Contactaanvragen bewaren wij maximaal 2 jaar na ontvangst. Gegevens van klantprojecten bewaren wij 7 jaar, vanwege de wettelijke bewaarplicht voor de administratie.",
+      },
+      {
+        heading: "5. Uw rechten (AVG)",
+        body: "U heeft recht op inzage, correctie en verwijdering van uw persoonsgegevens. Stuur uw verzoek naar contact@photodecaffeine.com. Wij reageren binnen 30 dagen.",
+      },
+      {
+        heading: "6. Beveiliging",
+        body: "Wij nemen passende technische en organisatorische maatregelen om uw persoonsgegevens te beschermen. Onze systemen gebruiken versleutelde verbindingen en opslag met toegangscontrole.",
+      },
+      {
+        heading: "7. Contact",
+        body: "Vragen over dit beleid? Mail naar contact@photodecaffeine.com of schrijf naar Middenstraat 47, Roosendaal.",
+      },
+    ],
+  },
+  terms: {
+    title: "Algemene voorwaarden",
+    lastUpdated: "Laatst bijgewerkt: oktober 2026",
+    sections: [
+      {
+        heading: "1. Toepasselijkheid",
+        body: "Deze voorwaarden zijn van toepassing op alle aanbiedingen, overeenkomsten en leveringen van Photo De Caffeine (PDC), KvK 94948933, Middenstraat 47, Roosendaal.",
+      },
+      {
+        heading: "2. Offertes en overeenkomsten",
+        body: "Alle offertes zijn 30 dagen geldig. Een overeenkomst komt tot stand na schriftelijke bevestiging (per e-mail) door beide partijen. Wijzigingen moeten schriftelijk worden bevestigd.",
+      },
+      {
+        heading: "3. Betaling",
+        body: "Vóór de shootdatum is een aanbetaling van 50% vereist. Het resterende bedrag moet binnen 14 dagen na de levering van de definitieve bestanden worden betaald. Over te laat betaalde facturen is de wettelijke rente verschuldigd.",
+      },
+      {
+        heading: "4. Intellectueel eigendom",
+        body: "PDC behoudt het volledige auteursrecht op alle beelden totdat de volledige betaling is ontvangen. Na volledige betaling ontvangt de opdrachtgever een niet-exclusieve gebruikslicentie zoals beschreven in de offerte. PDC mag de beelden gebruiken voor portfolio- en promotiedoeleinden, tenzij schriftelijk anders is afgesproken.",
+      },
+      {
+        heading: "5. Levering",
+        body: "Definitieve bestanden worden geleverd via een beveiligde downloadlink, binnen de termijn die in de projectovereenkomst staat. Standaard leveren wij binnen 14 werkdagen na de shoot.",
+      },
+      {
+        heading: "6. Annulering",
+        body: "Bij annulering binnen 7 dagen voor de shootdatum vervalt de aanbetaling. Bij annulering meer dan 14 dagen van tevoren wordt de aanbetaling volledig terugbetaald.",
+      },
+      {
+        heading: "7. Aansprakelijkheid",
+        body: "De aansprakelijkheid van PDC is beperkt tot de factuurwaarde van het betreffende project. PDC is niet aansprakelijk voor indirecte schade of gevolgschade.",
+      },
+      {
+        heading: "8. Toepasselijk recht",
+        body: "Op deze voorwaarden is Nederlands recht van toepassing. Geschillen worden voorgelegd aan de bevoegde rechter in Breda.",
+      },
+    ],
   },
 };
 
@@ -233,8 +131,6 @@ function PolicyModal({
   onClose: () => void;
   doc: PolicyDoc;
 }) {
-  const { language } = useLanguage();
-  const closeLabel = language === "nl" ? "Sluiten" : "Close";
   return (
     <Dialog.Root open={open} onOpenChange={(v) => !v && onClose()}>
       <Dialog.Portal>
@@ -248,7 +144,7 @@ function PolicyModal({
               <p className="text-xs text-[#3e250a]/70 mt-1 tracking-wide">{doc.lastUpdated}</p>
             </div>
             <Dialog.Close asChild>
-              <button type="button" aria-label={closeLabel} className="text-[#3e250a]/60 hover:text-[#3e250a] transition-colors mt-0.5">
+              <button type="button" aria-label="Sluiten" className="text-[#3e250a]/60 hover:text-[#3e250a] transition-colors mt-0.5">
                 <X size={20} aria-hidden="true" />
               </button>
             </Dialog.Close>
@@ -270,13 +166,11 @@ function PolicyModal({
 }
 
 export function Footer() {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const year = new Date().getFullYear();
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
   const [cookieOpen, setCookieOpen] = useState(false);
-
-  const policy = policyContent[language];
 
   const socialLinks = [
     {
@@ -436,17 +330,17 @@ export function Footer() {
       <PolicyModal
         open={privacyOpen}
         onClose={() => setPrivacyOpen(false)}
-        doc={policy.privacy}
+        doc={policies.privacy}
       />
       <PolicyModal
         open={termsOpen}
         onClose={() => setTermsOpen(false)}
-        doc={policy.terms}
+        doc={policies.terms}
       />
       <PolicyModal
         open={cookieOpen}
         onClose={() => setCookieOpen(false)}
-        doc={policy.cookie}
+        doc={policies.cookie}
       />
     </>
   );

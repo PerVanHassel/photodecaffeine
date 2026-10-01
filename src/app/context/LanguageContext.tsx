@@ -1,39 +1,43 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { translations, type Language, type Translations } from "../i18n/translations";
+import { translations, type Translations } from "../i18n/translations";
+
+/** Languages of the client portal. The public site is Dutch only. */
+export type Language = "nl" | "en";
 
 interface LanguageContextValue {
+  /** The client portal's language; the public site ignores it. */
   language: Language;
   setLanguage: (lang: Language) => void;
+  /** The public site's texts. */
   t: Translations;
 }
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 const STORAGE_KEY = "pdc-lang";
-// The client portal used its own key before the choice became site-wide.
+// The client portal used its own key before the choice was stored here.
 const LEGACY_KEYS = ["pdc-portal-lang"];
 
-/** The language this visitor chose before, or the best guess from the browser. */
-function preferredLanguage(): Language {
+/** The portal language this visitor picked before; Dutch otherwise. */
+function savedLanguage(): Language {
   try {
     for (const key of [STORAGE_KEY, ...LEGACY_KEYS]) {
       const saved = localStorage.getItem(key);
       if (saved === "nl" || saved === "en") return saved;
     }
   } catch {
-    // Storage blocked: fall through to the browser languages.
+    // Storage blocked: Dutch.
   }
-  const wanted = navigator.languages?.length ? navigator.languages : [navigator.language];
-  return wanted.some((l) => l?.toLowerCase().startsWith("nl")) ? "nl" : "en";
+  return "nl";
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  // Dutch first: the prerendered HTML is Dutch, and the first render has to
-  // match it. The visitor's own language is applied right after hydration.
+  // Dutch first, so the first render matches the prerendered HTML; a saved
+  // portal choice is read right after hydration.
   const [language, setLanguageState] = useState<Language>("nl");
 
   useEffect(() => {
-    setLanguageState(preferredLanguage());
+    setLanguageState(savedLanguage());
   }, []);
 
   const setLanguage = (lang: Language) => {
@@ -45,21 +49,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // The served HTML says lang="nl"; if someone switches to English the
-  // attribute has to follow, or search engines and screen readers keep being
-  // told the page is Dutch.
-  useEffect(() => {
-    document.documentElement.lang = language;
-  }, [language]);
-
   return (
-    <LanguageContext.Provider
-      value={{
-        language,
-        setLanguage,
-        t: translations[language],
-      }}
-    >
+    <LanguageContext.Provider value={{ language, setLanguage, t: translations.nl }}>
       {children}
     </LanguageContext.Provider>
   );

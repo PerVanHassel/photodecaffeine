@@ -383,12 +383,17 @@ export function useT(): PortalText {
   return language === "en" ? en : nl;
 }
 
-/** The site-wide language (remembered by LanguageContext), with dates in step. */
+/** The portal language (remembered by LanguageContext), with dates and the page language in step. */
 export function usePortalLanguage() {
   const { language, setLanguage } = useLanguage();
   useEffect(() => {
     setDateLocale(language === "en" ? "en" : "nl");
-    return () => setDateLocale("nl");
+    document.documentElement.lang = language;
+    // Outside the portal the site is Dutch only.
+    return () => {
+      setDateLocale("nl");
+      document.documentElement.lang = "nl";
+    };
   }, [language]);
   return { language, choose: setLanguage };
 }

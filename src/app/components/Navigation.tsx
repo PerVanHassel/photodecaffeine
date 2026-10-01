@@ -2,16 +2,10 @@ import { useState, useEffect, useRef, type KeyboardEvent } from "react";
 import { Link, NavLink, useLocation } from "react-router";
 import { PdcLogo } from "./PdcLogo";
 import { useLanguage } from "../context/LanguageContext";
-import type { Language } from "../i18n/translations";
 import { scrollToTop } from "../lib/scroll";
 
 // Link colours, hover and active states live in src/styles/site.css
 // (.pdc-nav-*), so keyboard focus and touch get the same treatment as a mouse.
-
-const LANGUAGES: { code: Language; name: string }[] = [
-  { code: "en", name: "English" },
-  { code: "nl", name: "Nederlands" },
-];
 
 export function Navigation() {
   const [scrolled, setScrolled] = useState(false);
@@ -23,7 +17,7 @@ export function Navigation() {
   const menuButton = useRef<HTMLButtonElement>(null);
   const mobileMenu = useRef<HTMLDivElement>(null);
   const location = useLocation();
-  const { language, setLanguage, t } = useLanguage();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 60);
@@ -173,9 +167,6 @@ export function Navigation() {
             {t.nav.about}
           </NavLink>
 
-          {/* Language Switcher */}
-          <LanguageSwitcher language={language} setLanguage={setLanguage} label={t.nav.language} />
-
           {/* Client Portal link */}
           <Link to="/portal/login" className="pdc-nav-link pdc-nav-quiet">
             {t.nav.clientPortal}
@@ -279,11 +270,6 @@ export function Navigation() {
             {t.nav.about}
           </NavLink>
 
-          {/* Mobile language switcher */}
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <LanguageSwitcher language={language} setLanguage={setLanguage} label={t.nav.language} />
-          </div>
-
           {/* Mobile Client Portal link */}
           <Link to="/portal/login" className="pdc-nav-mobile pdc-nav-quiet">
             {t.nav.clientPortal}
@@ -313,43 +299,5 @@ function Chevron({ open }: { open: boolean }) {
     >
       <path d="M1 1L4 4L7 1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
     </svg>
-  );
-}
-
-function LanguageSwitcher({
-  language,
-  setLanguage,
-  label,
-}: {
-  language: Language;
-  setLanguage: (l: Language) => void;
-  label: string;
-}) {
-  return (
-    <div
-      role="group"
-      aria-label={label}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "0",
-        border: "1px solid rgba(255,251,224,0.15)",
-        overflow: "hidden",
-      }}
-    >
-      {LANGUAGES.map(({ code, name }) => (
-        <button
-          key={code}
-          type="button"
-          lang={code}
-          aria-label={name}
-          aria-pressed={language === code}
-          className="pdc-nav-lang"
-          onClick={() => setLanguage(code)}
-        >
-          {code.toUpperCase()}
-        </button>
-      ))}
-    </div>
   );
 }

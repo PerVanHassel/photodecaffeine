@@ -10,9 +10,9 @@ import DARKROOM from "@/assets/web/darkroom-1200.webp";
 import { scrollBehavior } from "../lib/scroll";
 
 const TEAM = [
-  { id: "majd", name: "Majd Tawashe", role: "Co-Founder & Head Of Office Portugal", tag: "Creative Director & International Relations" },
-  { id: "per", name: "Per van Hassel", role: "Co-Founder & Creative Director / Strategy", tag: "Strategy & Brand Identity" },
-  { id: "ryan", name: "Ryan Chantre", role: "Co-Founder & Creative Lead", tag: "Graphic Design & Post" },
+  { id: "majd", name: "Majd Tawashe", role: "Medeoprichter & hoofd kantoor Portugal", tag: "Creative director & internationale relaties" },
+  { id: "per", name: "Per van Hassel", role: "Medeoprichter & creative director / strategie", tag: "Strategie & merkidentiteit" },
+  { id: "ryan", name: "Ryan Chantre", role: "Medeoprichter & creative lead", tag: "Grafisch ontwerp & postproductie" },
 ] as const;
 
 const PORTRAITS = { majd: image_IMG_9694, per: image_IMG_0114_TIF, ryan: image_IMG_0115_TIF };
@@ -243,15 +243,15 @@ export function AboutPage() {
         paddingTop: "72px",
       }}>
       <Helmet>
-        <title>Over Ons — Het Team achter de Lens | PhotoDeCaffeine</title>
+        <title>Over ons — het team achter de lens | PhotoDeCaffeine</title>
         <meta name="description" content="Maak kennis met het team van PhotoDeCaffeine. Gepassioneerde automotive fotografen en videomakers, actief door heel Nederland, met een oog voor detail en een liefde voor het vak." />
         <link rel="canonical" href="https://www.photodecaffeine.com/about" />
-        <meta property="og:title" content="Over Ons | PhotoDeCaffeine" />
+        <meta property="og:title" content="Over ons | PhotoDeCaffeine" />
         <meta property="og:description" content="Maak kennis met het team van PhotoDeCaffeine — gepassioneerde automotive fotografen door heel Nederland." />
         <meta property="og:url" content="https://www.photodecaffeine.com/about" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Over Ons | PhotoDeCaffeine" />
+        <meta name="twitter:title" content="Over ons | PhotoDeCaffeine" />
         <meta name="twitter:description" content="Maak kennis met het team van PhotoDeCaffeine — gepassioneerde automotive fotografen door heel Nederland." />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",

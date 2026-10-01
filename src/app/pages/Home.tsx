@@ -36,15 +36,15 @@ export function Home() {
   return (
     <div style={{ backgroundColor: "#080401", fontFamily: "'Inter', sans-serif", overflowX: "hidden" }}>
       <Helmet>
-        <title>Automotive Fotografie & Social Media Beheer | PhotoDeCaffeine</title>
+        <title>Automotive fotografie & social media beheer | PhotoDeCaffeine</title>
         <meta name="description" content="Automotive fotografie, videografie en social media beheer door heel Nederland. Voor auto's, motoren en de mensen erachter — zakelijk en particulier. Vraag een offerte aan." />
         <link rel="canonical" href="https://www.photodecaffeine.com/" />
-        <meta property="og:title" content="Automotive Fotografie & Social Media Beheer | PhotoDeCaffeine" />
+        <meta property="og:title" content="Automotive fotografie & social media beheer | PhotoDeCaffeine" />
         <meta property="og:description" content="Automotive fotografie, videografie en social media beheer door heel Nederland. Voor auto's, motoren en de mensen erachter." />
         <meta property="og:url" content="https://www.photodecaffeine.com/" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Automotive Fotografie & Social Media Beheer | PhotoDeCaffeine" />
+        <meta name="twitter:title" content="Automotive fotografie & social media beheer | PhotoDeCaffeine" />
         <meta name="twitter:description" content="Automotive fotografie, videografie en social media beheer door heel Nederland." />
       </Helmet>
       <Hero />

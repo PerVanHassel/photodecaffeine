@@ -89,15 +89,15 @@ export function AutomotivePage() {
       }}
     >
       <Helmet>
-        <title>Automotive Fotografie — Auto's & Motoren | PhotoDeCaffeine</title>
+        <title>Automotive fotografie — auto's & motoren | PhotoDeCaffeine</title>
         <meta name="description" content="Professionele automotive fotografie door heel Nederland. Auto's, motoren en de mensen erachter — voor showrooms, dealers en particuliere eigenaren. Vanaf €50." />
         <link rel="canonical" href="https://www.photodecaffeine.com/services/automotive" />
-        <meta property="og:title" content="Automotive Fotografie — Auto's & Motoren | PhotoDeCaffeine" />
+        <meta property="og:title" content="Automotive fotografie — auto's & motoren | PhotoDeCaffeine" />
         <meta property="og:description" content="Professionele automotive fotografie door heel Nederland. Voor showrooms, dealers en particuliere eigenaren. Vanaf €50." />
         <meta property="og:url" content="https://www.photodecaffeine.com/services/automotive" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Automotive Fotografie — Auto's & Motoren | PhotoDeCaffeine" />
+        <meta name="twitter:title" content="Automotive fotografie — auto's & motoren | PhotoDeCaffeine" />
         <meta name="twitter:description" content="Professionele automotive fotografie door heel Nederland. Voor showrooms, dealers en particuliere eigenaren. Vanaf €50." />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
@@ -168,7 +168,7 @@ export function AutomotivePage() {
                     fontFamily: "'Inter', sans-serif",
                   }}
                 >
-                  Photography & Film
+                  Fotografie & film
                 </em>
               </h1>
             </div>

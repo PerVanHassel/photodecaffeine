@@ -350,16 +350,6 @@
 .pdc-nav-mobile-sub { font-size: 12px; color: rgba(255,251,224,0.55); }
 .pdc-nav-mobile[aria-current="page"] { color: #fffbe0; }
 
-.pdc-nav-lang {
-  background: none; border: 0; cursor: pointer; padding: 7px 11px;
-  font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 400; line-height: 1;
-  letter-spacing: 0.18em; text-transform: uppercase;
-  color: rgba(255,251,224,0.55);
-  transition: color 0.2s ease, background-color 0.2s ease;
-}
-.pdc-nav-lang:hover { color: rgba(255,251,224,0.85); }
-.pdc-nav-lang[aria-pressed="true"] { background: rgba(255,251,224,0.1); color: #fffbe0; font-weight: 700; }
-
 /* ── Public buttons and links that look like buttons ──────────────────── */
 
 .pdc-btn {

@@ -157,7 +157,7 @@ export function WorkProcess() {
                     textTransform: "uppercase",
                   }}
                 >
-                  Step {step.number}
+                  Stap {step.number}
                 </span>
                 <div
                   style={{
