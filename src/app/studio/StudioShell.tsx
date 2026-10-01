@@ -1,4 +1,4 @@
-import logo from "@/imports/pdc-logo-dark.png";
+import { PdcLogo } from "../components/PdcLogo";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Helmet } from "react-helmet-async";
 import {
@@ -68,7 +68,7 @@ function Shell() {
       <div className="s-app">
         <aside className="s-rail">
           <NavLink to="/admin" end className="s-brand" aria-label="Naar Vandaag">
-            <img src={logo} alt="PDC Productions" width={168} height={32} />
+            <PdcLogo className="s-logo" width={168} height={32} />
             <span className="s-brand-tag">Studio</span>
           </NavLink>
           <button className="s-search-btn" type="button" onClick={() => setPaletteOpen(true)}>

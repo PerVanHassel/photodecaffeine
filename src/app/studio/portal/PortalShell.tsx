@@ -1,4 +1,4 @@
-import logo from "@/imports/pdc-logo-dark.png";
+import { PdcLogo } from "../../components/PdcLogo";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Helmet } from "react-helmet-async";
 import { LogOut } from "lucide-react";
@@ -49,7 +49,7 @@ function Frame() {
       <a href="#portal-main" className="s-skip" onClick={skipToMain("portal-main")}>{t.skipToContent}</a>
       <header className="p-top">
         <NavLink to="/portal/dashboard" className="s-brand" aria-label="Naar het overzicht">
-          <img src={logo} alt="PDC Productions" width={150} height={28} />
+          <PdcLogo className="s-logo" width={150} height={28} />
           <span className="s-brand-tag">{t.portal}</span>
         </NavLink>
         <nav aria-label={t.portal}>

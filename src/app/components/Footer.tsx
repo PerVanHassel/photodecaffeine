@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { Instagram, Linkedin, X, MapPin, Mail, Phone } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useLanguage } from "../context/LanguageContext";
-import pdcLogo from "@/assets/web/pdc-logo-light.webp";
+import { PdcLogo } from "./PdcLogo";
 
 function TikTokIcon({ className }: { className?: string }) {
   return (
@@ -312,10 +312,12 @@ export function Footer() {
             {/* Brand column */}
             <div className="md:col-span-5 space-y-5">
               <div>
-                <img
-                  src={pdcLogo}
-                  alt="Photo De Caffeine"
-                  style={{ height: "64px", width: "auto", display: "block", objectFit: "contain" }}
+                <PdcLogo
+                  artboard
+                  label="Photo De Caffeine"
+                  width={160}
+                  height={64}
+                  style={{ display: "block", color: "#fffbe0" }}
                 />
               </div>
               <p className="text-sm text-[#fffbe0]/60 leading-relaxed italic max-w-xs">

@@ -1,6 +1,6 @@
-import pdcLogo from "@/assets/web/pdc-logo-light.webp";
 import { useState, useEffect, useRef, type KeyboardEvent } from "react";
 import { Link, NavLink, useLocation } from "react-router";
+import { PdcLogo } from "./PdcLogo";
 import { useLanguage } from "../context/LanguageContext";
 import type { Language } from "../i18n/translations";
 import { scrollToTop } from "../lib/scroll";
@@ -110,18 +110,7 @@ export function Navigation() {
           }}
           style={{ display: "flex", alignItems: "center" }}
         >
-          <img
-            src={pdcLogo}
-            alt=""
-            width={200}
-            height={80}
-            style={{
-              height: "80px",
-              width: "auto",
-              display: "block",
-              objectFit: "contain",
-            }}
-          />
+          <PdcLogo artboard width={200} height={80} style={{ display: "block", color: "#fffbe0" }} />
         </Link>
 
         {/* Desktop Nav */}

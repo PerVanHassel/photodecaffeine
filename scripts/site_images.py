@@ -32,7 +32,6 @@ PHOTOS = {
     "_MAJ2869_1_.jpeg": ("hero-frame", (800,)),
     "webContent/shared124.jpeg": ("darkroom", (1200,)),
 }
-LOGO = ("PDClogo2.0-12-1.png", "pdc-logo-light", 600)
 
 
 def save_webp(img: Image.Image, path: Path, quality: int) -> None:
@@ -49,13 +48,6 @@ def main() -> None:
                 w = min(width, img.width)
                 resized = img.resize((w, round(img.height * w / img.width)), Image.LANCZOS)
                 save_webp(resized, OUT / f"{name}-{w}.webp", quality=80)
-
-    source, name, width = LOGO
-    with Image.open(SRC / source) as original:
-        # The transparent margin stays: the components size the logo by its full box.
-        img = original.convert("RGBA")
-        resized = img.resize((width, round(img.height * width / img.width)), Image.LANCZOS)
-        save_webp(resized, OUT / f"{name}.webp", quality=90)
 
 
 if __name__ == "__main__":

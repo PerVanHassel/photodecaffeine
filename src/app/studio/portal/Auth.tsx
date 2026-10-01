@@ -1,4 +1,4 @@
-import logo from "@/imports/pdc-logo-dark.png";
+import { PdcLogo } from "../../components/PdcLogo";
 import { Eye, EyeOff, MailCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
@@ -19,7 +19,7 @@ function Frame({ tag, children, t, showLanguage }: { tag: string; children: Reac
       <StudioFonts />
       <div className="s-card" style={{ width: "min(420px, 100%)", padding: "32px 28px", display: "flex", flexDirection: "column", gap: 20, boxShadow: "var(--shadow)" }}>
         <div className="s-brand" style={{ alignItems: "center", alignSelf: "center" }}>
-          <img src={logo} alt="PDC Productions" style={{ width: 190 }} />
+          <PdcLogo className="s-logo" label="PDC Productions" width={190} height={36} style={{ width: 190 }} />
           <span className="s-brand-tag">{tag}</span>
         </div>
         {children}
