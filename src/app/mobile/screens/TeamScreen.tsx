@@ -315,7 +315,7 @@ function AddWorkerSheet({
     >
       <Stack gap={14} style={{ paddingBottom: 4 }}>
         <Field label="Naam">
-          <Input value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+          <Input value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
         <Field label="E-mail">
           <Input
@@ -528,7 +528,6 @@ function RoleSheet({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Bijv. Fotograaf, CFO"
-            autoFocus
           />
         </Field>
 

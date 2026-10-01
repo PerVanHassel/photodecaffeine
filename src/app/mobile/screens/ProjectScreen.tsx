@@ -449,7 +449,6 @@ function AddDeliverableSheet({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Bijv. Bewerkte foto's"
-            autoFocus
           />
         </Field>
         <Field label="Aantal" hint="0 als het aantal niet van toepassing is">
@@ -726,6 +725,7 @@ function GalleryTab({
             <motion.button
               key={url}
               type="button"
+              aria-label={`Foto ${i + 1} bekijken`}
               layout
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}

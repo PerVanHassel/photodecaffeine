@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { downloadZip } from "client-zip";
 import { ArrowLeft, ChevronLeft, ChevronRight, Download, Heart, Send, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 import { toast } from "sonner";
 import { errorMessage, get, post } from "../api";
@@ -10,13 +10,15 @@ import type { GalleryImage, Project } from "../types";
 import { Button, Empty, ErrorState, isVideo, Modal, Photo, Segmented, Skeleton, TextAreaField } from "../ui";
 import { pkeys, saveFile, usePortalProject } from "./data";
 import { useT } from "./i18n";
+import { useModalFocus } from "../../lib/dialog";
+import { useUrlState } from "../urlState";
 
 export function PortalGallery() {
   const { id = "" } = useParams();
   const t = useT();
   const qc = useQueryClient();
   const data = usePortalProject(id);
-  const [filter, setFilter] = useState<"all" | "fav">("all");
+  const [filter, setFilter] = useUrlState<"all" | "fav">("filter", "all", ["all", "fav"]);
   const [open, setOpen] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [zip, setZip] = useState<{ done: number; total: number } | null>(null);
@@ -111,7 +113,7 @@ export function PortalGallery() {
           {shown.length === 0 ? <Empty icon={<Heart />} title={t.noFavorites}>{t.noFavoritesHint}</Empty> : (
             <div className="p-proof">
               {shown.map((g) => (
-                <Photo key={g.id} src={g.url} video={isVideo(g.fileName || g.url)} alt={g.fileName} onClick={() => setOpen(p.gallery.indexOf(g))}>
+                <Photo key={g.id} src={g.url} video={isVideo(g.fileName || g.url)} alt={g.fileName} openLabel={t.viewPhoto(p.gallery.indexOf(g) + 1)} onClick={() => setOpen(p.gallery.indexOf(g))}>
                   <div className="corner">
                     <button type="button" className={`s-fav ${favs.has(g.id) ? "on" : ""}`} aria-pressed={favs.has(g.id)} aria-label={favs.has(g.id) ? t.unfavorite : t.favorite}
                       onClick={(e) => { e.stopPropagation(); toggle(g); }}>
@@ -136,23 +138,25 @@ function Lightbox({ project: p, index, setIndex, favs, onToggle, onDownload }: {
   const t = useT();
   const img = p.gallery[index];
   const go = useCallback((d: number) => setIndex((index + d + p.gallery.length) % p.gallery.length), [index, p.gallery.length, setIndex]);
+  const box = useRef<HTMLDivElement>(null);
+  const closeButton = useRef<HTMLButtonElement>(null);
+  // Focus moves in, stays in, Escape closes, and focus returns to the photo.
+  useModalFocus(box, () => setIndex(null), closeButton);
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setIndex(null);
       if (e.key === "ArrowRight") go(1);
       if (e.key === "ArrowLeft") go(-1);
-      if (e.key.toLowerCase() === "f") onToggle(img);
+      if (e.key.toLowerCase() === "f" && !e.metaKey && !e.ctrlKey && !e.altKey) onToggle(img);
     }
     window.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
-  }, [go, img, onToggle, setIndex]);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [go, img, onToggle]);
 
   // Swipe on phones.
   const [touchX, setTouchX] = useState<number | null>(null);
 
   return (
-    <div className="p-lightbox" role="dialog" aria-modal="true" aria-label={`${index + 1} / ${p.gallery.length}`}
+    <div ref={box} className="p-lightbox" role="dialog" aria-modal="true" aria-label={t.photoOf(index + 1, p.gallery.length)}
       onTouchStart={(e) => setTouchX(e.touches[0].clientX)}
       onTouchEnd={(e) => { if (touchX === null) return; const dx = e.changedTouches[0].clientX - touchX; if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1); setTouchX(null); }}>
       <div className="bar">
@@ -162,7 +166,7 @@ function Lightbox({ project: p, index, setIndex, favs, onToggle, onDownload }: {
             <Heart size={15} fill={favs.has(img.id) ? "currentColor" : "none"} />{favs.has(img.id) ? t.favorite : t.makeFavorite}
           </button>
           <button type="button" className="s-btn" onClick={() => onDownload(img)}><Download size={15} />{t.download}</button>
-          <button type="button" className="s-btn icon" onClick={() => setIndex(null)} aria-label={t.close}><X size={16} /></button>
+          <button ref={closeButton} type="button" className="s-btn icon" onClick={() => setIndex(null)} aria-label={t.close}><X size={16} aria-hidden="true" /></button>
         </div>
       </div>
       <div className="stage">

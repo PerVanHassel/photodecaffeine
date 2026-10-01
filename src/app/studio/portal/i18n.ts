@@ -14,6 +14,7 @@ const nl = {
   back: "Overzicht",
   remove: "Verwijderen",
   unread: (n: number) => `${n} ongelezen`,
+  skipToContent: "Naar de inhoud",
 
   journey: ["Offerte", "Gepland", "Shoot", "Bewerken", "Levering", "Afgerond"],
   journeyHint: ["Wacht op akkoord", "Datum staat", "Op locatie", "Wij zijn bezig", "Klaar om te downloaden", "Bedankt!"],
@@ -99,6 +100,8 @@ const nl = {
   unfavorite: "Uit favorieten",
   download: "Download",
   close: "Sluiten",
+  viewPhoto: (n: number) => `Foto ${n} bekijken`,
+  photoOf: (n: number, total: number) => `Foto ${n} van ${total}`,
   previous: "Vorige",
   next: "Volgende",
   lightboxHint: "Pijltjestoetsen om te bladeren · F voor favoriet",
@@ -199,6 +202,7 @@ const en: PortalText = {
   back: "Overview",
   remove: "Remove",
   unread: (n) => `${n} unread`,
+  skipToContent: "Skip to content",
 
   journey: ["Quote", "Booked", "Shoot", "Editing", "Delivery", "Done"],
   journeyHint: ["Awaiting approval", "Date is set", "On location", "We're working on it", "Ready to download", "Thank you!"],
@@ -284,6 +288,8 @@ const en: PortalText = {
   unfavorite: "Remove from favourites",
   download: "Download",
   close: "Close",
+  viewPhoto: (n) => `View photo ${n}`,
+  photoOf: (n, total) => `Photo ${n} of ${total}`,
   previous: "Previous",
   next: "Next",
   lightboxHint: "Arrow keys to browse · F to favourite",

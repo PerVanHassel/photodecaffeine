@@ -6,6 +6,8 @@ import { MediaGrid, uploadPublic } from "../components/MediaGrid";
 import { fmtDate } from "../format";
 import { useAction } from "../queries";
 import { Button, Card, Empty, ErrorState, Field, Input, isVideo, PageHead, Photo, Pill, Segmented, Sheet, SkeletonList, TextAreaField, TextField, useConfirm } from "../ui";
+import { useUnsavedChanges } from "../unsaved";
+import { useUrlState } from "../urlState";
 
 // Portfolio articles and the automotive gallery live in the kv store; the
 // automotive gallery is one special article that the public page looks up by
@@ -40,7 +42,7 @@ type Filter = "all" | "published" | "draft" | "featured";
 export function PortfolioPage() {
   const articles = useArticles();
   const [editing, setEditing] = useState<Article | "new" | null>(null);
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useUrlState<Filter>("filter", "all");
   const [category, setCategory] = useState("");
   const [q, setQ] = useState("");
 
@@ -203,12 +205,7 @@ export function AutomotivePage() {
   const dirty = !!urls && JSON.stringify(urls) !== JSON.stringify(gallery?.galleryUrls || []);
 
   // Leaving with unsaved changes asks first.
-  useEffect(() => {
-    if (!dirty) return;
-    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
+  useUnsavedChanges(dirty);
 
   const save = useAction({
     fn: () => {

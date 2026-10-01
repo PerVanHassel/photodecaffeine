@@ -6,7 +6,8 @@ import { get, post, put } from "../../api";
 import { ago, euro, TYPE_LABEL } from "../../format";
 import { keys, useAction, useClients } from "../../queries";
 import type { Deliverable, Project, ProjectType } from "../../types";
-import { Button, Card, Field, Input, Pill, Select, SelectField, TextAreaField, TextField, useConfirm } from "../../ui";
+import { Button, Card, Field, Input, Pill, Select, SelectField, TextAreaField, TextField, undoToast, useConfirm } from "../../ui";
+import { useUnsavedChanges } from "../../unsaved";
 
 export function OverviewTab({ project }: { project: Project }) {
   return (
@@ -28,6 +29,7 @@ function DetailsCard({ project: p }: { project: Project }) {
   const [form, setForm] = useState(() => fromProject(p));
   useEffect(() => setForm(fromProject(p)), [p.id, p.updatedAt]); // eslint-disable-line react-hooks/exhaustive-deps
   const dirty = JSON.stringify(form) !== JSON.stringify(fromProject(p));
+  useUnsavedChanges(dirty);
   const save = useAction({
     fn: () => put(`/admin/project/${p.id}`, {
       title: form.title.trim(),
@@ -106,7 +108,7 @@ function DeliverablesCard({ project: p }: { project: Project }) {
                 </button>
                 <span className="label">{d.name}</span>
                 <span className="s-faint s-mono s-small">{d.count ? `${d.count}×` : ""}</span>
-                <Button size="sm" variant="ghost" iconOnly aria-label={`${d.name} verwijderen`} icon={<X />} onClick={() => save.mutate(list.filter((_, j) => j !== i))} />
+                <Button size="sm" variant="ghost" iconOnly aria-label={`${d.name} verwijderen`} icon={<X />} onClick={() => { const before = list; save.mutate(list.filter((_, j) => j !== i)); undoToast(`${d.name} verwijderd`, () => save.mutate(before)); }} />
               </li>
             ))}
           </ul>
@@ -146,7 +148,7 @@ function DemosCard({ project: p }: { project: Project }) {
                 <input type="checkbox" checked={d.live} onChange={() => save.mutate(p.demos.map((x) => (x.slug === d.slug ? { ...x, live: !x.live } : x)))} />
                 Zichtbaar voor klant
               </label>
-              <Button size="sm" variant="ghost" iconOnly aria-label="Demo loskoppelen" icon={<Trash2 />} onClick={() => save.mutate(p.demos.filter((x) => x.slug !== d.slug))} />
+              <Button size="sm" variant="ghost" iconOnly aria-label="Demo loskoppelen" icon={<Trash2 />} onClick={() => { const before = p.demos; save.mutate(p.demos.filter((x) => x.slug !== d.slug)); undoToast("Demo losgekoppeld", () => save.mutate(before)); }} />
             </div>
           </div>
         ))}

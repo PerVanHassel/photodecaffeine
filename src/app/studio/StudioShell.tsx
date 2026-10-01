@@ -1,5 +1,6 @@
 import logo from "@/imports/pdc-logo-dark.png";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { Helmet } from "react-helmet-async";
 import {
   CalendarDays, CheckSquare, Euro, FileText, Globe, Images, Inbox, Kanban, Layers, LogOut, MapPin, Megaphone, Receipt,
   Search, Settings, Shield, Star, Sun, Users,
@@ -14,7 +15,7 @@ import { StudioFonts } from "./fonts";
 import { initials } from "./format";
 import { queryClient, useMe, useOverview } from "./queries";
 import "./studio.css";
-import { Button, ConfirmProvider } from "./ui";
+import { Button, ConfirmProvider, skipToMain } from "./ui";
 
 export function StudioShell() {
   const { session, user, loading } = useAuth();
@@ -59,7 +60,11 @@ function Shell() {
 
   return (
     <div className="studio">
+      <Helmet>
+        <meta name="theme-color" content="#ffffff" />
+      </Helmet>
       <StudioFonts />
+      <a href="#studio-main" className="s-skip" onClick={skipToMain("studio-main")}>Naar de inhoud</a>
       <div className="s-app">
         <aside className="s-rail">
           <NavLink to="/admin" end className="s-brand" aria-label="Naar Vandaag">
@@ -115,7 +120,7 @@ function Shell() {
             />
           </div>
         </aside>
-        <main className="s-main">
+        <main className="s-main" id="studio-main" tabIndex={-1}>
           <Outlet />
         </main>
       </div>

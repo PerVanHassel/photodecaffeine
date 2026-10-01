@@ -1,6 +1,6 @@
 import { ArrowLeft, Bell, Check, Copy, Eye, Plus, Receipt, Search, Send, Trash2, Undo2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { del, post, put } from "../api";
 import { ago, euro, fmtDate } from "../format";
 import { keys, useAction, useClients, useInvoice, useInvoices, useProjects } from "../queries";
@@ -8,14 +8,15 @@ import type { Business, Invoice, InvoiceLine } from "../types";
 import { Button, Card, Empty, ErrorState, Field, Input, Modal, PageHead, Pill, Segmented, SelectField, Skeleton, SkeletonList, TextAreaField, TextField, useConfirm } from "../ui";
 import { InvoiceDocument } from "../components/InvoiceDocument";
 import { copyText, INVOICE_STATUS } from "./Money";
+import { useSearchPatch, useUrlState } from "../urlState";
 
 type Filter = "open" | "overdue" | "paid" | "all";
 
 export function InvoicesPage() {
-  const [params, setParams] = useSearchParams();
+  const { params, patch } = useSearchPatch();
   const navigate = useNavigate();
   const invoices = useInvoices();
-  const [filter, setFilter] = useState<Filter>("open");
+  const [filter, setFilter] = useUrlState<Filter>("filter", "open");
   const [q, setQ] = useState("");
   const list = invoices.data || [];
 
@@ -37,7 +38,7 @@ export function InvoicesPage() {
       <PageHead
         title="Facturen"
         sub="Maak een factuur uit een offerte of los. Nummering loopt vanzelf door."
-        actions={<Button variant="primary" icon={<Plus />} onClick={() => setParams({ new: "1" })}>Nieuwe factuur</Button>}
+        actions={<Button variant="primary" icon={<Plus />} onClick={() => patch({ new: "1" })}>Nieuwe factuur</Button>}
       />
       <Card bodyClass="none">
         <div className="s-stats">
@@ -56,7 +57,7 @@ export function InvoicesPage() {
       {invoices.isError && <ErrorState error={invoices.error} retry={() => invoices.refetch()} />}
       <Card bodyClass="none">
         {invoices.isLoading ? <SkeletonList rows={4} /> : rows.length === 0 ? (
-          <Empty icon={<Receipt />} title="Geen facturen" action={<Button onClick={() => setParams({ new: "1" })}>Maak een factuur</Button>}>
+          <Empty icon={<Receipt />} title="Geen facturen" action={<Button onClick={() => patch({ new: "1" })}>Maak een factuur</Button>}>
             {filter === "overdue" ? "Niets te laat. Mooi zo." : "Niets gevonden met dit filter."}
           </Empty>
         ) : (
@@ -79,7 +80,7 @@ export function InvoicesPage() {
           </div>
         )}
       </Card>
-      <NewInvoiceDialog open={params.get("new") === "1"} onClose={() => setParams({})} defaults={{ clientId: params.get("clientId") || "", projectId: params.get("projectId") || "" }} />
+      <NewInvoiceDialog open={params.get("new") === "1"} onClose={() => patch({ new: null, clientId: null, projectId: null })} defaults={{ clientId: params.get("clientId") || "", projectId: params.get("projectId") || "" }} />
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import { motion } from "motion/react";
 import { Check, ChevronDown, Search, X } from "lucide-react";
 import {
+  createContext,
+  useContext,
   useId,
   useState,
   type CSSProperties,
@@ -124,6 +126,20 @@ const fieldBase: CSSProperties = {
   transition: "border-color 0.18s ease, background-color 0.18s ease",
 };
 
+/** What a Field tells the control inside it: its id and what describes it. */
+const FieldContext = createContext<{ id: string; describedBy?: string; invalid: boolean } | null>(null);
+
+/** id, aria-describedby and aria-invalid for a control inside a Field. */
+function useFieldProps(own: { id?: string; "aria-describedby"?: string }) {
+  const field = useContext(FieldContext);
+  if (!field) return {};
+  return {
+    id: own.id ?? field.id,
+    "aria-describedby": own["aria-describedby"] ?? field.describedBy,
+    "aria-invalid": field.invalid || undefined,
+  };
+}
+
 export function Field({
   label,
   hint,
@@ -135,28 +151,33 @@ export function Field({
   error?: string;
   children: ReactNode;
 }) {
+  const id = useId();
+  const noteId = `${id}-note`;
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-      {label && (
-        <label
-          style={{
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: "0.18em",
-            textTransform: "uppercase",
-            color: c.fg3,
-          }}
-        >
-          {label}
-        </label>
-      )}
-      {children}
-      {(error || hint) && (
-        <div style={{ fontSize: 11.5, color: error ? c.danger : c.fg4, lineHeight: 1.4 }}>
-          {error || hint}
-        </div>
-      )}
-    </div>
+    <FieldContext.Provider value={{ id, describedBy: error || hint ? noteId : undefined, invalid: !!error }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+        {label && (
+          <label
+            htmlFor={id}
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: c.fg3,
+            }}
+          >
+            {label}
+          </label>
+        )}
+        {children}
+        {(error || hint) && (
+          <div id={noteId} role={error ? "alert" : undefined} style={{ fontSize: 11.5, color: error ? c.danger : c.fg4, lineHeight: 1.4 }}>
+            {error || hint}
+          </div>
+        )}
+      </div>
+    </FieldContext.Provider>
   );
 }
 
@@ -164,7 +185,8 @@ export function Input({
   style,
   ...rest
 }: InputHTMLAttributes<HTMLInputElement> & { style?: CSSProperties }) {
-  return <input style={{ ...fieldBase, ...style }} {...rest} />;
+  const field = useFieldProps(rest);
+  return <input style={{ ...fieldBase, ...style }} {...rest} {...field} />;
 }
 
 export function Textarea({
@@ -172,7 +194,8 @@ export function Textarea({
   rows = 4,
   ...rest
 }: TextareaHTMLAttributes<HTMLTextAreaElement> & { style?: CSSProperties }) {
-  return <textarea rows={rows} style={{ ...fieldBase, resize: "none", ...style }} {...rest} />;
+  const field = useFieldProps(rest);
+  return <textarea rows={rows} style={{ ...fieldBase, resize: "none", ...style }} {...rest} {...field} />;
 }
 
 export function Select({
@@ -186,9 +209,11 @@ export function Select({
   options: { value: string; label: string }[];
   placeholder?: string;
 }) {
+  const field = useFieldProps({});
   return (
     <div style={{ position: "relative" }}>
       <select
+        {...field}
         value={value}
         onChange={(e) => {
           haptic("select");
@@ -209,6 +234,7 @@ export function Select({
       </select>
       <ChevronDown
         size={16}
+        aria-hidden="true"
         style={{
           position: "absolute",
           right: 13,
@@ -242,6 +268,8 @@ export function SearchField({
         style={{ position: "absolute", left: 13, color: c.fg4, pointerEvents: "none" }}
       />
       <input
+        type="search"
+        aria-label={placeholder}
         value={value}
         autoFocus={autoFocus}
         onChange={(e) => onChange(e.target.value)}

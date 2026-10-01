@@ -33,7 +33,7 @@ import { Card, CardButton, Chip, Ellipsis, Press, Row, Stack } from "../ui/base"
 import { Button, Field, Input, Segmented, Textarea } from "../ui/form";
 import { Empty, SkeletonList, useToast } from "../ui/feedback";
 import { HeaderAction, Screen } from "../ui/Screen";
-import { Sheet } from "../ui/Sheet";
+import { ConfirmSheet, Sheet } from "../ui/Sheet";
 import { SwipeRow } from "../ui/SwipeRow";
 
 const ICONS: Record<ActionIcon, ReactNode> = {
@@ -281,6 +281,7 @@ function OwnTasksTab({
   const { reminders, loading, refresh, setReminders } = useAppData();
 
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Reminder | null>(null);
 
   const { open, done } = useMemo(() => {
     const sorted = [...reminders].sort(
@@ -309,6 +310,7 @@ function OwnTasksTab({
   }
 
   async function remove(reminder: Reminder) {
+    setPendingDelete(null);
     const before = reminders;
     setReminders((list) => list.filter((r) => r.id !== reminder.id));
     try {
@@ -339,7 +341,7 @@ function OwnTasksTab({
               items={open}
               busyId={busyId}
               onToggle={(r) => setCompleted(r, true)}
-              onDelete={remove}
+              onDelete={setPendingDelete}
             />
           )}
           {done.length > 0 && (
@@ -348,11 +350,19 @@ function OwnTasksTab({
               items={done}
               busyId={busyId}
               onToggle={(r) => setCompleted(r, false)}
-              onDelete={remove}
+              onDelete={setPendingDelete}
             />
           )}
         </Stack>
       )}
+
+      <ConfirmSheet
+        open={!!pendingDelete}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={() => pendingDelete && remove(pendingDelete)}
+        title="Taak verwijderen?"
+        body={pendingDelete?.title}
+      />
 
       <ComposeTaskSheet
         open={composing}
@@ -474,6 +484,25 @@ function TaskGroup({
                         {overdue && <Chip tone="danger">Te laat</Chip>}
                       </Row>
                     </div>
+
+                    {/* The same as the swipe action, for anyone who doesn't swipe. */}
+                    <Press
+                      onClick={() => onDelete(r)}
+                      aria-label={`${r.title} verwijderen`}
+                      style={{
+                        width: 32,
+                        height: 32,
+                        flexShrink: 0,
+                        marginTop: -3,
+                        marginRight: -4,
+                        borderRadius: 9,
+                        display: "grid",
+                        placeItems: "center",
+                        color: c.fg4,
+                      }}
+                    >
+                      <Trash2 size={15} aria-hidden="true" />
+                    </Press>
                   </Row>
                 </Card>
               </SwipeRow>
@@ -549,7 +578,6 @@ function ComposeTaskSheet({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Bijv. Marc terugbellen over shoot"
-            autoFocus
           />
         </Field>
         <Field label="Toelichting" hint="Optioneel">

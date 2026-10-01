@@ -9,6 +9,7 @@ import { del, errorMessage, post, put, upload } from "../../api";
 import { keys, useAction } from "../../queries";
 import type { GalleryImage, Project } from "../../types";
 import { Button, Card, Empty, isVideo, Photo, Pill, TextField, useConfirm } from "../../ui";
+import { useUnsavedChanges } from "../../unsaved";
 
 const BATCH = 8;
 
@@ -107,7 +108,7 @@ export function GalleryTab({ project: p }: { project: Project }) {
         {progress ? (
           <div className="s-stack" style={{ maxWidth: 360, margin: "0 auto" }}>
             <b>Uploaden… {progress.done} van {progress.total}</b>
-            <div className="s-progress"><i style={{ width: `${(progress.done / progress.total) * 100}%` }} /></div>
+            <div className="s-progress" role="progressbar" aria-valuemin={0} aria-valuemax={progress.total} aria-valuenow={progress.done}><i style={{ transform: `scaleX(${progress.done / progress.total})` }} /></div>
             <span className="s-small s-faint">Laat dit venster open tot het klaar is.</span>
           </div>
         ) : (
@@ -196,6 +197,7 @@ function GallerySettings({ project: p }: { project: Project }) {
   const [title, setTitle] = useState(p.gallerySettings.title || "");
   const [subtitle, setSubtitle] = useState(p.gallerySettings.subtitle || "");
   const dirty = title !== (p.gallerySettings.title || "") || subtitle !== (p.gallerySettings.subtitle || "");
+  useUnsavedChanges(dirty);
   const save = useAction({
     fn: () => put(`/admin/project/${p.id}`, { gallerySettings: { ...p.gallerySettings, title, subtitle } }),
     invalidate: () => [keys.project(p.id)],

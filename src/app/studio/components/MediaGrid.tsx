@@ -77,7 +77,7 @@ export function MediaGrid({ urls, onChange, cover, onCover, accept = "image/*,vi
         {progress ? (
           <div className="s-stack sm" style={{ maxWidth: 320, margin: "0 auto" }}>
             <span className="s-small">Uploaden… {progress.done} van {progress.total}</span>
-            <div className="s-progress"><i style={{ width: `${(progress.done / progress.total) * 100}%` }} /></div>
+            <div className="s-progress" role="progressbar" aria-valuemin={0} aria-valuemax={progress.total} aria-valuenow={progress.done}><i style={{ transform: `scaleX(${progress.done / progress.total})` }} /></div>
           </div>
         ) : (
           <div className="s-row" style={{ justifyContent: "center" }}>

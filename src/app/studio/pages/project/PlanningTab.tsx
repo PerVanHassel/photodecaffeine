@@ -13,7 +13,7 @@ import { compass, lightFor } from "../../light";
 import { MiniMap } from "../../map";
 import { keys, useAction, useLocations, useShots } from "../../queries";
 import type { Project, Shot, StudioEvent } from "../../types";
-import { Button, Card, Empty, Input, SelectField, SkeletonList } from "../../ui";
+import { Button, Card, Empty, Input, SelectField, SkeletonList, useConfirm } from "../../ui";
 
 export function PlanningTab({ project: p }: { project: Project }) {
   const [editing, setEditing] = useState<EventDraft | null>(null);
@@ -113,6 +113,7 @@ function LocationCard({ project: p }: { project: Project }) {
 }
 
 function ShotList({ projectId }: { projectId: string }) {
+  const confirm = useConfirm();
   const qc = useQueryClient();
   const shots = useShots(projectId);
   const [label, setLabel] = useState("");
@@ -133,6 +134,7 @@ function ShotList({ projectId }: { projectId: string }) {
     try { await put(`/admin/shots/${shot.id}`, patch); } catch (err) { setList(before); toast.error(errorMessage(err)); }
   }
   async function remove(shot: Shot) {
+    if (!(await confirm({ title: "Shot verwijderen?", body: shot.label, confirm: "Verwijderen", danger: true }))) return;
     const before = list;
     setList(list.filter((s) => s.id !== shot.id));
     try { await del(`/admin/shots/${shot.id}`); } catch (err) { setList(before); toast.error(errorMessage(err)); }
@@ -162,7 +164,7 @@ function ShotList({ projectId }: { projectId: string }) {
         )}
         <form className="s-row nowrap" onSubmit={(e) => { e.preventDefault(); if (label.trim()) add.mutate(); }}>
           <Input aria-label="Nieuw shot" placeholder="Bijv. rolling shot op de brug" value={label} onChange={(e) => setLabel(e.target.value)} />
-          <label className="s-check s-small" title="Verplicht shot"><input type="checkbox" checked={required} onChange={(e) => setRequired(e.target.checked)} /><Star size={14} /></label>
+          <label className="s-check s-small" title="Verplicht shot"><input type="checkbox" aria-label="Verplicht shot" checked={required} onChange={(e) => setRequired(e.target.checked)} /><Star size={14} aria-hidden="true" /></label>
           <Button type="submit" icon={<Plus />} loading={add.isPending} disabled={!label.trim()}>Toevoegen</Button>
         </form>
       </div>

@@ -10,7 +10,8 @@ function page<T, K extends keyof T>(load: () => Promise<T>, name: K): LazyExotic
 
 function Loading() {
   return (
-    <div className="s-view" aria-busy="true" aria-label="Laden">
+    <div className="s-view" role="status" aria-busy="true">
+      <span className="s-sr">Laden…</span>
       <div className="s-skel" style={{ height: 14, width: 120 }} />
       <div className="s-skel" style={{ height: 32, width: 320 }} />
       <div className="s-skel" style={{ height: 280, borderRadius: 12 }} />

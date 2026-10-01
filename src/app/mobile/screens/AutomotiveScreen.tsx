@@ -166,6 +166,7 @@ export function AutomotiveScreen() {
                 <motion.button
                   key={url}
                   type="button"
+                  aria-label={`Foto ${i + 1} bekijken`}
                   layout
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}

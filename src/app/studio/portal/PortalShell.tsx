@@ -1,5 +1,6 @@
 import logo from "@/imports/pdc-logo-dark.png";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { Helmet } from "react-helmet-async";
 import { LogOut } from "lucide-react";
 import { useEffect } from "react";
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router";
@@ -9,7 +10,7 @@ import { initials } from "../format";
 import { queryClient } from "../queries";
 import { StudioFonts } from "../fonts";
 import "../studio.css";
-import { Button, ConfirmProvider } from "../ui";
+import { Button, ConfirmProvider, skipToMain } from "../ui";
 import { usePortalProjects } from "./data";
 import { usePortalLanguage, useT } from "./i18n";
 
@@ -41,7 +42,11 @@ function Frame() {
 
   return (
     <div className="studio">
+      <Helmet>
+        <meta name="theme-color" content="#ffffff" />
+      </Helmet>
       <StudioFonts />
+      <a href="#portal-main" className="s-skip" onClick={skipToMain("portal-main")}>{t.skipToContent}</a>
       <header className="p-top">
         <NavLink to="/portal/dashboard" className="s-brand" aria-label="Naar het overzicht">
           <img src={logo} alt="PDC Productions" width={150} height={28} />
@@ -51,7 +56,7 @@ function Frame() {
           <NavLink to="/portal/dashboard" className={({ isActive }) => (isActive ? "active" : undefined)}>{t.navOverview}</NavLink>
           <NavLink to="/portal/documents" className={({ isActive }) => (isActive ? "active" : undefined)}>{t.navDocuments}</NavLink>
           <NavLink to="/portal/messages" className={({ isActive }) => (isActive ? "active" : undefined)}>
-            {t.navMessages}{unread > 0 && <span className="dot" aria-label={t.unread(unread)} />}
+            {t.navMessages}{unread > 0 && <><span className="dot" aria-hidden="true" /><span className="s-sr">, {t.unread(unread)}</span></>}
           </NavLink>
           <NavLink to="/portal/account" className={({ isActive }) => (isActive ? "active" : undefined)}>{t.navAccount}</NavLink>
         </nav>
@@ -64,7 +69,9 @@ function Frame() {
           <Button variant="ghost" size="sm" iconOnly aria-label={t.signOut} title={t.signOut} icon={<LogOut />} onClick={async () => { await signOut(); navigate("/portal/login"); }} />
         </div>
       </header>
-      <Outlet />
+      <div id="portal-main" tabIndex={-1} className="p-main-anchor">
+        <Outlet />
+      </div>
       <Toaster position="bottom-center" richColors toastOptions={{ style: { fontFamily: "var(--ui)" } }} />
     </div>
   );

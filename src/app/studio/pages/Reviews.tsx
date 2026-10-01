@@ -3,10 +3,11 @@ import { Eye, EyeOff, MessageSquareHeart, Star, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 import { del, get, put } from "../api";
-import { fmtDate } from "../format";
+import { fmtDate, decimal1 } from "../format";
 import { useAction } from "../queries";
 import { Button, Card, Empty, ErrorState, PageHead, Photo, Pill, Segmented, Select, SkeletonList, useConfirm } from "../ui";
 import type { Article } from "./Content";
+import { useUrlState } from "../urlState";
 
 type Review = {
   id: string; projectId: string; projectTitle: string; clientName: string; rating: number; text: string;
@@ -28,7 +29,7 @@ export function Stars({ rating, size = 14 }: { rating: number; size?: number }) 
 }
 
 export function ReviewsPage() {
-  const [tab, setTab] = useState<"reviews" | "feedback">("reviews");
+  const [tab, setTab] = useUrlState<"reviews" | "feedback">("tab", "reviews", ["reviews", "feedback"]);
   const reviews = useQuery({ queryKey: k.reviews, queryFn: () => get<{ reviews: Review[] }>("/admin/reviews").then((r) => r.reviews) });
   const feedback = useQuery({ queryKey: k.feedback, queryFn: () => get<{ feedback: Feedback[] }>("/admin/feedback").then((r) => r.feedback) });
   const portfolio = useQuery({ queryKey: ["portfolio"], queryFn: () => get<{ articles: Article[] }>("/admin/portfolio").then((r) => r.articles) });
@@ -49,7 +50,7 @@ export function ReviewsPage() {
     <div className="s-view">
       <PageHead
         title="Reviews en feedback"
-        sub={list.length ? `${list.length} reviews, gemiddeld ${avg.toFixed(1).replace(".", ",")} sterren. Alleen wat je publiceert komt op de site.` : "Vraag om een review vanaf een geleverd project."}
+        sub={list.length ? `${list.length} reviews, gemiddeld ${decimal1(avg)} sterren. Alleen wat je publiceert komt op de site.` : "Vraag om een review vanaf een geleverd project."}
       />
       <Segmented<"reviews" | "feedback"> label="Weergave" value={tab} onChange={setTab} options={[
         { value: "reviews", label: `Reviews (${list.length})` },

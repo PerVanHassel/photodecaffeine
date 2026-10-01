@@ -3,10 +3,11 @@ import { Copy, EyeOff, Link2, Megaphone, Undo2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { get, put } from "../api";
-import { ago, fmt } from "../format";
+import { ago, fmt, percent } from "../format";
 import { useAction } from "../queries";
 import { Button, Card, Empty, ErrorState, Input, Modal, PageHead, Pill, Segmented, SelectField, SkeletonList, TextField } from "../ui";
 import { copyText } from "./Money";
+import { useUrlState } from "../urlState";
 
 type AdsData = {
   visits: { ref: string; page: string; createdAt: string }[];
@@ -25,7 +26,7 @@ const key = ["ads"] as const;
 
 export function AdsPage() {
   const data = useQuery({ queryKey: key, queryFn: () => get<AdsData>("/admin/ads") });
-  const [period, setPeriod] = useState<Period>("30");
+  const [period, setPeriod] = useUrlState<Period>("periode", "30");
   const [showHidden, setShowHidden] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
 
@@ -90,7 +91,7 @@ export function AdsPage() {
         <div className="s-stats" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
           <div><b>{totalVisits}</b><span>Bezoeken</span></div>
           <div><b>{totalLeads}</b><span>Aanvragen</span></div>
-          <div><b>{totalVisits ? `${((totalLeads / totalVisits) * 100).toFixed(1).replace(".", ",")}%` : "–"}</b><span>Conversie</span></div>
+          <div><b>{totalVisits ? percent(totalLeads / totalVisits) : "–"}</b><span>Conversie</span></div>
         </div>
         <div style={{ height: 180, padding: "8px 12px 12px" }}>
           <ResponsiveContainer width="100%" height="100%">
@@ -132,7 +133,7 @@ export function AdsPage() {
                       <td className="s-muted">{c.page || "–"}</td>
                       <td className="right s-mono">{c.visits}</td>
                       <td className="right s-mono">{c.leads}</td>
-                      <td className="right s-mono">{c.visits ? `${((c.leads / c.visits) * 100).toFixed(1).replace(".", ",")}%` : "–"}</td>
+                      <td className="right s-mono">{c.visits ? percent(c.leads / c.visits) : "–"}</td>
                       <td className="s-muted s-small">{c.last ? ago(c.last) : "–"}</td>
                       <td>
                         <button type="button" className="s-pill" style={{ border: 0, cursor: "pointer", ...(m?.active === false ? {} : { background: "var(--ok-soft)", color: "var(--ok)" }) }}

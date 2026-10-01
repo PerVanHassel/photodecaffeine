@@ -4,7 +4,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Layer, Map as MapGL, Marker, NavigationControl, Source, type MapRef } from "react-map-gl/maplibre";
-import { Link, useSearchParams } from "react-router";
+import { Link } from "react-router";
 import { toast } from "sonner";
 import { del, errorMessage, post, put, upload } from "../api";
 import { ago, fmtTime, LIGHT_LABEL, LOCATION_KIND_LABEL, mapsLink, STAGE_LABEL } from "../format";
@@ -14,6 +14,7 @@ import { MAP_STYLE_LABEL, MAP_STYLES, Pin, SunRay, type MapStyleName } from "../
 import { keys, queryClient, useAction, useLocations } from "../queries";
 import type { BestLight, LocationKind, StudioLocation } from "../types";
 import { Button, Field, Input, PageHead, Photo, Pill, SelectField, Skeleton, TextAreaField, TextField, useConfirm } from "../ui";
+import { useSearchPatch, useUrlState } from "../urlState";
 
 // The detail panel covers the right of the map; centre points in what is left.
 const PANEL_PADDING = { right: 410, left: 0, top: 0, bottom: 0 };
@@ -39,13 +40,13 @@ function toDraft(l: StudioLocation): Draft {
 }
 
 export function LocationsPage() {
-  const [params, setParams] = useSearchParams();
+  const { params, patch } = useSearchPatch();
   const locations = useLocations();
   const map = useRef<MapRef>(null);
   const [style, setStyle] = useState<MapStyleName>(() => {
     try { return (localStorage.getItem("pdc-map-style") as MapStyleName) || "kaart"; } catch { return "kaart"; }
   });
-  const [kind, setKind] = useState<LocationKind | "all">("all");
+  const [kind, setKind] = useUrlState<LocationKind | "all">("soort", "all");
   const [q, setQ] = useState("");
   const [draft, setDraft] = useState<Draft | null>(null);
   const [lightDate, setLightDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -69,7 +70,7 @@ export function LocationsPage() {
 
   function select(id: string | null, fly = true) {
     setDraft(null);
-    setParams(id ? { open: id } : {}, { replace: true });
+    patch({ open: id, new: null }, { replace: true });
     const l = all.find((x) => x.id === id);
     if (l && fly) map.current?.flyTo({ center: [l.lng, l.lat], zoom: Math.max(map.current.getZoom(), 14), duration: 700, padding: PANEL_PADDING });
   }
@@ -94,7 +95,7 @@ export function LocationsPage() {
   }, [params]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function startDraft(lat: number, lng: number, label = "") {
-    setParams({}, { replace: true });
+    patch({ open: null, new: null }, { replace: true });
     setDraft({ name: label.split(",")[0] || "", kind: "urban", lat, lng, address: label, notes: "", parking: "", permitRequired: false, bestLight: "", tags: "" });
     if (!label) {
       const address = await reverseGeocode(lat, lng);
@@ -236,7 +237,7 @@ export function LocationsPage() {
               draft={draft}
               setDraft={setDraft}
               onCancel={() => setDraft(null)}
-              onSaved={(id) => { setDraft(null); setParams({ open: id }, { replace: true }); }}
+              onSaved={(id) => { setDraft(null); patch({ open: id }, { replace: true }); }}
             />
           )}
         </div>

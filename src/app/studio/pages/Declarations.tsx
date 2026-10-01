@@ -5,6 +5,7 @@ import { api, del, get, post, put } from "../api";
 import { euro, fmtDate } from "../format";
 import { useAction, useMe } from "../queries";
 import { Button, Card, Empty, ErrorState, Field, Input, Modal, PageHead, Pill, Select, SelectField, SkeletonList, TextField, useConfirm } from "../ui";
+import { useUrlState } from "../urlState";
 
 const CATEGORIES = [
   "Reiskosten", "Apparatuur", "Software & Abonnementen", "Kantoorbenodigdheden", "Marketing & Advertenties",
@@ -41,8 +42,8 @@ function recentQuarters(n = 8) {
 export function DeclarationsPage() {
   const confirm = useConfirm();
   const me = useMe();
-  const [quarter, setQuarter] = useState(quarterOf());
-  const [person, setPerson] = useState("");
+  const [quarter, setQuarter] = useUrlState<string>("kwartaal", quarterOf());
+  const [person, setPerson] = useUrlState<string>("persoon", "");
   const [editing, setEditing] = useState<Declaration | "new" | null>(null);
   const qs = new URLSearchParams({ ...(quarter ? { quarter } : {}), ...(person ? { adminId: person } : {}) });
   const data = useQuery({ queryKey: ["declarations", quarter, person], queryFn: () => get<Listing>(`/admin/declarations?${qs}`) });
@@ -101,7 +102,11 @@ export function DeclarationsPage() {
                   <tr key={d.id} className="clickable" onClick={() => setEditing(d)}>
                     <td className="s-muted">{fmtDate(d.date)}</td>
                     {data.data?.canViewAll && <td>{d.adminName}</td>}
-                    <td>{d.description || <span className="s-faint">–</span>}</td>
+                    <td>
+                      <button type="button" className="s-cell-link" onClick={(e) => { e.stopPropagation(); setEditing(d); }}>
+                        {d.description || <span className="s-faint">–</span>}
+                      </button>
+                    </td>
                     <td><Pill plain>{d.category}</Pill></td>
                     <td className="right s-mono">{euro(d.amount)}</td>
                     <td className="right s-mono s-muted">{euro(d.vatAmount)} <span className="s-faint">({d.vatRate}%)</span></td>

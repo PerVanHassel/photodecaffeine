@@ -318,7 +318,14 @@ export function DeclarationsScreen() {
         }}
       />
 
-      <DetailSheet declaration={detail} onClose={() => setDetail(null)} />
+      <DetailSheet
+        declaration={detail}
+        onClose={() => setDetail(null)}
+        onDelete={() => {
+          setPendingDelete(detail);
+          setDetail(null);
+        }}
+      />
 
       <ConfirmSheet
         open={!!pendingDelete}
@@ -338,9 +345,11 @@ export function DeclarationsScreen() {
 function DetailSheet({
   declaration,
   onClose,
+  onDelete,
 }: {
   declaration: Declaration | null;
   onClose: () => void;
+  onDelete: () => void;
 }) {
   return (
     <Sheet
@@ -390,6 +399,16 @@ function DetailSheet({
               Bon openen
             </Button>
           )}
+
+          <Button
+            full
+            variant="ghost"
+            icon={<Trash2 size={16} aria-hidden="true" />}
+            onClick={onDelete}
+            style={{ color: c.danger }}
+          >
+            Verwijderen
+          </Button>
         </Stack>
       )}
     </Sheet>
@@ -487,7 +506,6 @@ function ComposeDeclarationSheet({
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="0,00"
-            autoFocus
             style={{ fontSize: 22, fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif" }}
           />
         </Field>

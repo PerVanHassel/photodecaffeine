@@ -1,9 +1,10 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { AlertTriangle, ImageOff, Loader2, X } from "lucide-react";
 import {
-  createContext, forwardRef, useCallback, useContext, useId, useRef, useState,
+  cloneElement, createContext, forwardRef, isValidElement, useCallback, useContext, useId, useRef, useState,
   type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes,
 } from "react";
+import { toast } from "sonner";
 import { errorMessage } from "./api";
 
 const cx = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(" ");
@@ -40,11 +41,26 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       aria-busy={loading || undefined}
       {...rest}
     >
-      {loading ? <Loader2 className="spin" /> : icon}
+      {loading ? <Loader2 className="spin" aria-hidden="true" /> : hideIcon(icon)}
       {children}
     </button>
   );
 });
+
+/** Jumps past the navigation without adding the target to the address. */
+export function skipToMain(id: string) {
+  return (e: React.MouseEvent) => {
+    e.preventDefault();
+    const main = document.getElementById(id);
+    main?.focus();
+    main?.scrollIntoView();
+  };
+}
+
+/** lucide 0.487 does not hide its SVGs from screen readers; buttons do it here. */
+function hideIcon(icon: ReactNode) {
+  return isValidElement<{ "aria-hidden"?: boolean | "true" }>(icon) ? cloneElement(icon, { "aria-hidden": "true" }) : icon;
+}
 
 // ---------------------------------------------------------------------------
 // Surfaces
@@ -103,7 +119,8 @@ export function Skeleton({ h = 16, w = "100%", r }: { h?: number | string; w?: n
 
 export function SkeletonList({ rows = 4 }: { rows?: number }) {
   return (
-    <div className="s-stack" style={{ padding: 18 }} aria-busy="true" aria-label="Laden">
+    <div className="s-stack" style={{ padding: 18 }} role="status" aria-busy="true">
+      <span className="s-sr">Laden…</span>
       {Array.from({ length: rows }, (_, i) => (
         <div key={i} className="s-row nowrap" style={{ gap: 12 }}>
           <Skeleton h={34} w={34} r={8} />
@@ -130,13 +147,14 @@ export function ErrorState({ error, retry }: { error: unknown; retry?: () => voi
 }
 
 /** A photo, or a neutral tile when there is none (or it fails to load). */
-export function Photo({ src, alt = "", caption, className, style, children, onClick, video }: {
+export function Photo({ src, alt = "", caption, className, style, children, onClick, openLabel, video }: {
   src?: string | null; alt?: string; caption?: string; className?: string; style?: React.CSSProperties; children?: ReactNode;
-  onClick?: () => void; video?: boolean;
+  onClick?: () => void; openLabel?: string; video?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
   return (
-    <div className={cx("s-ph", (!src || failed) && "s-ph-empty", className)} style={style} onClick={onClick}>
+    <div className={cx("s-ph", (!src || failed) && "s-ph-empty", className)} style={style}>
+      {onClick && <button type="button" className="s-ph-open" aria-label={openLabel || alt || "Openen"} onClick={onClick} />}
       {src && !failed ? (
         video ? <video src={src} muted playsInline preload="metadata" /> : <img src={src} alt={alt} loading="lazy" decoding="async" onError={() => setFailed(true)} />
       ) : (
@@ -159,9 +177,10 @@ export function Field({ label, hint, error, children, className, htmlFor }: {
 }) {
   return (
     <div className={cx("s-field", className)}>
-      {label && <label htmlFor={htmlFor}>{label}</label>}
+      {label && (htmlFor ? <label htmlFor={htmlFor}>{label}</label> : <span className="s-label">{label}</span>)}
       {children}
-      {error ? <span className="error" role="alert">{error}</span> : hint ? <span className="hint">{hint}</span> : null}
+      {error ? <span id={htmlFor ? `${htmlFor}-error` : undefined} className="error" role="alert">{error}</span>
+        : hint ? <span id={htmlFor ? `${htmlFor}-hint` : undefined} className="hint">{hint}</span> : null}
     </div>
   );
 }
@@ -183,9 +202,19 @@ export function TextField({ label, hint, error, className, ...input }: InputHTML
   label: ReactNode; hint?: ReactNode; error?: string | null;
 }) {
   const id = useId();
+  // Admin fields are not logins: keep password managers out unless a field
+  // says otherwise, and never autocorrect an e-mail address.
+  const email = input.type === "email" ? { spellCheck: false, autoCapitalize: "none", inputMode: "email" as const } : {};
   return (
     <Field label={label} hint={hint} error={error} className={className} htmlFor={id}>
-      <Input id={id} aria-invalid={error ? true : undefined} {...input} />
+      <Input
+        id={id}
+        autoComplete="off"
+        {...email}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
+        {...input}
+      />
     </Field>
   );
 }
@@ -196,7 +225,13 @@ export function TextAreaField({ label, hint, error, className, ...input }: Texta
   const id = useId();
   return (
     <Field label={label} hint={hint} error={error} className={className} htmlFor={id}>
-      <Textarea id={id} aria-invalid={error ? true : undefined} {...input} />
+      <Textarea
+        id={id}
+        autoComplete="off"
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
+        {...input}
+      />
     </Field>
   );
 }
@@ -207,7 +242,7 @@ export function SelectField({ label, hint, className, children, ...select }: Sel
   const id = useId();
   return (
     <Field label={label} hint={hint} className={className} htmlFor={id}>
-      <Select id={id} {...select}>{children}</Select>
+      <Select id={id} aria-describedby={hint ? `${id}-hint` : undefined} {...select}>{children}</Select>
     </Field>
   );
 }
@@ -301,8 +336,8 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
         description={state?.body}
         footer={
           <>
-            <Button onClick={() => close(false)}>Annuleren</Button>
-            <Button variant={state?.danger ? "danger-solid" : "primary"} onClick={() => close(true)} autoFocus>
+            <Button onClick={() => close(false)} autoFocus={!!state?.danger}>Annuleren</Button>
+            <Button variant={state?.danger ? "danger-solid" : "primary"} onClick={() => close(true)} autoFocus={!state?.danger}>
               {state?.confirm || "Doorgaan"}
             </Button>
           </>
@@ -313,3 +348,8 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
 }
 
 export const useConfirm = () => useContext(ConfirmContext);
+
+/** A removal that happens at once, with a few seconds to take it back. */
+export function undoToast(message: string, undo: () => void) {
+  toast(message, { action: { label: "Ongedaan maken", onClick: undo }, duration: 6000 });
+}

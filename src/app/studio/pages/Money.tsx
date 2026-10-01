@@ -1,6 +1,6 @@
 import { Copy, Eye, FilePlus, Receipt, Search, Send } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { post } from "../api";
 import { ago, euro, fmtDate } from "../format";
@@ -8,6 +8,7 @@ import { keys, useAction, useQuotes } from "../queries";
 import type { Invoice, Quote } from "../types";
 import { Button, Card, Empty, ErrorState, PageHead, Pill, Segmented, SkeletonList } from "../ui";
 import { QuoteEditor, SendQuoteDialog } from "./QuoteEditor";
+import { useSearchPatch, useUrlState } from "../urlState";
 
 type Tone = "ok" | "warn" | "bad" | "info" | "acc" | undefined;
 
@@ -36,11 +37,14 @@ export async function copyText(text: string, what = "Link") {
 
 type Filter = "open" | "all" | "draft" | "accepted" | "declined";
 
+/** Closes the editor and keeps the filter. */
+const EDITOR_CLOSED = { open: null, new: null, projectId: null, clientId: null };
+
 export function QuotesPage() {
-  const [params, setParams] = useSearchParams();
+  const { params, patch, href } = useSearchPatch();
   const navigate = useNavigate();
   const quotes = useQuotes();
-  const [filter, setFilter] = useState<Filter>("open");
+  const [filter, setFilter] = useUrlState<Filter>("filter", "open");
   const [q, setQ] = useState("");
   const [sending, setSending] = useState<Quote | null>(null);
 
@@ -72,7 +76,7 @@ export function QuotesPage() {
       <PageHead
         title="Offertes"
         sub={quotes.data ? `${euro(open)} staat open, ${euro(accepted)} geaccepteerd.` : " "}
-        actions={<Button variant="primary" icon={<FilePlus />} onClick={() => setParams({ new: "1" })}>Nieuwe offerte</Button>}
+        actions={<Button variant="primary" icon={<FilePlus />} onClick={() => patch({ new: "1" })}>Nieuwe offerte</Button>}
       />
       <div className="s-row between">
         <Segmented<Filter> label="Filter" value={filter} onChange={setFilter} options={[
@@ -85,7 +89,7 @@ export function QuotesPage() {
       {quotes.isError && <ErrorState error={quotes.error} retry={() => quotes.refetch()} />}
       <Card bodyClass="none">
         {quotes.isLoading ? <SkeletonList rows={4} /> : rows.length === 0 ? (
-          <Empty title="Geen offertes" action={<Button onClick={() => setParams({ new: "1" })}>Maak een offerte</Button>}>
+          <Empty title="Geen offertes" action={<Button onClick={() => patch({ new: "1" })}>Maak een offerte</Button>}>
             {filter === "open" ? "Er staat niets open." : "Niets gevonden met dit filter."}
           </Empty>
         ) : (
@@ -94,8 +98,8 @@ export function QuotesPage() {
               <thead><tr><th>Nummer</th><th>Titel</th><th>Klant</th><th className="right">Bedrag</th><th>Status</th><th>Laatste stap</th><th /></tr></thead>
               <tbody>
                 {rows.map((x) => (
-                  <tr key={x.id} className="clickable" onClick={() => setParams({ open: x.id })}>
-                    <td className="s-mono">{x.number}</td>
+                  <tr key={x.id} className="clickable" onClick={() => patch({ open: x.id })}>
+                    <td className="s-mono"><Link to={href({ open: x.id })} style={{ textDecoration: "none" }} onClick={(e) => e.stopPropagation()}>{x.number}</Link></td>
                     <td style={{ fontWeight: 600 }}>{x.title}</td>
                     <td className="s-muted">{x.clientName || x.clientEmail || "–"}</td>
                     <td className="right s-mono">{euro(x.totals.oneTime)}{x.totals.monthly ? <span className="s-faint"> + {euro(x.totals.monthly)} p/m</span> : null}</td>
@@ -125,8 +129,8 @@ export function QuotesPage() {
         <QuoteEditor
           quote={editing}
           defaults={{ projectId: params.get("projectId") || "", clientId: params.get("clientId") || "" }}
-          onClose={() => setParams({})}
-          onSend={(saved) => { setParams({}); setSending(saved); }}
+          onClose={() => patch(EDITOR_CLOSED)}
+          onSend={(saved) => { patch(EDITOR_CLOSED); setSending(saved); }}
         />
       )}
       <SendQuoteDialog quote={sending} onClose={() => setSending(null)} />

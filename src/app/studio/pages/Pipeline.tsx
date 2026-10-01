@@ -163,10 +163,10 @@ function DealCard({ project: p, dragging, overlay }: { project: Project; draggin
     <article
       className={`s-deal ${dragging ? "dragging" : ""} ${overlay ? "overlay" : ""}`}
       onClick={() => !overlay && navigate(`/admin/project/${p.id}`)}
-      onKeyDown={(e) => { if (e.key === "Enter") navigate(`/admin/project/${p.id}`); }}
     >
       {cover && <Photo src={cover} />}
-      <div className="t">{p.title}</div>
+      {/* The card itself is the drag handle; the title opens the project. */}
+      <div className="t">{overlay ? p.title : <Link to={`/admin/project/${p.id}`} className="s-deal-link" onClick={(e) => e.stopPropagation()}>{p.title}</Link>}</div>
       <div className="meta">
         <span className="s-truncate">{(p.clientNames || []).join(", ") || "Geen klant"}</span>
         <span className="s-mono">{p.valueCents ? euro(p.valueCents / 100) : TYPE_LABEL[p.type]}</span>

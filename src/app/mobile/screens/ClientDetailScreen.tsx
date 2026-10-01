@@ -321,7 +321,6 @@ function NewProjectSheet({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Bijv. Porsche 911 — studio shoot"
-            autoFocus
           />
         </Field>
         <Field label="Status">

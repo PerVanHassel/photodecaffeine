@@ -1,18 +1,19 @@
 import { ArrowRightCircle, Check, Inbox, Mail, Phone, Trash2, Undo2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { del, post, put } from "../api";
 import { ago, fmtDateTime, TYPE_LABEL } from "../format";
 import { keys, useAction, useInquiries } from "../queries";
 import type { Client, Inquiry, ProjectType } from "../types";
 import { Button, Card, Empty, ErrorState, Modal, PageHead, Pill, Segmented, SelectField, SkeletonList, TextField, useConfirm } from "../ui";
+import { useSearchPatch, useUrlState } from "../urlState";
 
 type Filter = "new" | "handled" | "all";
 
 export function InquiriesPage() {
-  const [params, setParams] = useSearchParams();
+  const { params, patch } = useSearchPatch();
   const inquiries = useInquiries();
-  const [filter, setFilter] = useState<Filter>("new");
+  const [filter, setFilter] = useUrlState<Filter>("filter", "new");
   const list = inquiries.data || [];
   const rows = useMemo(() => list.filter((i) => (filter === "all" ? true : filter === "new" ? !i.handled : i.handled)), [list, filter]);
   const openId = params.get("open");
@@ -35,7 +36,7 @@ export function InquiriesPage() {
             <ul className="s-list">
               {rows.map((i) => (
                 <li key={i.id}>
-                  <button type="button" className="s-item" onClick={() => setParams({ open: i.id }, { replace: true })}
+                  <button type="button" className="s-item" onClick={() => patch({ open: i.id }, { replace: true })}
                     style={{ gridTemplateColumns: "minmax(0,1fr) auto", ...(selected?.id === i.id ? { background: "var(--accent-soft)", boxShadow: "inset 3px 0 0 var(--accent)" } : {}) }}>
                     <div style={{ minWidth: 0 }}>
                       <div className="t s-truncate">{i.name}{i.brand ? ` · ${i.brand}` : ""}</div>

@@ -58,6 +58,14 @@ const eurFmt = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EU
 const eurRound = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR", maximumFractionDigits: 0, minimumFractionDigits: 0 });
 
 /** € 1.250 when round, € 1.250,50 otherwise. */
+const pctFmt = new Intl.NumberFormat("nl-NL", { style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const oneDecimal = new Intl.NumberFormat("nl-NL", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+/** 0.025 → "2,5%". */
+export const percent = (fraction: number) => pctFmt.format(fraction);
+/** 4.5 → "4,5". */
+export const decimal1 = (n: number) => oneDecimal.format(n);
+
 export function euro(amount: number | null | undefined): string {
   const n = Number(amount) || 0;
   return Math.round(n * 100) % 100 === 0 ? eurRound.format(n) : eurFmt.format(n);

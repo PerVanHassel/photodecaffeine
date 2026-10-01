@@ -82,7 +82,10 @@ export function SwipeRow({
   return (
     <div style={{ position: "relative", borderRadius: radius.lg, overflow: "hidden" }}>
       {/* Action tray, revealed as the row slides off it */}
+      {/* Hidden from the keyboard and screen readers while shut: every screen
+          that uses a swipe action also offers it somewhere you can tap. */}
       <div
+        aria-hidden={!open}
         style={{
           position: "absolute",
           inset: 0,
@@ -95,6 +98,7 @@ export function SwipeRow({
           <motion.button
             key={a.label}
             type="button"
+            tabIndex={open ? 0 : -1}
             whileTap={{ scale: 0.94 }}
             onClick={() => {
               close();

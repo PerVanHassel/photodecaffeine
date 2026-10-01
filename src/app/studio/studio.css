@@ -415,7 +415,7 @@ a.s-stat:hover { background: var(--hover); }
 .s-composer { display: flex; gap: 8px; align-items: flex-end; border-top: 1px solid var(--line); padding: 12px 18px; }
 .s-composer textarea { min-height: 44px; max-height: 200px; }
 .s-progress { height: 6px; border-radius: 3px; background: var(--line-strong); overflow: hidden; }
-.s-progress > i { display: block; height: 100%; background: var(--accent); transition: width 0.3s; }
+.s-progress > i { display: block; width: 100%; height: 100%; background: var(--accent); transform-origin: left center; transition: transform 0.3s; }
 
 /* ---------- map ---------- */
 .s-map-layout { display: grid; grid-template-columns: 340px minmax(0, 1fr); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--surface); height: calc(100vh - 190px); min-height: 560px; }
@@ -462,7 +462,8 @@ a.s-stat:hover { background: var(--hover); }
 .s-cal .fc .fc-button { background: var(--surface); border: 1px solid var(--line-strong); color: var(--text); font-weight: 600; font-size: 12.5px; border-radius: 8px; box-shadow: none; text-transform: none; padding: 6px 11px; }
 .s-cal .fc .fc-button:hover { border-color: var(--text); background: var(--surface); color: var(--text); }
 .s-cal .fc .fc-button-primary:not(:disabled).fc-button-active, .s-cal .fc .fc-button-primary:not(:disabled):active { background: var(--text); border-color: var(--text); color: #fff; }
-.s-cal .fc .fc-button:focus { box-shadow: 0 0 0 3px var(--accent-soft); }
+.s-cal .fc .fc-button:focus { box-shadow: none; }
+.s-cal .fc .fc-button:focus-visible { box-shadow: 0 0 0 3px var(--accent-soft); }
 .s-cal .fc .fc-col-header-cell-cushion, .s-cal .fc .fc-daygrid-day-number { color: var(--muted); text-decoration: none; font-weight: 600; }
 .s-cal .fc .fc-timegrid-slot-label-cushion { font-family: var(--mono); font-size: 11px; color: var(--faint); }
 .s-cal .fc-event:not(.fc-bg-event) { border-radius: 6px; border: 0; border-left: 3px solid; padding: 2px 4px; font-size: 12px; cursor: pointer; }
@@ -556,3 +557,31 @@ a.s-stat:hover { background: var(--hover); }
 .s-next-shoot .s-light-strip > div:nth-child(2) { border-right: 0; }
 .s-next-shoot .s-light-strip > div:nth-child(-n + 2) { border-bottom: 1px solid var(--line); }
 .s-light-strip span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+
+/* A clickable photo: a real button under the corner actions. */
+.studio .s-ph-open { position: absolute; inset: 0; z-index: 1; padding: 0; border: 0; background: none; cursor: zoom-in; border-radius: inherit; }
+.studio .s-ph .corner { z-index: 2; }
+.studio .s-ph-open:focus-visible { outline-offset: -3px; }
+
+/* Long galleries: only photos near the screen are laid out and painted. */
+.studio .s-contact-sheet > *, .studio .p-proof > * { content-visibility: auto; contain-intrinsic-size: auto 160px; }
+
+/* Scrolling inside a dialog or sheet never scrolls the page behind it. */
+.studio .s-dialog, .studio .s-sheet-body { overscroll-behavior: contain; }
+
+/* Skip link: hidden until it gets keyboard focus. */
+.studio .s-skip {
+  position: absolute; left: 12px; top: 12px; z-index: 100; transform: translateY(-200%);
+  padding: 10px 14px; border-radius: 8px; background: var(--text); color: #fff; font-weight: 600; text-decoration: none;
+}
+.studio .s-skip:focus { transform: none; }
+.studio #studio-main:focus, .studio #portal-main:focus { outline: none; }
+
+/* The client lightbox scrolls nothing behind it. */
+.studio .p-lightbox { overscroll-behavior: contain; }
+
+/* Row and card texts that open the item: the keyboard way in. */
+.studio .s-deal-link { color: inherit; text-decoration: none; }
+.studio .s-deal-link:hover { text-decoration: underline; }
+.studio .s-cell-link { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.studio .s-cell-link:hover { text-decoration: underline; }

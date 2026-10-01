@@ -7,6 +7,7 @@ import { useAction } from "../queries";
 import type { Business } from "../types";
 import { Button, Card, Modal, PageHead, Photo, Skeleton, TextAreaField, TextField } from "../ui";
 import type { Article } from "./Content";
+import { useUnsavedChanges } from "../unsaved";
 
 type Sections = { workProcess: boolean; portfolio: boolean; about: boolean; services: boolean; socialProof: boolean; customCTA: boolean };
 type Settings = {
@@ -50,6 +51,7 @@ export function SettingsPage() {
   const [picking, setPicking] = useState<(typeof IMAGES)[number]["key"] | null>(null);
   useEffect(() => { if (data.data) setS(data.data); }, [data.data]);
   const dirty = !!s && !!data.data && JSON.stringify(s) !== JSON.stringify(data.data);
+  useUnsavedChanges(dirty);
 
   const save = useAction({
     fn: () => put("/admin/settings", s),
@@ -96,11 +98,11 @@ export function SettingsPage() {
       <Card title="Op facturen">
         <div className="s-form-grid">
           <TextField label="Bedrijfsnaam" value={s.business.name} placeholder="PhotoDeCaffeine Productions" onChange={(e) => setS({ ...s, business: { ...s.business, name: e.target.value } })} />
-          <TextField label="E-mail voor facturen" value={s.business.email} onChange={(e) => setS({ ...s, business: { ...s.business, email: e.target.value } })} />
+          <TextField label="E-mail voor facturen" type="email" value={s.business.email} onChange={(e) => setS({ ...s, business: { ...s.business, email: e.target.value } })} />
           <TextAreaField className="full" label="Adres" rows={2} value={s.business.address} onChange={(e) => setS({ ...s, business: { ...s.business, address: e.target.value } })} />
-          <TextField label="KvK-nummer" value={s.business.kvk} onChange={(e) => setS({ ...s, business: { ...s.business, kvk: e.target.value } })} />
-          <TextField label="Btw-nummer" value={s.business.vatNumber} onChange={(e) => setS({ ...s, business: { ...s.business, vatNumber: e.target.value } })} />
-          <TextField className="full" label="IBAN" value={s.business.iban} onChange={(e) => setS({ ...s, business: { ...s.business, iban: e.target.value.toUpperCase() } })} />
+          <TextField label="KvK-nummer" inputMode="numeric" spellCheck={false} placeholder="12345678" value={s.business.kvk} onChange={(e) => setS({ ...s, business: { ...s.business, kvk: e.target.value } })} />
+          <TextField label="Btw-nummer" spellCheck={false} autoCapitalize="characters" placeholder="NL123456789B01" value={s.business.vatNumber} onChange={(e) => setS({ ...s, business: { ...s.business, vatNumber: e.target.value } })} />
+          <TextField className="full" label="IBAN" spellCheck={false} autoCapitalize="characters" placeholder="NL00 BANK 0123 4567 89" value={s.business.iban} onChange={(e) => setS({ ...s, business: { ...s.business, iban: e.target.value.toUpperCase() } })} />
         </div>
       </Card>
       <PortfolioPicker open={!!picking} onClose={() => setPicking(null)} onPick={(url) => { if (picking) setS({ ...s, [picking]: url }); setPicking(null); }} />
