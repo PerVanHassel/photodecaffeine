@@ -86,10 +86,10 @@ export function PortfolioPage() {
         })}</script>
       </Helmet>
       <div
+        className="pdc-svc-head"
         style={{
           backgroundColor: "#0d0703",
           borderBottom: "1px solid rgba(255,251,224,0.06)",
-          padding: "80px 40px 64px",
         }}
       >
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
@@ -109,7 +109,7 @@ export function PortfolioPage() {
             <div>
               <span
                 style={{
-                  color: "rgba(255,251,224,0.3)",
+                  color: "rgba(255,251,224,0.5)",
                   fontSize: "10px",
                   fontWeight: 500,
                   letterSpacing: "0.3em",
@@ -121,9 +121,9 @@ export function PortfolioPage() {
                 {t.portfolioPage.label}
               </span>
               <h1
+                className="pdc-page-title"
                 style={{
                   color: "#fffbe0",
-                  fontSize: "clamp(48px, 7vw, 88px)",
                   fontWeight: 900,
                   letterSpacing: "-0.03em",
                   lineHeight: 0.92,
@@ -133,13 +133,13 @@ export function PortfolioPage() {
               >
                 {t.portfolioPage.titleLine1}
                 <br />
-                <span style={{ color: "rgba(255,251,224,0.3)" }}>{t.portfolioPage.titleLine2}</span>
+                <span style={{ color: "rgba(255,251,224,0.4)" }}>{t.portfolioPage.titleLine2}</span>
               </h1>
             </div>
 
             <p
               style={{
-                color: "rgba(255,251,224,0.35)",
+                color: "rgba(255,251,224,0.5)",
                 fontSize: "14px",
                 fontWeight: 300,
                 lineHeight: 1.7,
@@ -160,6 +160,7 @@ export function PortfolioPage() {
       </div>
 
       <div
+        className="pdc-gutter"
         style={{
           position: "sticky",
           top: "72px",
@@ -167,7 +168,6 @@ export function PortfolioPage() {
           backgroundColor: "rgba(8, 4, 1, 0.95)",
           backdropFilter: "blur(8px)",
           borderBottom: "1px solid rgba(255,251,224,0.06)",
-          padding: "0 40px",
         }}
       >
         <div
@@ -198,10 +198,10 @@ export function PortfolioPage() {
       </div>
 
       <div
+        className="pdc-page-body"
         style={{
           maxWidth: "1400px",
           margin: "0 auto",
-          padding: "40px 40px 120px",
         }}
       >
         {loading ? (
@@ -217,7 +217,7 @@ export function PortfolioPage() {
               gap: "20px",
             }}
           >
-            <span style={{ color: "rgba(255,251,224,0.3)", fontSize: "12px", letterSpacing: "0.2em", textTransform: "uppercase" }}>
+            <span style={{ color: "rgba(255,251,224,0.5)", fontSize: "12px", letterSpacing: "0.2em", textTransform: "uppercase" }}>
               {t.portfolioPage.loadError}
             </span>
             <button
@@ -234,7 +234,7 @@ export function PortfolioPage() {
             style={{
               textAlign: "center",
               padding: "120px 0",
-              color: "rgba(255,251,224,0.2)",
+              color: "rgba(255,251,224,0.5)",
               fontSize: "12px",
               letterSpacing: "0.2em",
               textTransform: "uppercase",
@@ -270,7 +270,7 @@ export function PortfolioPage() {
           {activeCategory !== ALL && (
             <span
               style={{
-                color: "rgba(255,251,224,0.2)",
+                color: "rgba(255,251,224,0.5)",
                 fontSize: "10px",
                 fontWeight: 400,
                 letterSpacing: "0.2em",

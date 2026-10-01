@@ -81,7 +81,7 @@ export function Hero() {
             <div className="pdc-hero-label" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <div style={{ width: "32px", height: "1px", backgroundColor: "rgba(255,251,224,0.35)" }} />
               <span style={{
-                color: "rgba(255,251,224,0.4)", fontSize: "10px", fontWeight: 500,
+                color: "rgba(255,251,224,0.5)", fontSize: "10px", fontWeight: 500,
                 letterSpacing: "0.3em", textTransform: "uppercase",
               }}>{t.hero.label}</span>
             </div>

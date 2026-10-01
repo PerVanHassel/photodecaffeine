@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { Link } from "react-router";
+import { useLanguage } from "../context/LanguageContext";
 
 export function CustomCTA() {
-  const [hoveredButton, setHoveredButton] = useState(false);
+  const { t } = useLanguage();
+  const tc = t.customCta;
 
   return (
     <section
+      className="pdc-band"
       style={{
         backgroundColor: "#0a0502",
-        padding: "100px 40px",
         fontFamily: "'Inter', sans-serif",
         borderTop: "1px solid rgba(200,144,90,0.08)",
         borderBottom: "1px solid rgba(200,144,90,0.08)",
@@ -33,7 +35,7 @@ export function CustomCTA() {
           <div>
             <div
               style={{
-                color: "rgba(200,144,90,0.5)",
+                color: "rgba(200,144,90,0.8)",
                 fontSize: "9px",
                 fontWeight: 600,
                 letterSpacing: "0.28em",
@@ -41,7 +43,7 @@ export function CustomCTA() {
                 marginBottom: "24px",
               }}
             >
-              CUSTOM PROJECTS
+              {tc.label}
             </div>
 
             <h2
@@ -55,12 +57,12 @@ export function CustomCTA() {
                 marginBottom: "24px",
               }}
             >
-              Have a vision that doesn't fit inside a package?
+              {tc.title}
             </h2>
 
             <p
               style={{
-                color: "rgba(255,251,224,0.45)",
+                color: "rgba(255,251,224,0.5)",
                 fontSize: "15px",
                 fontWeight: 300,
                 lineHeight: 1.7,
@@ -69,14 +71,12 @@ export function CustomCTA() {
                 maxWidth: "580px",
               }}
             >
-              Some projects need more than a standard package. Whether it's a personal shoot,
-              brand campaign, automotive concept, real estate story, event, or creative idea — we'll
-              help shape the vision first, then build a clear price estimate around it.
+              {tc.body}
             </p>
 
             <p
               style={{
-                color: "rgba(255,251,224,0.25)",
+                color: "rgba(255,251,224,0.5)",
                 fontSize: "11px",
                 fontWeight: 400,
                 letterSpacing: "0.03em",
@@ -85,7 +85,7 @@ export function CustomCTA() {
                 fontStyle: "italic",
               }}
             >
-              Built for personal projects, custom campaigns and ideas that need their own direction.
+              {tc.note}
             </p>
           </div>
 
@@ -97,36 +97,25 @@ export function CustomCTA() {
               padding: "48px 40px",
             }}
           >
-            <button
-              onClick={() => {
-                const el = document.getElementById("contact");
-                if (el) el.scrollIntoView({ behavior: "smooth" });
-              }}
-              onMouseEnter={() => setHoveredButton(true)}
-              onMouseLeave={() => setHoveredButton(false)}
+            <Link
+              to="/#contact"
+              className="pdc-btn pdc-btn-solid"
               style={{
                 display: "block",
                 width: "100%",
-                backgroundColor: hoveredButton ? "#c8905a" : "#fffbe0",
-                color: hoveredButton ? "#fffbe0" : "#1a0c04",
-                border: "none",
                 padding: "18px 32px",
                 fontSize: "10px",
                 fontWeight: 700,
                 letterSpacing: "0.2em",
-                textTransform: "uppercase",
-                cursor: "pointer",
-                fontFamily: "'Inter', sans-serif",
-                transition: "all 0.3s ease",
                 marginBottom: "20px",
               }}
             >
-              CREATE MY VISION & PRICE ESTIMATE
-            </button>
+              {tc.button}
+            </Link>
 
             <p
               style={{
-                color: "rgba(255,251,224,0.35)",
+                color: "rgba(255,251,224,0.5)",
                 fontSize: "11px",
                 fontWeight: 300,
                 lineHeight: 1.7,
@@ -134,8 +123,7 @@ export function CustomCTA() {
                 textAlign: "center",
               }}
             >
-              Tell us the idea, the goal, the location and the feeling you want to create. We'll
-              turn it into a clear concept and custom quote.
+              {tc.cardNote}
             </p>
           </div>
         </div>

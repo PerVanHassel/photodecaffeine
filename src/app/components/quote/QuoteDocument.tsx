@@ -49,13 +49,13 @@ const ACCENT = "#c8905a";
 const CREAM = "#fffbe0";
 const GREEN = "rgba(120,190,140,0.95)";
 
+const EUR = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
+const EUR_WHOLE = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR", minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+/** Dutch money notation (€ 1.234,50), without cents when there are none. */
 export function euro(amount: number): string {
   const n = Number(amount) || 0;
-  const decimals = Math.round(n * 100) % 100 === 0 ? 0 : 2;
-  return `€${n.toLocaleString("nl-NL", {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  })}`;
+  return Math.round(n * 100) % 100 === 0 ? EUR_WHOLE.format(n) : EUR.format(n);
 }
 
 export const DEFAULT_VAT_RATE = 21;

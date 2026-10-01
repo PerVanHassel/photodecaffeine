@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import { useState } from "react";
 import { useLanguage } from "../context/LanguageContext";
 
@@ -43,7 +44,7 @@ export function Services() {
                     : "rgba(255,251,224,0.06)"
                 }`,
                 padding: "48px 40px",
-                transition: "all 0.3s ease",
+                transition: "background-color 0.3s ease",
                 position: "relative",
               }}
             >
@@ -77,7 +78,7 @@ export function Services() {
 
               <p
                 style={{
-                  color: "rgba(255,251,224,0.45)",
+                  color: "rgba(255,251,224,0.5)",
                   fontSize: "13px",
                   fontWeight: 300,
                   lineHeight: 1.7,
@@ -111,7 +112,7 @@ export function Services() {
                 </div>
                 <div
                   style={{
-                    color: "rgba(255,251,224,0.3)",
+                    color: "rgba(255,251,224,0.5)",
                     fontSize: "11px",
                     fontWeight: 400,
                     letterSpacing: "0.05em",
@@ -132,7 +133,7 @@ export function Services() {
 
               <div
                 style={{
-                  color: "rgba(255,251,224,0.25)",
+                  color: "rgba(255,251,224,0.5)",
                   fontSize: "8px",
                   fontWeight: 700,
                   letterSpacing: "0.25em",
@@ -155,6 +156,7 @@ export function Services() {
                     }}
                   >
                     <span
+                      aria-hidden="true"
                       style={{
                         color: pkg.id === "reserve" ? "#c8905a" : "rgba(200,144,90,0.5)",
                         fontSize: "14px",
@@ -190,7 +192,7 @@ export function Services() {
               <div style={{ marginBottom: "32px" }}>
                 <div
                   style={{
-                    color: "rgba(255,251,224,0.25)",
+                    color: "rgba(255,251,224,0.5)",
                     fontSize: "9px",
                     fontWeight: 600,
                     letterSpacing: "0.22em",
@@ -202,7 +204,7 @@ export function Services() {
                 </div>
                 <div
                   style={{
-                    color: "rgba(255,251,224,0.4)",
+                    color: "rgba(255,251,224,0.5)",
                     fontSize: "12px",
                     fontWeight: 300,
                     lineHeight: 1.6,
@@ -212,50 +214,20 @@ export function Services() {
                 </div>
               </div>
 
-              <button
-                onClick={() => {
-                  const el = document.getElementById("contact");
-                  if (el) el.scrollIntoView({ behavior: "smooth" });
-                }}
+              <Link
+                to="/#contact"
+                className={`pdc-btn ${pkg.id === "reserve" ? "pdc-btn-solid" : "pdc-btn-quiet"}`}
                 style={{
                   display: "block",
                   width: "100%",
-                  backgroundColor: pkg.id === "reserve" ? "#fffbe0" : "transparent",
-                  color: pkg.id === "reserve" ? "#1a0c04" : "rgba(255,251,224,0.6)",
-                  border:
-                    pkg.id === "reserve"
-                      ? "none"
-                      : "1px solid rgba(255,251,224,0.15)",
                   padding: "16px",
                   fontSize: "10px",
                   fontWeight: 700,
                   letterSpacing: "0.2em",
-                  textTransform: "uppercase",
-                  cursor: "pointer",
-                  fontFamily: "'Inter', sans-serif",
-                  transition: "all 0.3s ease",
-                }}
-                onMouseEnter={(e) => {
-                  if (pkg.id === "reserve") {
-                    e.currentTarget.style.backgroundColor = "#c8905a";
-                    e.currentTarget.style.color = "#fffbe0";
-                  } else {
-                    e.currentTarget.style.borderColor = "rgba(255,251,224,0.4)";
-                    e.currentTarget.style.color = "#fffbe0";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (pkg.id === "reserve") {
-                    e.currentTarget.style.backgroundColor = "#fffbe0";
-                    e.currentTarget.style.color = "#1a0c04";
-                  } else {
-                    e.currentTarget.style.borderColor = "rgba(255,251,224,0.15)";
-                    e.currentTarget.style.color = "rgba(255,251,224,0.6)";
-                  }
                 }}
               >
                 {ts.bookPackage}
-              </button>
+              </Link>
             </div>
           ))}
         </div>
@@ -263,7 +235,7 @@ export function Services() {
         <div style={{ marginTop: "56px", textAlign: "center" }}>
           <p
             style={{
-              color: "rgba(255,251,224,0.25)",
+              color: "rgba(255,251,224,0.5)",
               fontSize: "11px",
               fontWeight: 300,
               letterSpacing: "0.05em",

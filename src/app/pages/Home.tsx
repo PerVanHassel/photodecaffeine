@@ -7,9 +7,8 @@ import { SocialProof } from "../components/SocialProof";
 import { Contact } from "../components/Contact";
 import { Hero } from "../components/Hero";
 import { CustomCTA } from "../components/CustomCTA";
-import { useEffect } from "react";
-import { useLocation } from "react-router";
 import { useSiteSettings, type SectionKey } from "../lib/siteData";
+import { useLanguage } from "../context/LanguageContext";
 
 const Divider = () => (
   <div
@@ -31,15 +30,8 @@ const DEFAULT_SECTIONS: Record<SectionKey, boolean> = {
 };
 
 export function Home() {
-  const location = useLocation();
+  const { t } = useLanguage();
   const sections = { ...DEFAULT_SECTIONS, ...useSiteSettings().data?.sections };
-
-  useEffect(() => {
-    if (location.state?.scrollTo) {
-      const el = document.getElementById(location.state.scrollTo);
-      if (el) el.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [location.state]);
 
   return (
     <div style={{ backgroundColor: "#080401", fontFamily: "'Inter', sans-serif", overflowX: "hidden" }}>
@@ -70,7 +62,7 @@ export function Home() {
           textAlign: "center",
         }}
       >
-        <h2
+        <p
           style={{
             color: "rgba(255,251,224,0.55)",
             fontSize: "13px",
@@ -80,12 +72,10 @@ export function Home() {
             margin: 0,
           }}
         >
-          PhotoDeCaffeine is gespecialiseerd in{" "}
-          <strong style={{ color: "rgba(255,251,224,0.75)" }}>automotive fotografie en social media beheer</strong>
-          . Van auto's en motoren tot de mensen erachter — we fotograferen en filmen voor showrooms,
-          autodealers, autobedrijven en privé-eigenaren door heel Nederland. Elke shoot is op maat —
-          scherpe beelden die je auto, motor of merk laten opvallen.
-        </h2>
+          {t.home.seoStart}{" "}
+          <strong style={{ color: "rgba(255,251,224,0.75)" }}>{t.home.seoStrong}</strong>
+          {t.home.seoEnd}
+        </p>
       </section>
       <Contact />
     </div>

@@ -37,7 +37,7 @@ export function WorkProcess() {
           <div>
             <span
               style={{
-                color: "rgba(255,251,224,0.3)",
+                color: "rgba(255,251,224,0.5)",
                 fontSize: "10px",
                 fontWeight: 500,
                 letterSpacing: "0.3em",
@@ -61,14 +61,14 @@ export function WorkProcess() {
             >
               {t.workProcess.titleLine1}
               <br />
-              <span style={{ color: "rgba(255,251,224,0.35)" }}>
+              <span style={{ color: "rgba(255,251,224,0.4)" }}>
                 {t.workProcess.titleLine2}
               </span>
             </h2>
           </div>
           <p
             style={{
-              color: "rgba(255,251,224,0.4)",
+              color: "rgba(255,251,224,0.5)",
               fontSize: "14px",
               fontWeight: 300,
               lineHeight: 1.7,
@@ -185,7 +185,7 @@ export function WorkProcess() {
               </h3>
               <p
                 style={{
-                  color: "rgba(255,251,224,0.35)",
+                  color: "rgba(255,251,224,0.5)",
                   fontSize: "11px",
                   fontWeight: 400,
                   letterSpacing: "0.18em",
@@ -220,7 +220,7 @@ export function WorkProcess() {
               >
                 <span
                   style={{
-                    color: "rgba(255,251,224,0.25)",
+                    color: "rgba(255,251,224,0.5)",
                     fontSize: "9px",
                     fontWeight: 500,
                     letterSpacing: "0.2em",

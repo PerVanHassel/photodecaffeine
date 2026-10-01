@@ -76,5 +76,5 @@ const styles: Record<string, React.CSSProperties> = {
   row: { display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center", marginTop: 8 },
   primary: { background: "#c8955c", color: "#080401", border: 0, padding: "12px 24px", fontSize: 13, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", fontFamily: font },
   secondary: { border: "1px solid rgba(255,251,224,0.2)", color: "#fffbe0", padding: "12px 24px", fontSize: 13, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", textDecoration: "none" },
-  detail: { fontSize: 12, color: "rgba(255,251,224,0.35)", margin: "8px 0 0", wordBreak: "break-word" },
+  detail: { fontSize: 12, color: "rgba(255,251,224,0.55)", margin: "8px 0 0", wordBreak: "break-word" },
 };

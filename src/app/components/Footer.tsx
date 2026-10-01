@@ -233,25 +233,27 @@ function PolicyModal({
   onClose: () => void;
   doc: PolicyDoc;
 }) {
+  const { language } = useLanguage();
+  const closeLabel = language === "nl" ? "Sluiten" : "Close";
   return (
     <Dialog.Root open={open} onOpenChange={(v) => !v && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-2xl max-h-[80vh] bg-[#fffbe0] text-[#3e250a] flex flex-col overflow-hidden shadow-2xl">
+        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[calc(100%-32px)] max-w-2xl max-h-[80vh] bg-[#fffbe0] text-[#3e250a] flex flex-col overflow-hidden shadow-2xl">
           <div className="flex items-start justify-between px-8 pt-8 pb-6 border-b border-[#3e250a]/10">
             <div>
               <Dialog.Title className="text-xl font-bold tracking-tight uppercase">
                 {doc.title}
               </Dialog.Title>
-              <p className="text-xs text-[#3e250a]/50 mt-1 tracking-wide">{doc.lastUpdated}</p>
+              <p className="text-xs text-[#3e250a]/70 mt-1 tracking-wide">{doc.lastUpdated}</p>
             </div>
             <Dialog.Close asChild>
-              <button className="text-[#3e250a]/40 hover:text-[#3e250a] transition-colors mt-0.5">
-                <X size={20} />
+              <button type="button" aria-label={closeLabel} className="text-[#3e250a]/60 hover:text-[#3e250a] transition-colors mt-0.5">
+                <X size={20} aria-hidden="true" />
               </button>
             </Dialog.Close>
           </div>
-          <div className="overflow-y-auto px-8 py-6 space-y-6">
+          <div className="overflow-y-auto overscroll-contain px-8 py-6 space-y-6">
             {doc.sections.map((section) => (
               <div key={section.heading}>
                 <h3 className="text-sm font-semibold uppercase tracking-widest text-[#3e250a] mb-2">
@@ -319,27 +321,27 @@ export function Footer() {
               <p className="text-sm text-[#fffbe0]/60 leading-relaxed italic max-w-xs">
                 {t.footer.tagline}
               </p>
-              <div className="flex items-start gap-2 text-xs text-[#fffbe0]/40 pt-1">
+              <div className="flex items-start gap-2 text-xs text-[#fffbe0]/60 pt-1">
                 <MapPin size={12} className="mt-0.5 shrink-0 opacity-60" />
                 <span>{t.footer.address}</span>
               </div>
               <a
                 href={`mailto:${t.footer.email}`}
-                className="flex items-center gap-2 text-xs text-[#fffbe0]/40 hover:text-[#fffbe0]/70 transition-colors duration-200"
+                className="flex items-center gap-2 text-xs text-[#fffbe0]/60 hover:text-[#fffbe0] transition-colors duration-200"
               >
                 <Mail size={12} className="shrink-0" />
                 <span>{t.footer.email}</span>
               </a>
               <a
                 href="tel:+31636112514"
-                className="flex items-center gap-2 text-xs text-[#fffbe0]/40 hover:text-[#fffbe0]/70 transition-colors duration-200"
+                className="flex items-center gap-2 text-xs text-[#fffbe0]/60 hover:text-[#fffbe0] transition-colors duration-200"
               >
                 <Phone size={12} className="shrink-0" />
                 <span>+31 6 36112514</span>
               </a>
               <Link
                 to="/#contact"
-                className="inline-block text-xs tracking-widest uppercase border border-[#fffbe0]/20 text-[#fffbe0]/60 hover:text-[#fffbe0] hover:border-[#fffbe0]/50 px-4 py-2 transition-all duration-200 mt-1"
+                className="inline-block text-xs tracking-widest uppercase border border-[#fffbe0]/20 text-[#fffbe0]/60 hover:text-[#fffbe0] hover:border-[#fffbe0]/50 px-4 py-2 transition-colors duration-200 mt-1"
               >
                 {t.footer.bookShoot}
               </Link>
@@ -347,7 +349,7 @@ export function Footer() {
 
             {/* Nav column */}
             <div className="md:col-span-3 space-y-4">
-              <p className="text-[10px] tracking-[0.25em] uppercase text-[#fffbe0]/30">
+              <p className="text-[10px] tracking-[0.25em] uppercase text-[#fffbe0]/60">
                 {t.footer.nav}
               </p>
               <nav className="flex flex-col gap-2.5">
@@ -362,7 +364,7 @@ export function Footer() {
                 ))}
                 <Link
                   to="/portal/login"
-                  className="text-[10px] tracking-[0.2em] uppercase text-[#fffbe0]/30 hover:text-[#fffbe0]/60 transition-colors duration-200 pt-2 border-t border-[#fffbe0]/10 mt-1"
+                  className="text-[10px] tracking-[0.2em] uppercase text-[#fffbe0]/60 hover:text-[#fffbe0] transition-colors duration-200 pt-2 border-t border-[#fffbe0]/10 mt-1"
                 >
                   {t.footer.clientPortal}
                 </Link>
@@ -371,7 +373,7 @@ export function Footer() {
 
             {/* Social column */}
             <div className="md:col-span-4 space-y-4">
-              <p className="text-[10px] tracking-[0.25em] uppercase text-[#fffbe0]/30">
+              <p className="text-[10px] tracking-[0.25em] uppercase text-[#fffbe0]/60">
                 {t.footer.followUs}
               </p>
               <div className="flex gap-3">
@@ -382,7 +384,7 @@ export function Footer() {
                     aria-label={label}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-9 h-9 flex items-center justify-center border border-[#fffbe0]/15 text-[#fffbe0]/50 hover:text-[#fffbe0] hover:border-[#fffbe0]/40 transition-all duration-200"
+                    className="w-9 h-9 flex items-center justify-center border border-[#fffbe0]/15 text-[#fffbe0]/50 hover:text-[#fffbe0] hover:border-[#fffbe0]/40 transition-colors duration-200"
                   >
                     {icon}
                   </a>
@@ -394,35 +396,35 @@ export function Footer() {
           {/* Bottom bar */}
           <div className="border-t border-[#fffbe0]/10 py-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div className="flex flex-col gap-1">
-              <p className="text-[11px] text-[#fffbe0]/30 tracking-wide">
+              <p className="text-[11px] text-[#fffbe0]/60 tracking-wide">
                 KvK {t.footer.kvk} &nbsp;·&nbsp; BTW {t.footer.btw}
               </p>
-              <p className="text-[11px] text-[#fffbe0]/20 italic">
+              <p className="text-[11px] text-[#fffbe0]/60 italic">
                 {t.footer.madeIn}
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[9px] tracking-[0.18em] uppercase font-normal text-[#fffbe0]/30">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[9px] tracking-[0.18em] uppercase font-normal text-[#fffbe0]/60">
               <button
                 onClick={() => setPrivacyOpen(true)}
-                className="hover:text-[#fffbe0]/60 transition-colors duration-200 text-[9px]"
+                className="hover:text-[#fffbe0] transition-colors duration-200 text-[9px]"
               >
                 {t.footer.privacy}
               </button>
-              <span className="opacity-40">·</span>
+              <span className="opacity-40" aria-hidden="true">·</span>
               <button
                 onClick={() => setTermsOpen(true)}
-                className="hover:text-[#fffbe0]/60 transition-colors duration-200 text-[9px]"
+                className="hover:text-[#fffbe0] transition-colors duration-200 text-[9px]"
               >
                 {t.footer.terms}
               </button>
-              <span className="opacity-40">·</span>
+              <span className="opacity-40" aria-hidden="true">·</span>
               <button
                 onClick={() => setCookieOpen(true)}
-                className="hover:text-[#fffbe0]/60 transition-colors duration-200 text-[9px]"
+                className="hover:text-[#fffbe0] transition-colors duration-200 text-[9px]"
               >
                 {t.footer.cookiePolicy}
               </button>
-              <span className="opacity-40">·</span>
+              <span className="opacity-40" aria-hidden="true">·</span>
               <span>{t.footer.copyright(year)}</span>
             </div>
           </div>

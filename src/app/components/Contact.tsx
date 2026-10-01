@@ -1,25 +1,31 @@
-import { useState } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { Link } from "react-router";
 import { Select } from "./portal/Select";
+import { EMAIL_INPUT, PHONE_INPUT, PublicInput, PublicTextarea } from "./form/PublicField";
 import { useLanguage } from "../context/LanguageContext";
 import { portalFetch } from "../../lib/supabase";
 import { getStoredAdRef } from "../hooks/useAdTracking";
 
+const EMPTY = { name: "", email: "", phone: "", brand: "", message: "", package: "" };
+
 export function Contact() {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    brand: "",
-    message: "",
-    package: "",
-  });
+  const [formData, setFormData] = useState(EMPTY);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [focused, setFocused] = useState<string | null>(null);
+  const successHeading = useRef<HTMLHeadingElement>(null);
+  const packageId = useId();
   const { t } = useLanguage();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const set = (field: keyof typeof EMPTY) => (value: string) => setFormData((f) => ({ ...f, [field]: value }));
+
+  // Screen readers hear the confirmation, and keyboard focus is not left on
+  // a form that no longer exists.
+  useEffect(() => {
+    if (submitted) successHeading.current?.focus();
+  }, [submitted]);
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -34,31 +40,25 @@ export function Contact() {
       });
       setSubmitted(true);
     } catch {
-      setError("Something went wrong. Please try again or email us directly.");
+      setError(t.contact.sendError);
     } finally {
       setLoading(false);
     }
   };
 
-  const inputStyle = (field: string) => ({
-    width: "100%",
-    backgroundColor: "transparent",
-    border: "none",
-    borderBottom: `1px solid ${
-      focused === field
-        ? "rgba(255,251,224,0.5)"
-        : "rgba(255,251,224,0.12)"
-    }`,
-    color: "#fffbe0",
-    fontSize: "15px",
-    fontWeight: 300,
-    fontFamily: "'Inter', sans-serif",
-    padding: "16px 0",
-    outline: "none",
-    letterSpacing: "0.02em",
-    transition: "border-color 0.2s ease",
-    boxSizing: "border-box" as const,
-  });
+  // The same packages, names and prices as the packages section.
+  const packages = [
+    ...t.services.packages.map((p) => ({ value: p.id, label: `${p.name} — ${p.price} ${p.per}` })),
+    { value: "custom", label: t.contact.packageCustom },
+  ];
+
+  const details: { label: string; value: string; href?: string; external?: boolean }[] = [
+    { label: t.contact.infoEmail, value: "contact@photodecaffeine.com", href: "mailto:contact@photodecaffeine.com" },
+    { label: t.contact.infoPhone, value: "+31 6 36112514", href: "tel:+31636112514" },
+    { label: t.contact.infoLocation, value: t.contact.infoLocationValue },
+    { label: "Instagram", value: "@photodecaffeine", href: "https://www.instagram.com/photodecaffeine", external: true },
+    { label: t.contact.infoResponse, value: t.contact.responseTime },
+  ];
 
   return (
     <section
@@ -81,7 +81,7 @@ export function Contact() {
       >
         <span
           style={{
-            color: "rgba(255,251,224,0.3)",
+            color: "rgba(255,251,224,0.5)",
             fontSize: "10px",
             fontWeight: 500,
             letterSpacing: "0.3em",
@@ -120,7 +120,7 @@ export function Contact() {
         </h2>
         <p
           style={{
-            color: "rgba(255,251,224,0.35)",
+            color: "rgba(255,251,224,0.5)",
             fontSize: "15px",
             fontWeight: 300,
             lineHeight: 1.7,
@@ -130,44 +130,13 @@ export function Contact() {
         >
           {t.contact.formSubtitle}
         </p>
-        <a
-          href="#contact-form"
-          onClick={(e) => {
-            e.preventDefault();
-            document
-              .getElementById("contact-form")
-              ?.scrollIntoView({ behavior: "smooth" });
-          }}
-          className="pdc-contact-cta"
-          style={{
-            display: "inline-block",
-            backgroundColor: "#fffbe0",
-            color: "#1a0c04",
-            fontSize: "11px",
-            fontWeight: 800,
-            letterSpacing: "0.22em",
-            textTransform: "uppercase",
-            textDecoration: "none",
-            transition: "all 0.25s ease",
-            cursor: "pointer",
-          }}
-          onMouseEnter={(e) => {
-            (
-              e.currentTarget as HTMLElement
-            ).style.backgroundColor = "#c8905a";
-            (e.currentTarget as HTMLElement).style.color =
-              "#fffbe0";
-          }}
-          onMouseLeave={(e) => {
-            (
-              e.currentTarget as HTMLElement
-            ).style.backgroundColor = "#fffbe0";
-            (e.currentTarget as HTMLElement).style.color =
-              "#1a0c04";
-          }}
+        <Link
+          to="#contact-form"
+          className="pdc-btn pdc-btn-solid pdc-contact-cta"
+          style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.22em" }}
         >
           {t.contact.formTitle}
-        </a>
+        </Link>
       </div>
 
       {/* Form section */}
@@ -199,6 +168,7 @@ export function Contact() {
           </h3>
 
           <div
+            aria-hidden="true"
             style={{
               width: "32px",
               height: "1px",
@@ -209,7 +179,7 @@ export function Contact() {
 
           <p
             style={{
-              color: "rgba(255,251,224,0.45)",
+              color: "rgba(255,251,224,0.5)",
               fontSize: "14px",
               fontWeight: 300,
               lineHeight: 1.8,
@@ -220,56 +190,28 @@ export function Contact() {
             {t.contact.formSubtitle}
           </p>
 
-          <div
+          <dl
             className="contact-info-list"
             style={{
               display: "flex",
               flexDirection: "column",
               gap: "32px",
+              margin: 0,
             }}
           >
-            {[
-              {
-                label: "Email",
-                value: "contact@photodecaffeine.com",
-                href: "mailto:contact@photodecaffeine.com",
-                icon: "✉",
-              },
-              {
-                label: "Phone",
-                value: "+31 6 36112514",
-                href: "tel:+31636112514",
-                icon: "◌",
-              },
-              {
-                label: "Location",
-                value: "Roosendaal, The Netherlands & Lisbon, Portugal",
-                icon: "⌖",
-              },
-              {
-                label: "Instagram",
-                value: "@photodecaffeine",
-                icon: "◉",
-              },
-              {
-                label: "Response time",
-                value: t.contact.responseTime,
-                icon: "◷",
-              },
-            ].map((item) => (
+            {details.map((item) => (
               <div
                 key={item.label}
                 className="contact-info-item"
                 style={{
-                  borderBottom:
-                    "1px solid rgba(255,251,224,0.06)",
+                  borderBottom: "1px solid rgba(255,251,224,0.06)",
                   paddingBottom: "24px",
                 }}
               >
-                <div
+                <dt
                   className="contact-info-label"
                   style={{
-                    color: "rgba(255,251,224,0.25)",
+                    color: "rgba(255,251,224,0.5)",
                     fontSize: "9px",
                     fontWeight: 600,
                     letterSpacing: "0.25em",
@@ -278,44 +220,30 @@ export function Contact() {
                   }}
                 >
                   {item.label}
-                </div>
-                {"href" in item ? (
-                  <a
-                    href={item.href}
-                    style={{
-                      color: "rgba(255,251,224,0.65)",
-                      fontSize: "13px",
-                      fontWeight: 300,
-                      letterSpacing: "0.02em",
-                      textDecoration: "none",
-                      transition: "color 0.2s ease",
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.color = "rgba(255,251,224,0.9)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,251,224,0.65)"; }}
-                  >
-                    {item.value}
-                  </a>
-                ) : (
-                  <div
-                    style={{
-                      color: "rgba(255,251,224,0.65)",
-                      fontSize: "13px",
-                      fontWeight: 300,
-                      letterSpacing: "0.02em",
-                    }}
-                  >
-                    {item.value}
-                  </div>
-                )}
+                </dt>
+                <dd className="pdc-contact-detail" style={{ margin: 0 }}>
+                  {item.href ? (
+                    <a
+                      href={item.href}
+                      className="pdc-contact-link"
+                      {...(item.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                    >
+                      {item.value}
+                    </a>
+                  ) : (
+                    item.value
+                  )}
+                </dd>
               </div>
             ))}
-          </div>
+          </dl>
         </div>
 
         {/* Right — Form */}
         <div className="pdc-contact-form">
           {submitted ? (
             <div
+              role="status"
               style={{
                 border: "1px solid rgba(200,144,90,0.3)",
                 padding: "64px 48px",
@@ -323,6 +251,7 @@ export function Contact() {
               }}
             >
               <div
+                aria-hidden="true"
                 style={{
                   color: "#c8905a",
                   fontSize: "32px",
@@ -332,6 +261,8 @@ export function Contact() {
                 ✓
               </div>
               <h4
+                ref={successHeading}
+                tabIndex={-1}
                 style={{
                   color: "#fffbe0",
                   fontSize: "22px",
@@ -340,13 +271,14 @@ export function Contact() {
                   textTransform: "uppercase",
                   margin: 0,
                   marginBottom: "16px",
+                  outline: "none",
                 }}
               >
                 {t.contact.successTitle}
               </h4>
               <p
                 style={{
-                  color: "rgba(255,251,224,0.4)",
+                  color: "rgba(255,251,224,0.5)",
                   fontSize: "13px",
                   fontWeight: 300,
                   lineHeight: 1.7,
@@ -366,246 +298,93 @@ export function Contact() {
               }}
             >
               <div className="pdc-form-row">
-                <div>
-                  <label
-                    style={{
-                      color: "rgba(255,251,224,0.25)",
-                      fontSize: "9px",
-                      fontWeight: 600,
-                      letterSpacing: "0.25em",
-                      textTransform: "uppercase",
-                      display: "block",
-                      marginBottom: "8px",
-                    }}
-                  >
-                    {t.contact.namePlaceholder}
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        name: e.target.value,
-                      })
-                    }
-                    onFocus={() => setFocused("name")}
-                    onBlur={() => setFocused(null)}
-                    placeholder={t.contact.namePlaceholder}
-                    style={{ ...inputStyle("name") }}
-                  />
-                </div>
-                <div>
-                  <label
-                    style={{
-                      color: "rgba(255,251,224,0.25)",
-                      fontSize: "9px",
-                      fontWeight: 600,
-                      letterSpacing: "0.25em",
-                      textTransform: "uppercase",
-                      display: "block",
-                      marginBottom: "8px",
-                    }}
-                  >
-                    {t.contact.emailPlaceholder}
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        email: e.target.value,
-                      })
-                    }
-                    onFocus={() => setFocused("email")}
-                    onBlur={() => setFocused(null)}
-                    placeholder="your@email.com"
-                    style={inputStyle("email")}
-                  />
-                </div>
+                <PublicInput
+                  label={t.contact.nameLabel}
+                  name="name"
+                  autoComplete="name"
+                  required
+                  value={formData.name}
+                  onChange={(e) => set("name")(e.target.value)}
+                  placeholder={t.contact.namePlaceholder}
+                />
+                <PublicInput
+                  label={t.contact.emailLabel}
+                  name="email"
+                  {...EMAIL_INPUT}
+                  required
+                  value={formData.email}
+                  onChange={(e) => set("email")(e.target.value)}
+                  placeholder={t.contact.emailPlaceholder}
+                />
               </div>
 
               <div className="pdc-form-row">
-                <div>
-                  <label
-                    style={{
-                      color: "rgba(255,251,224,0.25)",
-                      fontSize: "9px",
-                      fontWeight: 600,
-                      letterSpacing: "0.25em",
-                      textTransform: "uppercase",
-                      display: "block",
-                      marginBottom: "8px",
-                    }}
-                  >
-                    {t.contact.phonePlaceholder}
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        phone: e.target.value,
-                      })
-                    }
-                    onFocus={() => setFocused("phone")}
-                    onBlur={() => setFocused(null)}
-                    placeholder={t.contact.phonePlaceholder}
-                    style={inputStyle("phone")}
-                  />
-                </div>
-                <div>
-                  <label
-                    style={{
-                      color: "rgba(255,251,224,0.25)",
-                      fontSize: "9px",
-                      fontWeight: 600,
-                      letterSpacing: "0.25em",
-                      textTransform: "uppercase",
-                      display: "block",
-                      marginBottom: "8px",
-                    }}
-                  >
-                    {t.contact.brandPlaceholder}
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.brand}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        brand: e.target.value,
-                      })
-                    }
-                    onFocus={() => setFocused("brand")}
-                    onBlur={() => setFocused(null)}
-                    placeholder={t.contact.brandPlaceholder}
-                    style={inputStyle("brand")}
-                  />
-                </div>
+                <PublicInput
+                  label={t.contact.phoneLabel}
+                  name="phone"
+                  {...PHONE_INPUT}
+                  value={formData.phone}
+                  onChange={(e) => set("phone")(e.target.value)}
+                  placeholder={t.contact.phonePlaceholder}
+                />
+                <PublicInput
+                  label={t.contact.brandLabel}
+                  name="organization"
+                  autoComplete="organization"
+                  value={formData.brand}
+                  onChange={(e) => set("brand")(e.target.value)}
+                  placeholder={t.contact.brandPlaceholder}
+                />
               </div>
 
-              <div>
-                <label
-                  style={{
-                    color: "rgba(255,251,224,0.25)",
-                    fontSize: "9px",
-                    fontWeight: 600,
-                    letterSpacing: "0.25em",
-                    textTransform: "uppercase",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
+              <div className="pdc-field">
+                <label htmlFor={packageId} className="pdc-field-label">
                   {t.contact.packageLabel}
                 </label>
                 <Select
-                  variant="underline"
+                  id={packageId}
                   value={formData.package}
-                  onChange={(v) => setFormData({ ...formData, package: v })}
+                  onChange={set("package")}
                   placeholder={t.contact.packageDefault}
-                  ariaLabel={t.contact.packageDefault}
-                  options={[
-                    { value: "espresso", label: "Espresso — €890" },
-                    { value: "reserve", label: "Reserve — €2,400" },
-                    { value: "blend", label: "Blend Retainer — €1,200/mo" },
-                    { value: "custom", label: "Custom / Not Sure Yet" },
-                  ]}
+                  options={packages}
                 />
               </div>
 
-              <div>
-                <label
-                  style={{
-                    color: "rgba(255,251,224,0.25)",
-                    fontSize: "9px",
-                    fontWeight: 600,
-                    letterSpacing: "0.25em",
-                    textTransform: "uppercase",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t.contact.messagePlaceholder}
-                </label>
-                <textarea
-                  required
-                  rows={4}
-                  value={formData.message}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      message: e.target.value,
-                    })
-                  }
-                  onFocus={() => setFocused("message")}
-                  onBlur={() => setFocused(null)}
-                  placeholder="Tell us about your project, shoot date, location..."
-                  style={{
-                    ...inputStyle("message"),
-                    resize: "none",
-                    paddingTop: "16px",
-                  }}
-                />
-              </div>
+              <PublicTextarea
+                label={t.contact.messageLabel}
+                name="message"
+                autoComplete="off"
+                required
+                rows={4}
+                value={formData.message}
+                onChange={(e) => set("message")(e.target.value)}
+                placeholder={t.contact.messagePlaceholder}
+              />
 
               {error && (
-                <p
-                  style={{
-                    color: "#e87c6a",
-                    fontSize: "12px",
-                    fontWeight: 400,
-                    margin: 0,
-                    lineHeight: 1.6,
-                  }}
-                >
+                <p className="pdc-form-error" role="alert">
                   {error}
                 </p>
               )}
 
               <button
                 type="submit"
-                className="pdc-contact-submit"
+                className="pdc-btn pdc-btn-solid pdc-contact-submit pdc-submit"
                 disabled={loading}
+                aria-busy={loading || undefined}
                 style={{
-                  backgroundColor: loading ? "#6b5a3e" : "#fffbe0",
-                  color: loading ? "rgba(255,251,224,0.5)" : "#1a0c04",
-                  border: "none",
                   padding: "18px 40px",
                   fontSize: "11px",
                   fontWeight: 800,
                   letterSpacing: "0.22em",
-                  textTransform: "uppercase",
-                  cursor: loading ? "not-allowed" : "pointer",
-                  fontFamily: "'Inter', sans-serif",
-                  transition: "all 0.25s ease",
-                }}
-                onMouseEnter={(e) => {
-                  if (!loading) {
-                    e.currentTarget.style.backgroundColor = "#c8905a";
-                    e.currentTarget.style.color = "#fffbe0";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!loading) {
-                    e.currentTarget.style.backgroundColor = "#fffbe0";
-                    e.currentTarget.style.color = "#1a0c04";
-                  }
                 }}
               >
-                {loading ? "Sending..." : t.contact.sendButton}
+                {loading ? t.contact.sending : t.contact.sendButton}
               </button>
             </form>
           )}
         </div>
       </div>
-
-      {/* Footer */}
-      
     </section>
   );
 }

@@ -1,39 +1,49 @@
 import { Helmet } from "react-helmet-async";
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Link } from "react-router";
+import { ArrowLeft } from "lucide-react";
 import { portalFetch } from "../../lib/supabase";
 import { useAdTracking, getStoredAdRef } from "../hooks/useAdTracking";
-import { ArrowLeft } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
+import { EMAIL_INPUT, PHONE_INPUT, PublicInput, PublicTextarea } from "../components/form/PublicField";
 import heroSmall from "@/assets/web/majd-800.webp";
 import heroImage from "@/assets/web/majd-1365.webp";
 import { HIGH_PRIORITY } from "../lib/images";
 
-const INCLUDED = [
-  "Contentplanning afgestemd op jouw merk",
-  "Fotografie & video op locatie",
-  "Posting & community beheer",
-  "Vast aanspreekpunt, geen wisselend team",
-];
-
 export function SocialMediaPage() {
   useAdTracking("/services/social-media");
-
-  const navigate = useNavigate();
+  const { t } = useLanguage();
+  const ts = t.socialMediaPage;
 
   const [form, setForm] = useState({ name: "", email: "", phone: "", company: "", message: "" });
-  const [focused, setFocused] = useState<string | null>(null);
+  const [errors, setErrors] = useState<{ name?: string; contact?: string }>({});
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const nameInput = useRef<HTMLInputElement>(null);
+  const emailInput = useRef<HTMLInputElement>(null);
+  const successHeading = useRef<HTMLHeadingElement>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    if (submitted) successHeading.current?.focus();
+  }, [submitted]);
+
+  const set = (field: keyof typeof form) => (e: { target: { value: string } }) => {
+    setForm((f) => ({ ...f, [field]: e.target.value }));
+    // A fixed field stops being flagged as soon as it is fixed.
+    if (field === "name") setErrors((x) => ({ ...x, name: undefined }));
+    if (field === "email" || field === "phone") setErrors((x) => ({ ...x, contact: undefined }));
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim()) {
-      setError("Vul je naam in.");
-      return;
-    }
-    if (!form.email && !form.phone) {
-      setError("Vul minimaal een e-mailadres of telefoonnummer in.");
+    const found = {
+      name: form.name.trim() ? undefined : ts.errorName,
+      contact: form.email.trim() || form.phone.trim() ? undefined : ts.errorContact,
+    };
+    setErrors(found);
+    if (found.name || found.contact) {
+      (found.name ? nameInput : emailInput).current?.focus();
       return;
     }
     setLoading(true);
@@ -52,27 +62,11 @@ export function SocialMediaPage() {
       });
       setSubmitted(true);
     } catch {
-      setError("Er is iets misgegaan. Probeer het opnieuw of neem direct contact op.");
+      setError(ts.errorGeneric);
     } finally {
       setLoading(false);
     }
   };
-
-  const inputStyle = (field: string) => ({
-    width: "100%",
-    backgroundColor: "transparent",
-    border: "none",
-    borderBottom: `1px solid ${focused === field ? "rgba(255,251,224,0.5)" : "rgba(255,251,224,0.12)"}`,
-    color: "#fffbe0",
-    fontSize: "15px",
-    fontWeight: 300,
-    fontFamily: "'Inter', sans-serif",
-    padding: "16px 0",
-    outline: "none",
-    letterSpacing: "0.02em",
-    transition: "border-color 0.2s ease",
-    boxSizing: "border-box" as const,
-  });
 
   return (
     <div
@@ -113,28 +107,10 @@ export function SocialMediaPage() {
         }}
       >
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-          <button
-            onClick={() => navigate("/")}
-            style={{
-              background: "none",
-              border: "none",
-              color: "rgba(255,251,224,0.35)",
-              fontSize: "10px",
-              fontWeight: 500,
-              letterSpacing: "0.22em",
-              textTransform: "uppercase",
-              cursor: "pointer",
-              padding: 0,
-              marginBottom: "40px",
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              fontFamily: "'Inter', sans-serif",
-            }}
-          >
-            <ArrowLeft size={14} />
-            Diensten
-          </button>
+          <Link to="/" className="pdc-back-link">
+            <ArrowLeft size={14} aria-hidden="true" />
+            {ts.backLabel}
+          </Link>
 
           <div
             style={{
@@ -148,7 +124,7 @@ export function SocialMediaPage() {
             <div>
               <span
                 style={{
-                  color: "rgba(255,251,224,0.3)",
+                  color: "rgba(255,251,224,0.5)",
                   fontSize: "10px",
                   fontWeight: 500,
                   letterSpacing: "0.3em",
@@ -157,7 +133,7 @@ export function SocialMediaPage() {
                   marginBottom: "16px",
                 }}
               >
-                Diensten
+                {ts.sectionLabel}
               </span>
               <h1
                 className="pdc-svc-title pdc-svc-title--social"
@@ -170,7 +146,7 @@ export function SocialMediaPage() {
                   textTransform: "uppercase",
                 }}
               >
-                Social Media
+                {ts.titleLine1}
                 <br />
                 <em
                   style={{
@@ -182,14 +158,14 @@ export function SocialMediaPage() {
                     fontFamily: "'Inter', sans-serif",
                   }}
                 >
-                  Beheer & Content
+                  {ts.titleLine2}
                 </em>
               </h1>
             </div>
             <p
               className="pdc-desktop-only"
               style={{
-                color: "rgba(255,251,224,0.35)",
+                color: "rgba(255,251,224,0.5)",
                 fontSize: "14px",
                 fontWeight: 300,
                 lineHeight: 1.7,
@@ -198,7 +174,7 @@ export function SocialMediaPage() {
                 textAlign: "right",
               }}
             >
-              Consistente, professionele content voor je automotive merk — van shoot tot geplaatste post.
+              {ts.subtitle}
             </p>
           </div>
         </div>
@@ -213,7 +189,7 @@ export function SocialMediaPage() {
           width={1365}
           height={2048}
           {...HIGH_PRIORITY}
-          alt="Social media contentproductie op locatie — PhotoDeCaffeine"
+          alt={ts.heroAlt}
           style={{
             width: "100%",
             height: "100%",
@@ -233,7 +209,7 @@ export function SocialMediaPage() {
           textAlign: "center",
         }}
       >
-        <h2
+        <p
           style={{
             color: "rgba(255,251,224,0.55)",
             fontSize: "14px",
@@ -243,12 +219,10 @@ export function SocialMediaPage() {
             margin: 0,
           }}
         >
-          Naast losse shoots verzorgen we ook{" "}
-          <strong style={{ color: "rgba(255,251,224,0.8)" }}>social media beheer voor automotive</strong>{" "}
-          bedrijven: dealers, showrooms, autobedrijven en particuliere eigenaren die willen opvallen op
-          Instagram en TikTok. Wij regelen de content — van auto's en motoren tot de mensen erachter — en
-          zorgen dat je kanalen actief en professioneel blijven, door heel Nederland.
-        </h2>
+          {ts.introStart}{" "}
+          <strong style={{ color: "rgba(255,251,224,0.8)" }}>{ts.introStrong}</strong>{" "}
+          {ts.introEnd}
+        </p>
       </div>
 
       {/* ── What's included + form ── */}
@@ -263,53 +237,56 @@ export function SocialMediaPage() {
       >
         {/* Left — what's included */}
         <div>
-          <span
+          <h2
             style={{
-              color: "rgba(255,251,224,0.3)",
+              color: "rgba(255,251,224,0.5)",
               fontSize: "10px",
               fontWeight: 500,
               letterSpacing: "0.3em",
               textTransform: "uppercase",
               display: "block",
-              marginBottom: "24px",
+              margin: "0 0 24px",
             }}
           >
-            Wat je kunt verwachten
-          </span>
-          {INCLUDED.map((item) => (
-            <div
-              key={item}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "16px",
-                padding: "15px 0",
-                borderBottom: "1px solid rgba(255,251,224,0.06)",
-              }}
-            >
-              <span
+            {ts.includedLabel}
+          </h2>
+          <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+            {ts.included.map((item) => (
+              <li
+                key={item}
                 style={{
-                  color: "#c8905a",
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  fontFamily: "'Courier New', monospace",
-                  flexShrink: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "16px",
+                  padding: "15px 0",
+                  borderBottom: "1px solid rgba(255,251,224,0.06)",
                 }}
               >
-                —
-              </span>
-              <span
-                style={{
-                  fontSize: "13px",
-                  fontWeight: 400,
-                  color: "rgba(255,251,224,0.65)",
-                  letterSpacing: "0.02em",
-                }}
-              >
-                {item}
-              </span>
-            </div>
-          ))}
+                <span
+                  aria-hidden="true"
+                  style={{
+                    color: "#c8905a",
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    fontFamily: "'Courier New', monospace",
+                    flexShrink: 0,
+                  }}
+                >
+                  —
+                </span>
+                <span
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: 400,
+                    color: "rgba(255,251,224,0.65)",
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  {item}
+                </span>
+              </li>
+            ))}
+          </ul>
 
           <div
             style={{
@@ -321,7 +298,7 @@ export function SocialMediaPage() {
           >
             <span
               style={{
-                color: "rgba(255,251,224,0.3)",
+                color: "rgba(255,251,224,0.5)",
                 fontSize: "9px",
                 fontWeight: 600,
                 letterSpacing: "0.3em",
@@ -330,19 +307,18 @@ export function SocialMediaPage() {
                 marginBottom: "12px",
               }}
             >
-              Pakketten
+              {ts.packagesLabel}
             </span>
             <p
               style={{
-                color: "rgba(255,251,224,0.45)",
+                color: "rgba(255,251,224,0.5)",
                 fontSize: "13px",
                 fontWeight: 300,
                 lineHeight: 1.7,
                 margin: 0,
               }}
             >
-              Ieder merk heeft een andere aanpak nodig, dus we stellen een voorstel op maat samen —
-              vraag het hiernaast aan en we nemen binnen 24 uur contact op.
+              {ts.packagesBody}
             </p>
           </div>
         </div>
@@ -351,7 +327,7 @@ export function SocialMediaPage() {
         <div>
           <span
             style={{
-              color: "rgba(255,251,224,0.3)",
+              color: "rgba(255,251,224,0.5)",
               fontSize: "10px",
               fontWeight: 500,
               letterSpacing: "0.3em",
@@ -360,7 +336,7 @@ export function SocialMediaPage() {
               marginBottom: "16px",
             }}
           >
-            Vraag een voorstel aan
+            {ts.requestLabel}
           </span>
           <h2
             className="pdc-svc-form-title"
@@ -373,30 +349,33 @@ export function SocialMediaPage() {
               margin: "0 0 8px",
             }}
           >
-            Laat je gegevens achter
+            {ts.formTitle}
           </h2>
           <p
             style={{
-              color: "rgba(255,251,224,0.35)",
+              color: "rgba(255,251,224,0.5)",
               fontSize: "13px",
               fontWeight: 300,
               lineHeight: 1.7,
               margin: "0 0 40px",
             }}
           >
-            Vertel kort over je bedrijf en huidige kanalen — we nemen binnen 24 uur contact op.
+            {ts.formSubtitle}
           </p>
 
           {submitted ? (
             <div
+              role="status"
               style={{
                 border: "1px solid rgba(200,144,90,0.3)",
                 padding: "48px 36px",
                 textAlign: "center",
               }}
             >
-              <div style={{ color: "#c8905a", fontSize: "28px", marginBottom: "20px" }}>✓</div>
-              <h4
+              <div aria-hidden="true" style={{ color: "#c8905a", fontSize: "28px", marginBottom: "20px" }}>✓</div>
+              <h3
+                ref={successHeading}
+                tabIndex={-1}
                 style={{
                   color: "#fffbe0",
                   fontSize: "20px",
@@ -404,178 +383,94 @@ export function SocialMediaPage() {
                   letterSpacing: "-0.01em",
                   textTransform: "uppercase",
                   margin: "0 0 12px",
+                  outline: "none",
                 }}
               >
-                We hebben je gegevens ontvangen
-              </h4>
+                {ts.successTitle}
+              </h3>
               <p
                 style={{
-                  color: "rgba(255,251,224,0.4)",
+                  color: "rgba(255,251,224,0.5)",
                   fontSize: "13px",
                   fontWeight: 300,
                   lineHeight: 1.7,
                   margin: 0,
                 }}
               >
-                We nemen binnen 24 uur contact met je op om je voorstel te bespreken. Tot snel.
+                {ts.successBody}
               </p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
-              <div>
-                <label
-                  style={{
-                    color: "rgba(255,251,224,0.25)",
-                    fontSize: "9px",
-                    fontWeight: 600,
-                    letterSpacing: "0.25em",
-                    textTransform: "uppercase",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Jouw naam
-                </label>
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  onFocus={() => setFocused("name")}
-                  onBlur={() => setFocused(null)}
-                  placeholder="Jouw naam"
-                  style={inputStyle("name")}
-                />
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    color: "rgba(255,251,224,0.25)",
-                    fontSize: "9px",
-                    fontWeight: 600,
-                    letterSpacing: "0.25em",
-                    textTransform: "uppercase",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  E-mailadres
-                </label>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  onFocus={() => setFocused("email")}
-                  onBlur={() => setFocused(null)}
-                  placeholder="jouw@email.com"
-                  style={inputStyle("email")}
-                />
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    color: "rgba(255,251,224,0.25)",
-                    fontSize: "9px",
-                    fontWeight: 600,
-                    letterSpacing: "0.25em",
-                    textTransform: "uppercase",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Telefoonnummer
-                </label>
-                <input
-                  type="tel"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  onFocus={() => setFocused("phone")}
-                  onBlur={() => setFocused(null)}
-                  placeholder="+31 6 ..."
-                  style={inputStyle("phone")}
-                />
-                <p
-                  style={{
-                    color: "rgba(255,251,224,0.2)",
-                    fontSize: "10px",
-                    fontWeight: 300,
-                    margin: "8px 0 0",
-                    letterSpacing: "0.02em",
-                  }}
-                >
-                  E-mail of telefoon — minimaal één verplicht
-                </p>
-              </div>
-
-              <div>
-                <label style={{ color: "rgba(255,251,224,0.25)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase", display: "block", marginBottom: "8px" }}>
-                  Bedrijfsnaam (optioneel)
-                </label>
-                <input
-                  type="text"
-                  value={form.company}
-                  onChange={(e) => setForm({ ...form, company: e.target.value })}
-                  onFocus={() => setFocused("company")}
-                  onBlur={() => setFocused(null)}
-                  placeholder="bijv. Autobedrijf Jansen"
-                  style={inputStyle("company")}
-                />
-              </div>
-
-              <div>
-                <label style={{ color: "rgba(255,251,224,0.25)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase", display: "block", marginBottom: "8px" }}>
-                  Vertel over je kanalen (optioneel)
-                </label>
-                <input
-                  type="text"
-                  value={form.message}
-                  onChange={(e) => setForm({ ...form, message: e.target.value })}
-                  onFocus={() => setFocused("message")}
-                  onBlur={() => setFocused(null)}
-                  placeholder="bijv. Instagram @autobedrijfjansen, willen vaker posten"
-                  style={inputStyle("message")}
-                />
-              </div>
+            <form noValidate onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+              <PublicInput
+                ref={nameInput}
+                label={ts.nameLabel}
+                name="name"
+                autoComplete="name"
+                aria-required="true"
+                value={form.name}
+                onChange={set("name")}
+                placeholder={ts.namePlaceholder}
+                error={errors.name}
+              />
+              <PublicInput
+                ref={emailInput}
+                label={ts.emailLabel}
+                name="email"
+                {...EMAIL_INPUT}
+                value={form.email}
+                onChange={set("email")}
+                placeholder={t.contact.emailPlaceholder}
+                aria-invalid={errors.contact ? true : undefined}
+              />
+              <PublicInput
+                label={ts.phoneLabel}
+                name="phone"
+                {...PHONE_INPUT}
+                value={form.phone}
+                onChange={set("phone")}
+                placeholder={ts.phonePlaceholder}
+                hint={ts.phoneHint}
+                error={errors.contact}
+              />
+              <PublicInput
+                label={ts.companyLabel}
+                name="organization"
+                autoComplete="organization"
+                value={form.company}
+                onChange={set("company")}
+                placeholder={ts.companyPlaceholder}
+              />
+              <PublicTextarea
+                label={ts.messageLabel}
+                name="message"
+                autoComplete="off"
+                rows={3}
+                value={form.message}
+                onChange={set("message")}
+                placeholder={ts.messagePlaceholder}
+              />
 
               {error && (
-                <p style={{ color: "#e87c6a", fontSize: "12px", fontWeight: 400, margin: 0, lineHeight: 1.6 }}>
+                <p className="pdc-form-error" role="alert">
                   {error}
                 </p>
               )}
 
               <button
                 type="submit"
-                className="pdc-svc-submit"
+                className="pdc-btn pdc-btn-solid pdc-svc-submit pdc-submit"
                 disabled={loading}
+                aria-busy={loading || undefined}
                 style={{
-                  backgroundColor: loading ? "#6b5a3e" : "#fffbe0",
-                  color: loading ? "rgba(255,251,224,0.5)" : "#1a0c04",
-                  border: "none",
                   padding: "18px 40px",
                   fontSize: "11px",
                   fontWeight: 800,
                   letterSpacing: "0.22em",
-                  textTransform: "uppercase",
-                  cursor: loading ? "not-allowed" : "pointer",
-                  fontFamily: "'Inter', sans-serif",
-                  transition: "all 0.25s ease",
                   alignSelf: "flex-start",
                 }}
-                onMouseEnter={(e) => {
-                  if (!loading) {
-                    e.currentTarget.style.backgroundColor = "#c8905a";
-                    e.currentTarget.style.color = "#fffbe0";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!loading) {
-                    e.currentTarget.style.backgroundColor = "#fffbe0";
-                    e.currentTarget.style.color = "#1a0c04";
-                  }
-                }}
               >
-                {loading ? "Bezig…" : "Vraag een voorstel aan"}
+                {loading ? ts.submitting : ts.submitButton}
               </button>
             </form>
           )}
@@ -593,7 +488,7 @@ export function SocialMediaPage() {
       >
         <span
           style={{
-            color: "rgba(255,251,224,0.3)",
+            color: "rgba(255,251,224,0.5)",
             fontSize: "10px",
             fontWeight: 500,
             letterSpacing: "0.3em",
@@ -602,7 +497,7 @@ export function SocialMediaPage() {
             marginBottom: "20px",
           }}
         >
-          Ook losse shoot nodig?
+          {ts.ctaLabel}
         </span>
         <h2
           className="pdc-svc-cta-title"
@@ -615,11 +510,11 @@ export function SocialMediaPage() {
             margin: "0 0 16px",
           }}
         >
-          Bekijk onze <span style={{ color: "rgba(255,251,224,0.3)" }}>automotive fotografie</span>
+          {ts.ctaTitle} <span style={{ color: "rgba(255,251,224,0.4)" }}>{ts.ctaTitleDim}</span>
         </h2>
         <p
           style={{
-            color: "rgba(255,251,224,0.35)",
+            color: "rgba(255,251,224,0.5)",
             fontSize: "14px",
             fontWeight: 300,
             lineHeight: 1.7,
@@ -627,34 +522,15 @@ export function SocialMediaPage() {
             margin: "0 auto 40px",
           }}
         >
-          Losse shoots voor auto's en motoren, vanaf €50 per voertuig.
+          {ts.ctaBody}
         </p>
-        <button
-          onClick={() => navigate("/services/automotive")}
-          style={{
-            background: "none",
-            border: "1px solid rgba(255,251,224,0.3)",
-            color: "#fffbe0",
-            fontSize: "10px",
-            fontWeight: 600,
-            letterSpacing: "0.2em",
-            textTransform: "uppercase",
-            cursor: "pointer",
-            padding: "13px 32px",
-            fontFamily: "'Inter', sans-serif",
-            transition: "all 0.25s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = "#fffbe0";
-            e.currentTarget.style.color = "#1a0c04";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = "transparent";
-            e.currentTarget.style.color = "#fffbe0";
-          }}
+        <Link
+          to="/services/automotive"
+          className="pdc-btn pdc-btn-invert"
+          style={{ padding: "13px 32px", fontSize: "10px", fontWeight: 600, letterSpacing: "0.2em", borderColor: "rgba(255,251,224,0.3)" }}
         >
-          Naar Automotive Fotografie →
-        </button>
+          {ts.ctaButton}
+        </Link>
       </div>
     </div>
   );

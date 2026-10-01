@@ -18,54 +18,41 @@ interface SelectProps {
   options: SelectOption[];
   /** Shown when nothing is selected. */
   placeholder?: string;
+  /** Lets a <label htmlFor> name the control. */
   id?: string;
   disabled?: boolean;
   /** Needed when no <label> points at this control. */
   ariaLabel?: string;
   /** Set to false to size to the content rather than fill its column. */
   block?: boolean;
-  /** "underline" matches the public contact form; the admin look is default. */
-  variant?: keyof typeof THEMES;
   style?: React.CSSProperties;
 }
 
-const fg = (a: number) => `rgba(var(--admin-fg-rgb),calc(${a} * var(--admin-fg-boost)))`;
-
-/** The two places this control appears: the admin panel and the public form. */
-const THEMES = {
-  admin: {
-    field: fg(0.03), border: fg(0.1), borderOpen: "rgba(200,144,90,0.5)",
-    text: "var(--admin-fg-solid)", muted: fg(0.4), hint: fg(0.38),
-    panel: "rgb(var(--admin-bg-card-rgb))", panelBorder: fg(0.16),
-    hover: fg(0.07), off: fg(0.25),
-    fontSize: "13px", padding: "10px 12px", underline: false,
-  },
-  underline: {
-    field: "transparent", border: "rgba(255,251,224,0.12)", borderOpen: "rgba(255,251,224,0.5)",
-    text: "#fffbe0", muted: "rgba(255,251,224,0.4)", hint: "rgba(255,251,224,0.35)",
-    panel: "#1a0c04", panelBorder: "rgba(255,251,224,0.16)",
-    hover: "rgba(255,251,224,0.07)", off: "rgba(255,251,224,0.25)",
-    fontSize: "15px", padding: "16px 0", underline: true,
-  },
+/** The underlined look of the public contact form. */
+const LOOK = {
+  border: "rgba(255,251,224,0.12)", borderOpen: "rgba(255,251,224,0.5)",
+  text: "#fffbe0", muted: "rgba(255,251,224,0.5)", hint: "rgba(255,251,224,0.55)",
+  panel: "#1a0c04", panelBorder: "rgba(255,251,224,0.16)",
+  hover: "rgba(255,251,224,0.07)", off: "rgba(255,251,224,0.3)",
 } as const;
 
 /**
- * A dropdown that is actually readable on this admin.
+ * A dropdown that draws its own list.
  *
- * A native <select> paints its option list with the browser's own popup, and
- * the panel here sets a light text colour on a nearly transparent background —
- * which the popup composites over white. Light text on white: unreadable, on
- * Chrome in particular. This draws the list itself, so both colours are ours.
+ * A native <select> paints its option list with the browser's own popup, which
+ * on this dark page means light text on a white popup in some browsers. This
+ * draws the list itself, so both colours are ours.
  *
  * It keeps the keyboard behaviour people expect from a select: arrows and
  * Home/End move, Enter or Space picks, Escape closes, typing jumps to a match,
- * and focus returns to the button afterwards.
+ * and focus returns to the button afterwards. Focus stays on the button while
+ * the list is open; aria-activedescendant tells screen readers which option is
+ * highlighted.
  */
 export function Select({
   value, onChange, options, placeholder = "Kies…", id, disabled,
-  ariaLabel, block = true, variant = "admin", style,
+  ariaLabel, block = true, style,
 }: SelectProps) {
-  const t = THEMES[variant];
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const [dropUp, setDropUp] = useState(false);
@@ -73,7 +60,10 @@ export function Select({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const typed = useRef({ text: "", at: 0 });
-  const listId = useId();
+  const generatedId = useId();
+  const buttonId = id ?? `${generatedId}-button`;
+  const listId = `${generatedId}-list`;
+  const optionId = (i: number) => `${generatedId}-option-${i}`;
 
   const selected = options.find((o) => o.value === value);
   const selectable = useCallback(
@@ -185,12 +175,13 @@ export function Select({
     >
       <button
         ref={buttonRef}
-        id={id}
+        id={buttonId}
         type="button"
         role="combobox"
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={open ? listId : undefined}
+        aria-activedescendant={open && options[active] ? optionId(active) : undefined}
         aria-label={ariaLabel}
         disabled={disabled}
         onClick={() => (open ? close(false) : openList())}
@@ -198,14 +189,14 @@ export function Select({
         style={{
           width: "100%",
           display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px",
-          backgroundColor: t.field,
-          border: t.underline ? "none" : `1px solid ${open ? t.borderOpen : t.border}`,
-          borderBottom: `1px solid ${open ? t.borderOpen : t.border}`,
-          color: selected ? t.text : t.muted,
-          fontSize: t.fontSize,
+          backgroundColor: "transparent",
+          border: "none",
+          borderBottom: `1px solid ${open ? LOOK.borderOpen : LOOK.border}`,
+          color: selected ? LOOK.text : LOOK.muted,
+          fontSize: "15px",
           fontFamily: "'Inter', sans-serif",
           textAlign: "left",
-          padding: t.padding,
+          padding: "16px 0",
           cursor: disabled ? "not-allowed" : "pointer",
           opacity: disabled ? 0.5 : 1,
           boxSizing: "border-box",
@@ -216,11 +207,12 @@ export function Select({
         </span>
         <ChevronDown
           size={14}
+          aria-hidden="true"
           style={{
             flexShrink: 0,
             transform: open ? "rotate(180deg)" : "none",
             transition: "transform .15s ease",
-            color: t.muted,
+            color: LOOK.muted,
           }}
         />
       </button>
@@ -230,17 +222,18 @@ export function Select({
           ref={listRef}
           id={listId}
           role="listbox"
+          aria-labelledby={ariaLabel ? undefined : buttonId}
           aria-label={ariaLabel}
           tabIndex={-1}
           style={{
             position: "absolute", zIndex: 50,
             left: 0, right: 0,
             [dropUp ? "bottom" : "top"]: "calc(100% + 4px)",
-            maxHeight: "260px", overflowY: "auto",
+            maxHeight: "260px", overflowY: "auto", overscrollBehavior: "contain",
             // Solid, not translucent: the whole point is that the list never
             // borrows a colour from whatever sits behind it.
-            backgroundColor: t.panel,
-            border: `1px solid ${t.panelBorder}`,
+            backgroundColor: LOOK.panel,
+            border: `1px solid ${LOOK.panelBorder}`,
             boxShadow: "0 18px 40px -20px rgba(0,0,0,0.75)",
           }}
         >
@@ -249,6 +242,7 @@ export function Select({
             return (
               <div
                 key={option.value}
+                id={optionId(i)}
                 role="option"
                 aria-selected={isSelected}
                 aria-disabled={option.disabled || undefined}
@@ -264,25 +258,25 @@ export function Select({
                   padding: "10px 12px",
                   fontSize: "13px",
                   lineHeight: 1.45,
-                  color: option.disabled ? t.off : t.text,
-                  backgroundColor: i === active && !option.disabled ? t.hover : "transparent",
+                  color: option.disabled ? LOOK.off : LOOK.text,
+                  backgroundColor: i === active && !option.disabled ? LOOK.hover : "transparent",
                   cursor: option.disabled ? "not-allowed" : "pointer",
                 }}
               >
                 <span style={{ minWidth: 0 }}>
                   {option.label}
                   {option.hint && (
-                    <span style={{ display: "block", color: fg(0.38), fontSize: "11.5px", marginTop: "2px" }}>
+                    <span style={{ display: "block", color: LOOK.hint, fontSize: "11.5px", marginTop: "2px" }}>
                       {option.hint}
                     </span>
                   )}
                 </span>
-                {isSelected && <Check size={13} color="#c8905a" style={{ flexShrink: 0 }} />}
+                {isSelected && <Check size={13} color="#c8905a" aria-hidden="true" style={{ flexShrink: 0 }} />}
               </div>
             );
           })}
           {options.length === 0 && (
-            <div style={{ padding: "12px", fontSize: "12.5px", color: t.muted }}>
+            <div style={{ padding: "12px", fontSize: "12.5px", color: LOOK.muted }}>
               Niets om te kiezen.
             </div>
           )}

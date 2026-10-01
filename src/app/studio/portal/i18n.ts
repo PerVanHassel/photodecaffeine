@@ -372,31 +372,19 @@ const en: PortalText = {
   printOrSave: "Print or save as PDF",
 };
 
-const STORAGE_KEY = "pdc-portal-lang";
-
 export function useT(): PortalText {
   const { language } = useLanguage();
   return language === "en" ? en : nl;
 }
 
-/** Restores the portal language the client chose last time and keeps dates in step. */
+/** The site-wide language (remembered by LanguageContext), with dates in step. */
 export function usePortalLanguage() {
   const { language, setLanguage } = useLanguage();
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved === "en" || saved === "nl") setLanguage(saved);
-    } catch { /* private mode */ }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     setDateLocale(language === "en" ? "en" : "nl");
     return () => setDateLocale("nl");
   }, [language]);
-  function choose(lang: "nl" | "en") {
-    setLanguage(lang);
-    try { localStorage.setItem(STORAGE_KEY, lang); } catch { /* private mode */ }
-  }
-  return { language, choose };
+  return { language, choose: setLanguage };
 }
 
 export const texts = { nl, en };

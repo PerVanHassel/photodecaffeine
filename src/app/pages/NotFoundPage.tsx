@@ -1,9 +1,12 @@
 import { Helmet } from "react-helmet-async";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { useLanguage } from "../context/LanguageContext";
 import { Home, ArrowLeft, Camera } from "lucide-react";
 
 export function NotFoundPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
+  const tn = t.notFound;
 
   return (
     <div
@@ -20,8 +23,9 @@ export function NotFoundPage() {
       }}
     >
       <Helmet>
-        <title>Pagina niet gevonden | PhotoDeCaffeine</title>
+        <title>{`${tn.title} | PhotoDeCaffeine`}</title>
         <meta name="robots" content="noindex" />
+        <meta name="theme-color" content="#060301" />
       </Helmet>
       {/* Background decorative elements */}
       <div
@@ -60,6 +64,7 @@ export function NotFoundPage() {
           }}
         >
           <div
+            aria-hidden="true"
             style={{
               borderRadius: "50%",
               backgroundColor: "rgba(200,144,90,0.08)",
@@ -76,6 +81,7 @@ export function NotFoundPage() {
 
         {/* 404 Number */}
         <div
+          aria-hidden="true"
           className="pdc-404-number"
           style={{
             fontWeight: 900,
@@ -102,14 +108,14 @@ export function NotFoundPage() {
             lineHeight: 1.2,
           }}
         >
-          Frame Not Found
+          {tn.title}
         </h1>
 
         {/* Subtitle */}
         <p
           className="pdc-404-text"
           style={{
-            color: "rgba(255,251,224,0.4)",
+            color: "rgba(255,251,224,0.55)",
             fontWeight: 300,
             lineHeight: 1.7,
             margin: "0 0 48px 0",
@@ -118,11 +124,12 @@ export function NotFoundPage() {
             marginRight: "auto",
           }}
         >
-          De pagina die je zoekt is niet ontwikkeld, verschoven, of bestaat niet in onze compositie.
+          {tn.body}
         </p>
 
         {/* Decorative line */}
         <div
+          aria-hidden="true"
           style={{
             width: "60px",
             height: "2px",
@@ -141,70 +148,18 @@ export function NotFoundPage() {
           }}
         >
           <button
-            className="pdc-404-btn"
+            type="button"
+            className="pdc-404-btn pdc-404-back"
             onClick={() => navigate(-1)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "10px",
-              backgroundColor: "transparent",
-              border: "1px solid rgba(255,251,224,0.15)",
-              color: "rgba(255,251,224,0.6)",
-              fontSize: "11px",
-              fontWeight: 600,
-              letterSpacing: "0.15em",
-              textTransform: "uppercase",
-              cursor: "pointer",
-              fontFamily: "'Inter', sans-serif",
-              transition: "all 0.3s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = "rgba(255,251,224,0.3)";
-              e.currentTarget.style.color = "#fffbe0";
-              e.currentTarget.style.backgroundColor = "rgba(255,251,224,0.02)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = "rgba(255,251,224,0.15)";
-              e.currentTarget.style.color = "rgba(255,251,224,0.6)";
-              e.currentTarget.style.backgroundColor = "transparent";
-            }}
           >
-            <ArrowLeft size={16} />
-            Ga Terug
+            <ArrowLeft size={16} aria-hidden="true" />
+            {tn.back}
           </button>
 
-          <button
-            className="pdc-404-btn"
-            onClick={() => navigate("/")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "10px",
-              backgroundColor: "#c8905a",
-              border: "none",
-              color: "#060301",
-              fontSize: "11px",
-              fontWeight: 700,
-              letterSpacing: "0.15em",
-              textTransform: "uppercase",
-              cursor: "pointer",
-              fontFamily: "'Inter', sans-serif",
-              transition: "all 0.3s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#fffbe0";
-              e.currentTarget.style.transform = "translateY(-2px)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "#c8905a";
-              e.currentTarget.style.transform = "translateY(0)";
-            }}
-          >
-            <Home size={16} />
-            Naar Home
-          </button>
+          <Link to="/" className="pdc-404-btn pdc-404-home">
+            <Home size={16} aria-hidden="true" />
+            {tn.home}
+          </Link>
         </div>
 
         {/* Extra links */}
@@ -217,7 +172,7 @@ export function NotFoundPage() {
         >
           <p
             style={{
-              color: "rgba(255,251,224,0.25)",
+              color: "rgba(255,251,224,0.55)",
               fontSize: "10px",
               fontWeight: 500,
               letterSpacing: "0.2em",
@@ -225,7 +180,7 @@ export function NotFoundPage() {
               marginBottom: "16px",
             }}
           >
-            Of navigeer naar
+            {tn.orVisit}
           </p>
           <div
             style={{
@@ -236,30 +191,13 @@ export function NotFoundPage() {
             }}
           >
             {[
-              { label: "Portfolio", path: "/portfolio" },
-              { label: "Over Ons", path: "/about" },
-              { label: "Client Portal", path: "/portal/login" },
+              { label: tn.portfolio, path: "/portfolio" },
+              { label: tn.about, path: "/about" },
+              { label: tn.clientPortal, path: "/portal/login" },
             ].map((link) => (
-              <a
-                key={link.path}
-                href={link.path}
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate(link.path);
-                }}
-                style={{
-                  color: "rgba(255,251,224,0.3)",
-                  fontSize: "11px",
-                  fontWeight: 500,
-                  letterSpacing: "0.1em",
-                  textDecoration: "none",
-                  transition: "color 0.2s ease",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "#c8905a")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,251,224,0.3)")}
-              >
+              <Link key={link.path} to={link.path} className="pdc-404-link">
                 {link.label}
-              </a>
+              </Link>
             ))}
           </div>
         </div>

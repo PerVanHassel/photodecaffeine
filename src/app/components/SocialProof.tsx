@@ -32,7 +32,7 @@ export function SocialProof() {
         <div style={{ marginBottom: "48px", textAlign: "center" }}>
           <span
             style={{
-              color: "rgba(255,251,224,0.3)",
+              color: "rgba(255,251,224,0.5)",
               fontSize: "11px",
               fontWeight: 500,
               letterSpacing: "0.3em",
@@ -122,7 +122,7 @@ export function SocialProof() {
                   </div>
                   <div
                     style={{
-                      color: "rgba(255,251,224,0.3)",
+                      color: "rgba(255,251,224,0.5)",
                       fontSize: "11px",
                       letterSpacing: "0.12em",
                       textTransform: "uppercase",

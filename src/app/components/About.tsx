@@ -34,7 +34,7 @@ export function About() {
         >
           <span
             style={{
-              color: "rgba(255,251,224,0.3)",
+              color: "rgba(255,251,224,0.5)",
               fontSize: "11px",
               fontWeight: 500,
               letterSpacing: "0.3em",
@@ -61,7 +61,7 @@ export function About() {
         >
           {t.about.titleLine1}
           <br />
-          <span style={{ color: "rgba(255,251,224,0.3)" }}>
+          <span style={{ color: "rgba(255,251,224,0.4)" }}>
             {t.about.titleLine2}
           </span>
           <br />
@@ -139,7 +139,7 @@ export function About() {
               </div>
               <div
                 style={{
-                  color: "rgba(255,251,224,0.4)",
+                  color: "rgba(255,251,224,0.5)",
                   fontSize: "9px",
                   fontWeight: 400,
                   letterSpacing: "0.2em",
@@ -204,7 +204,7 @@ export function About() {
               </div>
               <div
                 style={{
-                  color: "rgba(255,251,224,0.4)",
+                  color: "rgba(255,251,224,0.5)",
                   fontSize: "9px",
                   fontWeight: 400,
                   letterSpacing: "0.2em",
@@ -269,7 +269,7 @@ export function About() {
               </div>
               <div
                 style={{
-                  color: "rgba(255,251,224,0.4)",
+                  color: "rgba(255,251,224,0.5)",
                   fontSize: "9px",
                   fontWeight: 400,
                   letterSpacing: "0.2em",
@@ -342,7 +342,7 @@ export function About() {
             </blockquote>
             <cite
               style={{
-                color: "rgba(255,251,224,0.3)",
+                color: "rgba(255,251,224,0.5)",
                 fontSize: "9px",
                 fontWeight: 500,
                 letterSpacing: "0.25em",
@@ -374,7 +374,7 @@ export function About() {
               >
                 <div
                   style={{
-                    color: "rgba(255,251,224,0.25)",
+                    color: "rgba(255,251,224,0.5)",
                     fontSize: "9px",
                     fontWeight: 500,
                     letterSpacing: "0.22em",

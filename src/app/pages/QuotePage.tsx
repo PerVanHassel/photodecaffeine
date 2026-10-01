@@ -101,7 +101,7 @@ export function QuotePage() {
       <div style={{ maxWidth: "660px", margin: "0 auto" }}>
         <div
           style={{
-            color: "rgba(255,251,224,0.25)",
+            color: "rgba(255,251,224,0.5)",
             fontSize: "10px",
             fontWeight: 600,
             letterSpacing: "0.3em",
@@ -113,7 +113,7 @@ export function QuotePage() {
         </div>
 
         {loading && (
-          <p style={{ color: "rgba(255,251,224,0.25)", fontSize: "11px", letterSpacing: "0.3em", textTransform: "uppercase" }}>
+          <p style={{ color: "rgba(255,251,224,0.5)", fontSize: "11px", letterSpacing: "0.3em", textTransform: "uppercase" }}>
             Laden…
           </p>
         )}
@@ -121,7 +121,7 @@ export function QuotePage() {
         {!loading && error && (
           <div style={{ border: "1px solid rgba(224,112,96,0.25)", padding: "22px", color: "#e07060", fontSize: "14px", lineHeight: 1.7 }}>
             {error}
-            <div style={{ color: "rgba(255,251,224,0.3)", fontSize: "13px", marginTop: "10px" }}>
+            <div style={{ color: "rgba(255,251,224,0.5)", fontSize: "13px", marginTop: "10px" }}>
               Klopt er iets niet? Mail{" "}
               <a href="mailto:contact@photodecaffeine.com" style={{ color: ACCENT }}>
                 contact@photodecaffeine.com
@@ -158,13 +158,14 @@ export function QuotePage() {
                 </div>
               ) : (
                 <>
-                  <p style={{ color: "rgba(255,251,224,0.45)", fontSize: "13px", lineHeight: 1.7, margin: "0 0 16px" }}>
+                  <p style={{ color: "rgba(255,251,224,0.5)", fontSize: "13px", lineHeight: 1.7, margin: "0 0 16px" }}>
                     Laat hieronder weten wat je ervan vindt. Je kunt er een bericht bij zetten — een vraag of een aanpassing mag ook.
                   </p>
 
                   <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "14px" }}>
                     <button
                       type="button"
+                      aria-pressed={answer === "accepted"}
                       onClick={() => setAnswer("accepted")}
                       style={{
                         ...buttonBase,
@@ -177,6 +178,7 @@ export function QuotePage() {
                     </button>
                     <button
                       type="button"
+                      aria-pressed={answer === "declined"}
                       onClick={() => setAnswer("declined")}
                       style={{
                         ...buttonBase,
@@ -191,7 +193,7 @@ export function QuotePage() {
 
                   {answer && (
                     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                      <label htmlFor="quote-message" style={{ color: "rgba(255,251,224,0.3)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.24em", textTransform: "uppercase" }}>
+                      <label htmlFor="quote-message" style={{ color: "rgba(255,251,224,0.5)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.24em", textTransform: "uppercase" }}>
                         Bericht (optioneel)
                       </label>
                       <textarea
@@ -199,25 +201,17 @@ export function QuotePage() {
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         rows={4}
-                        placeholder="Bijvoorbeeld: wanneer kunnen we starten?"
-                        style={{
-                          width: "100%",
-                          backgroundColor: "rgba(255,251,224,0.03)",
-                          border: "1px solid rgba(255,251,224,0.1)",
-                          color: "#fffbe0",
-                          fontSize: "14px",
-                          fontFamily: "'Inter', sans-serif",
-                          padding: "12px 14px",
-                          outline: "none",
-                          boxSizing: "border-box",
-                          resize: "vertical",
-                        }}
+                        name="message"
+                        autoComplete="off"
+                        placeholder="Bijvoorbeeld: wanneer kunnen we starten…"
+                        className="pdc-quote-message"
                       />
                       <div>
                         <button
                           type="button"
                           onClick={respond}
                           disabled={sending}
+                          aria-busy={sending || undefined}
                           style={{
                             ...buttonBase,
                             border: "none",
@@ -234,13 +228,13 @@ export function QuotePage() {
                   )}
 
                   {sendError && (
-                    <p style={{ color: "#e07060", fontSize: "13px", marginTop: "12px" }}>{sendError}</p>
+                    <p role="alert" style={{ color: "#e87c6a", fontSize: "13px", marginTop: "12px" }}>{sendError}</p>
                   )}
                 </>
               )}
             </section>
 
-            <p style={{ color: "rgba(255,251,224,0.2)", fontSize: "11px", lineHeight: 1.8, marginTop: "36px" }}>
+            <p style={{ color: "rgba(255,251,224,0.5)", fontSize: "11px", lineHeight: 1.8, marginTop: "36px" }}>
               PhotoDeCaffeine Productions · contact@photodecaffeine.com
             </p>
           </>

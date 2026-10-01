@@ -30,7 +30,7 @@ export function Portfolio() {
           justifyContent: "center",
         }}
       >
-        <div style={{ color: "rgba(255,251,224,0.3)", fontSize: "12px", letterSpacing: "0.2em" }}>
+        <div style={{ color: "rgba(255,251,224,0.5)", fontSize: "12px", letterSpacing: "0.2em" }}>
           {t.portfolio.loading}
         </div>
       </section>
@@ -57,7 +57,7 @@ export function Portfolio() {
         >
           <span
             style={{
-              color: "rgba(255,251,224,0.2)",
+              color: "rgba(255,251,224,0.5)",
               fontSize: "12px",
               letterSpacing: "0.2em",
               textTransform: "uppercase",
@@ -99,7 +99,7 @@ export function Portfolio() {
           <div>
             <span
               style={{
-                color: "rgba(255,251,224,0.3)",
+                color: "rgba(255,251,224,0.5)",
                 fontSize: "10px",
                 fontWeight: 500,
                 letterSpacing: "0.3em",
@@ -122,13 +122,13 @@ export function Portfolio() {
               }}
             >
               PDC <br />
-              <span style={{ color: "rgba(255,251,224,0.35)" }}>{t.portfolio.titleLine2}</span>
+              <span style={{ color: "rgba(255,251,224,0.4)" }}>{t.portfolio.titleLine2}</span>
             </h2>
           </div>
           <p
             className="pdc-hover-hint"
             style={{
-              color: "rgba(255,251,224,0.35)",
+              color: "rgba(255,251,224,0.5)",
               fontSize: "12px",
               fontWeight: 400,
               letterSpacing: "0.12em",

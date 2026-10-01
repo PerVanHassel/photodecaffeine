@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { Outlet } from "react-router";
 import { Navigation } from "./components/Navigation";
 import { Footer } from "./components/Footer";
@@ -10,6 +11,10 @@ export function Root() {
 
   return (
     <>
+      <Helmet>
+        {/* Browser chrome in the colour of the dark public site. */}
+        <meta name="theme-color" content="#080401" />
+      </Helmet>
       <a
         href="#main"
         className="pdc-skip-link"

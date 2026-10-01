@@ -185,7 +185,7 @@
   border: 1px solid rgba(255,251,224,0.1);
   color: #fffbe0;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 .pdc-slider-arrow:hover {
   background-color: rgba(255,251,224,0.1);
@@ -368,7 +368,8 @@
   transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
 }
 .pdc-btn-solid { background-color: #fffbe0; color: #1a0c04; border: none; }
-.pdc-btn-solid:hover { background-color: #c8905a; color: #fffbe0; }
+.pdc-btn-solid:hover:not(:disabled) { background-color: #c8905a; color: #fffbe0; }
+.pdc-btn-solid:disabled { background-color: #6b5a3e; color: rgba(255,251,224,0.6); }
 .pdc-btn-outline { background-color: transparent; color: rgba(255,251,224,0.7); border: 1px solid rgba(255,251,224,0.2); }
 .pdc-btn-outline:hover { border-color: rgba(255,251,224,0.5); color: #fffbe0; }
 .pdc-btn-quiet { background-color: transparent; color: rgba(255,251,224,0.6); border: 1px solid rgba(255,251,224,0.15); }
@@ -449,3 +450,144 @@
   color: rgba(255,251,224,0.55); transition: color 0.2s ease;
 }
 .pdc-text-link:hover { color: #fffbe0; }
+
+/* ── Public forms (contact, automotive, social media) ─────────────────── */
+
+.pdc-field { display: flex; flex-direction: column; }
+.pdc-field-label {
+  display: block; margin-bottom: 8px; color: rgba(255,251,224,0.55);
+  font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 600; line-height: 1.5;
+  letter-spacing: 0.25em; text-transform: uppercase;
+}
+.pdc-input {
+  width: 100%; box-sizing: border-box; padding: 16px 0;
+  background: transparent; border: 0; border-bottom: 1px solid rgba(255,251,224,0.12); border-radius: 0;
+  color: #fffbe0; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 300; line-height: 1.5; letter-spacing: 0.02em;
+  outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+textarea.pdc-input { resize: none; }
+.pdc-input::placeholder { color: rgba(255,251,224,0.5); }
+/* Text fields always show where typing goes: a copper underline. */
+.pdc-input:focus { border-bottom-color: #c8905a; box-shadow: 0 1px 0 0 #c8905a; }
+.pdc-input[aria-invalid="true"] { border-bottom-color: #e87c6a; }
+.pdc-field-hint, .pdc-field-error { margin-top: 8px; font-family: 'Inter', sans-serif; font-size: 12px; line-height: 1.6; }
+.pdc-field-hint { color: rgba(255,251,224,0.55); }
+.pdc-field-error, .pdc-form-error { color: #e87c6a; }
+.pdc-form-error { margin: 0; font-family: 'Inter', sans-serif; font-size: 12px; line-height: 1.6; }
+.pdc-submit:disabled { cursor: not-allowed; }
+.pdc-contact-detail, .pdc-contact-link {
+  color: rgba(255,251,224,0.65); font-size: 13px; font-weight: 300; letter-spacing: 0.02em; text-decoration: none;
+}
+.pdc-contact-link { transition: color 0.2s ease; }
+.pdc-contact-link:hover { color: rgba(255,251,224,0.9); }
+
+/* About page carousel dots: 24px targets around a small mark (phones only). */
+.pdc-values-dots { display: flex; justify-content: center; margin: 14px 0 0; }
+.pdc-dot { display: flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 3px; background: none; border: 0; cursor: pointer; }
+.pdc-dot-mark { display: block; width: 6px; height: 6px; border-radius: 3px; background-color: rgba(255,251,224,0.25); transition: width 0.25s ease, background-color 0.25s ease; }
+.pdc-dot[aria-current="true"] .pdc-dot-mark { width: 20px; background-color: #c8905a; }
+@media (min-width: 768px) { .pdc-values-dots { display: none; } }
+
+/* ── Portfolio article: photos and lightbox ───────────────────────────── */
+
+.pdc-detail-photo {
+  display: block; width: 100%; margin: 0 0 3px; padding: 0; border: 0; background: none;
+  overflow: hidden; break-inside: avoid; cursor: zoom-in;
+}
+.pdc-detail-photo img { display: block; width: 100%; height: auto; filter: contrast(1.05) saturate(0.75); transition: transform 0.4s ease; }
+.pdc-detail-photo:hover img, .pdc-detail-photo:focus-visible img { transform: scale(1.03); }
+.pdc-detail-photo:focus-visible { outline-offset: -3px; }
+
+.pdc-lightbox {
+  position: fixed; inset: 0; z-index: 9999; padding: 40px;
+  display: flex; align-items: center; justify-content: center;
+  background-color: rgba(8,4,1,0.98); overscroll-behavior: contain;
+}
+.pdc-lightbox-photo { max-width: 90%; max-height: 90%; object-fit: contain; }
+.pdc-lightbox-btn {
+  display: flex; align-items: center; justify-content: center; width: 48px; height: 48px;
+  background-color: rgba(255,251,224,0.1); border: 1px solid rgba(255,251,224,0.2); color: #fffbe0;
+  cursor: pointer; transition: background-color 0.2s ease;
+}
+.pdc-lightbox-btn:hover { background-color: rgba(255,251,224,0.2); }
+.pdc-lightbox-close { position: absolute; top: 24px; right: 24px; }
+.pdc-lightbox-prev, .pdc-lightbox-next { position: absolute; top: 50%; transform: translateY(-50%); }
+.pdc-lightbox-prev { left: 24px; }
+.pdc-lightbox-next { right: 24px; }
+.pdc-lightbox-count { position: absolute; bottom: 24px; color: rgba(255,251,224,0.55); font-size: 11px; letter-spacing: 0.2em; }
+
+@media (max-width: 767px) {
+  .pdc-lightbox-prev, .pdc-lightbox-next { top: auto; bottom: 64px; transform: none; width: 52px; height: 52px; }
+  .pdc-lightbox-prev { left: calc(50% - 60px); }
+  .pdc-lightbox-next { right: auto; left: calc(50% + 8px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pdc-detail-photo img { transition: none; }
+}
+
+/* Read by screen readers, not shown. */
+.pdc-visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* 404 page buttons and links */
+.pdc-404-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; text-decoration: none;
+  font-family: 'Inter', sans-serif; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; line-height: 1.5;
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.3s ease;
+}
+.pdc-404-back { background-color: transparent; border: 1px solid rgba(255,251,224,0.15); color: rgba(255,251,224,0.6); font-weight: 600; }
+.pdc-404-back:hover { border-color: rgba(255,251,224,0.3); color: #fffbe0; background-color: rgba(255,251,224,0.02); }
+.pdc-404-home { background-color: #c8905a; border: none; color: #060301; font-weight: 700; }
+.pdc-404-home:hover { background-color: #fffbe0; transform: translateY(-2px); }
+.pdc-404-link { color: rgba(255,251,224,0.6); font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-decoration: none; transition: color 0.2s ease; }
+.pdc-404-link:hover { color: #c8905a; }
+@media (prefers-reduced-motion: reduce) {
+  .pdc-404-home:hover { transform: none; }
+  [style*="pdc-icon-pulse"] { animation: none !important; }
+}
+
+/* Quote page reply box: a visible focus ring, as the page has no other field. */
+.pdc-quote-message {
+  width: 100%; box-sizing: border-box; padding: 12px 14px; resize: vertical;
+  background-color: rgba(255,251,224,0.03); border: 1px solid rgba(255,251,224,0.1); border-radius: 0;
+  color: #fffbe0; font-family: 'Inter', sans-serif; font-size: 14px; outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.pdc-quote-message::placeholder { color: rgba(255,251,224,0.5); }
+.pdc-quote-message:focus { border-color: #c8905a; box-shadow: 0 0 0 1px #c8905a; }
+
+/* ── Page canvas of the public site ───────────────────────────────────── */
+
+/* The public pages are dark: dark scrollbars and form controls, and no white
+   flash or white rubber-band scrolling behind them. */
+html:has(.pdc-skip-link), html:has(.pdc-404-number) { color-scheme: dark; background-color: #080401; }
+body:has(.pdc-skip-link), body:has(.pdc-404-number) { background-color: #080401; }
+
+/* Headings break into even lines instead of leaving one word behind. */
+#main :is(h1, h2, h3), .pdc-404-title { text-wrap: balance; }
+
+/* ── Page paddings with a phone variant ───────────────────────────────── */
+
+.pdc-band { padding: 100px 40px; }
+.pdc-gutter { padding: 0 40px; }
+.pdc-page-body { padding: 40px 40px 120px; }
+.pdc-detail-body { padding: 80px 40px 120px; }
+
+@media (max-width: 767px) {
+  .pdc-band { padding: 80px 20px; }
+  .pdc-gutter { padding: 0 20px; }
+  .pdc-page-body { padding: 32px 20px 80px; }
+  .pdc-detail-body { padding: 48px 20px 80px; }
+}
+
+/* About page values: four across only where four fit. */
+@media (min-width: 768px) and (max-width: 1100px) {
+  .pdc-values-track { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Page titles of the portfolio and about pages: long Dutch words must fit a phone. */
+.pdc-page-title { font-size: clamp(48px, 7vw, 88px); }
+@media (max-width: 767px) { .pdc-page-title { font-size: clamp(34px, 10.5vw, 64px); } }

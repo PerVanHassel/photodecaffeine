@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Link } from "react-router";
 import { portalFetch } from "../../lib/supabase";
 import { useLanguage } from "../context/LanguageContext";
 import { AUTOMOTIVE_GALLERY_TITLE, usePortfolio } from "../lib/siteData";
@@ -9,11 +9,11 @@ import { ArrowLeft } from "lucide-react";
 import heroSmall from "@/assets/web/automotive-hero-1000.webp";
 import heroImage from "@/assets/web/automotive-hero-1920.webp";
 import { HIGH_PRIORITY } from "../lib/images";
+import { EMAIL_INPUT, PHONE_INPUT, PublicInput } from "../components/form/PublicField";
 
 export function AutomotivePage() {
   useAdTracking("/services/automotive");
 
-  const navigate = useNavigate();
   const { t } = useLanguage();
   const ta = t.automotivePage;
 
@@ -21,19 +21,34 @@ export function AutomotivePage() {
     usePortfolio().data?.find((a) => a.title === AUTOMOTIVE_GALLERY_TITLE)?.galleryUrls ?? [];
 
   const [form, setForm] = useState({ name: "", email: "", phone: "", carBrand: "", date: "", location: "" });
-  const [focused, setFocused] = useState<string | null>(null);
+  const [errors, setErrors] = useState<{ name?: string; contact?: string }>({});
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const nameInput = useRef<HTMLInputElement>(null);
+  const emailInput = useRef<HTMLInputElement>(null);
+  const successHeading = useRef<HTMLHeadingElement>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    if (submitted) successHeading.current?.focus();
+  }, [submitted]);
+
+  const set = (field: keyof typeof form) => (e: { target: { value: string } }) => {
+    setForm((f) => ({ ...f, [field]: e.target.value }));
+    // A fixed field stops being flagged as soon as it is fixed.
+    if (field === "name") setErrors((x) => ({ ...x, name: undefined }));
+    if (field === "email" || field === "phone") setErrors((x) => ({ ...x, contact: undefined }));
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim()) {
-      setError(ta.errorName);
-      return;
-    }
-    if (!form.email && !form.phone) {
-      setError(ta.errorContact);
+    const found = {
+      name: form.name.trim() ? undefined : ta.errorName,
+      contact: form.email.trim() || form.phone.trim() ? undefined : ta.errorContact,
+    };
+    setErrors(found);
+    if (found.name || found.contact) {
+      (found.name ? nameInput : emailInput).current?.focus();
       return;
     }
     setLoading(true);
@@ -62,22 +77,6 @@ export function AutomotivePage() {
       setLoading(false);
     }
   };
-
-  const inputStyle = (field: string) => ({
-    width: "100%",
-    backgroundColor: "transparent",
-    border: "none",
-    borderBottom: `1px solid ${focused === field ? "rgba(255,251,224,0.5)" : "rgba(255,251,224,0.12)"}`,
-    color: "#fffbe0",
-    fontSize: "15px",
-    fontWeight: 300,
-    fontFamily: "'Inter', sans-serif",
-    padding: "16px 0",
-    outline: "none",
-    letterSpacing: "0.02em",
-    transition: "border-color 0.2s ease",
-    boxSizing: "border-box" as const,
-  });
 
   return (
     <div
@@ -118,28 +117,10 @@ export function AutomotivePage() {
         }}
       >
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-          <button
-            onClick={() => navigate("/")}
-            style={{
-              background: "none",
-              border: "none",
-              color: "rgba(255,251,224,0.35)",
-              fontSize: "10px",
-              fontWeight: 500,
-              letterSpacing: "0.22em",
-              textTransform: "uppercase",
-              cursor: "pointer",
-              padding: 0,
-              marginBottom: "40px",
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              fontFamily: "'Inter', sans-serif",
-            }}
-          >
-            <ArrowLeft size={14} />
+          <Link to="/" className="pdc-back-link">
+            <ArrowLeft size={14} aria-hidden="true" />
             {ta.backLabel}
-          </button>
+          </Link>
 
           <div
             style={{
@@ -153,7 +134,7 @@ export function AutomotivePage() {
             <div>
               <span
                 style={{
-                  color: "rgba(255,251,224,0.3)",
+                  color: "rgba(255,251,224,0.5)",
                   fontSize: "10px",
                   fontWeight: 500,
                   letterSpacing: "0.3em",
@@ -194,7 +175,7 @@ export function AutomotivePage() {
             <p
               className="pdc-desktop-only"
               style={{
-                color: "rgba(255,251,224,0.35)",
+                color: "rgba(255,251,224,0.5)",
                 fontSize: "14px",
                 fontWeight: 300,
                 lineHeight: 1.7,
@@ -238,7 +219,7 @@ export function AutomotivePage() {
           textAlign: "center",
         }}
       >
-        <h2
+        <p
           style={{
             color: "rgba(255,251,224,0.55)",
             fontSize: "14px",
@@ -248,14 +229,10 @@ export function AutomotivePage() {
             margin: 0,
           }}
         >
-          Als{" "}
-          <strong style={{ color: "rgba(255,251,224,0.8)" }}>automotive fotograaf</strong>{" "}
-          fotografeer ik personenauto's, sportauto's, oldtimers, motoren en bedrijfswagens voor
-          dealerships, showrooms en particuliere eigenaren — én de mensen erachter, met persoonlijke
-          shoots op en rond het voertuig. Een shoot duurt circa één uur op locatie, door heel Nederland,
-          en levert scherpe, klaargestoomde beelden op die direct inzetbaar zijn voor social media,
-          advertenties of jouw website.
-        </h2>
+          {ta.introStart}{" "}
+          <strong style={{ color: "rgba(255,251,224,0.8)" }}>{ta.introStrong}</strong>{" "}
+          {ta.introEnd}
+        </p>
       </div>
 
       {/* ── Package + booking ── */}
@@ -274,7 +251,7 @@ export function AutomotivePage() {
           <div style={{ marginBottom: "48px" }}>
             <span
               style={{
-                color: "rgba(255,251,224,0.3)",
+                color: "rgba(255,251,224,0.5)",
                 fontSize: "10px",
                 fontWeight: 500,
                 letterSpacing: "0.3em",
@@ -306,7 +283,7 @@ export function AutomotivePage() {
               </span>
               <span
                 style={{
-                  color: "rgba(255,251,224,0.3)",
+                  color: "rgba(255,251,224,0.5)",
                   fontSize: "13px",
                   fontWeight: 300,
                   letterSpacing: "0.05em",
@@ -323,7 +300,7 @@ export function AutomotivePage() {
           <div>
             <span
               style={{
-                color: "rgba(255,251,224,0.3)",
+                color: "rgba(255,251,224,0.5)",
                 fontSize: "10px",
                 fontWeight: 500,
                 letterSpacing: "0.3em",
@@ -381,7 +358,7 @@ export function AutomotivePage() {
           >
             <span
               style={{
-                color: "rgba(255,251,224,0.3)",
+                color: "rgba(255,251,224,0.5)",
                 fontSize: "9px",
                 fontWeight: 600,
                 letterSpacing: "0.3em",
@@ -406,7 +383,7 @@ export function AutomotivePage() {
             </div>
             <p
               style={{
-                color: "rgba(255,251,224,0.45)",
+                color: "rgba(255,251,224,0.5)",
                 fontSize: "13px",
                 fontWeight: 300,
                 lineHeight: 1.7,
@@ -415,26 +392,13 @@ export function AutomotivePage() {
             >
               {ta.package2Body}
             </p>
-            <button
-              onClick={() => navigate("/", { state: { scrollTo: "contact" } })}
-              style={{
-                background: "none",
-                border: "1px solid rgba(255,251,224,0.2)",
-                color: "rgba(255,251,224,0.6)",
-                fontSize: "10px",
-                fontWeight: 600,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                cursor: "pointer",
-                padding: "10px 20px",
-                fontFamily: "'Inter', sans-serif",
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(255,251,224,0.4)"; e.currentTarget.style.color = "#fffbe0"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,251,224,0.2)"; e.currentTarget.style.color = "rgba(255,251,224,0.6)"; }}
+            <Link
+              to="/#contact"
+              className="pdc-btn pdc-btn-quiet"
+              style={{ padding: "10px 20px", fontSize: "10px", fontWeight: 600, letterSpacing: "0.18em" }}
             >
               {ta.package2Button}
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -442,7 +406,7 @@ export function AutomotivePage() {
         <div>
           <span
             style={{
-              color: "rgba(255,251,224,0.3)",
+              color: "rgba(255,251,224,0.5)",
               fontSize: "10px",
               fontWeight: 500,
               letterSpacing: "0.3em",
@@ -468,7 +432,7 @@ export function AutomotivePage() {
           </h2>
           <p
             style={{
-              color: "rgba(255,251,224,0.35)",
+              color: "rgba(255,251,224,0.5)",
               fontSize: "13px",
               fontWeight: 300,
               lineHeight: 1.7,
@@ -480,14 +444,17 @@ export function AutomotivePage() {
 
           {submitted ? (
             <div
+              role="status"
               style={{
                 border: "1px solid rgba(200,144,90,0.3)",
                 padding: "48px 36px",
                 textAlign: "center",
               }}
             >
-              <div style={{ color: "#c8905a", fontSize: "28px", marginBottom: "20px" }}>✓</div>
+              <div aria-hidden="true" style={{ color: "#c8905a", fontSize: "28px", marginBottom: "20px" }}>✓</div>
               <h4
+                ref={successHeading}
+                tabIndex={-1}
                 style={{
                   color: "#fffbe0",
                   fontSize: "20px",
@@ -495,13 +462,14 @@ export function AutomotivePage() {
                   letterSpacing: "-0.01em",
                   textTransform: "uppercase",
                   margin: "0 0 12px",
+                  outline: "none",
                 }}
               >
                 {ta.successTitle}
               </h4>
               <p
                 style={{
-                  color: "rgba(255,251,224,0.4)",
+                  color: "rgba(255,251,224,0.5)",
                   fontSize: "13px",
                   fontWeight: 300,
                   lineHeight: 1.7,
@@ -512,179 +480,80 @@ export function AutomotivePage() {
               </p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
-              {/* Name */}
-              <div>
-                <label
-                  style={{
-                    color: "rgba(255,251,224,0.25)",
-                    fontSize: "9px",
-                    fontWeight: 600,
-                    letterSpacing: "0.25em",
-                    textTransform: "uppercase",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {ta.namePlaceholder}
-                </label>
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  onFocus={() => setFocused("name")}
-                  onBlur={() => setFocused(null)}
-                  placeholder={ta.namePlaceholder}
-                  style={inputStyle("name")}
-                />
-              </div>
-
-              {/* Email */}
-              <div>
-                <label
-                  style={{
-                    color: "rgba(255,251,224,0.25)",
-                    fontSize: "9px",
-                    fontWeight: 600,
-                    letterSpacing: "0.25em",
-                    textTransform: "uppercase",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {ta.emailLabel}
-                </label>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  onFocus={() => setFocused("email")}
-                  onBlur={() => setFocused(null)}
-                  placeholder="your@email.com"
-                  style={inputStyle("email")}
-                />
-              </div>
-
-              {/* Phone */}
-              <div>
-                <label
-                  style={{
-                    color: "rgba(255,251,224,0.25)",
-                    fontSize: "9px",
-                    fontWeight: 600,
-                    letterSpacing: "0.25em",
-                    textTransform: "uppercase",
-                    display: "block",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {ta.phoneLabel}
-                </label>
-                <input
-                  type="tel"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  onFocus={() => setFocused("phone")}
-                  onBlur={() => setFocused(null)}
-                  placeholder={ta.phonePlaceholder}
-                  style={inputStyle("phone")}
-                />
-                <p
-                  style={{
-                    color: "rgba(255,251,224,0.2)",
-                    fontSize: "10px",
-                    fontWeight: 300,
-                    margin: "8px 0 0",
-                    letterSpacing: "0.02em",
-                  }}
-                >
-                  {ta.phoneHint}
-                </p>
-              </div>
-
-              {/* Car brand/model */}
-              <div>
-                <label style={{ color: "rgba(255,251,224,0.25)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase", display: "block", marginBottom: "8px" }}>
-                  {ta.carBrandLabel}
-                </label>
-                <input
-                  type="text"
-                  value={form.carBrand}
-                  onChange={(e) => setForm({ ...form, carBrand: e.target.value })}
-                  onFocus={() => setFocused("carBrand")}
-                  onBlur={() => setFocused(null)}
-                  placeholder={ta.carBrandPlaceholder}
-                  style={inputStyle("carBrand")}
-                />
-              </div>
-
-              {/* Preferred date */}
-              <div>
-                <label style={{ color: "rgba(255,251,224,0.25)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase", display: "block", marginBottom: "8px" }}>
-                  {ta.dateLabel}
-                </label>
-                <input
-                  type="text"
-                  value={form.date}
-                  onChange={(e) => setForm({ ...form, date: e.target.value })}
-                  onFocus={() => setFocused("date")}
-                  onBlur={() => setFocused(null)}
-                  placeholder={ta.datePlaceholder}
-                  style={inputStyle("date")}
-                />
-              </div>
-
-              {/* Location */}
-              <div>
-                <label style={{ color: "rgba(255,251,224,0.25)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase", display: "block", marginBottom: "8px" }}>
-                  {ta.locationLabel}
-                </label>
-                <input
-                  type="text"
-                  value={form.location}
-                  onChange={(e) => setForm({ ...form, location: e.target.value })}
-                  onFocus={() => setFocused("location")}
-                  onBlur={() => setFocused(null)}
-                  placeholder={ta.locationPlaceholder}
-                  style={inputStyle("location")}
-                />
-              </div>
+            <form noValidate onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+              <PublicInput
+                ref={nameInput}
+                label={ta.nameLabel}
+                name="name"
+                autoComplete="name"
+                aria-required="true"
+                value={form.name}
+                onChange={set("name")}
+                placeholder={ta.namePlaceholder}
+                error={errors.name}
+              />
+              <PublicInput
+                ref={emailInput}
+                label={ta.emailLabel}
+                name="email"
+                {...EMAIL_INPUT}
+                value={form.email}
+                onChange={set("email")}
+                placeholder={t.contact.emailPlaceholder}
+                aria-invalid={errors.contact ? true : undefined}
+              />
+              <PublicInput
+                label={ta.phoneLabel}
+                name="phone"
+                {...PHONE_INPUT}
+                value={form.phone}
+                onChange={set("phone")}
+                placeholder={ta.phonePlaceholder}
+                hint={ta.phoneHint}
+                error={errors.contact}
+              />
+              <PublicInput
+                label={ta.carBrandLabel}
+                name="vehicle"
+                autoComplete="off"
+                value={form.carBrand}
+                onChange={set("carBrand")}
+                placeholder={ta.carBrandPlaceholder}
+              />
+              <PublicInput
+                label={ta.dateLabel}
+                name="preferred-date"
+                autoComplete="off"
+                value={form.date}
+                onChange={set("date")}
+                placeholder={ta.datePlaceholder}
+              />
+              <PublicInput
+                label={ta.locationLabel}
+                name="preferred-location"
+                autoComplete="off"
+                value={form.location}
+                onChange={set("location")}
+                placeholder={ta.locationPlaceholder}
+              />
 
               {error && (
-                <p style={{ color: "#e87c6a", fontSize: "12px", fontWeight: 400, margin: 0, lineHeight: 1.6 }}>
+                <p className="pdc-form-error" role="alert">
                   {error}
                 </p>
               )}
 
               <button
                 type="submit"
-                className="pdc-svc-submit"
+                className="pdc-btn pdc-btn-solid pdc-svc-submit pdc-submit"
                 disabled={loading}
+                aria-busy={loading || undefined}
                 style={{
-                  backgroundColor: loading ? "#6b5a3e" : "#fffbe0",
-                  color: loading ? "rgba(255,251,224,0.5)" : "#1a0c04",
-                  border: "none",
                   padding: "18px 40px",
                   fontSize: "11px",
                   fontWeight: 800,
                   letterSpacing: "0.22em",
-                  textTransform: "uppercase",
-                  cursor: loading ? "not-allowed" : "pointer",
-                  fontFamily: "'Inter', sans-serif",
-                  transition: "all 0.25s ease",
                   alignSelf: "flex-start",
-                }}
-                onMouseEnter={(e) => {
-                  if (!loading) {
-                    e.currentTarget.style.backgroundColor = "#c8905a";
-                    e.currentTarget.style.color = "#fffbe0";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!loading) {
-                    e.currentTarget.style.backgroundColor = "#fffbe0";
-                    e.currentTarget.style.color = "#1a0c04";
-                  }
                 }}
               >
                 {loading ? ta.submitting : ta.submitButton}
@@ -709,7 +578,7 @@ export function AutomotivePage() {
             <div key={i} style={{ aspectRatio: "4/3", overflow: "hidden" }}>
               <img
                 src={src}
-                alt={`Automotive fotografie — foto ${i + 1}`}
+                alt={ta.galleryAlt(i + 1)}
                 loading="lazy"
                 style={{
                   width: "100%",
@@ -737,7 +606,7 @@ export function AutomotivePage() {
       >
         <span
           style={{
-            color: "rgba(255,251,224,0.3)",
+            color: "rgba(255,251,224,0.5)",
             fontSize: "10px",
             fontWeight: 500,
             letterSpacing: "0.3em",
@@ -760,11 +629,11 @@ export function AutomotivePage() {
           }}
         >
           {ta.customTitle}{" "}
-          <span style={{ color: "rgba(255,251,224,0.3)" }}>{ta.customTitleDim}</span>
+          <span style={{ color: "rgba(255,251,224,0.4)" }}>{ta.customTitleDim}</span>
         </h2>
         <p
           style={{
-            color: "rgba(255,251,224,0.35)",
+            color: "rgba(255,251,224,0.5)",
             fontSize: "14px",
             fontWeight: 300,
             lineHeight: 1.7,
@@ -774,32 +643,13 @@ export function AutomotivePage() {
         >
           {ta.customBody}
         </p>
-        <button
-          onClick={() => navigate("/", { state: { scrollTo: "contact" } })}
-          style={{
-            background: "none",
-            border: "1px solid rgba(255,251,224,0.3)",
-            color: "#fffbe0",
-            fontSize: "10px",
-            fontWeight: 600,
-            letterSpacing: "0.2em",
-            textTransform: "uppercase",
-            cursor: "pointer",
-            padding: "13px 32px",
-            fontFamily: "'Inter', sans-serif",
-            transition: "all 0.25s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = "#fffbe0";
-            e.currentTarget.style.color = "#1a0c04";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = "transparent";
-            e.currentTarget.style.color = "#fffbe0";
-          }}
+        <Link
+          to="/#contact"
+          className="pdc-btn pdc-btn-invert"
+          style={{ padding: "13px 32px", fontSize: "10px", fontWeight: 600, letterSpacing: "0.2em", borderColor: "rgba(255,251,224,0.3)" }}
         >
           {ta.customButton}
-        </button>
+        </Link>
       </div>
     </div>
   );
