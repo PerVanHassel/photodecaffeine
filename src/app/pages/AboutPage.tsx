@@ -10,7 +10,7 @@ import DARKROOM from "@/assets/web/darkroom-1200.webp";
 import { scrollBehavior } from "../lib/scroll";
 
 const TEAM = [
-  { id: "majd", name: "Majd Tawashe", role: "Medeoprichter & hoofd kantoor Portugal", tag: "Creative director & internationale relaties" },
+  { id: "majd", name: "Majd Tawashe", role: "Medeoprichter & creative director", tag: "Fotografie & film" },
   { id: "per", name: "Per van Hassel", role: "Medeoprichter & creative director / strategie", tag: "Strategie & merkidentiteit" },
   { id: "ryan", name: "Ryan Chantre", role: "Medeoprichter & creative lead", tag: "Grafisch ontwerp & postproductie" },
 ] as const;

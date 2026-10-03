@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet-async";
+import { BUSINESS_JSON_LD } from "../lib/business";
 import { WorkProcess } from "../components/WorkProcess";
 import { Portfolio } from "../components/Portfolio";
 import { About } from "../components/About";
@@ -46,6 +47,7 @@ export function Home() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Automotive fotografie & social media beheer | PhotoDeCaffeine" />
         <meta name="twitter:description" content="Automotive fotografie, videografie en social media beheer door heel Nederland." />
+        <script type="application/ld+json">{JSON.stringify(BUSINESS_JSON_LD)}</script>
       </Helmet>
       <Hero />
       {sections.workProcess && <><Divider /><WorkProcess /></>}
