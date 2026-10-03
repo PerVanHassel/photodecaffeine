@@ -403,7 +403,7 @@ export function AutomotivePage() {
         </div>
 
         {/* Right — booking form */}
-        <div>
+        <div id="boeken" style={{ scrollMarginTop: "96px" }}>
           <span
             style={{
               color: "rgba(255,251,224,0.5)",

@@ -581,3 +581,21 @@ body:has(.pdc-skip-link), body:has(.pdc-404-number) { background-color: #080401;
 /* Page titles of the portfolio and about pages: long Dutch words must fit a phone. */
 .pdc-page-title { font-size: clamp(48px, 7vw, 88px); }
 @media (max-width: 767px) { .pdc-page-title { font-size: clamp(34px, 10.5vw, 64px); } }
+
+/* Booking button pinned to the bottom on phones (StickyCta). */
+.pdc-sticky-cta, .pdc-sticky-cta-spacer { display: none; }
+@media (max-width: 767px) {
+  .pdc-sticky-cta {
+    display: block; position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: rgba(8,4,1,0.92); border-top: 1px solid rgba(255,251,224,0.12);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    transition: transform 0.3s ease, visibility 0.3s;
+  }
+  .pdc-sticky-cta[data-shown="false"] { transform: translateY(110%); visibility: hidden; }
+  .pdc-sticky-cta-button { display: block; width: 100%; padding: 14px 22px; background: #fffbe0; color: #1a0c04; border-color: #fffbe0; }
+  .pdc-sticky-cta-spacer { display: block; height: calc(72px + env(safe-area-inset-bottom)); background: #3e250a; }
+}
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+  .pdc-sticky-cta { transition: none; }
+}
