@@ -152,13 +152,13 @@ export function About() {
             </div>
           </div>
 
-          {/* Majd Tawashe */}
+          {/* Ryan Chantre */}
           <div
             style={{ position: "relative", overflow: "hidden" }}
           >
             <ImageWithFallback
-              src={IMG_9694}
-              alt="Majd Tawashe — medeoprichter van PDC"
+              src={image_IMG_0115_TIF}
+              alt="Ryan Chantre — medeoprichter van PDC"
               style={{
                 width: "100%",
                 height: "var(--pdc-owner-h)",
@@ -217,13 +217,13 @@ export function About() {
             </div>
           </div>
 
-          {/* Ryan Chantre */}
+          {/* Majd Tawashe */}
           <div
             style={{ position: "relative", overflow: "hidden" }}
           >
             <ImageWithFallback
-              src={image_IMG_0115_TIF}
-              alt="Ryan Chantre — medeoprichter van PDC"
+              src={IMG_9694}
+              alt="Majd Tawashe — medeoprichter van PDC"
               style={{
                 width: "100%",
                 height: "var(--pdc-owner-h)",
