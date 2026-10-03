@@ -70,7 +70,7 @@ export function AutomotivePage() {
           phone: form.phone,
           package: "automotive",
           brand: "",
-          message: `Automotive package booking — €50 per vehicle, 1 hour on location.${details ? `\n\n${details}` : ""}${getStoredAdRef() ? `\n\n[ref:${getStoredAdRef()}]` : ""}`,
+          message: `Boeking automotive-pakket: €50 per voertuig, 1 uur op locatie.${details ? `\n\n${details}` : ""}${getStoredAdRef() ? `\n\n[ref:${getStoredAdRef()}]` : ""}`,
         }),
       });
       const sent: InquiryForm = "automotive";
@@ -94,15 +94,15 @@ export function AutomotivePage() {
       }}
     >
       <Helmet>
-        <title>Automotive fotografie — auto's & motoren | PhotoDeCaffeine</title>
-        <meta name="description" content="Professionele automotive fotografie door heel Nederland. Auto's, motoren en de mensen erachter — voor showrooms, dealers en particuliere eigenaren. Vanaf €50." />
+        <title>Automotive fotografie: auto's & motoren | PhotoDeCaffeine</title>
+        <meta name="description" content="Professionele automotive fotografie door heel Nederland. Auto's, motoren en de mensen erachter, voor showrooms, dealers en particuliere eigenaren. Vanaf €50." />
         <link rel="canonical" href="https://www.photodecaffeine.com/services/automotive" />
-        <meta property="og:title" content="Automotive fotografie — auto's & motoren | PhotoDeCaffeine" />
+        <meta property="og:title" content="Automotive fotografie: auto's & motoren | PhotoDeCaffeine" />
         <meta property="og:description" content="Professionele automotive fotografie door heel Nederland. Voor showrooms, dealers en particuliere eigenaren. Vanaf €50." />
         <meta property="og:url" content="https://www.photodecaffeine.com/services/automotive" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Automotive fotografie — auto's & motoren | PhotoDeCaffeine" />
+        <meta name="twitter:title" content="Automotive fotografie: auto's & motoren | PhotoDeCaffeine" />
         <meta name="twitter:description" content="Professionele automotive fotografie door heel Nederland. Voor showrooms, dealers en particuliere eigenaren. Vanaf €50." />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
@@ -204,7 +204,7 @@ export function AutomotivePage() {
           width={1920}
           height={2891}
           {...HIGH_PRIORITY}
-          alt="Automotive fotograaf — buitenshoot sportwagen"
+          alt="Automotive fotograaf bij een buitenshoot met een sportwagen"
           style={{
             width: "100%",
             height: "100%",
@@ -336,7 +336,7 @@ export function AutomotivePage() {
                     flexShrink: 0,
                   }}
                 >
-                  —
+                  •
                 </span>
                 <span
                   style={{

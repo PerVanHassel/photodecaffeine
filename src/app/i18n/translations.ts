@@ -5,7 +5,7 @@ export const translations = {
     home: {
       seoStart: "PhotoDeCaffeine is gespecialiseerd in",
       seoStrong: "automotive fotografie en social media beheer",
-      seoEnd: ". Van auto's en motoren tot de mensen erachter — we fotograferen en filmen voor showrooms, autodealers, autobedrijven en particuliere eigenaren door heel Nederland. Elke shoot is op maat — scherpe beelden die je auto, motor of merk laten opvallen.",
+      seoEnd: ". Van auto's en motoren tot de mensen erachter: we fotograferen en filmen voor showrooms, autodealers, autobedrijven en particuliere eigenaren door heel Nederland. Elke shoot is op maat, met scherpe beelden die je auto, motor of merk laten opvallen.",
     },
     nav: {
       work: "Werk",
@@ -25,7 +25,7 @@ export const translations = {
     },
     hero: {
       frameAlt: "Recente shoot van PhotoDeCaffeine",
-      label: "Visuele contentstudio — opg. 2025",
+      label: "Visuele contentstudio · opg. 2025",
       headline1: "Waar",
       headline2: "jouw",
       headline3: "verhaal",
@@ -46,7 +46,7 @@ export const translations = {
           title: "Ontdekking",
           subtitle: "Jouw merk begrijpen",
           description:
-            "Elk project begint met een diepgaand gesprek. We bestuderen de visuele taal van jouw merk, jouw doelgroep en het verhaal dat je wilt vertellen — voordat er ook maar één lensdop afgaat.",
+            "Elk project begint met een diepgaand gesprek. We bestuderen de visuele taal van jouw merk, jouw doelgroep en het verhaal dat je wilt vertellen, nog voordat er ook maar één lensdop afgaat.",
           detail: "Creatieve briefing · Moodboard · Locatieverkenning",
         },
         {
@@ -54,7 +54,7 @@ export const translations = {
           title: "Productie",
           subtitle: "De shootdag",
           description:
-            "Precieze belichting. Bewuste compositie. Elk frame krijgt dezelfde zorg als een perfect gezette specialtykoffie — gecontroleerd, weloverwogen en tot in detail doordacht.",
+            "Precieze belichting. Bewuste compositie. Elk frame krijgt dezelfde zorg als een perfect gezette specialtykoffie: gecontroleerd, weloverwogen en tot in detail doordacht.",
           detail: "Studio / locatie · Artdirection · Styling",
         },
         {
@@ -62,7 +62,7 @@ export const translations = {
           title: "Levering",
           subtitle: "Gepolijst & klaar",
           description:
-            "Met een filmische kleurcorrectie, subtiel geretoucheerd en geleverd in elk formaat dat je team nodig heeft — klaar voor online en print.",
+            "Met een filmische kleurcorrectie, subtiel geretoucheerd en geleverd in elk formaat dat je team nodig heeft. Klaar voor online en print.",
           detail: "Retouche · Kleurcorrectie · Bestandslevering",
         },
       ],
@@ -81,10 +81,10 @@ export const translations = {
       titleLine2: "obsessie",
       titleLine3: "& espresso.",
       body1:
-        "Photo De Caffeine is ontstaan uit een eenvoudige frustratie: de meeste merkfotografie zag er hetzelfde uit. Overbelicht. Zielloos. Vergeetbaar. Drie creatievelingen — Per, Ryan en Majd — kwamen samen met een gedeelde visie: visueel werk creëren dat echt iets betekent.",
+        "Photo De Caffeine is ontstaan uit een eenvoudige frustratie: de meeste merkfotografie zag er hetzelfde uit. Overbelicht. Zielloos. Vergeetbaar. Drie creatievelingen, Per, Ryan en Majd, kwamen samen met een gedeelde visie: visueel werk creëren dat echt iets betekent.",
       pullQuote:
-        '"Gemaakt als koffie, geschoten als cinema — dat is niet zomaar een slogan. Zo benaderen we elk frame."',
-      pullQuoteCite: "— De oprichters van PDC",
+        '"Gemaakt als koffie, geschoten als cinema. Dat is niet zomaar een slogan. Zo benaderen we elk frame."',
+      pullQuoteCite: "De oprichters van PDC",
       credentials: [
         { label: "Gevestigd in", value: "Roosendaal, Nederland" },
         { label: "Opgericht", value: "2025" },
@@ -135,7 +135,7 @@ export const translations = {
           label: "Studio Signature",
           price: "€749,-",
           per: "per maand",
-          description: "De volledige PDC-ervaring — cinematisch, strategisch, gericht op verkoop en gemaakt om op te vallen.",
+          description: "De volledige PDC-ervaring: cinematisch, strategisch, gericht op verkoop en gemaakt om op te vallen.",
           includes: [
             "2 shootdagen per maand",
             "Tot 4,5 uur per shoot",
@@ -193,7 +193,7 @@ export const translations = {
     customCta: {
       label: "Projecten op maat",
       title: "Een idee dat niet in een pakket past?",
-      body: "Sommige projecten vragen meer dan een standaardpakket. Of het nu een persoonlijke shoot is, een merkcampagne, een automotive concept, een vastgoedverhaal, een evenement of een creatief idee — we helpen eerst het idee scherp te krijgen en maken daarna een duidelijke prijsindicatie.",
+      body: "Sommige projecten vragen meer dan een standaardpakket. Of het nu een persoonlijke shoot is, een merkcampagne, een automotive concept, een vastgoedverhaal, een evenement of een creatief idee: we helpen eerst het idee scherp te krijgen en maken daarna een duidelijke prijsindicatie.",
       note: "Voor persoonlijke projecten, campagnes op maat en ideeën die hun eigen richting nodig hebben.",
       button: "Vraag een prijsindicatie aan",
       cardNote: "Vertel ons het idee, het doel, de locatie en het gevoel dat je wilt neerzetten. Wij maken er een helder concept en een offerte op maat van.",
@@ -214,7 +214,7 @@ export const translations = {
       brandLabel: "Jouw merk / bedrijf",
       brandPlaceholder: "Optioneel…",
       messageLabel: "Jouw project",
-      messagePlaceholder: "Wat, waar en wanneer — vertel over de shoot…",
+      messagePlaceholder: "Wat, waar en wanneer? Vertel over de shoot…",
       packageLabel: "Pakket",
       packageDefault: "Kies een pakket (optioneel)",
       packageCustom: "Maatwerk / weet ik nog niet",
@@ -247,10 +247,10 @@ export const translations = {
       copyright: (year: number) => `© ${year} Photo De Caffeine. Alle rechten voorbehouden.`,
     },
     automotivePage: {
-      galleryAlt: (n: number) => `Automotive fotografie — foto ${n}`,
+      galleryAlt: (n: number) => `Automotive fotografie, foto ${n}`,
       introStart: "Als",
       introStrong: "automotive fotografen",
-      introEnd: "leggen we personenauto's, sportauto's, oldtimers, motoren en bedrijfswagens vast voor dealers, showrooms en particuliere eigenaren — én de mensen erachter, met persoonlijke shoots op en rond het voertuig. Een shoot duurt ongeveer een uur op locatie, waar dan ook in Nederland, en levert scherpe beelden op die direct klaar zijn voor social media, advertenties of je website.",
+      introEnd: "leggen we personenauto's, sportauto's, oldtimers, motoren en bedrijfswagens vast voor dealers, showrooms en particuliere eigenaren, én de mensen erachter, met persoonlijke shoots op en rond het voertuig. Een shoot duurt ongeveer een uur op locatie, waar dan ook in Nederland, en levert scherpe beelden op die direct klaar zijn voor social media, advertenties of je website.",
       backLabel: "Home",
       sectionLabel: "Diensten",
       subtitle: "Cinematische beelden die de kracht, precisie en persoonlijkheid van elk voertuig vastleggen.",
@@ -258,7 +258,7 @@ export const translations = {
       perVehicle: "per voertuig",
       includedLabel: "Wat is inbegrepen",
       included: [
-        "1 voertuig — auto, motor, vrachtwagen of iets anders",
+        "1 voertuig: auto, motor, vrachtwagen of iets anders",
         "1 uur op locatie",
         "15 bewerkte foto's in hoge resolutie",
         "Geleverd binnen 5 werkdagen",
@@ -266,13 +266,13 @@ export const translations = {
       ],
       bookLabel: "Boek dit pakket",
       bookTitle: "Laat je gegevens achter",
-      bookSubtitle: "Vul je naam in en hoe we je kunnen bereiken — we nemen binnen 24 uur contact op om de shoot te bevestigen en te plannen.",
+      bookSubtitle: "Vul je naam in en hoe we je kunnen bereiken. We nemen binnen 24 uur contact op om de shoot te bevestigen en te plannen.",
       nameLabel: "Jouw naam",
       namePlaceholder: "Voor- en achternaam…",
       emailLabel: "E-mailadres",
       phoneLabel: "Telefoonnummer",
       phonePlaceholder: "06 12345678",
-      phoneHint: "E-mail of telefoon — minimaal één verplicht",
+      phoneHint: "E-mail of telefoon: minimaal één is verplicht",
       carBrandLabel: "Merk en model (optioneel)",
       carBrandPlaceholder: "bijv. BMW M3, Porsche 911…",
       dateLabel: "Gewenste datum (optioneel)",
@@ -286,12 +286,12 @@ export const translations = {
       errorContact: "Vul minimaal een e-mailadres of telefoonnummer in.",
       package2Label: "Meer voertuigen of video?",
       package2Title: "Shoot op maat",
-      package2Body: "Meerdere voertuigen, cinematische video, een volledige dag of in de studio — vraag een offerte op maat aan.",
+      package2Body: "Meerdere voertuigen, cinematische video, een volledige dag of in de studio? Vraag een offerte op maat aan.",
       package2Button: "Vraag een offerte aan →",
       customLabel: "Meer nodig?",
       customTitle: "Pakketten",
       customTitleDim: "op maat",
-      customBody: "Meerdere voertuigen, video, dagshoots of iets heel anders — neem contact op, dan stellen we samen iets passends op.",
+      customBody: "Meerdere voertuigen, video, dagshoots of iets heel anders? Neem contact op, dan stellen we samen iets passends op.",
       customButton: "Neem contact op",
       readyLabel: "Klaar voor de shoot?",
       recentLabel: "Recente shoots",
@@ -302,12 +302,12 @@ export const translations = {
       sectionLabel: "Diensten",
       titleLine1: "Social media",
       titleLine2: "Beheer & content",
-      subtitle: "Consistente, professionele content voor je automotive merk — van shoot tot geplaatste post.",
-      heroAlt: "Social media contentproductie op locatie — PhotoDeCaffeine",
+      subtitle: "Consistente, professionele content voor je automotive merk, van shoot tot geplaatste post.",
+      heroAlt: "Social media contentproductie op locatie door PhotoDeCaffeine",
       introStart: "Naast losse shoots verzorgen we ook",
       introStrong: "social media beheer voor automotive",
       introEnd:
-        "bedrijven: dealers, showrooms, autobedrijven en particuliere eigenaren die willen opvallen op Instagram en TikTok. Wij regelen de content — van auto's en motoren tot de mensen erachter — en zorgen dat je kanalen actief en professioneel blijven, door heel Nederland.",
+        "bedrijven: dealers, showrooms, autobedrijven en particuliere eigenaren die willen opvallen op Instagram en TikTok. Wij regelen de content, van auto's en motoren tot de mensen erachter, en zorgen dat je kanalen actief en professioneel blijven, door heel Nederland.",
       includedLabel: "Wat je kunt verwachten",
       included: [
         "Contentplanning afgestemd op jouw merk",
@@ -320,13 +320,13 @@ export const translations = {
         "Ieder merk heeft een eigen aanpak nodig, dus we stellen een voorstel op maat samen. Vraag het aan via het formulier, dan nemen we binnen 24 uur contact op.",
       requestLabel: "Vraag een voorstel aan",
       formTitle: "Laat je gegevens achter",
-      formSubtitle: "Vertel kort over je bedrijf en huidige kanalen — we nemen binnen 24 uur contact op.",
+      formSubtitle: "Vertel kort over je bedrijf en huidige kanalen. We nemen binnen 24 uur contact op.",
       nameLabel: "Jouw naam",
       namePlaceholder: "Voor- en achternaam…",
       emailLabel: "E-mailadres",
       phoneLabel: "Telefoonnummer",
       phonePlaceholder: "06 12345678",
-      phoneHint: "E-mail of telefoon — minimaal één verplicht",
+      phoneHint: "E-mail of telefoon: minimaal één is verplicht",
       companyLabel: "Bedrijfsnaam (optioneel)",
       companyPlaceholder: "bijv. Autobedrijf Jansen…",
       messageLabel: "Vertel over je kanalen (optioneel)",
@@ -353,7 +353,7 @@ export const translations = {
       close: "Sluiten",
       previous: "Vorige foto",
       next: "Volgende foto",
-      photoAlt: (title: string, n: number) => `${title} — foto ${n}`,
+      photoAlt: (title: string, n: number) => `${title}, foto ${n}`,
       photoOf: (n: number, total: number) => `Foto ${n} van ${total}`,
     },
     notFound: {
@@ -468,7 +468,7 @@ export const translations = {
       previous: "Vorige",
       next: "Volgende",
       team: {
-        majd: "Verhalen vertellen is altijd de kern geweest van wat ik doe. Met meer dan zes jaar ervaring in fotografie en film richt ik me op beelden die echt, filmisch en krachtig aanvoelen.\n\nBij PDC Productions leid ik de creatieve visie achter onze projecten, van het eerste concept tot de oplevering. Samen met mijn medeoprichters maak ik content en ervaringen die merken verbinden met hun publiek.\n\nVoor mij gaat goede content niet alleen over mooie beelden — het gaat om verhalen die mensen onthouden.",
+        majd: "Verhalen vertellen is altijd de kern geweest van wat ik doe. Met meer dan zes jaar ervaring in fotografie en film richt ik me op beelden die echt, filmisch en krachtig aanvoelen.\n\nBij PDC Productions leid ik de creatieve visie achter onze projecten, van het eerste concept tot de oplevering. Samen met mijn medeoprichters maak ik content en ervaringen die merken verbinden met hun publiek.\n\nVoor mij gaat goede content niet alleen over mooie beelden. Het gaat om verhalen die mensen onthouden.",
         per: "Ik ben een creatieveling uit Nederland met een achtergrond in de horeca en een sterke focus op videoproductie en storytelling. Muziek inspireert me enorm en speelt een grote rol in hoe ik denk en maak. Ik schakel snel tussen ideeën en projecten, waardoor mijn werk dynamisch blijft en steeds verder groeit. Op dit moment bouw ik verder aan mijn vaardigheden in videografie, met als doel in het buitenland te wonen en te werken, waar ik mijn vak verder kan ontwikkelen en mijn creatieve werk naar een hoger niveau kan tillen.",
         ryan: "Mijn passie voor fotografie begon begin 2026, vanuit de vrijheid om bijzondere momenten vast te leggen en mensen iets te geven waar ze altijd op terug kunnen kijken. Met een focus op automotive-, sport- en concertfotografie maak ik beelden die niet alleen een moment laten zien, maar ook het gevoel erachter overbrengen.\n\nSamen met Per en Majd zijn we PhotoDeCaffeine begonnen: een creatief collectief van fotografen die hun passie delen en samenwerken om sterke, blijvende herinneringen vast te leggen.",
       },
@@ -490,7 +490,7 @@ export const translations = {
         {
           num: "01",
           title: "Cinematisch eerst",
-          body: "Elk frame is opgebouwd als een filmstill — bewuste schaduwen, doordachte compositie, gericht licht. We schieten niet snel; we schieten goed.",
+          body: "Elk frame is opgebouwd als een filmstill: bewuste schaduwen, doordachte compositie, gericht licht. We schieten niet snel; we schieten goed.",
         },
         {
           num: "02",
@@ -500,12 +500,12 @@ export const translations = {
         {
           num: "03",
           title: "Obsessief vakmanschap",
-          body: "Van de boon tot de lens. We werken met dezelfde precisie als een specialtykoffiebrander aan zijn extractiecurve — niets wordt aan het toeval overgelaten.",
+          body: "Van de boon tot de lens. We werken met dezelfde precisie als een specialtykoffiebrander aan zijn extractiecurve. Niets wordt aan het toeval overgelaten.",
         },
         {
           num: "04",
           title: "Langetermijnvisie",
-          body: "We willen niet één campagne schieten. We willen de visuele taal worden van de merken waarmee we werken — consistent, in ontwikkeling en echt van hen.",
+          body: "We willen niet één campagne schieten. We willen de visuele taal worden van de merken waarmee we werken: consistent, in ontwikkeling en echt van hen.",
         },
       ],
       ctaLabel: "Klaar om samen te werken?",

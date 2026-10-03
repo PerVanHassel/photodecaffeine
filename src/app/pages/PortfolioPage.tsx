@@ -66,8 +66,8 @@ export function PortfolioPage() {
       }}
     >
       <Helmet>
-        <title>Portfolio — fotografie & video | PhotoDeCaffeine</title>
-        <meta name="description" content="Bekijk het portfolio van PhotoDeCaffeine — automotive-, editorial- en studiofotografie door heel Nederland. Scherpe beelden voor merken, showrooms en particulieren." />
+        <title>Portfolio: fotografie & video | PhotoDeCaffeine</title>
+        <meta name="description" content="Bekijk het portfolio van PhotoDeCaffeine: automotive-, editorial- en studiofotografie door heel Nederland. Scherpe beelden voor merken, showrooms en particulieren." />
         <link rel="canonical" href="https://www.photodecaffeine.com/portfolio" />
         <meta property="og:title" content="Portfolio | PhotoDeCaffeine" />
         <meta property="og:description" content="Automotive-, editorial- en studiofotografie door heel Nederland. Bekijk onze shoots." />

@@ -38,7 +38,7 @@ export function Home() {
     <div style={{ backgroundColor: "#080401", fontFamily: "'Inter', sans-serif", overflowX: "hidden" }}>
       <Helmet>
         <title>Automotive fotografie & social media beheer | PhotoDeCaffeine</title>
-        <meta name="description" content="Automotive fotografie, videografie en social media beheer door heel Nederland. Voor auto's, motoren en de mensen erachter — zakelijk en particulier. Vraag een offerte aan." />
+        <meta name="description" content="Automotive fotografie, videografie en social media beheer door heel Nederland. Voor auto's, motoren en de mensen erachter, zakelijk en particulier. Vraag een offerte aan." />
         <link rel="canonical" href="https://www.photodecaffeine.com/" />
         <meta property="og:title" content="Automotive fotografie & social media beheer | PhotoDeCaffeine" />
         <meta property="og:description" content="Automotive fotografie, videografie en social media beheer door heel Nederland. Voor auto's, motoren en de mensen erachter." />

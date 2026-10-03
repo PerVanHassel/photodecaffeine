@@ -168,7 +168,7 @@ export function Hero() {
                 ))}
               </div>
               <div aria-hidden="true" style={{ position: "absolute", bottom: "22px", left: "16px", right: "16px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-                <span style={{ color: "rgba(255,251,224,0.25)", fontSize: "8px", fontWeight: 500, letterSpacing: "0.25em", textTransform: "uppercase", fontFamily: "'Courier New', monospace" }}>PDC — 2026</span>
+                <span style={{ color: "rgba(255,251,224,0.25)", fontSize: "8px", fontWeight: 500, letterSpacing: "0.25em", textTransform: "uppercase", fontFamily: "'Courier New', monospace" }}>PDC · 2026</span>
                 <span style={{ color: "rgba(255,251,224,0.25)", fontSize: "8px", fontFamily: "'Courier New', monospace", letterSpacing: "0.15em" }}>35mm / ƒ1.4</span>
               </div>
             </div>

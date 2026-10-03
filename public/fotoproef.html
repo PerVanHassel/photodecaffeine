@@ -290,7 +290,7 @@
     <p class="lede">
       Elke foto die op de site staat is opnieuw uitgerekend naar <b>2560&nbsp;px</b> en als
       WebP&nbsp;+&nbsp;JPEG teruggezet. Hieronder staat wat bezoekers nu te zien krijgen.
-      Houd <b>Vergelijk</b> ingedrukt om het origineel ernaast te leggen — let op scherpte,
+      Houd <b>Vergelijk</b> ingedrukt om het origineel ernaast te leggen. Let op scherpte,
       kleur, en of staande foto's rechtop staan.
     </p>
     <div class="totals" id="totals"></div>
@@ -508,7 +508,7 @@
     hints.innerHTML = "";
     for (const [base, slugs] of suggestions()) {
       const b = document.createElement("button");
-      b.textContent = `${base} — ${slugs.length} keer`;
+      b.textContent = `${base} · ${slugs.length} keer`;
       b.addEventListener("click", () => {
         picking = slugs; keeper = slugs[0];
         render();

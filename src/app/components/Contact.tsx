@@ -49,7 +49,7 @@ export function Contact() {
 
   // The same packages, names and prices as the packages section.
   const packages = [
-    ...t.services.packages.map((p) => ({ value: p.id, label: `${p.name} — ${p.price} ${p.per}` })),
+    ...t.services.packages.map((p) => ({ value: p.id, label: `${p.name} (${p.price} ${p.per})` })),
     { value: "custom", label: t.contact.packageCustom },
   ];
 

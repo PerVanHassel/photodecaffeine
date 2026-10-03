@@ -85,7 +85,7 @@ function PreviewBar({ name }: { name: string }) {
         letterSpacing: "0.06em", padding: "10px 16px", textAlign: "center",
       }}
     >
-      Deze demo staat offline — alleen jij ziet hem. {name}
+      Deze demo staat offline. Alleen jij ziet hem. {name}
     </div>
   );
 }

@@ -94,7 +94,7 @@ export function QuotePage() {
       }}
     >
       <Helmet>
-        <title>Prijsopgave — PhotoDeCaffeine</title>
+        <title>Prijsopgave | PhotoDeCaffeine</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
@@ -159,7 +159,7 @@ export function QuotePage() {
               ) : (
                 <>
                   <p style={{ color: "rgba(255,251,224,0.5)", fontSize: "13px", lineHeight: 1.7, margin: "0 0 16px" }}>
-                    Laat hieronder weten wat je ervan vindt. Je kunt er een bericht bij zetten — een vraag of een aanpassing mag ook.
+                    Laat hieronder weten wat je ervan vindt. Je kunt er een bericht bij zetten. Een vraag of een aanpassing mag ook.
                   </p>
 
                   <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "14px" }}>

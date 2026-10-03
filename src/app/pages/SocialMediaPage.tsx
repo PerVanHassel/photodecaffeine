@@ -82,15 +82,15 @@ export function SocialMediaPage() {
     >
       <Helmet>
         <title>Social media beheer voor automotive | PhotoDeCaffeine</title>
-        <meta name="description" content="Content en social media beheer voor autobedrijven, dealers en particuliere eigenaren. Fotografie, video en een consistente social media aanwezigheid — door heel Nederland." />
+        <meta name="description" content="Content en social media beheer voor autobedrijven, dealers en particuliere eigenaren. Fotografie, video en een consistente social media aanwezigheid, door heel Nederland." />
         <link rel="canonical" href="https://www.photodecaffeine.com/services/social-media" />
         <meta property="og:title" content="Social media beheer voor automotive | PhotoDeCaffeine" />
-        <meta property="og:description" content="Content en social media beheer voor autobedrijven, dealers en particuliere eigenaren — door heel Nederland." />
+        <meta property="og:description" content="Content en social media beheer voor autobedrijven, dealers en particuliere eigenaren, door heel Nederland." />
         <meta property="og:url" content="https://www.photodecaffeine.com/services/social-media" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Social media beheer voor automotive | PhotoDeCaffeine" />
-        <meta name="twitter:description" content="Content en social media beheer voor autobedrijven, dealers en particuliere eigenaren — door heel Nederland." />
+        <meta name="twitter:description" content="Content en social media beheer voor autobedrijven, dealers en particuliere eigenaren, door heel Nederland." />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "BreadcrumbList",
@@ -274,7 +274,7 @@ export function SocialMediaPage() {
                     flexShrink: 0,
                   }}
                 >
-                  —
+                  •
                 </span>
                 <span
                   style={{

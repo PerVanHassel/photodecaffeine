@@ -82,8 +82,8 @@ export function PortfolioDetailPage() {
       }}
     >
       <Helmet>
-        <title>{article.title} — Portfolio | PhotoDeCaffeine</title>
-        <meta name="description" content={article.description ? `${article.description.slice(0, 140)}…` : `Bekijk de shoot ‘${article.title}’ van PhotoDeCaffeine — professionele ${/automotive/i.test(article.category) ? "automotive fotografie" : "fotografie"} door heel Nederland.`} />
+        <title>{article.title} | Portfolio | PhotoDeCaffeine</title>
+        <meta name="description" content={article.description ? `${article.description.slice(0, 140)}…` : `Bekijk de shoot ‘${article.title}’ van PhotoDeCaffeine: professionele ${/automotive/i.test(article.category) ? "automotive fotografie" : "fotografie"} door heel Nederland.`} />
         <link rel="canonical" href={`https://www.photodecaffeine.com/portfolio/${article.id}`} />
         <meta property="og:title" content={`${article.title} | PhotoDeCaffeine`} />
         <meta property="og:description" content={article.description ? article.description.slice(0, 140) : `Professionele fotoserie door PhotoDeCaffeine.`} />
@@ -98,7 +98,7 @@ export function PortfolioDetailPage() {
           "@context": "https://schema.org",
           "@type": "ImageGallery",
           "name": article.title,
-          "description": article.description || `Fotoserie door PhotoDeCaffeine — ${article.title}`,
+          "description": article.description || `Fotoserie door PhotoDeCaffeine: ${article.title}`,
           "url": `https://www.photodecaffeine.com/portfolio/${article.id}`,
           "image": article.coverUrl || undefined,
           "author": {

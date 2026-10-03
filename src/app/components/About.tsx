@@ -93,7 +93,7 @@ export function About() {
             <ImageWithFallback
               className="m-[0px]"
               src={image_IMG_0114_TIF}
-              alt="Per van Hassel — medeoprichter van PDC"
+              alt="Per van Hassel, medeoprichter van PDC"
               style={{
                 width: "100%",
                 height: "var(--pdc-owner-h)",
@@ -158,7 +158,7 @@ export function About() {
           >
             <ImageWithFallback
               src={image_IMG_0115_TIF}
-              alt="Ryan Chantre — medeoprichter van PDC"
+              alt="Ryan Chantre, medeoprichter van PDC"
               style={{
                 width: "100%",
                 height: "var(--pdc-owner-h)",
@@ -223,7 +223,7 @@ export function About() {
           >
             <ImageWithFallback
               src={IMG_9694}
-              alt="Majd Tawashe — medeoprichter van PDC"
+              alt="Majd Tawashe, medeoprichter van PDC"
               style={{
                 width: "100%",
                 height: "var(--pdc-owner-h)",
