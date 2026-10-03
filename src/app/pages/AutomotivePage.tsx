@@ -1,6 +1,7 @@
 import { Helmet } from "react-helmet-async";
 import { useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
+import { FormPrivacyNote } from "../components/form/FormPrivacyNote";
 import { track } from "../lib/analytics";
 import type { InquiryForm } from "./ThankYouPage";
 import { portalFetch } from "../../lib/supabase";
@@ -520,6 +521,7 @@ export function AutomotivePage() {
             >
               {loading ? ta.submitting : ta.submitButton}
             </button>
+            <FormPrivacyNote />
           </form>
         </div>
       </div>

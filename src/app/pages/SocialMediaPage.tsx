@@ -1,6 +1,7 @@
 import { Helmet } from "react-helmet-async";
 import { useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
+import { FormPrivacyNote } from "../components/form/FormPrivacyNote";
 import { track } from "../lib/analytics";
 import type { InquiryForm } from "./ThankYouPage";
 import { ArrowLeft } from "lucide-react";
@@ -434,6 +435,7 @@ export function SocialMediaPage() {
             >
               {loading ? ts.submitting : ts.submitButton}
             </button>
+            <FormPrivacyNote />
           </form>
         </div>
       </div>

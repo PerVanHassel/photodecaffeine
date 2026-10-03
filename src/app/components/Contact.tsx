@@ -1,5 +1,6 @@
 import { useId, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
+import { FormPrivacyNote } from "./form/FormPrivacyNote";
 import { track } from "../lib/analytics";
 import type { InquiryForm } from "../pages/ThankYouPage";
 import { Select } from "./portal/Select";
@@ -333,6 +334,7 @@ export function Contact() {
             >
               {loading ? t.contact.sending : t.contact.sendButton}
             </button>
+            <FormPrivacyNote />
           </form>
         </div>
       </div>

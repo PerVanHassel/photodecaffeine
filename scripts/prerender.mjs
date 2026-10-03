@@ -38,6 +38,9 @@ const PAGES = [
   { route: "/about", data: [] },
   { route: "/services/automotive", data: ["articles"] },
   { route: "/services/social-media", data: [] },
+  { route: "/privacybeleid", data: [] },
+  { route: "/algemene-voorwaarden", data: [] },
+  { route: "/cookiebeleid", data: [] },
   // Not in the sitemap and noindex; prerendered so Vercel serves it instead of the 404.
   { route: "/bedankt", data: [] },
 ];

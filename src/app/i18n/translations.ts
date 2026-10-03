@@ -363,6 +363,9 @@ export const translations = {
       about: "Over ons",
       clientPortal: "Klantportaal",
     },
+    forms: {
+      privacyNote: "We gebruiken je gegevens alleen om je aanvraag te beantwoorden. Meer in ons",
+    },
     thanks: {
       label: "Aanvraag ontvangen",
       title: "Bedankt!",
