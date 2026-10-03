@@ -6,7 +6,8 @@ import { track } from "../lib/analytics";
 import type { InquiryForm } from "./ThankYouPage";
 import { portalFetch } from "../../lib/supabase";
 import { useLanguage } from "../context/LanguageContext";
-import { AUTOMOTIVE_GALLERY_TITLE, usePortfolio } from "../lib/siteData";
+import { AUTOMOTIVE_GALLERY_TITLE, usePortfolio, visibleArticles } from "../lib/siteData";
+import { PortfolioTile } from "../components/PortfolioTile";
 import { useAdTracking, getStoredAdRef } from "../hooks/useAdTracking";
 import { ArrowLeft } from "lucide-react";
 import heroSmall from "@/assets/web/automotive-hero-1000.webp";
@@ -20,8 +21,10 @@ export function AutomotivePage() {
   const { t } = useLanguage();
   const ta = t.automotivePage;
 
-  const galleryImages =
-    usePortfolio().data?.find((a) => a.title === AUTOMOTIVE_GALLERY_TITLE)?.galleryUrls ?? [];
+  const articles = usePortfolio().data;
+  const galleryImages = articles?.find((a) => a.title === AUTOMOTIVE_GALLERY_TITLE)?.galleryUrls ?? [];
+  // The latest automotive shoots from the portfolio, so the page links to real work.
+  const recentShoots = (visibleArticles(articles) ?? []).filter((a) => /automotive/i.test(a.category)).slice(0, 3);
 
   const [form, setForm] = useState({ name: "", email: "", phone: "", carBrand: "", date: "", location: "" });
   const [errors, setErrors] = useState<{ name?: string; contact?: string }>({});
@@ -556,6 +559,22 @@ export function AutomotivePage() {
             </div>
           ))}
         </div>
+      )}
+
+      {recentShoots.length > 0 && (
+        <section className="pdc-svc-recent" aria-labelledby="recent-shoots">
+          <h2 id="recent-shoots" className="pdc-svc-recent-label">{ta.recentLabel}</h2>
+          <div className="pdc-svc-recent-grid">
+            {recentShoots.map((item) => (
+              <div key={item.id}>
+                <PortfolioTile item={item} layout="fill" />
+              </div>
+            ))}
+          </div>
+          <Link to="/portfolio" className="pdc-text-link">
+            {ta.recentLink}
+          </Link>
+        </section>
       )}
 
       {/* ── Custom packages CTA ── */}

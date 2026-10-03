@@ -245,6 +245,13 @@ export function PortfolioDetailPage() {
           >
             {td.cta}
           </Link>
+          {/automotive/i.test(article.category) && (
+            <p style={{ marginTop: "28px" }}>
+              <Link to="/services/automotive" className="pdc-text-link">
+                {td.serviceLink}
+              </Link>
+            </p>
+          )}
         </div>
       </div>
 

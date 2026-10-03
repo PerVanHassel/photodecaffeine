@@ -294,6 +294,8 @@ export const translations = {
       customBody: "Meerdere voertuigen, video, dagshoots of iets heel anders — neem contact op, dan stellen we samen iets passends op.",
       customButton: "Neem contact op",
       readyLabel: "Klaar voor de shoot?",
+      recentLabel: "Recente shoots",
+      recentLink: "Bekijk het hele portfolio →",
     },
     socialMediaPage: {
       backLabel: "Home",
@@ -346,6 +348,7 @@ export const translations = {
       back: "Terug naar portfolio",
       noImages: "Nog geen foto's in deze serie.",
       cta: "Werk samen met ons",
+      serviceLink: "Meer over automotive fotografie →",
       dialog: (title: string) => `Foto's van ${title}`,
       close: "Sluiten",
       previous: "Vorige foto",

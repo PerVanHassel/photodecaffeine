@@ -629,3 +629,14 @@ body:has(.pdc-skip-link), body:has(.pdc-404-number) { background-color: #080401;
 /* "We gebruiken je gegevens alleen…" under every inquiry form. */
 .pdc-form-privacy { margin: 0; color: rgba(255,251,224,0.55); font-size: 12px; line-height: 1.6; }
 .pdc-form-privacy a { color: rgba(255,251,224,0.85); text-decoration: underline; text-underline-offset: 3px; }
+
+/* Automotive page: the latest automotive shoots from the portfolio. */
+.pdc-svc-recent { max-width: 1400px; margin: 0 auto; padding: 96px 24px; text-align: center; }
+.pdc-svc-recent-label { margin: 0 0 32px; color: rgba(255,251,224,0.55); font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase; }
+.pdc-svc-recent-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; margin-bottom: 40px; text-align: left; }
+.pdc-svc-recent-grid > div { aspect-ratio: 4 / 5; }
+@media (max-width: 767px) {
+  .pdc-svc-recent { padding: 64px 0; }
+  .pdc-svc-recent-grid { grid-template-columns: 1fr; }
+  .pdc-svc-recent-grid > div { aspect-ratio: 4 / 3; }
+}
