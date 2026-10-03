@@ -1,5 +1,7 @@
-import { useEffect, useId, useRef, useState, type FormEvent } from "react";
-import { Link } from "react-router";
+import { useId, useState, type FormEvent } from "react";
+import { Link, useNavigate } from "react-router";
+import { track } from "../lib/analytics";
+import type { InquiryForm } from "../pages/ThankYouPage";
 import { Select } from "./portal/Select";
 import { EMAIL_INPUT, PHONE_INPUT, PublicInput, PublicTextarea } from "./form/PublicField";
 import { useLanguage } from "../context/LanguageContext";
@@ -10,10 +12,9 @@ const EMPTY = { name: "", email: "", phone: "", brand: "", message: "", package:
 
 export function Contact() {
   const [formData, setFormData] = useState(EMPTY);
-  const [submitted, setSubmitted] = useState(false);
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const successHeading = useRef<HTMLHeadingElement>(null);
   const packageId = useId();
   const { t } = useLanguage();
 
@@ -21,9 +22,6 @@ export function Contact() {
 
   // Screen readers hear the confirmation, and keyboard focus is not left on
   // a form that no longer exists.
-  useEffect(() => {
-    if (submitted) successHeading.current?.focus();
-  }, [submitted]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -38,7 +36,9 @@ export function Contact() {
           message: ref ? `${formData.message}\n\n[ref:${ref}]` : formData.message,
         }),
       });
-      setSubmitted(true);
+      const sent: InquiryForm = "contact";
+      track("Aanvraag", { formulier: "contact" });
+      navigate("/bedankt", { state: { from: sent } });
     } catch {
       setError(t.contact.sendError);
     } finally {
@@ -241,148 +241,99 @@ export function Contact() {
 
         {/* Right — Form */}
         <div className="pdc-contact-form">
-          {submitted ? (
-            <div
-              role="status"
-              style={{
-                border: "1px solid rgba(200,144,90,0.3)",
-                padding: "64px 48px",
-                textAlign: "center",
-              }}
-            >
-              <div
-                aria-hidden="true"
-                style={{
-                  color: "#c8905a",
-                  fontSize: "32px",
-                  marginBottom: "24px",
-                }}
-              >
-                ✓
-              </div>
-              <h4
-                ref={successHeading}
-                tabIndex={-1}
-                style={{
-                  color: "#fffbe0",
-                  fontSize: "22px",
-                  fontWeight: 800,
-                  letterSpacing: "-0.01em",
-                  textTransform: "uppercase",
-                  margin: 0,
-                  marginBottom: "16px",
-                  outline: "none",
-                }}
-              >
-                {t.contact.successTitle}
-              </h4>
-              <p
-                style={{
-                  color: "rgba(255,251,224,0.5)",
-                  fontSize: "13px",
-                  fontWeight: 300,
-                  lineHeight: 1.7,
-                  margin: 0,
-                }}
-              >
-                {t.contact.successBody}
-              </p>
-            </div>
-          ) : (
-            <form
-              onSubmit={handleSubmit}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "32px",
-              }}
-            >
-              <div className="pdc-form-row">
-                <PublicInput
-                  label={t.contact.nameLabel}
-                  name="name"
-                  autoComplete="name"
-                  required
-                  value={formData.name}
-                  onChange={(e) => set("name")(e.target.value)}
-                  placeholder={t.contact.namePlaceholder}
-                />
-                <PublicInput
-                  label={t.contact.emailLabel}
-                  name="email"
-                  {...EMAIL_INPUT}
-                  required
-                  value={formData.email}
-                  onChange={(e) => set("email")(e.target.value)}
-                  placeholder={t.contact.emailPlaceholder}
-                />
-              </div>
-
-              <div className="pdc-form-row">
-                <PublicInput
-                  label={t.contact.phoneLabel}
-                  name="phone"
-                  {...PHONE_INPUT}
-                  value={formData.phone}
-                  onChange={(e) => set("phone")(e.target.value)}
-                  placeholder={t.contact.phonePlaceholder}
-                />
-                <PublicInput
-                  label={t.contact.brandLabel}
-                  name="organization"
-                  autoComplete="organization"
-                  value={formData.brand}
-                  onChange={(e) => set("brand")(e.target.value)}
-                  placeholder={t.contact.brandPlaceholder}
-                />
-              </div>
-
-              <div className="pdc-field">
-                <label htmlFor={packageId} className="pdc-field-label">
-                  {t.contact.packageLabel}
-                </label>
-                <Select
-                  id={packageId}
-                  value={formData.package}
-                  onChange={set("package")}
-                  placeholder={t.contact.packageDefault}
-                  options={packages}
-                />
-              </div>
-
-              <PublicTextarea
-                label={t.contact.messageLabel}
-                name="message"
-                autoComplete="off"
+          <form
+            onSubmit={handleSubmit}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "32px",
+            }}
+          >
+            <div className="pdc-form-row">
+              <PublicInput
+                label={t.contact.nameLabel}
+                name="name"
+                autoComplete="name"
                 required
-                rows={4}
-                value={formData.message}
-                onChange={(e) => set("message")(e.target.value)}
-                placeholder={t.contact.messagePlaceholder}
+                value={formData.name}
+                onChange={(e) => set("name")(e.target.value)}
+                placeholder={t.contact.namePlaceholder}
               />
+              <PublicInput
+                label={t.contact.emailLabel}
+                name="email"
+                {...EMAIL_INPUT}
+                required
+                value={formData.email}
+                onChange={(e) => set("email")(e.target.value)}
+                placeholder={t.contact.emailPlaceholder}
+              />
+            </div>
 
-              {error && (
-                <p className="pdc-form-error" role="alert">
-                  {error}
-                </p>
-              )}
+            <div className="pdc-form-row">
+              <PublicInput
+                label={t.contact.phoneLabel}
+                name="phone"
+                {...PHONE_INPUT}
+                value={formData.phone}
+                onChange={(e) => set("phone")(e.target.value)}
+                placeholder={t.contact.phonePlaceholder}
+              />
+              <PublicInput
+                label={t.contact.brandLabel}
+                name="organization"
+                autoComplete="organization"
+                value={formData.brand}
+                onChange={(e) => set("brand")(e.target.value)}
+                placeholder={t.contact.brandPlaceholder}
+              />
+            </div>
 
-              <button
-                type="submit"
-                className="pdc-btn pdc-btn-solid pdc-contact-submit pdc-submit"
-                disabled={loading}
-                aria-busy={loading || undefined}
-                style={{
-                  padding: "18px 40px",
-                  fontSize: "11px",
-                  fontWeight: 800,
-                  letterSpacing: "0.22em",
-                }}
-              >
-                {loading ? t.contact.sending : t.contact.sendButton}
-              </button>
-            </form>
-          )}
+            <div className="pdc-field">
+              <label htmlFor={packageId} className="pdc-field-label">
+                {t.contact.packageLabel}
+              </label>
+              <Select
+                id={packageId}
+                value={formData.package}
+                onChange={set("package")}
+                placeholder={t.contact.packageDefault}
+                options={packages}
+              />
+            </div>
+
+            <PublicTextarea
+              label={t.contact.messageLabel}
+              name="message"
+              autoComplete="off"
+              required
+              rows={4}
+              value={formData.message}
+              onChange={(e) => set("message")(e.target.value)}
+              placeholder={t.contact.messagePlaceholder}
+            />
+
+            {error && (
+              <p className="pdc-form-error" role="alert">
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              className="pdc-btn pdc-btn-solid pdc-contact-submit pdc-submit"
+              disabled={loading}
+              aria-busy={loading || undefined}
+              style={{
+                padding: "18px 40px",
+                fontSize: "11px",
+                fontWeight: 800,
+                letterSpacing: "0.22em",
+              }}
+            >
+              {loading ? t.contact.sending : t.contact.sendButton}
+            </button>
+          </form>
         </div>
       </div>
     </section>

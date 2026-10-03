@@ -599,3 +599,17 @@ body:has(.pdc-skip-link), body:has(.pdc-404-number) { background-color: #080401;
 @media (max-width: 767px) and (prefers-reduced-motion: reduce) {
   .pdc-sticky-cta { transition: none; }
 }
+
+/* /bedankt — where the inquiry forms land. */
+.pdc-thanks { background: #080401; color: #fffbe0; font-family: 'Inter', sans-serif; padding: 160px 24px 120px; }
+.pdc-thanks-inner { max-width: 640px; margin: 0 auto; }
+.pdc-thanks-label { display: block; margin: 0 0 16px; color: rgba(255,251,224,0.55); font-size: 10px; font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase; }
+.pdc-thanks-title { margin: 0 0 20px; font-size: clamp(40px, 8vw, 72px); font-weight: 900; line-height: 1; letter-spacing: -0.03em; text-transform: uppercase; outline: none; }
+.pdc-thanks-body { margin: 0 0 40px; color: rgba(255,251,224,0.7); font-size: 16px; line-height: 1.7; }
+.pdc-thanks-body a { color: #fffbe0; text-decoration: underline; text-underline-offset: 3px; }
+.pdc-thanks-steps { list-style: none; margin: 0 0 40px; padding: 0; border-top: 1px solid rgba(255,251,224,0.12); }
+.pdc-thanks-steps li { display: flex; gap: 20px; padding: 18px 0; border-bottom: 1px solid rgba(255,251,224,0.12); font-size: 15px; line-height: 1.5; }
+.pdc-thanks-steps span { color: #c8905a; font-weight: 700; font-variant-numeric: tabular-nums; }
+.pdc-thanks-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.pdc-thanks-primary { background: #fffbe0; color: #1a0c04; border-color: #fffbe0; }
+@media (max-width: 767px) { .pdc-thanks { padding: 120px 20px 80px; } }

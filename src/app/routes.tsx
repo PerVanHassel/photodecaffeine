@@ -38,6 +38,7 @@ export const routes: RouteObject[] = [
           { path: "about", lazy: chunk(() => import("./pages/AboutPage"), (m) => m.AboutPage) },
           { path: "services/automotive", lazy: chunk(() => import("./pages/AutomotivePage"), (m) => m.AutomotivePage) },
           { path: "services/social-media", lazy: chunk(() => import("./pages/SocialMediaPage"), (m) => m.SocialMediaPage) },
+          { path: "bedankt", lazy: chunk(() => import("./pages/ThankYouPage"), (m) => m.ThankYouPage) },
         ],
       },
       portalRoutes,

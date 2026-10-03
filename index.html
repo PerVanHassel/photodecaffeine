@@ -50,6 +50,8 @@
 
       <!-- Plausible Analytics — cookievrij, privacyvriendelijk -->
       <script defer data-domain="photodecaffeine.com" src="https://plausible.io/js/script.js"></script>
+      <!-- Queues custom events (src/app/lib/analytics.ts) until the script above has loaded. -->
+      <script>window.plausible = window.plausible || function () { (window.plausible.q = window.plausible.q || []).push(arguments) }</script>
 
       <!-- Structured data: LocalBusiness -->
       <script type="application/ld+json">

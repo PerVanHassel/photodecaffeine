@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Helmet } from "react-helmet-async";
 import { Outlet } from "react-router";
 import { Navigation } from "./components/Navigation";
@@ -5,10 +6,16 @@ import { Footer } from "./components/Footer";
 import { StickyCta } from "./components/StickyCta";
 import { useLanguage } from "./context/LanguageContext";
 import { usePageScroll } from "./lib/scroll";
+import { trackContactClicks } from "./lib/analytics";
 
 export function Root() {
   const { t } = useLanguage();
   usePageScroll();
+
+  useEffect(() => {
+    document.addEventListener("click", trackContactClicks);
+    return () => document.removeEventListener("click", trackContactClicks);
+  }, []);
 
   return (
     <>

@@ -1,6 +1,8 @@
 import { Helmet } from "react-helmet-async";
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Link } from "react-router";
+import { useRef, useState, type FormEvent } from "react";
+import { Link, useNavigate } from "react-router";
+import { track } from "../lib/analytics";
+import type { InquiryForm } from "./ThankYouPage";
 import { portalFetch } from "../../lib/supabase";
 import { useLanguage } from "../context/LanguageContext";
 import { AUTOMOTIVE_GALLERY_TITLE, usePortfolio } from "../lib/siteData";
@@ -23,15 +25,11 @@ export function AutomotivePage() {
   const [form, setForm] = useState({ name: "", email: "", phone: "", carBrand: "", date: "", location: "" });
   const [errors, setErrors] = useState<{ name?: string; contact?: string }>({});
   const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const nameInput = useRef<HTMLInputElement>(null);
   const emailInput = useRef<HTMLInputElement>(null);
-  const successHeading = useRef<HTMLHeadingElement>(null);
 
-  useEffect(() => {
-    if (submitted) successHeading.current?.focus();
-  }, [submitted]);
 
   const set = (field: keyof typeof form) => (e: { target: { value: string } }) => {
     setForm((f) => ({ ...f, [field]: e.target.value }));
@@ -70,7 +68,9 @@ export function AutomotivePage() {
           message: `Automotive package booking — €50 per vehicle, 1 hour on location.${details ? `\n\n${details}` : ""}${getStoredAdRef() ? `\n\n[ref:${getStoredAdRef()}]` : ""}`,
         }),
       });
-      setSubmitted(true);
+      const sent: InquiryForm = "automotive";
+      track("Aanvraag", { formulier: "automotive" });
+      navigate("/bedankt", { state: { from: sent } });
     } catch {
       setError(ta.errorGeneric);
     } finally {
@@ -442,124 +442,85 @@ export function AutomotivePage() {
             {ta.bookSubtitle}
           </p>
 
-          {submitted ? (
-            <div
-              role="status"
+          <form noValidate onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+            <PublicInput
+              ref={nameInput}
+              label={ta.nameLabel}
+              name="name"
+              autoComplete="name"
+              aria-required="true"
+              value={form.name}
+              onChange={set("name")}
+              placeholder={ta.namePlaceholder}
+              error={errors.name}
+            />
+            <PublicInput
+              ref={emailInput}
+              label={ta.emailLabel}
+              name="email"
+              {...EMAIL_INPUT}
+              value={form.email}
+              onChange={set("email")}
+              placeholder={t.contact.emailPlaceholder}
+              aria-invalid={errors.contact ? true : undefined}
+            />
+            <PublicInput
+              label={ta.phoneLabel}
+              name="phone"
+              {...PHONE_INPUT}
+              value={form.phone}
+              onChange={set("phone")}
+              placeholder={ta.phonePlaceholder}
+              hint={ta.phoneHint}
+              error={errors.contact}
+            />
+            <PublicInput
+              label={ta.carBrandLabel}
+              name="vehicle"
+              autoComplete="off"
+              value={form.carBrand}
+              onChange={set("carBrand")}
+              placeholder={ta.carBrandPlaceholder}
+            />
+            <PublicInput
+              label={ta.dateLabel}
+              name="preferred-date"
+              autoComplete="off"
+              value={form.date}
+              onChange={set("date")}
+              placeholder={ta.datePlaceholder}
+            />
+            <PublicInput
+              label={ta.locationLabel}
+              name="preferred-location"
+              autoComplete="off"
+              value={form.location}
+              onChange={set("location")}
+              placeholder={ta.locationPlaceholder}
+            />
+
+            {error && (
+              <p className="pdc-form-error" role="alert">
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              className="pdc-btn pdc-btn-solid pdc-svc-submit pdc-submit"
+              disabled={loading}
+              aria-busy={loading || undefined}
               style={{
-                border: "1px solid rgba(200,144,90,0.3)",
-                padding: "48px 36px",
-                textAlign: "center",
+                padding: "18px 40px",
+                fontSize: "11px",
+                fontWeight: 800,
+                letterSpacing: "0.22em",
+                alignSelf: "flex-start",
               }}
             >
-              <div aria-hidden="true" style={{ color: "#c8905a", fontSize: "28px", marginBottom: "20px" }}>✓</div>
-              <h4
-                ref={successHeading}
-                tabIndex={-1}
-                style={{
-                  color: "#fffbe0",
-                  fontSize: "20px",
-                  fontWeight: 800,
-                  letterSpacing: "-0.01em",
-                  textTransform: "uppercase",
-                  margin: "0 0 12px",
-                  outline: "none",
-                }}
-              >
-                {ta.successTitle}
-              </h4>
-              <p
-                style={{
-                  color: "rgba(255,251,224,0.5)",
-                  fontSize: "13px",
-                  fontWeight: 300,
-                  lineHeight: 1.7,
-                  margin: 0,
-                }}
-              >
-                {ta.successBody}
-              </p>
-            </div>
-          ) : (
-            <form noValidate onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
-              <PublicInput
-                ref={nameInput}
-                label={ta.nameLabel}
-                name="name"
-                autoComplete="name"
-                aria-required="true"
-                value={form.name}
-                onChange={set("name")}
-                placeholder={ta.namePlaceholder}
-                error={errors.name}
-              />
-              <PublicInput
-                ref={emailInput}
-                label={ta.emailLabel}
-                name="email"
-                {...EMAIL_INPUT}
-                value={form.email}
-                onChange={set("email")}
-                placeholder={t.contact.emailPlaceholder}
-                aria-invalid={errors.contact ? true : undefined}
-              />
-              <PublicInput
-                label={ta.phoneLabel}
-                name="phone"
-                {...PHONE_INPUT}
-                value={form.phone}
-                onChange={set("phone")}
-                placeholder={ta.phonePlaceholder}
-                hint={ta.phoneHint}
-                error={errors.contact}
-              />
-              <PublicInput
-                label={ta.carBrandLabel}
-                name="vehicle"
-                autoComplete="off"
-                value={form.carBrand}
-                onChange={set("carBrand")}
-                placeholder={ta.carBrandPlaceholder}
-              />
-              <PublicInput
-                label={ta.dateLabel}
-                name="preferred-date"
-                autoComplete="off"
-                value={form.date}
-                onChange={set("date")}
-                placeholder={ta.datePlaceholder}
-              />
-              <PublicInput
-                label={ta.locationLabel}
-                name="preferred-location"
-                autoComplete="off"
-                value={form.location}
-                onChange={set("location")}
-                placeholder={ta.locationPlaceholder}
-              />
-
-              {error && (
-                <p className="pdc-form-error" role="alert">
-                  {error}
-                </p>
-              )}
-
-              <button
-                type="submit"
-                className="pdc-btn pdc-btn-solid pdc-svc-submit pdc-submit"
-                disabled={loading}
-                aria-busy={loading || undefined}
-                style={{
-                  padding: "18px 40px",
-                  fontSize: "11px",
-                  fontWeight: 800,
-                  letterSpacing: "0.22em",
-                  alignSelf: "flex-start",
-                }}
-              >
-                {loading ? ta.submitting : ta.submitButton}
-              </button>
-            </form>
-          )}
+              {loading ? ta.submitting : ta.submitButton}
+            </button>
+          </form>
         </div>
       </div>
 

@@ -46,6 +46,9 @@ export function StickyCta() {
 
   const shown = pastHero && !formInView;
 
+  // Just sent an inquiry: nothing left to book.
+  if (pathname === "/bedankt") return null;
+
   return (
     <>
       <div className="pdc-sticky-cta" data-shown={shown} aria-hidden={!shown}>

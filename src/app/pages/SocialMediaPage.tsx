@@ -1,6 +1,8 @@
 import { Helmet } from "react-helmet-async";
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Link } from "react-router";
+import { useRef, useState, type FormEvent } from "react";
+import { Link, useNavigate } from "react-router";
+import { track } from "../lib/analytics";
+import type { InquiryForm } from "./ThankYouPage";
 import { ArrowLeft } from "lucide-react";
 import { portalFetch } from "../../lib/supabase";
 import { useAdTracking, getStoredAdRef } from "../hooks/useAdTracking";
@@ -18,15 +20,11 @@ export function SocialMediaPage() {
   const [form, setForm] = useState({ name: "", email: "", phone: "", company: "", message: "" });
   const [errors, setErrors] = useState<{ name?: string; contact?: string }>({});
   const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const nameInput = useRef<HTMLInputElement>(null);
   const emailInput = useRef<HTMLInputElement>(null);
-  const successHeading = useRef<HTMLHeadingElement>(null);
 
-  useEffect(() => {
-    if (submitted) successHeading.current?.focus();
-  }, [submitted]);
 
   const set = (field: keyof typeof form) => (e: { target: { value: string } }) => {
     setForm((f) => ({ ...f, [field]: e.target.value }));
@@ -60,7 +58,9 @@ export function SocialMediaPage() {
           message: `Social media beheer aanvraag.${form.message ? `\n\n${form.message}` : ""}${getStoredAdRef() ? `\n\n[ref:${getStoredAdRef()}]` : ""}`,
         }),
       });
-      setSubmitted(true);
+      const sent: InquiryForm = "social";
+      track("Aanvraag", { formulier: "social media" });
+      navigate("/bedankt", { state: { from: sent } });
     } catch {
       setError(ts.errorGeneric);
     } finally {
@@ -363,117 +363,78 @@ export function SocialMediaPage() {
             {ts.formSubtitle}
           </p>
 
-          {submitted ? (
-            <div
-              role="status"
+          <form noValidate onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+            <PublicInput
+              ref={nameInput}
+              label={ts.nameLabel}
+              name="name"
+              autoComplete="name"
+              aria-required="true"
+              value={form.name}
+              onChange={set("name")}
+              placeholder={ts.namePlaceholder}
+              error={errors.name}
+            />
+            <PublicInput
+              ref={emailInput}
+              label={ts.emailLabel}
+              name="email"
+              {...EMAIL_INPUT}
+              value={form.email}
+              onChange={set("email")}
+              placeholder={t.contact.emailPlaceholder}
+              aria-invalid={errors.contact ? true : undefined}
+            />
+            <PublicInput
+              label={ts.phoneLabel}
+              name="phone"
+              {...PHONE_INPUT}
+              value={form.phone}
+              onChange={set("phone")}
+              placeholder={ts.phonePlaceholder}
+              hint={ts.phoneHint}
+              error={errors.contact}
+            />
+            <PublicInput
+              label={ts.companyLabel}
+              name="organization"
+              autoComplete="organization"
+              value={form.company}
+              onChange={set("company")}
+              placeholder={ts.companyPlaceholder}
+            />
+            <PublicTextarea
+              label={ts.messageLabel}
+              name="message"
+              autoComplete="off"
+              rows={3}
+              value={form.message}
+              onChange={set("message")}
+              placeholder={ts.messagePlaceholder}
+            />
+
+            {error && (
+              <p className="pdc-form-error" role="alert">
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              className="pdc-btn pdc-btn-solid pdc-svc-submit pdc-submit"
+              disabled={loading}
+              aria-busy={loading || undefined}
               style={{
-                border: "1px solid rgba(200,144,90,0.3)",
-                padding: "48px 36px",
-                textAlign: "center",
+                padding: "18px 40px",
+                fontSize: "11px",
+                fontWeight: 800,
+                letterSpacing: "0.22em",
+                alignSelf: "flex-start",
               }}
             >
-              <div aria-hidden="true" style={{ color: "#c8905a", fontSize: "28px", marginBottom: "20px" }}>✓</div>
-              <h3
-                ref={successHeading}
-                tabIndex={-1}
-                style={{
-                  color: "#fffbe0",
-                  fontSize: "20px",
-                  fontWeight: 800,
-                  letterSpacing: "-0.01em",
-                  textTransform: "uppercase",
-                  margin: "0 0 12px",
-                  outline: "none",
-                }}
-              >
-                {ts.successTitle}
-              </h3>
-              <p
-                style={{
-                  color: "rgba(255,251,224,0.5)",
-                  fontSize: "13px",
-                  fontWeight: 300,
-                  lineHeight: 1.7,
-                  margin: 0,
-                }}
-              >
-                {ts.successBody}
-              </p>
-            </div>
-          ) : (
-            <form noValidate onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
-              <PublicInput
-                ref={nameInput}
-                label={ts.nameLabel}
-                name="name"
-                autoComplete="name"
-                aria-required="true"
-                value={form.name}
-                onChange={set("name")}
-                placeholder={ts.namePlaceholder}
-                error={errors.name}
-              />
-              <PublicInput
-                ref={emailInput}
-                label={ts.emailLabel}
-                name="email"
-                {...EMAIL_INPUT}
-                value={form.email}
-                onChange={set("email")}
-                placeholder={t.contact.emailPlaceholder}
-                aria-invalid={errors.contact ? true : undefined}
-              />
-              <PublicInput
-                label={ts.phoneLabel}
-                name="phone"
-                {...PHONE_INPUT}
-                value={form.phone}
-                onChange={set("phone")}
-                placeholder={ts.phonePlaceholder}
-                hint={ts.phoneHint}
-                error={errors.contact}
-              />
-              <PublicInput
-                label={ts.companyLabel}
-                name="organization"
-                autoComplete="organization"
-                value={form.company}
-                onChange={set("company")}
-                placeholder={ts.companyPlaceholder}
-              />
-              <PublicTextarea
-                label={ts.messageLabel}
-                name="message"
-                autoComplete="off"
-                rows={3}
-                value={form.message}
-                onChange={set("message")}
-                placeholder={ts.messagePlaceholder}
-              />
-
-              {error && (
-                <p className="pdc-form-error" role="alert">
-                  {error}
-                </p>
-              )}
-
-              <button
-                type="submit"
-                className="pdc-btn pdc-btn-solid pdc-svc-submit pdc-submit"
-                disabled={loading}
-                aria-busy={loading || undefined}
-                style={{
-                  padding: "18px 40px",
-                  fontSize: "11px",
-                  fontWeight: 800,
-                  letterSpacing: "0.22em",
-                  alignSelf: "flex-start",
-                }}
-              >
-                {loading ? ts.submitting : ts.submitButton}
-              </button>
-            </form>
-          )}
+              {loading ? ts.submitting : ts.submitButton}
+            </button>
+          </form>
         </div>
       </div>
 

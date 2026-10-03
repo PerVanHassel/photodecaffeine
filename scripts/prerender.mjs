@@ -38,6 +38,8 @@ const PAGES = [
   { route: "/about", data: [] },
   { route: "/services/automotive", data: ["articles"] },
   { route: "/services/social-media", data: [] },
+  // Not in the sitemap and noindex; prerendered so Vercel serves it instead of the 404.
+  { route: "/bedankt", data: [] },
 ];
 
 function outputPathFor(route) {
