@@ -2,6 +2,7 @@ import { Helmet } from "react-helmet-async";
 import { useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { FormPrivacyNote } from "../components/form/FormPrivacyNote";
+import { Faq } from "../components/Faq";
 import { track } from "../lib/analytics";
 import type { InquiryForm } from "./ThankYouPage";
 import { ArrowLeft } from "lucide-react";
@@ -439,6 +440,8 @@ export function SocialMediaPage() {
           </form>
         </div>
       </div>
+
+      <Faq items={t.faq.social} />
 
       {/* ── Custom CTA ── */}
       <div

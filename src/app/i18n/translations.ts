@@ -93,7 +93,7 @@ export const translations = {
       ],
       owners: [
         { name: "Per van Hassel", role: "Medeoprichter & creative director / strategie" },
-        { name: "Majd Tawashe", role: "Medeoprichter & creative director" },
+        { name: "Majd Tawashe", role: "Fotografie & creative director" },
         { name: "Ryan Chantre", role: "Medeoprichter & creative lead" },
       ],
       learnMore: "Meer over PDC →",
@@ -365,6 +365,61 @@ export const translations = {
       portfolio: "Portfolio",
       about: "Over ons",
       clientPortal: "Klantportaal",
+    },
+    faq: {
+      label: "Veelgestelde vragen",
+      automotive: [
+        {
+          q: "Wat kost een shoot?",
+          a: "Een shoot van één voertuig kost €50: een uur op locatie en 15 bewerkte foto's. Meer voertuigen, video of een hele dag? Dan maken we een offerte op maat.",
+        },
+        {
+          q: "Rekenen jullie reiskosten?",
+          a: "Ja. De reiskosten hangen af van de afstand en spreken we altijd vooraf met je af.",
+        },
+        {
+          q: "Waar fotograferen jullie?",
+          a: "Door heel Nederland, op een plek die bij je voertuig past: je eigen oprit, de showroom of een locatie die we samen kiezen.",
+        },
+        {
+          q: "Wanneer krijg ik de foto's?",
+          a: "Binnen 5 werkdagen na de shoot, in hoge resolutie, via een downloadlink.",
+        },
+        {
+          q: "Mag ik de foto's overal gebruiken?",
+          a: "Ja. Je krijgt een licentie voor persoonlijk en commercieel gebruik: social media, advertenties, je website of een verkoopadvertentie.",
+        },
+        {
+          q: "Wat gebeurt er bij slecht weer?",
+          a: "Dan overleggen we samen. Gaat de shoot die dag niet door, dan plannen we hem opnieuw in.",
+        },
+        {
+          q: "Kan ik bellen met vragen?",
+          a: "Altijd. Bel +31 6 36112514 of mail naar contact@photodecaffeine.com.",
+        },
+      ],
+      social: [
+        {
+          q: "Wat kost social media beheer?",
+          a: "Dat hangt af van je kanalen en hoeveel content je nodig hebt. Je krijgt binnen 24 uur een voorstel op maat.",
+        },
+        {
+          q: "Voor wie is het?",
+          a: "Voor dealers, showrooms, autobedrijven en particuliere eigenaren die willen opvallen op Instagram en TikTok.",
+        },
+        {
+          q: "Wie maakt de content?",
+          a: "Wij zelf: fotografie en video op locatie, door heel Nederland. Je hebt één vast aanspreekpunt.",
+        },
+        {
+          q: "Rekenen jullie reiskosten?",
+          a: "Ja. De reiskosten hangen af van de afstand en spreken we altijd vooraf met je af.",
+        },
+        {
+          q: "Kan ik bellen met vragen?",
+          a: "Altijd. Bel +31 6 36112514 of mail naar contact@photodecaffeine.com.",
+        },
+      ],
     },
     forms: {
       privacyNote: "We gebruiken je gegevens alleen om je aanvraag te beantwoorden. Meer in ons",

@@ -640,3 +640,22 @@ body:has(.pdc-skip-link), body:has(.pdc-404-number) { background-color: #080401;
   .pdc-svc-recent-grid { grid-template-columns: 1fr; }
   .pdc-svc-recent-grid > div { aspect-ratio: 4 / 3; }
 }
+
+/* Frequently asked questions on the service pages (components/Faq.tsx). */
+.pdc-faq { border-top: 1px solid rgba(255,251,224,0.06); padding: 96px 24px; font-family: 'Inter', sans-serif; }
+.pdc-faq-inner { max-width: 760px; margin: 0 auto; }
+.pdc-faq-label { margin: 0 0 32px; color: rgba(255,251,224,0.55); font-size: 10px; font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase; text-align: center; }
+.pdc-faq-item { border-top: 1px solid rgba(255,251,224,0.12); }
+.pdc-faq-item:last-child { border-bottom: 1px solid rgba(255,251,224,0.12); }
+.pdc-faq-item summary {
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  padding: 22px 0; cursor: pointer; list-style: none;
+  color: #fffbe0; font-size: 16px; font-weight: 600; line-height: 1.4;
+}
+.pdc-faq-item summary::-webkit-details-marker { display: none; }
+.pdc-faq-item summary::after { content: "+"; flex-shrink: 0; color: #c8905a; font-size: 22px; font-weight: 300; transition: transform 0.2s ease; }
+.pdc-faq-item[open] summary::after { transform: rotate(45deg); }
+.pdc-faq-item summary:focus-visible { outline: 2px solid #c8905a; outline-offset: 4px; }
+.pdc-faq-item p { margin: 0 0 24px; max-width: 640px; color: rgba(255,251,224,0.7); font-size: 15px; line-height: 1.75; }
+@media (max-width: 767px) { .pdc-faq { padding: 64px 20px; } }
+@media (prefers-reduced-motion: reduce) { .pdc-faq-item summary::after { transition: none; } }

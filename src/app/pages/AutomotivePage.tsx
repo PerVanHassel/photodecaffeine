@@ -8,6 +8,7 @@ import { portalFetch } from "../../lib/supabase";
 import { useLanguage } from "../context/LanguageContext";
 import { AUTOMOTIVE_GALLERY_TITLE, usePortfolio, visibleArticles } from "../lib/siteData";
 import { PortfolioTile } from "../components/PortfolioTile";
+import { Faq } from "../components/Faq";
 import { useAdTracking, getStoredAdRef } from "../hooks/useAdTracking";
 import { ArrowLeft } from "lucide-react";
 import heroSmall from "@/assets/web/automotive-hero-1000.webp";
@@ -576,6 +577,8 @@ export function AutomotivePage() {
           </Link>
         </section>
       )}
+
+      <Faq items={t.faq.automotive} />
 
       {/* ── Custom packages CTA ── */}
       <div
