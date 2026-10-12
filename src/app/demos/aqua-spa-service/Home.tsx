@@ -104,13 +104,13 @@ function Hero() {
         </div>
         <div className="hero__media">
           <img
-            src={`${IMG}/dakterras-1024.jpg`}
-            srcSet={`${IMG}/dakterras-1024.jpg 1024w, ${IMG}/dakterras-1536.jpg 1536w`}
+            src={`${IMG}/spa-water-1024.jpg`}
+            srcSet={`${IMG}/spa-water-1024.jpg 1024w, ${IMG}/spa-water-1536.jpg 1536w`}
             sizes="(max-width: 899px) 100vw, 44vw"
             width={1024}
             height={683}
             decoding="async"
-            alt="Ingebouwde spa op een houten dakterras bij zonsondergang, met de cover ernaast."
+            alt="Buitenspa met houten ombouw aan het water, met de cover opengeklapt ernaast."
           />
         </div>
       </div>
@@ -166,12 +166,12 @@ function Statement() {
         </div>
         <div className="band" data-reveal>
           <img
-            src={`${IMG}/terras-zee-1024.jpg`}
+            src={`${IMG}/spa-tuin-1024.jpg`}
             width={1024}
             height={360}
             loading="lazy"
             decoding="async"
-            alt="Vierkante jacuzzi met houten ombouw en rieten zitbanken op een terras aan zee."
+            alt="Ingebouwde spa op een terras in een verzorgde tuin, met gazon en borders."
           />
         </div>
       </div>
@@ -194,12 +194,12 @@ function Services() {
         <div className="bento">
           <article className="cell cell--lead" data-reveal>
             <img
-              src={`${IMG}/bruisend-683.jpg`}
+              src={`${IMG}/bubbels-683.jpg`}
               width={683}
               height={1024}
               loading="lazy"
               decoding="async"
-              alt="Close-up van bruisend water in een jacuzzi met bedieningsknoppen op de rand."
+              alt="Bruisend water in een spa met blauwe onderwaterverlichting, handdoeken op de rand."
             />
             <div className="cell__body">
               <h3>Jacuzzi's en whirlpools</h3>
@@ -364,14 +364,14 @@ function Energie() {
       <div className="wrap energie">
         <div className="promo" data-reveal>
           <img
-            src={`${IMG}/meer-1024.jpg`}
-            srcSet={`${IMG}/meer-1024.jpg 1024w, ${IMG}/meer-1536.jpg 1536w`}
+            src={`${IMG}/schuim-1024.jpg`}
+            srcSet={`${IMG}/schuim-1024.jpg 1024w, ${IMG}/schuim-1536.jpg 1536w`}
             sizes="(max-width: 979px) 100vw, 62vw"
             width={1024}
             height={683}
             loading="lazy"
             decoding="async"
-            alt="Twee mensen ontspannen in een buitenjacuzzi aan een meer."
+            alt="Bovenaanzicht van bruisend spawater naast een houten terras met glazen."
           />
           <div className="promo__body">
             <h2>Laat uw spa verwarmen wanneer stroom goedkoop is</h2>
