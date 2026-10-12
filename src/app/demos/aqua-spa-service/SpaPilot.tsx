@@ -1,6 +1,20 @@
 import { useMemo, useRef, useState, type FormEvent } from "react";
 import { SPA_BRANDS } from "./data";
-import { BELMOMENT_OPTIES, ChoiceChips, DonePanel, Field, IMG, SubmitButton, TEL, TEL_LABEL, mailto, settle, useValidation } from "./shared";
+import {
+  BELMOMENT_OPTIES,
+  BelmomentChips,
+  DonePanel,
+  Field,
+  IMG,
+  PrivacyNote,
+  SubmitButton,
+  TEL,
+  TEL_LABEL,
+  belmomentTekst,
+  mailto,
+  settle,
+  useValidation,
+} from "./shared";
 
 const RULES = {
   naam: { required: true },
@@ -8,6 +22,30 @@ const RULES = {
   email: { required: true, email: true },
   toestel: { required: true },
 };
+
+/*
+ * Hoe het werkt, nagekeken bij de fabrikant (Zavepower, 12-10-2026): Balboa BP
+ * en Gecko in.ye, wifi op 2,4 GHz, in de app een maximumprijs, de temperatuur,
+ * een planner voor wanneer u in bad wilt, en meteen verwarmen.
+ */
+const STAPPEN = [
+  {
+    title: "Wij plaatsen een kastje op uw besturing",
+    body: "Spa Pilot komt op de besturing die al in uw spa zit, een Balboa BP of een Gecko in.ye. Er gaat niets uit. Wij sluiten het aan en verbinden het met uw wifi. Dat duurt ongeveer een uur.",
+  },
+  {
+    title: "Het volgt de stroomprijs per kwartier",
+    body: "De stroomprijzen voor de volgende dag liggen vooraf vast. Spa Pilot leest ze en zoekt de goedkoopste kwartieren uit om te verwarmen. Staat de prijs hoog, dan wacht hij.",
+  },
+  {
+    title: "U stelt de grenzen in de app",
+    body: "U kiest de temperatuur en tot welke prijs hij mag verwarmen. Zegt u wanneer u in bad wilt, dan is het water op dat moment warm, verwarmd in de goedkoopste kwartieren ervoor.",
+  },
+  {
+    title: "U houdt zelf de controle",
+    body: "Wilt u meteen warm water, dan zet u de verwarming in de app gewoon aan. U ziet er ook wat uw spa verbruikt, ook als u niet thuis bent.",
+  },
+];
 
 const EISEN = [
   {
@@ -55,7 +93,7 @@ export function SpaPilot() {
         `Merk en type spa: ${d.get("toestel")}`,
         `Besturing: ${d.get("besturing") || "onbekend"}`,
         `Dynamisch tarief: ${d.get("tarief") || "niet opgegeven"}`,
-        `Voorkeur belmoment: ${belmoment}`,
+        `Voorkeur belmoment: ${belmomentTekst(belmoment)}`,
         "",
         `Naam: ${d.get("naam")}`,
         `Telefoon: ${d.get("telefoon")}`,
@@ -98,7 +136,46 @@ export function SpaPilot() {
         </div>
       </section>
 
+      {/* Eerst wat het is en hoe het werkt, pas daarna wat u ervoor nodig heeft. */}
       <section className="section">
+        <div className="wrap flow">
+          <div className="flow__head" data-reveal>
+            <h2>Wat is Spa Pilot?</h2>
+            <p>
+              Een spa staat dag en nacht op temperatuur, en het verwarmen kost het meeste stroom. Met een dynamisch
+              energiecontract betaalt u elk kwartier een andere prijs. Op sommige momenten van de dag is stroom veel
+              goedkoper dan op andere.
+            </p>
+            <p>
+              Spa Pilot schuift het verwarmen op naar die goedkope momenten. Een goed geïsoleerde spa koelt maar
+              langzaam af, dus het water is warm wanneer u erin wilt.
+            </p>
+          </div>
+          <ol className="flow__steps" data-reveal>
+            {STAPPEN.map((s) => (
+              <li key={s.title}>
+                <h3>{s.title}</h3>
+                <p>{s.body}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section className="section" style={{ paddingTop: 0 }}>
+        <div className="wrap">
+          <div className="callout callout--plain" data-reveal>
+            <i className="ph ph-info" aria-hidden="true" />
+            <p>
+              Wat het oplevert hangt af van uw tarief en hoe u de spa gebruikt. Wij draaien het nu bij eigen klanten en
+              zetten hier pas cijfers neer als die een heel seizoen achter de rug hebben. Liever geen belofte dan een
+              belofte die niet klopt.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="section" style={{ paddingTop: 0 }}>
         <div className="wrap">
           <div className="section__head" data-reveal>
             <h2>Wat u nodig heeft</h2>
@@ -112,41 +189,6 @@ export function SpaPilot() {
                 <p>{e.body}</p>
               </article>
             ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="section" style={{ paddingTop: 0 }}>
-        <div className="wrap pilotprice" data-reveal>
-          <div>
-            <h2>Wat het kost</h2>
-            <p>
-              Installeren duurt ongeveer een uur. Wij sluiten aan, koppelen aan uw wifi en zetten de grenzen samen met u
-              goed.
-            </p>
-          </div>
-          <dl>
-            <div>
-              <dt>Het kastje</dt>
-              <dd>vanaf &euro; 495</dd>
-            </div>
-            <div>
-              <dt>Geplaatst door ons</dt>
-              <dd>vanaf &euro; 695</dd>
-            </div>
-          </dl>
-        </div>
-      </section>
-
-      <section className="section" style={{ paddingTop: 0 }}>
-        <div className="wrap">
-          <div className="callout callout--plain" data-reveal>
-            <i className="ph ph-info" aria-hidden="true" />
-            <p>
-              Wat het oplevert hangt af van uw tarief en hoe u de spa gebruikt. Wij draaien het nu bij eigen klanten en
-              zetten hier pas cijfers neer als die een heel seizoen achter de rug hebben. Liever geen belofte dan een
-              belofte die niet klopt.
-            </p>
           </div>
         </div>
       </section>
@@ -189,6 +231,28 @@ export function SpaPilot() {
         </div>
       </section>
 
+      <section className="section" style={{ paddingTop: 0 }}>
+        <div className="wrap pilotprice" data-reveal>
+          <div>
+            <h2>Wat het kost</h2>
+            <p>
+              Installeren duurt ongeveer een uur. Wij sluiten aan, koppelen aan uw wifi en zetten de grenzen samen met u
+              goed.
+            </p>
+          </div>
+          <dl>
+            <div>
+              <dt>Het kastje</dt>
+              <dd>vanaf &euro; 495</dd>
+            </div>
+            <div>
+              <dt>Geplaatst door ons</dt>
+              <dd>vanaf &euro; 695</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
       <section className="section" id="pilot-vraag" style={{ paddingTop: 0 }}>
         <div className="wrap request">
           <div className="request__intro" data-reveal>
@@ -214,18 +278,13 @@ export function SpaPilot() {
                   <Field v={v} id="sp-tarief" name="tarief" label="Heeft u een dynamisch tarief?" hint="Ja, nee, of weet ik niet." />
                 </div>
                 <Field v={v} id="sp-vraag" name="vraag" label="Uw vraag" textarea minHeight={90} />
-                <ChoiceChips
-                  label="Wanneer kunnen wij u het beste bellen?"
-                  name="belmoment"
-                  options={BELMOMENT_OPTIES}
-                  value={belmoment}
-                  onChange={setBelmoment}
-                />
+                <BelmomentChips value={belmoment} onChange={setBelmoment} />
                 <div className="formfoot">
                   <SubmitButton busy={busy} icon="ph-paper-plane-tilt">
                     Verstuur uw vraag
                   </SubmitButton>
                 </div>
+                <PrivacyNote />
               </form>
             ) : (
               <DonePanel

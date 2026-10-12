@@ -105,6 +105,11 @@
 .ass .choice__chip input{position:absolute;opacity:0;width:0;height:0}
 .ass .choice__chip[data-on="true"]{background:var(--btn-bg);color:var(--btn-ink);border-color:var(--btn-bg)}
 .ass .choice__chip:focus-within{outline:2px solid var(--accent);outline-offset:3px}
+.ass .choice__sub{margin-left:7px;font-size:.8rem;opacity:.72}
+
+/* Onder elk formulier: waarvoor de gegevens dienen */
+.ass .privacynote{margin-top:18px;font-size:.85rem;color:var(--ink-3)}
+.ass .privacynote a{color:var(--accent);font-weight:500}
 
 /* Melding in een kader */
 .ass .callout{
@@ -194,4 +199,23 @@
   outline:none;border-color:var(--accent);
   box-shadow:0 0 0 3px rgba(39,66,141,.22);
   box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+/* Privacyverklaring en algemene voorwaarden */
+.ass .legal__concept{max-width:72ch}
+.ass .legal{max-width:72ch;margin-top:clamp(28px,4vw,44px)}
+.ass .legal section + section{margin-top:clamp(28px,4vw,40px)}
+.ass .legal h2{font-size:clamp(1.3rem,2.2vw,1.6rem)}
+.ass .legal p{margin-top:12px;color:var(--ink-2)}
+.ass .legal ul{margin-top:12px;display:grid;gap:8px}
+.ass .legal li{position:relative;padding-left:20px;color:var(--ink-2)}
+.ass .legal li::before{
+  content:"";position:absolute;left:4px;top:.72em;
+  width:6px;height:6px;border-radius:50%;background:var(--accent);
+}
+/* Nog in te vullen of na te kijken, alleen zolang het een concept is */
+.ass mark.todo{
+  color:inherit;border-radius:4px;padding:0 .25em;
+  background:rgba(224,165,38,.28);
+  background:color-mix(in srgb, #e0a526 30%, transparent);
 }

@@ -3,9 +3,18 @@ import { Helmet } from "react-helmet-async";
 import { Link, useLocation, useSearchParams } from "react-router";
 import { Cover } from "./Cover";
 import { Home } from "./Home";
+import { Privacy, Voorwaarden } from "./Legal";
 import { Parts } from "./Parts";
 import { SpaPilot } from "./SpaPilot";
 import { IMG, Logo, MAIL, TEL, TEL_LABEL } from "./shared";
+// Letter en iconen komen uit het project zelf, niet van Google Fonts of een CDN:
+// blokkeert een netwerk die, dan bleef de menuknop op telefoon leeg.
+import "@fontsource/geist/400.css";
+import "@fontsource/geist/500.css";
+import "@fontsource/geist/600.css";
+import "@fontsource/geist/700.css";
+import "@phosphor-icons/web/regular";
+import "@phosphor-icons/web/fill";
 import "./aqua.css";
 import "./pages.css";
 
@@ -17,6 +26,8 @@ import "./pages.css";
  *   onderdelen   onderdelen aanvragen (?p=webshop komt hier ook uit)
  *   cover        het coverformulier
  *   spapilot     Spa Pilot: uitleg, vereisten en een vraag stellen
+ *   privacy      de privacyverklaring (concept)
+ *   voorwaarden  de algemene voorwaarden (concept)
  *   brandkit     het brand kit-bord, bedoeld om aan de klant te tonen
  *
  * Bijgewerkt na het gesprek van 24-09-2026: de webshop is eruit. Arjan wil geen
@@ -28,7 +39,7 @@ import "./pages.css";
  * meekleurt.
  */
 
-type View = "home" | "onderdelen" | "cover" | "spapilot" | "brandkit";
+type View = "home" | "onderdelen" | "cover" | "spapilot" | "privacy" | "voorwaarden" | "brandkit";
 type Theme = "light" | "dark";
 
 const THEME_KEY = "ass-theme";
@@ -44,9 +55,13 @@ export function AquaSpaServiceDemo() {
         ? "cover"
         : p === "spapilot"
           ? "spapilot"
-          : p === "brandkit"
-            ? "brandkit"
-            : "home";
+          : p === "privacy"
+            ? "privacy"
+            : p === "voorwaarden"
+              ? "voorwaarden"
+              : p === "brandkit"
+                ? "brandkit"
+                : "home";
 
   const [theme, setTheme] = useState<Theme | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -143,6 +158,8 @@ export function AquaSpaServiceDemo() {
     onderdelen: "Onderdelen aanvragen | Aqua Spa Service",
     cover: "Cover op maat | Aqua Spa Service",
     spapilot: "Spa Pilot | Aqua Spa Service",
+    privacy: "Privacyverklaring | Aqua Spa Service",
+    voorwaarden: "Algemene voorwaarden | Aqua Spa Service",
     brandkit: "Brand kit | Aqua Spa Service",
   };
   const title = TITLES[view];
@@ -156,11 +173,6 @@ export function AquaSpaServiceDemo() {
     >
       <Helmet>
         <title>{title}</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet" />
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css" />
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css" />
       </Helmet>
 
       <a className="skip" href="#ass-main">
@@ -224,6 +236,8 @@ export function AquaSpaServiceDemo() {
         {view === "onderdelen" && <Parts />}
         {view === "cover" && <Cover />}
         {view === "spapilot" && <SpaPilot />}
+        {view === "privacy" && <Privacy />}
+        {view === "voorwaarden" && <Voorwaarden />}
         {view === "brandkit" && (
           <section className="brandkit">
             <div className="wrap">
@@ -280,6 +294,10 @@ export function AquaSpaServiceDemo() {
           <div className="foot__base">
             <span>Copyright 2026 Aqua Spa Service</span>
             <span>Ondernemingsnummer en btw: BE 0883.523.510</span>
+            <nav className="foot__legal" aria-label="Juridisch">
+              <Link to={{ search: "?p=privacy", hash: "" }}>Privacyverklaring</Link>
+              <Link to={{ search: "?p=voorwaarden", hash: "" }}>Algemene voorwaarden</Link>
+            </nav>
           </div>
         </div>
       </footer>

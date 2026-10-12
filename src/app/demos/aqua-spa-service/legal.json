@@ -1,0 +1,250 @@
+{
+  "privacy": {
+    "title": "Privacyverklaring",
+    "lead": "Hoe wij omgaan met de gegevens die u ons geeft via deze website, per e-mail of aan de telefoon. Kort gezegd: wij vragen alleen wat nodig is om u te helpen, en gebruiken het nergens anders voor.",
+    "versie": "12 oktober 2026",
+    "sections": [
+      {
+        "h": "Wie wij zijn",
+        "blocks": [
+          { "p": "Aqua Spa Service is de handelsnaam van Arjan Houter, eenmanszaak, Sluisstraat 31, 9130 Verrebroek, ondernemingsnummer BE 0883.523.510. Wij zijn verantwoordelijk voor de gegevens die u ons geeft." },
+          { "p": "Vragen over uw gegevens? Mail naar info@aquaspaservice.be of bel 0486 84 21 05." }
+        ]
+      },
+      {
+        "h": "Welke gegevens wij gebruiken",
+        "blocks": [
+          {
+            "ul": [
+              "Wat u invult in een formulier op deze website: uw naam, telefoonnummer, e-mailadres, postcode en gemeente, het merk en type van uw toestel, uw vraag, het moment waarop wij u mogen bellen en, als u die meestuurt, een foto.",
+              "Wat u ons per e-mail of aan de telefoon vertelt over uw toestel en het probleem.",
+              "Geeft u ons een opdracht, dan ook uw adres en, als u een bedrijf bent, uw btw-nummer. Die hebben wij nodig voor de interventie en de factuur."
+            ]
+          },
+          { "p": "Gevoelige gegevens, zoals over uw gezondheid, hebben wij niet nodig. Zet ze dus niet in een formulier." }
+        ]
+      },
+      {
+        "h": "Waarvoor wij ze gebruiken",
+        "blocks": [
+          {
+            "ul": [
+              "Om uw vraag te beantwoorden, u terug te bellen en u een prijs of offerte te sturen. Dat doen wij op uw verzoek, voor er een overeenkomst is.",
+              "Om de herstelling, levering of plaatsing uit te voeren en te factureren. Dat is nodig voor de overeenkomst met u.",
+              "Om onze boekhouding te bewaren, zoals de wet dat van ons vraagt.",
+              "Om bij een volgende interventie te weten welk toestel u heeft en wat er eerder aan gedaan is. Dat is ons gerechtvaardigd belang, en het scheelt u vaak een verplaatsing."
+            ]
+          },
+          { "p": "Wij gebruiken uw gegevens niet voor reclame, sturen u geen nieuwsbrief en verkopen ze aan niemand." }
+        ]
+      },
+      {
+        "h": "Wie uw gegevens ziet",
+        "blocks": [
+          { "p": "Uw gegevens zijn er voor Arjan Houter. Een paar dienstverleners verwerken ze voor ons, en alleen voor wat hierboven staat:" },
+          {
+            "ul": [
+              "Billit, ons programma voor offertes en facturen.",
+              "[[hostingbedrijf, nog te kiezen]], waar deze website en onze e-mail draaien.",
+              "onze webbouwer, die de website onderhoudt.",
+              "[[boekhouder, als die er is]], voor de boekhouding."
+            ]
+          },
+          { "p": "Met elk van hen maken wij afspraken over hoe zij uw gegevens beschermen. Aan anderen geven wij uw gegevens alleen als de wet ons daartoe verplicht." },
+          { "p": "[[Nakijken bij livegang: blijven alle gegevens in de Europese Unie? Zo niet, dan hier vermelden waarheen en op welke grond.]]" }
+        ]
+      },
+      {
+        "h": "Hoe lang wij ze bewaren",
+        "blocks": [
+          {
+            "ul": [
+              "Een vraag of aanvraag zonder opdracht: [[voorstel: tot één jaar na ons laatste contact]]. Daarna wissen wij ze.",
+              "Uw klantgegevens na een opdracht: [[voorstel: tot vijf jaar na uw laatste interventie]], zodat wij weten wat er aan uw toestel gebeurd is.",
+              "Facturen en wat daarbij hoort: zo lang als de wet voorschrijft, nu tien jaar."
+            ]
+          }
+        ]
+      },
+      {
+        "h": "Cookies en wat deze website bijhoudt",
+        "blocks": [
+          { "p": "Deze website plaatst geen cookies om u te volgen en gebruikt geen statistiekdiensten. De lettertypes en iconen komen van onze eigen server, niet van een ander bedrijf." },
+          { "p": "Kiest u de lichte of de donkere weergave, dan onthoudt uw browser die keuze op uw eigen toestel. Daar kunnen wij niet bij." },
+          { "p": "Zoals bij elke website houdt de server kort technische gegevens bij, zoals uw IP-adres, om de site veilig te houden." },
+          { "p": "De links naar Google Maps en Facebook openen die diensten pas als u erop klikt. Vanaf dan gelden hun regels." },
+          { "p": "[[Nakijken bij livegang: komt er toch statistiek of een ingebouwde kaart op de site, dan dit stuk aanpassen.]]" }
+        ]
+      },
+      {
+        "h": "Uw rechten",
+        "blocks": [
+          { "p": "U mag altijd vragen welke gegevens wij van u hebben, en ze laten verbeteren of wissen. U kunt ook vragen het gebruik ervan te beperken, er bezwaar tegen maken, of uw gegevens krijgen in een bestand dat u elders kunt gebruiken." },
+          { "p": "Mail daarvoor naar info@aquaspaservice.be. Wij antwoorden binnen een maand. Gegevens die wij wettelijk moeten bewaren, zoals facturen, kunnen wij pas wissen als die termijn voorbij is." }
+        ]
+      },
+      {
+        "h": "Hoe wij ze beveiligen",
+        "blocks": [
+          { "p": "De website gebruikt een beveiligde verbinding (https). Alleen wie uw gegevens nodig heeft voor zijn werk, kan erbij, met een eigen wachtwoord." }
+        ]
+      },
+      {
+        "h": "Een klacht",
+        "blocks": [
+          { "p": "Bent u niet tevreden over hoe wij met uw gegevens omgaan, laat het ons dan eerst weten, dan zoeken wij samen een oplossing. U kunt ook een klacht indienen bij de Gegevensbeschermingsautoriteit, Drukpersstraat 35, 1000 Brussel, www.gegevensbeschermingsautoriteit.be." }
+        ]
+      },
+      {
+        "h": "Wijzigingen",
+        "blocks": [
+          { "p": "Dit is de versie van 12 oktober 2026. Passen wij deze verklaring aan, dan staat de nieuwe datum hier." }
+        ]
+      }
+    ]
+  },
+  "voorwaarden": {
+    "title": "Algemene voorwaarden",
+    "lead": "Wat u van ons mag verwachten en wat wij van u vragen, bij elke herstelling, elk onderhoud en elke levering.",
+    "versie": "12 oktober 2026",
+    "sections": [
+      {
+        "h": "Wie wij zijn en wanneer deze voorwaarden gelden",
+        "blocks": [
+          { "p": "Aqua Spa Service is de handelsnaam van Arjan Houter, eenmanszaak, Sluisstraat 31, 9130 Verrebroek, ondernemingsnummer BE 0883.523.510, info@aquaspaservice.be, 0486 84 21 05." },
+          { "p": "Deze voorwaarden gelden voor elke offerte, herstelling, elk onderhoud en elke levering van onderdelen, covers en Spa Pilot, tenzij wij samen schriftelijk iets anders afspreken. Bent u een consument, dan gaan de wettelijke regels die u beschermen altijd voor." }
+        ]
+      },
+      {
+        "h": "Offertes en prijzen",
+        "blocks": [
+          {
+            "ul": [
+              "Voor een herstelling geven wij zelden vooraf een vaste prijs, want eerst moet de oorzaak gevonden worden. Na de diagnose zeggen wij wat de herstelling kost, en pas als u akkoord gaat, beginnen wij eraan.",
+              "Voorrijkosten: € 95 exclusief btw, binnen 50 kilometer van Verrebroek. [[Wat geldt verder dan 50 kilometer?]]",
+              "Uurtarief: € 75 exclusief btw. Het eerste uur rekenen wij altijd volledig aan, ook als het werk sneller klaar is. Daarna rekenen wij per kwartier.",
+              "Onderdelen rekenen wij apart aan, tegen de prijs die wij u vooraf meedelen.",
+              "Een offerte blijft [[30 dagen]] geldig."
+            ]
+          },
+          { "p": "[[Nakijken: aan particulieren moeten prijzen inclusief btw getoond worden. Welk btw-tarief geldt op een herstelling, 21 of 6 procent? Dan zetten wij hier en op de site de bedragen inclusief btw.]]" }
+        ]
+      },
+      {
+        "h": "De interventie",
+        "blocks": [
+          {
+            "ul": [
+              "Wij komen op het afgesproken moment. Lukt dat niet, dan laten wij het u zo snel mogelijk weten.",
+              "U zorgt dat wij vlot bij het toestel kunnen, met stroom in de buurt. Kunnen wij door een oorzaak bij u niet aan het werk, dan rekenen wij de voorrijkosten en de tijd die wij er waren aan.",
+              "Loont een herstelling niet meer, dan zeggen wij dat eerlijk. U betaalt dan de voorrijkosten en de tijd van de diagnose.",
+              "Opblaasbare spa's herstellen wij niet, en wij leveren er ook geen onderdelen voor."
+            ]
+          }
+        ]
+      },
+      {
+        "h": "Onderdelen op aanvraag",
+        "blocks": [
+          {
+            "ul": [
+              "U zegt welk onderdeel u zoekt. Wij zoeken het op en sturen u de prijs en de levertijd. Pas als u akkoord gaat, bestellen wij het.",
+              "De levertijd komt van onze leverancier en is een richtlijn. Verandert ze sterk, dan laten wij het u meteen weten.",
+              "Een geleverd onderdeel blijft van ons tot het volledig betaald is."
+            ]
+          }
+        ]
+      },
+      {
+        "h": "Covers op maat",
+        "blocks": [
+          {
+            "ul": [
+              "Wij laten een cover maken op de maten die u ons geeft. Controleer ze goed, en bel ons als u twijfelt. Meten wij zelf op, dan zijn wij verantwoordelijk voor de maten.",
+              "Een cover op maat kunnen wij niet terugnemen. Ook het herroepingsrecht geldt er niet voor, omdat hij speciaal voor u gemaakt wordt."
+            ]
+          }
+        ]
+      },
+      {
+        "h": "Spa Pilot",
+        "blocks": [
+          {
+            "ul": [
+              "Spa Pilot werkt alleen met een Balboa BP- of Gecko in.ye-besturing, met wifi op 2,4 GHz bij de spa en met een dynamisch energiecontract. Wij kijken dat vooraf samen met u na.",
+              "Wat u bespaart, hangt af van uw tarief en van hoe u de spa gebruikt. Daarom beloven wij geen bedrag.",
+              "De app komt van de fabrikant. Voor het gebruik van de app gelden ook hun voorwaarden."
+            ]
+          }
+        ]
+      },
+      {
+        "h": "Herroepingsrecht voor consumenten",
+        "blocks": [
+          { "p": "Koopt u als consument iets bij ons zonder dat wij elkaar in een winkel zien, bijvoorbeeld via de website, per e-mail, aan de telefoon of bij u thuis, dan heeft u in de regel 14 dagen bedenktijd. Bij een levering gaan die in op de dag dat u het onderdeel ontvangt, bij een dienst op de dag van de overeenkomst." },
+          { "p": "Wilt u afzien van uw aankoop, laat het ons dan binnen die 14 dagen duidelijk weten, bijvoorbeeld per mail. U stuurt het onderdeel ongebruikt en in de originele verpakking terug binnen 14 dagen, op eigen kosten. Wij betalen u binnen 14 dagen terug." },
+          { "p": "Er is geen bedenktijd voor:" },
+          {
+            "ul": [
+              "een cover of iets anders dat op uw maten gemaakt wordt;",
+              "een dringende herstelling of onderhoud waarvoor u ons zelf bij u thuis liet komen;",
+              "een dienst die op uw uitdrukkelijk verzoek al helemaal is uitgevoerd."
+            ]
+          },
+          { "p": "[[Laten nakijken: deze regels, en het modelformulier voor herroeping dat hier nog bij moet.]]" }
+        ]
+      },
+      {
+        "h": "Betalen",
+        "blocks": [
+          {
+            "ul": [
+              "U krijgt van ons een factuur per e-mail. Betalen kan met een overschrijving of met de QR-code op de factuur, binnen [[14]] dagen na de factuurdatum.",
+              "Betaalt u als consument niet op tijd, dan krijgt u eerst een kosteloze herinnering, met 14 dagen om alsnog te betalen. Pas daarna kunnen wij interest en een vergoeding vragen, binnen de grenzen die de wet daarvoor stelt.",
+              "Bent u een bedrijf en betaalt u niet op tijd, dan is vanaf de vervaldag zonder aanmaning de wettelijke interest voor handelstransacties verschuldigd, plus een forfaitaire vergoeding van € 40."
+            ]
+          }
+        ]
+      },
+      {
+        "h": "Garantie",
+        "blocks": [
+          {
+            "ul": [
+              "Koopt u als consument een nieuw onderdeel, een cover of een Spa Pilot bij ons, dan heeft u twee jaar wettelijke garantie vanaf de levering. Merkt u een gebrek, laat het ons dan weten binnen twee maanden nadat u het opmerkt.",
+              "Op een herstelling geven wij [[aantal maanden, in te vullen door Arjan]] garantie op het werk en op de onderdelen die wij daarbij vervangen. Wij zeggen vooraf welke termijn op uw herstelling geldt.",
+              "De garantie geldt niet bij schade door vorst, door verkeerd gebruik, door water dat niet goed onderhouden is, of als iemand anders intussen aan het toestel heeft gewerkt."
+            ]
+          },
+          { "p": "[[Laten nakijken: geldt voor een onderdeel dat wij bij een consument vervangen toch de wettelijke garantie van twee jaar? Op de site staat nu dat er een kortere termijn geldt.]]" }
+        ]
+      },
+      {
+        "h": "Aansprakelijkheid",
+        "blocks": [
+          {
+            "ul": [
+              "Wij werken zorgvuldig en staan in voor ons werk. [[Verzekering burgerlijke aansprakelijkheid: laten bevestigen.]]",
+              "Wij zijn niet aansprakelijk voor gebreken die er al waren, zoals slechte isolatie of leidingwerk dat iemand anders heeft aangelegd, en ook niet voor schade door gebruik tegen ons advies in.",
+              "Voor onrechtstreekse schade zijn wij niet aansprakelijk, behalve bij opzet of zware fout. De wettelijke rechten van consumenten blijven altijd gelden."
+            ]
+          }
+        ]
+      },
+      {
+        "h": "Klachten",
+        "blocks": [
+          { "p": "Bent u niet tevreden over ons werk of over een factuur, laat het ons dan zo snel mogelijk weten, het liefst per mail met een foto. Wij zoeken samen een oplossing." },
+          { "p": "Komen wij er samen niet uit, dan kunt u als consument terecht bij de Consumentenombudsdienst, www.consumentenombudsdienst.be." }
+        ]
+      },
+      {
+        "h": "Recht en rechtbank",
+        "blocks": [
+          { "p": "Op onze overeenkomsten is het Belgisch recht van toepassing. Bij een geschil zijn de rechtbanken van het gerechtelijk arrondissement Oost-Vlaanderen bevoegd, tenzij de wet een consument een andere rechtbank toekent." },
+          { "p": "Dit is de versie van 12 oktober 2026." }
+        ]
+      }
+    ]
+  }
+}

@@ -1,5 +1,19 @@
 import { useRef, useState, type FormEvent } from "react";
-import { BELMOMENT_OPTIES, ChoiceChips, DonePanel, Field, SubmitButton, TEL, TEL_LABEL, mailto, settle, useValidation } from "./shared";
+import {
+  BELMOMENT_OPTIES,
+  BelmomentChips,
+  ChoiceChips,
+  DonePanel,
+  Field,
+  PrivacyNote,
+  SubmitButton,
+  TEL,
+  TEL_LABEL,
+  belmomentTekst,
+  mailto,
+  settle,
+  useValidation,
+} from "./shared";
 
 const RULES = {
   lengte: { required: true },
@@ -59,7 +73,7 @@ export function Cover() {
         `Telefoon: ${d.get("telefoon")}`,
         `E-mail: ${d.get("email")}`,
         `Postcode en gemeente: ${d.get("plaats")}`,
-        `Voorkeur belmoment: ${belmoment}`,
+        `Voorkeur belmoment: ${belmomentTekst(belmoment)}`,
         `Opmerking: ${d.get("opmerking") || "geen"}`,
       ])
     );
@@ -148,13 +162,7 @@ export function Cover() {
                   <Field v={v} id="cv-plaats" name="plaats" label="Postcode en gemeente" required autoComplete="postal-code" error="Vul uw postcode en gemeente in." />
                 </div>
                 <Field v={v} id="cv-opm" name="opmerking" label="Opmerking" textarea minHeight={90} />
-                <ChoiceChips
-                  label="Wanneer kunnen wij u het beste bellen?"
-                  name="belmoment"
-                  options={BELMOMENT_OPTIES}
-                  value={belmoment}
-                  onChange={setBelmoment}
-                />
+                <BelmomentChips value={belmoment} onChange={setBelmoment} />
 
                 <div className="formfoot">
                   <SubmitButton busy={busy} icon="ph-paper-plane-tilt">
@@ -162,6 +170,7 @@ export function Cover() {
                   </SubmitButton>
                   <span className="hint">U zit nergens aan vast. Wij sturen eerst de prijs.</span>
                 </div>
+                <PrivacyNote />
               </form>
             ) : (
               <DonePanel

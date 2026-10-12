@@ -1,4 +1,5 @@
 import { useCallback, useState, type ChangeEvent, type FocusEvent, type ReactNode } from "react";
+import { Link } from "react-router";
 
 /*
  * Foto's: allemaal van Unsplash (unsplash.com/license: gratis, ook commercieel,
@@ -13,8 +14,25 @@ export const TEL = "tel:+32486842105";
 export const TEL_LABEL = "0486 84 21 05";
 export const MAIL = "info@aquaspaservice.be";
 
-/** Optie op elk aanvraagformulier: wanneer kunnen wij het beste bellen. */
-export const BELMOMENT_OPTIES = ["Ochtend", "Middag", "Avond", "Geen voorkeur"];
+/**
+ * Optie op elk aanvraagformulier: wanneer kunnen wij het beste bellen.
+ * De tijden zijn een voorstel van 12-10-2026 dat Arjan nog bevestigt. De
+ * ochtend begint om 9 uur, zodat het klopt met "bereikbaar vanaf 9:00".
+ */
+const BELMOMENTEN = [
+  { label: "Ochtend", tijd: "9 tot 12 uur" },
+  { label: "Middag", tijd: "12 tot 17 uur" },
+  { label: "Avond", tijd: "17 tot 20 uur" },
+  { label: "Geen voorkeur", tijd: "" },
+];
+export const BELMOMENT_OPTIES = BELMOMENTEN.map((b) => b.label);
+const BELMOMENT_TIJDEN = Object.fromEntries(BELMOMENTEN.map((b) => [b.label, b.tijd]));
+
+/** Zoals het in de mail komt, bijvoorbeeld "Ochtend (9 tot 12 uur)". */
+export function belmomentTekst(label: string) {
+  const tijd = BELMOMENT_TIJDEN[label];
+  return tijd ? `${label} (${tijd})` : label;
+}
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -179,6 +197,7 @@ export function ChoiceChips({
   value,
   onChange,
   hint,
+  subs,
 }: {
   label: string;
   name: string;
@@ -186,6 +205,8 @@ export function ChoiceChips({
   value: string;
   onChange: (v: string) => void;
   hint?: string;
+  /** Een korte toevoeging per optie, kleiner gezet, zoals de tijden bij het belmoment. */
+  subs?: Record<string, string>;
 }) {
   return (
     <fieldset className="field choice">
@@ -196,10 +217,35 @@ export function ChoiceChips({
           <label key={o} className="choice__chip" data-on={value === o ? "true" : "false"}>
             <input type="radio" name={name} value={o} checked={value === o} onChange={() => onChange(o)} />
             {o}
+            {subs?.[o] && <span className="choice__sub">{subs[o]}</span>}
           </label>
         ))}
       </div>
     </fieldset>
+  );
+}
+
+/** De belmomentkeuze, op elk formulier gelijk. */
+export function BelmomentChips({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <ChoiceChips
+      label="Wanneer kunnen wij u het beste bellen?"
+      name="belmoment"
+      options={BELMOMENT_OPTIES}
+      subs={BELMOMENT_TIJDEN}
+      value={value}
+      onChange={onChange}
+    />
+  );
+}
+
+/** Onder elk formulier: waarvoor de gegevens dienen, met de weg naar de privacyverklaring. */
+export function PrivacyNote() {
+  return (
+    <p className="privacynote">
+      Wij gebruiken uw gegevens alleen voor uw aanvraag, nooit voor reclame.{" "}
+      <Link to={{ search: "?p=privacy", hash: "" }}>Lees onze privacyverklaring</Link>.
+    </p>
   );
 }
 
