@@ -1,7 +1,21 @@
 import { useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { PART_GROUPS, SPA_BRANDS } from "./data";
-import { BELMOMENT_OPTIES, ChoiceChips, DonePanel, Field, IMG, SubmitButton, TEL, TEL_LABEL, mailto, settle, useValidation } from "./shared";
+import {
+  BELMOMENT_OPTIES,
+  BelmomentChips,
+  DonePanel,
+  Field,
+  IMG,
+  PrivacyNote,
+  SubmitButton,
+  TEL,
+  TEL_LABEL,
+  belmomentTekst,
+  mailto,
+  settle,
+  useValidation,
+} from "./shared";
 
 const RULES = {
   naam: { required: true },
@@ -37,7 +51,7 @@ export function Parts() {
         `Telefoon: ${d.get("telefoon")}`,
         `E-mail: ${d.get("email") || "niet opgegeven"}`,
         `Merk en type: ${d.get("toestel")}`,
-        `Voorkeur belmoment: ${belmoment}`,
+        `Voorkeur belmoment: ${belmomentTekst(belmoment)}`,
         "",
         "Gezocht onderdeel:",
         String(d.get("onderdeel") ?? ""),
@@ -200,18 +214,13 @@ export function Parts() {
                   accept="image/*"
                   hint="Niet verplicht, maar het scheelt ons vaak een heen en weer."
                 />
-                <ChoiceChips
-                  label="Wanneer kunnen wij u het beste bellen?"
-                  name="belmoment"
-                  options={BELMOMENT_OPTIES}
-                  value={belmoment}
-                  onChange={setBelmoment}
-                />
+                <BelmomentChips value={belmoment} onChange={setBelmoment} />
                 <div className="formfoot">
                   <SubmitButton busy={busy} icon="ph-paper-plane-tilt">
                     Verstuur aanvraag
                   </SubmitButton>
                 </div>
+                <PrivacyNote />
               </form>
             ) : (
               <DonePanel

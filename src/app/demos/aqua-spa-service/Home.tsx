@@ -3,15 +3,18 @@ import { Link } from "react-router";
 import { RATES, SPA_BRANDS } from "./data";
 import {
   BELMOMENT_OPTIES,
+  BelmomentChips,
   ChoiceChips,
   DonePanel,
   Field,
   IMG,
   MAIL,
+  PrivacyNote,
   Stars,
   SubmitButton,
   TEL,
   TEL_LABEL,
+  belmomentTekst,
   mailto,
   settle,
   useValidation,
@@ -59,17 +62,21 @@ const CONTACT_RULES = {
   klacht: { required: true },
 };
 
+/*
+ * Spa Pilot staat sinds 12-10-2026 direct onder de opening. Arjan wil het
+ * duidelijk in beeld; onderaan de pagina zag bijna niemand het.
+ */
 export function Home() {
   return (
     <>
       <Hero />
       <Facts />
+      <Energie />
       <Statement />
       <Services />
       <Flow />
       <Reviews />
       <Brands />
-      <Energie />
       <Tarieven />
       <Faq />
       <Contact />
@@ -360,7 +367,7 @@ function Brands() {
 
 function Energie() {
   return (
-    <section className="section" style={{ paddingTop: 0 }}>
+    <section className="section">
       <div className="wrap energie">
         <div className="promo" data-reveal>
           <img
@@ -486,7 +493,7 @@ function Contact() {
         `E-mail: ${d.get("email") || "niet opgegeven"}`,
         `Postcode en gemeente: ${d.get("plaats")}`,
         `Merk en type: ${d.get("toestel") || "niet opgegeven"}`,
-        `Voorkeur belmoment: ${belmoment}`,
+        `Voorkeur belmoment: ${belmomentTekst(belmoment)}`,
         "",
         "Klacht:",
         String(d.get("klacht") ?? ""),
@@ -544,19 +551,14 @@ function Contact() {
                   hint="Bijvoorbeeld: verwarmt niet meer, jets slaan niet aan, lekkage onder het paneel, foutcode op het display."
                   error="Beschrijf kort wat er misgaat."
                 />
-                <ChoiceChips
-                  label="Wanneer kunnen wij u het beste bellen?"
-                  name="belmoment"
-                  options={BELMOMENT_OPTIES}
-                  value={belmoment}
-                  onChange={setBelmoment}
-                />
+                <BelmomentChips value={belmoment} onChange={setBelmoment} />
                 <div className="formfoot">
                   <SubmitButton busy={busy} icon="ph-paper-plane-tilt">
                     Verstuur aanvraag
                   </SubmitButton>
-                  <span className="hint">Wij bellen u terug tijdens de kantooruren.</span>
+                  <span className="hint">Wij bellen u terug in het tijdvak dat u kiest.</span>
                 </div>
+                <PrivacyNote />
               </form>
             ) : (
               <DonePanel

@@ -462,6 +462,8 @@
   display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:space-between;
   color:var(--ink-3);font-size:.875rem;
 }
+.ass .foot__legal{display:flex;flex-wrap:wrap;gap:8px 22px}
+.ass .foot__legal a:hover{color:var(--accent)}
 
 /* ---------- Scroll reveal ---------- */
 @media (prefers-reduced-motion: no-preference){
