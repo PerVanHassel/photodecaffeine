@@ -71,13 +71,13 @@ export function SpaPilot() {
     <>
       <section className="pilothero">
         <img
-          src={`${IMG}/meer-1024.jpg`}
-          srcSet={`${IMG}/meer-1024.jpg 1024w, ${IMG}/meer-1536.jpg 1536w`}
+          src={`${IMG}/schuim-1024.jpg`}
+          srcSet={`${IMG}/schuim-1024.jpg 1024w, ${IMG}/schuim-1536.jpg 1536w`}
           sizes="100vw"
           width={1024}
           height={683}
           decoding="async"
-          alt="Buitenjacuzzi aan een meer bij avondlicht."
+          alt="Bovenaanzicht van bruisend spawater naast een houten terras met glazen."
         />
         <div className="wrap pilothero__body">
           <h1>Uw spa verwarmt wanneer stroom goedkoop is</h1>

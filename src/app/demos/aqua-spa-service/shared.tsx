@@ -1,5 +1,13 @@
 import { useCallback, useState, type ChangeEvent, type FocusEvent, type ReactNode } from "react";
 
+/*
+ * Foto's: allemaal van Unsplash (unsplash.com/license: gratis, ook commercieel,
+ * naamsvermelding niet verplicht). Gekozen op 12-10-2026, geen zichtbare merklogo's.
+ *   spa-water-*  Erik Mclean       unsplash.com/photos/f17NzCj46AM
+ *   spa-tuin-*   Hot Tubs of London unsplash.com/photos/5uq6nHOYRfw
+ *   bubbels-*    Julia Mayo        unsplash.com/photos/Vw5RKO99LDw
+ *   schuim-*     Julia Mayo        unsplash.com/photos/B_u5koIwxWI
+ */
 export const IMG = "/demos/aqua-spa-service";
 export const TEL = "tel:+32486842105";
 export const TEL_LABEL = "0486 84 21 05";

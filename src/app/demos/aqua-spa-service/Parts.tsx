@@ -72,11 +72,11 @@ export function Parts() {
           </div>
           <div className="pagehead__media">
             <img
-              src={`${IMG}/bruisend-683.jpg`}
+              src={`${IMG}/bubbels-683.jpg`}
               width={683}
               height={1024}
               decoding="async"
-              alt="Close-up van bruisend water in een jacuzzi met bedieningsknoppen op de rand."
+              alt="Bruisend water in een spa met blauwe onderwaterverlichting, handdoeken op de rand."
             />
           </div>
         </div>
