@@ -1,0 +1,224 @@
+/* ---------------------------------------------------------------
+   Aqua Spa Service - het coverformulier in stappen (12-10-2026).
+   Zelfde tokens en radiusregel als de rest: knoppen pill, vlakken
+   18px, velden en keuzekaarten 10px. Een accent: --accent.
+   --------------------------------------------------------------- */
+
+.ass .cf-section{padding-top:clamp(32px,5vw,64px)}
+.ass .cf{
+  display:grid;gap:20px;
+  grid-template-areas:"progress" "preview" "main";
+  scroll-margin-top:calc(var(--nav-h) + 16px);
+}
+@media (min-width:980px){
+  .ass .cf{
+    grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);
+    grid-template-areas:"preview progress" "preview main";
+    grid-template-rows:auto 1fr;
+    column-gap:clamp(32px,4vw,56px);row-gap:18px;align-items:start;
+  }
+}
+.ass .cf-progress{grid-area:progress}
+.ass .cf-preview{grid-area:preview}
+.ass .cf-main{grid-area:main;min-width:0}
+@media (min-width:980px){.ass .cf-preview{position:sticky;top:calc(var(--nav-h) + 24px)}}
+
+/* ---------- voortgang ---------- */
+.ass .cf-steps{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.ass .cf-steps button{
+  width:100%;display:flex;flex-direction:column;gap:8px;align-items:flex-start;
+  background:none;border:0;padding:4px 0;font:inherit;color:var(--ink-3);
+  cursor:pointer;text-align:left;
+}
+.ass .cf-steps button:disabled{cursor:default}
+.ass .cf-steps__bar{display:block;width:100%;height:4px;border-radius:999px;background:var(--line);transition:background-color .3s ease}
+.ass .cf-steps__label{font-size:.82rem;font-weight:500;display:none}
+.ass .cf-steps li[data-status="done"] .cf-steps__bar{background:var(--accent);opacity:.55}
+.ass .cf-steps li[data-status="current"] .cf-steps__bar{background:var(--accent)}
+.ass .cf-steps li[data-status="current"] .cf-steps__label{color:var(--ink)}
+.ass .cf-steps li[data-status="done"] button:hover .cf-steps__label{color:var(--accent)}
+.ass .cf-steps__now{margin-top:10px;font-weight:600;display:flex;gap:10px;align-items:baseline}
+.ass .cf-steps__now span{font-weight:400;font-size:.875rem;color:var(--ink-3)}
+@media (min-width:600px){
+  .ass .cf-steps__label{display:block}
+  .ass .cf-steps__now{display:none}
+}
+
+/* ---------- tekening en samenvatting ---------- */
+.ass .cf-preview__card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-surface);
+  padding:clamp(16px,2.4vw,26px);
+}
+.ass .cf-preview__title{font-size:1rem;font-weight:600;letter-spacing:-.01em}
+.ass .cf-svg{display:block;width:100%;height:auto;margin:6px auto 4px;overflow:visible}
+@media (max-width:979px){.ass .cf-svg{max-height:260px}}
+.ass .cf-svg text{font-family:inherit;font-size:15px;fill:var(--ink-2)}
+
+.ass .cf-cover{fill:var(--surface-2);stroke:var(--ink-3);stroke-width:1.5;transition:fill .35s ease}
+.ass .cf-cover.is-empty{fill:none;stroke:var(--line-strong);stroke-dasharray:6 6}
+.ass .cf-fold{stroke-width:1.5;stroke-dasharray:5 5}
+.ass .cf-fold.cf-on-light{stroke:var(--ink-3)}
+.ass .cf-fold.cf-on-dark{stroke:rgba(255,255,255,.6)}
+.ass .cf-svg .cf-foldtext{font-size:13px;letter-spacing:.02em}
+.ass .cf-svg .cf-foldtext.cf-on-light{fill:var(--ink-3)}
+.ass .cf-svg .cf-foldtext.cf-on-dark{fill:rgba(255,255,255,.78)}
+
+.ass .cf-dim line{stroke:var(--ink-3);stroke-width:1.2}
+.ass .cf-svg .cf-dim text{fill:var(--ink-2)}
+.ass .cf-svg .cf-dim__key{font-weight:600;fill:var(--ink)}
+.ass .cf-dim.is-focus line{stroke:var(--accent);stroke-width:2}
+.ass .cf-svg .cf-dim.is-focus text,.ass .cf-svg .cf-dim.is-focus .cf-dim__key{fill:var(--accent);font-weight:600}
+
+.ass .cf-hl path,.ass .cf-hl line{fill:none;stroke:var(--accent);stroke-width:4;stroke-linecap:round}
+.ass .cf-svg .cf-hl text{fill:var(--accent);font-weight:600}
+
+.ass .cf-arrow line,.ass .cf-arrow polyline{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.ass .cf-arrow.cf-on-dark line,.ass .cf-arrow.cf-on-dark polyline{stroke:#ffffff}
+.ass .cf-arrow--mini line,.ass .cf-arrow--mini polyline{stroke-width:2.4}
+
+.ass .cf-strap{fill:none;stroke:var(--ink-3);stroke-width:1.4;stroke-dasharray:3 2.5;transition:fill .2s ease,stroke .2s ease}
+.ass .cf-strap.is-on{fill:var(--accent);stroke:var(--accent);stroke-dasharray:none}
+.ass .cf-spot{cursor:pointer;outline:none}
+.ass .cf-spot__hit{fill:transparent;stroke:transparent;stroke-width:2}
+.ass .cf-spot:hover .cf-strap:not(.is-on){stroke:var(--accent)}
+.ass .cf-spot:focus-visible .cf-spot__hit{stroke:var(--accent)}
+
+.ass .cf-you polyline{fill:none;stroke:var(--ink-3);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.ass .cf-svg .cf-you text{font-size:14px;fill:var(--ink-3)}
+
+.ass .cf-sum{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 18px;margin-top:10px;padding-top:14px;border-top:1px solid var(--line)}
+.ass .cf-sum dt{font-size:.8rem;color:var(--ink-3)}
+.ass .cf-sum dd{margin:2px 0 0;font-weight:500;font-size:.92rem;line-height:1.35}
+.ass .cf-sum__empty{margin-top:10px;padding-top:14px;border-top:1px solid var(--line);color:var(--ink-3);font-size:.9rem}
+/* Op telefoon telt elke centimeter: de tekening blijft, de samenvatting staat aan het einde in het overzicht. */
+@media (max-width:979px){.ass .cf-sum,.ass .cf-sum__empty{display:none}}
+.ass .cf-chipicon{margin-right:6px;font-size:1rem}
+
+/* ---------- een stap ---------- */
+.ass .cf-panel{padding:clamp(22px,3.2vw,36px)}
+.ass .cf-title{font-size:clamp(1.45rem,2.6vw,1.9rem);letter-spacing:-.025em}
+.ass .cf-title:focus{outline:none}
+.ass .cf-title:focus-visible{outline:2px solid var(--accent);outline-offset:6px;border-radius:8px}
+.ass .cf-lead{margin-top:10px;margin-bottom:22px;color:var(--ink-2);max-width:60ch}
+@media (prefers-reduced-motion: no-preference){
+  .ass .cf-step{animation:cf-in .32s cubic-bezier(.16,1,.3,1) both}
+}
+@keyframes cf-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.ass .cf-q{border:0;padding:0;margin:0 0 24px;min-width:0}
+.ass .cf-legend{font-size:1.02rem;font-weight:600;color:var(--ink);padding:0;margin-bottom:4px}
+.ass .cf-legend--sm{font-size:.95rem;font-weight:500}
+.ass .cf-hint{color:var(--ink-3);font-size:.875rem;margin-bottom:10px;max-width:62ch}
+.ass .cf-q .choice__row{margin-top:6px}
+.ass .cf-gap{margin-top:12px}
+
+/* Keuzekaarten */
+.ass .cf-cards{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));margin-top:10px}
+.ass .cf-cards--opties{grid-template-columns:1fr}
+.ass .cf-card{
+  position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:4px;
+  padding:14px 14px 13px;border-radius:var(--r-input);cursor:pointer;
+  border:1px solid var(--line-strong);background:var(--bg);
+  transition:border-color .16s ease,background-color .16s ease,transform .1s ease;
+}
+.ass .cf-card:hover{border-color:var(--ink-3)}
+.ass .cf-card:active{transform:scale(.985)}
+.ass .cf-card input{position:absolute;opacity:0;width:0;height:0}
+.ass .cf-card:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.ass .cf-card[data-on="true"]{
+  border-color:var(--accent);
+  background:var(--brand-50);
+  box-shadow:inset 0 0 0 1px var(--accent);
+}
+.ass .cf-card__art{display:block;width:72px;height:50px;margin-bottom:6px}
+.ass .cf-card__icon{font-size:1.6rem;color:var(--accent);height:50px;display:flex;align-items:center;margin-bottom:6px}
+.ass .cf-card__title{display:block;font-weight:600;font-size:.95rem;line-height:1.3;color:var(--ink)}
+.ass .cf-card__body{display:block;font-size:.84rem;color:var(--ink-3);line-height:1.4}
+.ass .cf-card__check{position:absolute;top:10px;right:10px;font-size:1.15rem;color:var(--accent);opacity:0;transform:scale(.6);transition:opacity .16s ease,transform .16s ease}
+.ass .cf-card[data-on="true"] .cf-card__check{opacity:1;transform:none}
+.ass .cf-card--row{flex-direction:row;align-items:flex-start;gap:14px;padding-right:44px}
+.ass .cf-card--row .cf-card__icon{height:auto;margin:1px 0 0;font-size:1.45rem}
+.ass .cf-card--row .cf-card__body{margin-top:2px}
+
+.ass .cf-mini{width:100%;height:100%;overflow:visible}
+.ass .cf-mini__shape{fill:var(--surface-2);stroke:var(--ink-2);stroke-width:1.6}
+.ass .cf-card[data-on="true"] .cf-mini__shape{fill:var(--surface);stroke:var(--accent)}
+.ass .cf-mini__edge{fill:none;stroke:var(--ink-2);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.ass .cf-card[data-on="true"] .cf-mini__edge{stroke:var(--accent)}
+.ass .cf-mini__you{fill:none;stroke:var(--ink-3);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+
+/* Maten in centimeters */
+.ass .cf-field{margin-bottom:18px}
+.ass .cf-unit{position:relative}
+.ass .cf-unit input{padding-right:48px}
+.ass .cf-unit span{position:absolute;right:15px;top:50%;transform:translateY(-50%);color:var(--ink-3);font-size:.92rem;pointer-events:none}
+.ass .field input:disabled{opacity:.55;cursor:not-allowed}
+.ass .cf-opt{font-weight:400;color:var(--ink-3)}
+.ass .cf-error{display:flex;align-items:flex-start;gap:6px;margin-top:6px;font-size:.875rem;color:var(--danger)}
+.ass .cf-error i{margin-top:3px}
+.ass .cf-warn{display:flex;align-items:flex-start;gap:6px;font-size:.85rem;color:var(--ink-2)}
+.ass .cf-warn i{color:var(--accent);margin-top:3px}
+.ass .cf-toggle{margin:-6px 0 22px}
+
+.ass .cf-with-side{display:grid;gap:8px;align-items:center;margin-bottom:8px}
+@media (min-width:640px){.ass .cf-with-side{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}}
+.ass .cf-side{width:100%;max-width:340px;height:auto;display:block;overflow:visible}
+.ass .cf-side__spa{fill:var(--surface-2);stroke:var(--line-strong)}
+.ass .cf-side .cf-side__label{font-size:16px;fill:var(--ink-3)}
+.ass .cf-side .cf-side__label.is-light{fill:rgba(255,255,255,.85)}
+.ass .cf-side .cf-cover{stroke-width:1.2}
+.ass .cf-side__rok{fill:var(--surface-2);stroke:var(--ink-3);stroke-width:1}
+.ass .cf-side__band{fill:var(--ink-2)}
+.ass .cf-side__clip{fill:var(--ink)}
+.ass .cf-side text{font-family:inherit;font-size:17px}
+
+.ass .cf-linkbtn{
+  background:none;border:0;padding:0;font:inherit;font-weight:500;color:var(--accent);
+  cursor:pointer;text-decoration:underline;text-underline-offset:3px;
+}
+.ass .cf-linkbtn:hover{text-decoration-thickness:2px}
+.ass .cf-q + .cf-linkbtn,.ass .row2 + .cf-linkbtn,.ass .cf-field + .cf-linkbtn{margin:-4px 0 22px}
+
+/* Bandjes */
+.ass .cf-spots{display:grid;gap:14px}
+@media (min-width:640px){.ass .cf-spots{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ass .cf-spots__label{display:block;font-size:.85rem;font-weight:500;color:var(--ink-2)}
+.ass .cf-count{min-height:1.4em;margin-top:10px;font-size:.9rem;color:var(--ink-2)}
+
+/* Kleuren */
+.ass .cf-swatches{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
+.ass .cf-swatch{
+  position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;
+  padding:12px 8px 10px;border-radius:var(--r-input);cursor:pointer;
+  border:1px solid transparent;transition:border-color .16s ease,background-color .16s ease;
+}
+.ass .cf-swatch:hover{background:var(--surface-2)}
+.ass .cf-swatch input{position:absolute;opacity:0;width:0;height:0}
+.ass .cf-swatch:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.ass .cf-swatch[data-on="true"]{border-color:var(--accent);background:var(--brand-50)}
+.ass .cf-swatch__chip{
+  width:44px;height:44px;border-radius:50%;display:grid;place-items:center;
+  box-shadow:0 0 0 1px var(--line-strong);font-size:1.1rem;color:var(--ink);
+}
+.ass .cf-swatch__chip i.is-light{color:#ffffff}
+.ass .cf-swatch__chip.is-unknown{background:transparent;border:1.5px dashed var(--line-strong);box-shadow:none;color:var(--ink-3)}
+.ass .cf-swatch__name{font-size:.84rem;text-align:center;line-height:1.25;color:var(--ink-2)}
+.ass .cf-swatch[data-on="true"] .cf-swatch__name{color:var(--ink);font-weight:500}
+
+/* Overzicht voor verzenden */
+.ass .cf-review{margin-top:8px;padding:18px 20px;border-radius:var(--r-input);background:var(--surface-2)}
+.ass .cf-review h3{font-size:1rem}
+.ass .cf-review dl{margin-top:8px}
+.ass .cf-review dl > div{display:grid;grid-template-columns:7.5rem minmax(0,1fr) auto;gap:4px 12px;align-items:baseline;padding:9px 0}
+.ass .cf-review dl > div + div{border-top:1px solid var(--line)}
+.ass .cf-review dt{font-size:.85rem;color:var(--ink-3)}
+.ass .cf-review dd{margin:0;font-weight:500;font-size:.92rem}
+.ass .cf-review .cf-linkbtn{font-size:.875rem}
+@media (max-width:520px){
+  .ass .cf-review dl > div{grid-template-columns:minmax(0,1fr) auto}
+  .ass .cf-review dd{grid-column:1 / -1;grid-row:2}
+}
+
+/* Navigatie tussen de stappen */
+.ass .cf-nav{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:26px;padding-top:20px;border-top:1px solid var(--line)}
+.ass .cf-panel .privacynote{margin-top:14px}
