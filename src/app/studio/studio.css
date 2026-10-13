@@ -483,6 +483,8 @@ a.s-stat:hover { background: var(--hover); }
 .s-doc-lines th { text-align: left; font-size: 11.5px; color: var(--faint); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 8px 0; border-bottom: 1px solid var(--line-strong); }
 .s-doc-lines td { padding: 10px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
 .s-doc-lines .right { text-align: right; }
+/* Ruimte tussen de getalkolommen; zonder dit liepen Aantal, Prijs en Bedrag in elkaar over. */
+.s-doc-lines th + th, .s-doc-lines td + td { padding-left: 20px; white-space: nowrap; }
 .s-totals { margin-left: auto; width: min(320px, 100%); display: flex; flex-direction: column; }
 .s-totals .s-kv:last-child { font-weight: 700; font-size: 15px; border-top: 1px solid var(--line-strong); }
 .s-line-editor { display: grid; grid-template-columns: minmax(0, 1fr) 80px 120px 34px; gap: 8px; align-items: start; }
