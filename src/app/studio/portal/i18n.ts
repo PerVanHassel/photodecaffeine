@@ -82,7 +82,7 @@ const nl = {
 
   galleryChooseTitle: "Kies je favorieten",
   galleryPhotosTitle: "Je foto's",
-  galleryChooseIntro: "Tik op het hartje bij de foto's die je het mooist vindt. Klaar? Geef je keuze door, dan gaan we ze bewerken.",
+  galleryChooseIntro: "Tik op het hartje bij de foto's die je het mooist vindt. Klaar? Geef je keuze door.",
   galleryDownloadIntro: "Download ze los of allemaal tegelijk.",
   watermarkNote: "Dit zijn voorbeelden met watermerk. De echte foto's krijg je bij levering.",
   noPhotos: "Nog geen foto's",
@@ -288,7 +288,7 @@ const en: PortalText = {
 
   galleryChooseTitle: "Pick your favourites",
   galleryPhotosTitle: "Your photos",
-  galleryChooseIntro: "Tap the heart on the photos you like best. Done? Send us your choice and we'll start editing.",
+  galleryChooseIntro: "Tap the heart on the photos you like best. Done? Send us your choice.",
   galleryDownloadIntro: "Download them one by one or all at once.",
   watermarkNote: "These are watermarked previews. You'll get the real photos on delivery.",
   noPhotos: "No photos yet",
