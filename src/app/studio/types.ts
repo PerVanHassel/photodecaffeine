@@ -11,7 +11,14 @@ export interface GalleryImage {
   id: string;
   url: string;
   fileName: string;
+  /** Admin: a watermarked copy exists. */
+  watermark?: boolean;
+  /** Portal: the client may download this one. */
+  download?: boolean;
 }
+
+/** What a client may download before delivery; after delivery always the original. */
+export type EarlyDownloads = "original" | "watermark" | "none";
 
 export interface StudioEvent {
   id: string;
@@ -57,7 +64,9 @@ export interface Project {
   description: string;
   dueDate: string;
   deliverables: Deliverable[];
-  gallerySettings: { title?: string; subtitle?: string; coverUrl?: string; accentColor?: string };
+  gallerySettings: { title?: string; subtitle?: string; coverUrl?: string; accentColor?: string; earlyDownloads?: EarlyDownloads };
+  /** Portal only: what this client may download right now. */
+  downloads?: EarlyDownloads;
   galleryUrls: string[];
   gallery: GalleryImage[];
   events: StudioEvent[];

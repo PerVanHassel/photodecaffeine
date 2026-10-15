@@ -253,7 +253,7 @@ async function notifyClients(
 r.delete(`${P}/project/:id`, async (c) => {
   const id = c.req.param("id");
   const row = await loadProject(id);
-  await removePrivate((row.gallery_images || []).map((g: any) => g.storage_path));
+  await removePrivate((row.gallery_images || []).flatMap((g: any) => [g.storage_path, g.preview_path]));
   must(await db.from("projects").delete().eq("id", id));
   return c.json({ success: true });
 });
@@ -329,9 +329,13 @@ r.post(`${P}/project/:id/gallery`, async (c) => {
   const last = must(await db.from("gallery_images").select("sort").eq("project_id", id).order("sort", { ascending: false }).limit(1)) as any[];
   let sort = (last[0]?.sort ?? -1) + 1;
   const rows = [];
-  for (const file of files) {
+  for (const [i, file] of files.entries()) {
     const path = await uploadPrivate(`galleries/${id}`, file, { allowVideo: true });
-    rows.push({ project_id: id, url: "", storage_path: path, file_name: file.name, sort: sort++ });
+    // The admin's browser sends a watermarked copy as preview-<index> when it
+    // could make one (not for video, nor for formats it can't decode).
+    const preview = form.get(`preview-${i}`);
+    const previewPath = preview instanceof File ? await uploadPrivate(`galleries/${id}/wm`, preview) : "";
+    rows.push({ project_id: id, url: "", storage_path: path, preview_path: previewPath, file_name: file.name, sort: sort++ });
   }
   must(await db.from("gallery_images").insert(rows));
   return c.json({ project: await respond(id), added: rows.length });
@@ -353,8 +357,24 @@ r.delete(`${P}/project/:id/gallery/:imageId`, async (c) => {
     "Foto niet gevonden",
   ) as any;
   must(await db.from("gallery_images").delete().eq("id", img.id));
-  await removePrivate([img.storage_path]);
+  await removePrivate([img.storage_path, img.preview_path]);
   return c.json({ project: await respond(id) });
+});
+
+// Watermarked copy for a photo uploaded before these existed; made in the
+// admin's browser from the original.
+r.put(`${P}/project/:id/gallery/:imageId/preview`, async (c) => {
+  const id = c.req.param("id");
+  const img = found(
+    await db.from("gallery_images").select("*").eq("id", c.req.param("imageId")).eq("project_id", id).maybeSingle(),
+    "Foto niet gevonden",
+  ) as any;
+  const file = (await c.req.formData()).get("file");
+  if (!(file instanceof File)) fail(400, "Geen bestand ontvangen.");
+  const path = await uploadPrivate(`galleries/${id}/wm`, file);
+  must(await db.from("gallery_images").update({ preview_path: path }).eq("id", img.id));
+  await removePrivate([img.preview_path]);
+  return c.json({ success: true });
 });
 
 // Galleries uploaded before private storage still point at the public

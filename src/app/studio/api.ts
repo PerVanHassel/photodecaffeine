@@ -31,7 +31,7 @@ export async function api<T>(path: string, opts: Options = {}): Promise<T> {
   // Dev-server only: answer from local fixtures (see dev/mock.ts).
   if (import.meta.env.DEV && typeof localStorage !== "undefined" && localStorage.getItem("pdc-mock") === "1") {
     const { mockApi } = await import("./dev/mock");
-    return (await mockApi(path, opts.method || (opts.body !== undefined || opts.form ? "POST" : "GET"), opts.body)) as T;
+    return (await mockApi(path, opts.method || (opts.body !== undefined || opts.form ? "POST" : "GET"), opts.body ?? opts.form)) as T;
   }
   const token = opts.anonymous ? null : await accessToken();
   const headers: Record<string, string> = { Authorization: `Bearer ${token || publicAnonKey}` };

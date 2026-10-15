@@ -5,11 +5,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Heart, ImagePlus, Mail, Star, Trash2, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { del, errorMessage, post, put, upload } from "../../api";
+import { api, del, errorMessage, post, put } from "../../api";
 import { keys, useAction } from "../../queries";
-import type { GalleryImage, Project } from "../../types";
-import { Button, Card, Empty, isVideo, Photo, Pill, TextField, useConfirm } from "../../ui";
+import type { EarlyDownloads, GalleryImage, Project } from "../../types";
+import { Button, Card, Empty, Field, isVideo, Photo, Pill, Segmented, TextField, useConfirm } from "../../ui";
 import { useUnsavedChanges } from "../../unsaved";
+import { watermark } from "../../watermark";
 
 const BATCH = 8;
 
@@ -37,7 +38,13 @@ export function GalleryTab({ project: p }: { project: Project }) {
       // show progress as it goes.
       for (let i = 0; i < media.length; i += BATCH) {
         const chunk = media.slice(i, i + BATCH);
-        const r = await upload<{ project: Project; added: number }>(`/admin/project/${p.id}/gallery`, chunk);
+        const form = new FormData();
+        for (const [j, file] of chunk.entries()) {
+          form.append("files", file);
+          const preview = await watermark(file, file.name);
+          if (preview) form.append(`preview-${j}`, preview);
+        }
+        const r = await api<{ project: Project; added: number }>(`/admin/project/${p.id}/gallery`, { method: "POST", form });
         added += r.added;
         qc.setQueryData(keys.project(p.id), (old: Project | undefined) => (old ? { ...old, ...r.project, favorites: old.favorites, unreadMessages: old.unreadMessages } : r.project));
         setProgress({ done: Math.min(i + BATCH, media.length), total: media.length });
@@ -194,6 +201,7 @@ function SortablePhoto({ image, index, isCover, favoritedBy, onCover, onRemove }
 }
 
 function GallerySettings({ project: p }: { project: Project }) {
+  const qc = useQueryClient();
   const [title, setTitle] = useState(p.gallerySettings.title || "");
   const [subtitle, setSubtitle] = useState(p.gallerySettings.subtitle || "");
   const dirty = title !== (p.gallerySettings.title || "") || subtitle !== (p.gallerySettings.subtitle || "");
@@ -203,11 +211,62 @@ function GallerySettings({ project: p }: { project: Project }) {
     invalidate: () => [keys.project(p.id)],
     success: "Galerij bijgewerkt",
   });
+
+  const early = p.gallerySettings.earlyDownloads || "original";
+  const missing = p.gallery.filter((g) => !g.watermark && !isVideo(g.fileName || g.url));
+  const [marking, setMarking] = useState<{ done: number; total: number } | null>(null);
+  const saveEarly = useAction({
+    fn: (earlyDownloads: EarlyDownloads) => put(`/admin/project/${p.id}`, { gallerySettings: { ...p.gallerySettings, earlyDownloads } }),
+    invalidate: () => [keys.project(p.id)],
+    success: "Opgeslagen",
+  });
+
+  // Photos from before watermarks existed get theirs here, from the original.
+  async function makeWatermarks(list: GalleryImage[]) {
+    setMarking({ done: 0, total: list.length });
+    let failed = 0;
+    for (const [i, g] of list.entries()) {
+      try {
+        const res = await fetch(g.url);
+        if (!res.ok) throw new Error(String(res.status));
+        const file = await watermark(await res.blob(), g.fileName);
+        if (!file) throw new Error("onleesbaar");
+        const form = new FormData();
+        form.append("file", file);
+        await api(`/admin/project/${p.id}/gallery/${g.id}/preview`, { method: "PUT", form });
+      } catch {
+        failed++;
+      }
+      setMarking({ done: i + 1, total: list.length });
+    }
+    setMarking(null);
+    qc.invalidateQueries({ queryKey: keys.project(p.id) });
+    if (failed) toast.error(`${failed} ${failed === 1 ? "foto kon" : "foto's konden"} geen watermerk krijgen.`);
+  }
+
+  async function chooseEarly(v: EarlyDownloads) {
+    if (v === "watermark" && missing.length) await makeWatermarks(missing);
+    saveEarly.mutate(v);
+  }
+
   return (
     <Card title="Zoals de klant het ziet" action={dirty && <Button size="sm" variant="primary" loading={save.isPending} onClick={() => save.mutate()}>Opslaan</Button>}>
       <div className="s-form-grid">
         <TextField label="Titel van de galerij" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={p.title} />
         <TextField label="Ondertitel" value={subtitle} onChange={(e) => setSubtitle(e.target.value)} placeholder="Bijv. Teamfoto's, september 2026" />
+        <Field label="Downloaden vóór levering" hint={marking ? `Watermerk maken… ${marking.done} van ${marking.total}` : "Na levering kan de klant altijd de originelen downloaden."}>
+          <Segmented<EarlyDownloads> label="Downloaden vóór levering" value={early} onChange={(v) => !marking && v !== early && chooseEarly(v)} options={[
+            { value: "original", label: "Origineel" },
+            { value: "watermark", label: "Met watermerk" },
+            { value: "none", label: "Niet" },
+          ]} />
+        </Field>
+        {early === "watermark" && missing.length > 0 && !marking && (
+          <div className="s-row" style={{ alignSelf: "end" }}>
+            <span className="s-small s-muted">{missing.length} {missing.length === 1 ? "foto heeft" : "foto's hebben"} nog geen watermerk</span>
+            <Button size="sm" onClick={() => makeWatermarks(missing)}>Watermerk maken</Button>
+          </div>
+        )}
       </div>
     </Card>
   );

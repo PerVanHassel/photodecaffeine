@@ -1,5 +1,5 @@
 import { db, found, must } from "./db.ts";
-import { imageKey, signPaths } from "./storage.ts";
+import { imageKey, removePrivate, signPaths } from "./storage.ts";
 import { projectDemos } from "./util.ts";
 
 // ---------------------------------------------------------------------------
@@ -35,7 +35,7 @@ export function stageForStatus(status: Status, current: Stage): Stage {
 export const PROJECT_SELECT = `
   *,
   project_clients ( client_id, position, clients ( id, name, email, company, user_id ) ),
-  gallery_images ( id, url, storage_path, file_name, sort ),
+  gallery_images ( id, url, storage_path, preview_path, file_name, sort ),
   events ( id, kind, title, starts_at, ends_at, all_day, location_text, link, notes, location_id, client_visible )
 `;
 
@@ -104,21 +104,47 @@ export function eventToApi(e: any) {
   };
 }
 
+export type Downloads = "original" | "watermark" | "none";
+
+/**
+ * What a client may download. Once the project is delivered that is always
+ * the original; before that the studio chooses per project.
+ */
+export function clientDownloads(row: ProjectRow): Downloads {
+  if (DONE_STAGES.includes(row.stage)) return "original";
+  const early = row.gallery_settings?.earlyDownloads;
+  return early === "watermark" || early === "none" ? early : "original";
+}
+
+export type Signer = (img: any, preview?: boolean) => string;
+
 /** Signs every private gallery image across the given projects in one call. */
-export async function gallerySigner(rows: ProjectRow[]): Promise<(img: any) => string> {
-  const paths = rows.flatMap((r) => (r.gallery_images || []).map((g: any) => g.storage_path)).filter(Boolean);
+export async function gallerySigner(rows: ProjectRow[]): Promise<Signer> {
+  const paths = rows.flatMap((r) => (r.gallery_images || []).flatMap((g: any) => [g.storage_path, g.preview_path])).filter(Boolean);
   const signed = await signPaths(paths);
-  return (img: any) => (img.storage_path ? signed.get(img.storage_path) || "" : img.url);
+  return (img: any, preview = false) => {
+    if (preview && img.preview_path) return signed.get(img.preview_path) || "";
+    return img.storage_path ? signed.get(img.storage_path) || "" : img.url;
+  };
 }
 
 /**
  * The project as the API has always returned it, plus the newer fields.
  * `forClient` drops what only the studio should see.
  */
-export function projectToApi(row: ProjectRow, sign: (img: any) => string, opts: { forClient?: boolean } = {}) {
+export function projectToApi(row: ProjectRow, sign: Signer, opts: { forClient?: boolean } = {}) {
   const clientIds = clientIdsOf(row);
   const demos = projectDemos(row);
-  const images = sortedImages(row).map((g) => ({ id: g.id, url: sign(g), fileName: g.file_name }));
+  const downloads = clientDownloads(row);
+  // A client on a watermarked project only ever gets the watermarked copy, so
+  // the original can't be saved from the page either.
+  const watermarked = opts.forClient && downloads === "watermark";
+  const images = sortedImages(row).map((g) => {
+    const img: Record<string, any> = { id: g.id, url: sign(g, watermarked), fileName: g.file_name };
+    if (opts.forClient) img.download = downloads === "original" || (downloads === "watermark" && Boolean(g.preview_path));
+    else img.watermark = Boolean(g.preview_path);
+    return img;
+  });
   const meeting = primaryMeeting(row);
   // Private images have short-lived URLs, so the cover is remembered by image
   // id and turned into a fresh URL here.
@@ -166,7 +192,8 @@ export function projectToApi(row: ProjectRow, sign: (img: any) => string, opts: 
     updatedAt: row.updated_at,
   };
 
-  if (!opts.forClient) {
+  if (opts.forClient) api.downloads = downloads;
+  else {
     const clients = clientsOf(row);
     api.clients = clients;
     api.clientNames = clients.map((c) => c.name);
@@ -205,7 +232,10 @@ export async function syncGalleryUrls(row: ProjectRow, urls: string[]): Promise<
   const wantedKeys = new Set(wanted.map((w) => w.key));
 
   const removed = existing.filter((g) => !wantedKeys.has(g.storage_path || imageKey(g.url)));
-  if (removed.length) must(await db.from("gallery_images").delete().in("id", removed.map((g) => g.id)));
+  if (removed.length) {
+    must(await db.from("gallery_images").delete().in("id", removed.map((g) => g.id)));
+    await removePrivate(removed.map((g) => g.preview_path));
+  }
 
   let added = 0;
   const rows = wanted.map((w, sort) => {

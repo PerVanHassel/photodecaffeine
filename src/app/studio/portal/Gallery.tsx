@@ -26,6 +26,7 @@ export function PortalGallery() {
   const p = data.data?.project;
   const favs = new Set(p?.favoriteIds || []);
   const delivered = !!p && ["delivered", "review", "archived"].includes(p.stage);
+  const downloads = p?.downloads || "original";
   const shown = (p?.gallery || []).filter((g) => filter === "all" || favs.has(g.id));
 
   const toggle = useCallback(async (img: GalleryImage) => {
@@ -56,7 +57,8 @@ export function PortalGallery() {
     }
   }
 
-  async function downloadAll(list: GalleryImage[]) {
+  async function downloadAll(all: GalleryImage[]) {
+    const list = all.filter((g) => g.download !== false);
     if (!p || !list.length) return;
     setZip({ done: 0, total: list.length });
     try {
@@ -69,6 +71,7 @@ export function PortalGallery() {
           const res = await fetch(img.url);
           if (!res.ok) throw new Error(`${img.fileName || "Een foto"} kon niet worden opgehaald.`);
           let name = img.fileName || `foto-${done + 1}.jpg`;
+          if (downloads === "watermark") name = `${name.replace(/\.\w+$/, "")}-voorbeeld.jpg`;
           while (used.has(name)) name = name.replace(/(\.\w+)?$/, (ext) => `-${done}${ext}`);
           used.add(name);
           yield { name, input: res };
@@ -96,6 +99,7 @@ export function PortalGallery() {
         <p className="s-eyebrow">{p.gallerySettings.subtitle || t.photosCount(p.gallery.length)}</p>
         <h1>{delivered ? p.gallerySettings.title || t.galleryPhotosTitle : t.galleryChooseTitle}</h1>
         <p>{delivered ? t.galleryDownloadIntro : t.galleryChooseIntro}</p>
+        {downloads === "watermark" && <p className="s-small s-muted">{t.watermarkNote}</p>}
       </div>
       {p.gallery.length === 0 ? <Empty title={t.noPhotos}>{t.noPhotosHint}</Empty> : (
         <>
@@ -104,14 +108,16 @@ export function PortalGallery() {
               <Segmented<"all" | "fav"> label="Filter" value={filter} onChange={setFilter} options={[{ value: "all", label: t.all(p.gallery.length) }, { value: "fav", label: t.favorites(favs.size) }]} />
             </div>
             <div className="s-row">
-              <Button icon={<Download />} loading={!!zip} onClick={() => downloadAll(filter === "fav" ? shown : p.gallery)}>
-                {zip ? t.zipping(zip.done, zip.total) : filter === "fav" ? t.downloadFavorites : t.downloadAll}
-              </Button>
+              {downloads !== "none" && (
+                <Button icon={<Download />} loading={!!zip} onClick={() => downloadAll(filter === "fav" ? shown : p.gallery)}>
+                  {zip ? t.zipping(zip.done, zip.total) : filter === "fav" ? t.downloadFavorites : t.downloadAll}
+                </Button>
+              )}
               {!delivered && <Button variant="primary" icon={<Send />} disabled={!favs.size} onClick={() => setSubmitting(true)}>{t.submitChoice}</Button>}
             </div>
           </div>
           {shown.length === 0 ? <Empty icon={<Heart />} title={t.noFavorites}>{t.noFavoritesHint}</Empty> : (
-            <div className="p-proof">
+            <div className="p-proof" onContextMenu={downloads === "original" ? undefined : (e) => e.preventDefault()}>
               {shown.map((g) => (
                 <Photo key={g.id} src={g.url} video={isVideo(g.fileName || g.url)} alt={g.fileName} openLabel={t.viewPhoto(p.gallery.indexOf(g) + 1)} onClick={() => setOpen(p.gallery.indexOf(g))}>
                   <div className="corner">
@@ -165,11 +171,11 @@ function Lightbox({ project: p, index, setIndex, favs, onToggle, onDownload }: {
           <button type="button" className={`s-btn ${favs.has(img.id) ? "on" : ""}`} onClick={() => onToggle(img)} aria-pressed={favs.has(img.id)}>
             <Heart size={15} fill={favs.has(img.id) ? "currentColor" : "none"} />{favs.has(img.id) ? t.favorite : t.makeFavorite}
           </button>
-          <button type="button" className="s-btn" onClick={() => onDownload(img)}><Download size={15} />{t.download}</button>
+          {img.download !== false && <button type="button" className="s-btn" onClick={() => onDownload(img)}><Download size={15} />{t.download}</button>}
           <button ref={closeButton} type="button" className="s-btn icon" onClick={() => setIndex(null)} aria-label={t.close}><X size={16} aria-hidden="true" /></button>
         </div>
       </div>
-      <div className="stage">
+      <div className="stage" onContextMenu={p.downloads && p.downloads !== "original" ? (e) => e.preventDefault() : undefined}>
         {isVideo(img.fileName || img.url) ? <video src={img.url} controls autoPlay playsInline /> : <img src={img.url} alt={img.fileName} />}
         <button type="button" className="nav prev" onClick={() => go(-1)} aria-label={t.previous}><ChevronLeft /></button>
         <button type="button" className="nav next" onClick={() => go(1)} aria-label={t.next}><ChevronRight /></button>

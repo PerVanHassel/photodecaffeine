@@ -60,6 +60,19 @@ const projects: Json[] = [
   mkProject(55, "Zomerterras", "photo", "delivered", [id(4)], { valueCents: 54000, gallery: PHOTOS.slice(8, 11) }),
 ];
 
+// Mirrors projectToApi's client view: watermarked copies and download rights.
+function forClient(x: Json) {
+  if (!x) return x;
+  const done = ["delivered", "review", "archived"].includes(x.stage);
+  const downloads = done ? "original" : x.gallerySettings.earlyDownloads || "original";
+  const gallery = x.gallery.map((g: Json) => ({
+    id: g.id, fileName: g.fileName,
+    url: downloads === "watermark" && g.previewUrl ? g.previewUrl : g.url,
+    download: downloads === "original" || (downloads === "watermark" && !!g.previewUrl),
+  }));
+  return { ...x, downloads, gallery, galleryUrls: gallery.map((g: Json) => g.url) };
+}
+
 function mkProject(n: number, title: string, type: string, stage: string, clientIds: string[], extra: Json = {}) {
   const gallery = (extra.gallery || []).map((url: string, i: number) => ({ id: id(n * 100 + i), url, fileName: `IMG_${2200 + i}.jpg` }));
   const favorites: Record<string, string[]> = {};
@@ -232,7 +245,7 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     };
     // portal
     if (p === "/portal/projects") return { projects: projects.filter((x) => x.clientIds.includes(id(2)) || x.clientIds.includes(id(1))).map((x) => ({ ...x, briefing: undefined })), locations: Object.fromEntries(locations.map((l) => [l.id, l])) };
-    if ((r = m(/^\/portal\/project\/([^/]+)$/))) return { project: projects.find((x) => x.id === r![1]), locations: Object.fromEntries(locations.map((l) => [l.id, l])) };
+    if ((r = m(/^\/portal\/project\/([^/]+)$/))) return { project: forClient(projects.find((x) => x.id === r![1])), locations: Object.fromEntries(locations.map((l) => [l.id, l])) };
     if ((r = m(/^\/portal\/project\/([^/]+)\/messages$/))) return { messages: messages.filter((x) => x.projectId === r![1]) };
     if (p === "/portal/events") return { events: eventsWithContext().filter((e) => e.startsAt > iso(-1)), locations: Object.fromEntries(locations.map((l) => [l.id, l])) };
     if (p === "/portal/quotes") return { quotes: quotes.filter((q) => q.status !== "draft").map((q) => ({ ...q, token: "abc" })) };
@@ -247,6 +260,12 @@ export async function mockApi(path: string, method: string, body: Json): Promise
   }
 
   // Writes: apply the obvious change in memory and answer like the server.
+  if ((r = m(/^\/admin\/project\/([^/]+)\/gallery\/([^/]+)\/preview$/)) && method === "PUT") {
+    const g = projects.find((y) => y.id === r![1])?.gallery.find((y: Json) => y.id === r![2]);
+    g.previewUrl = URL.createObjectURL((body as FormData).get("file") as File);
+    g.watermark = true;
+    return { success: true };
+  }
   if ((r = m(/^\/admin\/project\/([^/]+)$/)) && method === "PUT") {
     const x = projects.find((y) => y.id === r![1]);
     if (body.stage) x.stage = body.stage;
