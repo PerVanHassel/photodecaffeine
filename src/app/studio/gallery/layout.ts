@@ -16,30 +16,34 @@ export interface Row {
  * Justified rows: photos side by side at one height per row, each row exactly
  * as wide as the container. A row is closed where its height lands nearest the
  * target; rows that would get too tall (two portraits on a wide screen) are
- * capped instead of stretched.
+ * capped instead of stretched. The target may change per row, for a rhythm of
+ * tall and low rows.
  */
-export function justify(ratios: number[], width: number, target: number, gap: number, maxH = target * 1.45): Row[] {
+export function justify(ratios: number[], width: number, target: number | ((row: number) => number), gap: number, maxH?: number): Row[] {
   const rows: Row[] = [];
+  const targetOf = typeof target === "number" ? () => target : target;
   const heightOf = (count: number, sum: number) => (width - gap * (count - 1)) / sum;
   const close = (items: number[], sum: number) => {
     const h = heightOf(items.length, sum);
-    rows.push(h > maxH ? { items, height: maxH, full: false } : { items, height: h, full: true });
+    const cap = maxH ?? targetOf(rows.length) * 1.45;
+    rows.push(h > cap ? { items, height: cap, full: false } : { items, height: h, full: true });
   };
   let row: number[] = [];
   let sum = 0;
   for (let i = 0; i < ratios.length; i++) {
     const r = ratios[i];
+    const t = targetOf(rows.length);
     row.push(i);
     sum += r;
     const h = heightOf(row.length, sum);
-    if (h > target) continue;
+    if (h > t) continue;
     if (row.length > 1) {
       const before = heightOf(row.length - 1, sum - r);
-      if (Math.abs(Math.log(before / target)) < Math.abs(Math.log(h / target))) {
+      if (Math.abs(Math.log(before / t)) < Math.abs(Math.log(h / t))) {
         close(row.slice(0, -1), sum - r);
         row = [i];
         sum = r;
-        if (heightOf(1, r) <= target) {
+        if (heightOf(1, r) <= targetOf(rows.length)) {
           close(row, r);
           row = [];
           sum = 0;
@@ -52,8 +56,9 @@ export function justify(ratios: number[], width: number, target: number, gap: nu
     sum = 0;
   }
   if (row.length) {
+    const t = targetOf(rows.length);
     const h = heightOf(row.length, sum);
-    rows.push({ items: row, height: Math.min(h, target), full: h <= target, last: true });
+    rows.push({ items: row, height: Math.min(h, t), full: h <= t, last: true });
   }
   return rows;
 }

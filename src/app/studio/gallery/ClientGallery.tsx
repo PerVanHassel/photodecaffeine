@@ -41,6 +41,17 @@ const ROWS: Record<string, (w: number) => { target: number; gap: number; max?: n
   compact: (w) => (w < 560 ? { target: w * 0.3, gap: 3 } : { target: clamp(110, w * 0.11, 170), gap: 4 }),
 };
 
+/**
+ * Arena's tempo: one tall row with a highlight or two, then two low rows that
+ * read like a burst of frames. On a phone: one photo across, then pairs.
+ */
+function tempo(ratios: number[], w: number) {
+  const base = w < 560 ? w * 0.3 : clamp(150, w * 0.15, 230);
+  const gap = w < 560 ? 3 : 4;
+  const rows = justify(ratios, w, (row) => (row % 3 === 0 ? base * 1.9 : base), gap, w < 560 ? w * 1.5 : undefined);
+  return rowBoxes(rows, ratios, w, gap);
+}
+
 export function ClientGallery({ project: p, favs, favNames, actions, back, preview }: {
   project: Project;
   favs: Set<string>;
@@ -69,6 +80,8 @@ export function ClientGallery({ project: p, favs, favNames, actions, back, previ
 
   const coverImage = p.gallery.find((g) => g.id === p.gallerySettings.coverImageId) || p.gallery.find((g) => !isVideo(g.fileName || g.url));
   const cover = p.gallerySettings.coverUrl || coverImage?.url || "";
+  // Arena opens with the cover and the next few photos side by side, like a burst.
+  const strip = [cover, ...p.gallery.filter((g) => g !== coverImage && !isVideo(g.fileName || g.url)).slice(0, 3).map((g) => g.url)].filter(Boolean);
   const shoot = p.events?.find((e) => e.kind === "shoot");
   const kicker = p.gallerySettings.subtitle || (shoot ? fmt(shoot.startsAt, "d MMMM yyyy") : "");
 
@@ -92,6 +105,7 @@ export function ClientGallery({ project: p, favs, favNames, actions, back, previ
   let body: ReactNode;
   if (layout === "story") body = <StoryLayout images={shown} ratios={ratios} tile={tile} numberOf={numberOf} total={p.gallery.length} />;
   else if (layout === "sheet") body = <SheetLayout images={shown} ratios={ratios} tile={tile} numberOf={numberOf} favs={favs} favNames={favNames} onToggle={actions.toggle} t={t} />;
+  else if (layout === "tempo") body = <PlacedLayout images={shown} tile={tile} place={(w) => tempo(ratios, w)} />;
   else if (layout === "masonry") {
     body = <PlacedLayout images={shown} tile={tile} place={(w) => masonry(ratios, w, w < 620 ? 2 : w < 1080 ? 3 : 4, w < 620 ? 8 : 16)} />;
   } else {
@@ -134,7 +148,7 @@ export function ClientGallery({ project: p, favs, favNames, actions, back, previ
       </Helmet>
       {back && <div className="g-back">{back}</div>}
 
-      <Hero style={style} title={title} kicker={kicker} cover={cover} intro={intro} facts={facts} t={t}
+      <Hero style={style} title={title} kicker={kicker} cover={cover} strip={strip} intro={intro} facts={facts} t={t}
         status={delivered ? t.statusReady : t.statusChoosing} count={p.gallery.length} favCount={favs.size}
         onScroll={() => grid.current?.scrollIntoView({ behavior: "smooth" })} />
 
@@ -201,8 +215,8 @@ export function ClientGallery({ project: p, favs, favNames, actions, back, previ
 // The opening of each look
 // ---------------------------------------------------------------------------
 
-function Hero({ style, title, kicker, cover, intro, facts, status, count, favCount, onScroll, t }: {
-  style: StyleDef; title: string; kicker: string; cover: string; intro: ReactNode; facts: ReactNode; status: string;
+function Hero({ style, title, kicker, cover, strip, intro, facts, status, count, favCount, onScroll, t }: {
+  style: StyleDef; title: string; kicker: string; cover: string; strip: string[]; intro: ReactNode; facts: ReactNode; status: string;
   count: number; favCount: number; onScroll: () => void; t: T;
 }) {
   const coverFig = cover ? <figure className="g-cover"><img src={cover} alt="" /></figure> : null;
@@ -242,6 +256,20 @@ function Hero({ style, title, kicker, cover, intro, facts, status, count, favCou
           {kicker && <p className="g-kicker">{kicker}</p>}
           <h1 className="g-title">{title}</h1>
           {intro}
+          {facts}
+        </header>
+      );
+    case "arena":
+      return (
+        <header className="g-hero g-hero--arena">
+          {kicker && <p className="g-kicker"><span>{kicker}</span></p>}
+          <h1 className="g-title">{title}</h1>
+          {strip.length > 0 && (
+            <div className="g-burst">
+              {strip.map((src, k) => <figure key={k} style={{ "--i": k } as CSSProperties}><img src={src} alt="" /></figure>)}
+            </div>
+          )}
+          <div className="g-head">{intro}</div>
           {facts}
         </header>
       );

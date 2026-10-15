@@ -3,10 +3,10 @@ import type { Project } from "../types";
 // The looks a client gallery can have. The studio picks one per project; each
 // brings its own layout, type and colours, and an accent can be set on top.
 
-export type GalleryStyle = "atelier" | "editorial" | "noir" | "zacht" | "catalogus";
+export type GalleryStyle = "atelier" | "editorial" | "noir" | "zacht" | "catalogus" | "arena";
 
 /** How the photos are laid out in the large view. The compact view is always justified rows. */
-export type GalleryLayout = "rows" | "story" | "masonry" | "sheet";
+export type GalleryLayout = "rows" | "story" | "masonry" | "sheet" | "tempo";
 
 export interface StyleDef {
   id: GalleryStyle;
@@ -22,9 +22,11 @@ export interface StyleDef {
 
 // One request for both looks that use Fraunces, so the two never load clashing copies.
 const FRAUNCES = "Fraunces:ital,opsz,wght,SOFT@0,9..144,300..600,0..100;1,9..144,300..600,0..100";
-export const INSTRUMENT = "Instrument+Serif:ital@0;1";
+const INSTRUMENT = "Instrument+Serif:ital@0;1";
+// Condensed heavy italics only: Arena sets its titles and numbers in nothing else.
+const ARCHIVO = "Archivo:ital,wdth,wght@1,62..100,600..900";
 /** Every title font, for the admin's style thumbnails. */
-export const ALL_FONTS = [FRAUNCES, INSTRUMENT];
+export const ALL_FONTS = [FRAUNCES, INSTRUMENT, ARCHIVO];
 
 export const STYLES: StyleDef[] = [
   { id: "atelier", name: "Atelier", fits: "Portretten, gezinnen, alles wat tijdloos moet zijn", layout: "rows", accent: "#b06a2c", font: FRAUNCES },
@@ -32,6 +34,7 @@ export const STYLES: StyleDef[] = [
   { id: "noir", name: "Noir", fits: "Auto's, events, avond- en nachtwerk", layout: "rows", accent: "#d9a46a", dark: true },
   { id: "zacht", name: "Zacht", fits: "Newborn, zwangerschap en familie", layout: "masonry", accent: "#c48b7e", font: FRAUNCES },
   { id: "catalogus", name: "Catalogus", fits: "Zakelijk, producten, teams en vastgoed", layout: "sheet", accent: "#3a5a8c" },
+  { id: "arena", name: "Arena", fits: "Sport: wedstrijden, teams, atleten en events", layout: "tempo", accent: "#e4572e", font: ARCHIVO },
 ];
 
 export const ACCENTS: { name: string; hex: string }[] = [
@@ -57,13 +60,16 @@ export function accentOf(p: Pick<Project, "gallerySettings">): string {
   return a && HEX.test(a) ? a : styleOf(p).accent;
 }
 
-/** Dark text on light accents, white on the rest. */
+/** White or near-black text on the accent, whichever has the higher contrast. */
 export function onAccent(hex: string): string {
   const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.4 ? "#1a1714" : "#ffffff";
+  const l = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  // Against white: 1.05 / (l + 0.05). Against #151517 (luminance about 0.008): (l + 0.05) / 0.058.
+  return 1.05 / (l + 0.05) >= (l + 0.05) / 0.058 ? "#ffffff" : "#151517";
 }
 
 const HINTS: [RegExp, GalleryStyle][] = [
+  [/\b(sport|voetbal|hockey|tennis|padel|basketbal|volleybal|handbal|korfbal|rugby|honkbal|wielren|wieler|mtb|hardloop|marathon|stratenloop|triatlon|atletiek|zwem|turnen|wedstrijd|toernooi|competitie|kampioen|match|fitness|crossfit|boksen|judo|karate|golf|surf|skate)/i, "arena"],
   [/\b(auto|car|porsche|bmw|audi|mercedes|ferrari|motor|event|feest|concert|festival|club|nacht|avond)/i, "noir"],
   [/\b(bruiloft|trouw|wedding|huwelijk|verloving|koppel|fashion|mode|editorial|lookbook)/i, "editorial"],
   [/\b(newborn|baby|zwanger|gezin|familie|kind|kids|cakesmash)/i, "zacht"],

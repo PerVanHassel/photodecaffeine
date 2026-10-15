@@ -40,18 +40,20 @@ export function StylePicker({ project: p }: { project: Project }) {
         {ALL_FONTS.map((f) => <link key={f} rel="stylesheet" href={`https://fonts.googleapis.com/css2?family=${f}&display=swap`} />)}
       </Helmet>
       <div className="s-stack lg">
-        <div className="gp-grid" role="radiogroup" aria-label="Stijl">
-          {STYLES.map((s) => (
-            <button key={s.id} type="button" role="radio" aria-checked={current.id === s.id} className="gp-option"
-              disabled={save.isPending} onClick={() => current.id !== s.id && save.mutate({ style: s.id })}>
-              <Thumb style={s} title={p.gallerySettings.title || p.title} urls={urls} accent={accent || s.accent} />
-              <span className="gp-name">
-                {s.name}
-                {s.id === suggested && <span className="gp-tip">Past hierbij</span>}
-              </span>
-              <span className="gp-fits">{s.fits}</span>
-            </button>
-          ))}
+        <div className="gp-wrap">
+          <div className="gp-grid" role="radiogroup" aria-label="Stijl">
+            {STYLES.map((s) => (
+              <button key={s.id} type="button" role="radio" aria-checked={current.id === s.id} className="gp-option"
+                disabled={save.isPending} onClick={() => current.id !== s.id && save.mutate({ style: s.id })}>
+                <Thumb style={s} title={p.gallerySettings.title || p.title} urls={urls} accent={accent || s.accent} />
+                <span className="gp-name">
+                  {s.name}
+                  {s.id === suggested && <span className="gp-tip">Past hierbij</span>}
+                </span>
+                <span className="gp-fits">{s.fits}</span>
+              </button>
+            ))}
+          </div>
         </div>
         <Field label="Accentkleur" hint="Voor hartjes, knoppen en de mail aan de klant. Standaard kiest de stijl zelf.">
           <div className="gp-swatches" role="radiogroup" aria-label="Accentkleur">
@@ -105,6 +107,13 @@ function Thumb({ style, title, urls, accent }: { style: StyleDef; title: string;
           {ph(0, "cover")}
           <b className="t">{title}</b>
           <span className="row">{ph(1)}{ph(2)}{ph(3)}</span>
+        </>
+      )}
+      {style.id === "arena" && (
+        <>
+          <span className="tag" />
+          <b className="t">{title}</b>
+          <span className="burst">{ph(0)}{ph(1)}{ph(2)}{ph(3)}</span>
         </>
       )}
       {style.id === "catalogus" && (

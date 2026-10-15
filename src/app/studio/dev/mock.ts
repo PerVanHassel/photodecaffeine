@@ -72,6 +72,8 @@ const projects: Json[] = [
   mkProject(56, "Bruiloft Lotte & Sem", "photo", "editing", [id(2)], { valueCents: 125000, gallery: WEDDING, favorites: [1, 4, 9],
     gallerySettings: { style: "editorial", subtitle: "Kasteel Wouw, 14 juni 2026" },
     events: [{ id: id(64), kind: "shoot", title: "Bruiloft", startsAt: iso(-20, 11), endsAt: iso(-20, 23), allDay: false, locationId: null, locationText: "Kasteel Wouw", link: "", notes: "", clientVisible: true }] }),
+  mkProject(57, "Stratenloop Roosendaal 10K", "photo", "delivered", [id(2)], { valueCents: 68000, gallery: [...WEDDING].reverse().slice(0, 18), favorites: [2, 5],
+    gallerySettings: { style: "arena", subtitle: "12 oktober, Markt Roosendaal" } }),
 ];
 
 // Mirrors projectToApi's client view: watermarked copies and download rights.
