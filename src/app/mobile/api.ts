@@ -310,6 +310,8 @@ export function createApi(token: string) {
       send<{ worker: Worker }>("/admin/workers", "POST", body),
     setWorkerRole: (id: string, roleId: string | null) =>
       send<unknown>(`/admin/workers/${id}/role`, "PUT", { roleId }),
+    setWorkerPassword: (id: string, password: string) =>
+      send<unknown>(`/admin/workers/${id}/password`, "PUT", { password }),
     deleteWorker: (id: string) => send<unknown>(`/admin/workers/${id}`, "DELETE"),
 
     roles: () => get<{ roles: Role[] }>("/admin/roles").then((r) => r.roles ?? []),

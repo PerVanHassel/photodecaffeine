@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Crown, Plus, Shield, Trash2, UserPlus } from "lucide-react";
+import { Crown, KeyRound, Plus, Shield, Trash2, UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { del, get, post, put } from "../api";
 import { ago, initials } from "../format";
@@ -29,6 +29,7 @@ export function TeamPage() {
   const data = useQuery({ queryKey: key, queryFn: () => get<{ workers: Worker[]; roles: Role[] }>("/admin/workers") });
   const [adding, setAdding] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | "new" | null>(null);
+  const [passwordFor, setPasswordFor] = useState<Worker | null>(null);
   const canManage = !!me.data?.permissions.manageAdmins;
 
   const assign = useAction({
@@ -63,6 +64,7 @@ export function TeamPage() {
                       {!w.roleId && <option value="">Geen rol</option>}
                       {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                     </Select>
+                    <Button size="sm" variant="ghost" iconOnly aria-label={`Wachtwoord van ${w.name} wijzigen`} title="Wachtwoord wijzigen" icon={<KeyRound />} onClick={() => setPasswordFor(w)} />
                     <Button size="sm" variant="ghost" iconOnly aria-label={`${w.name} verwijderen`} icon={<Trash2 />}
                       onClick={async () => { if (await confirm({ title: `${w.name} verwijderen uit het team?`, body: "Het account blijft bestaan, maar kan niet meer in de studio.", danger: true, confirm: "Toegang intrekken" })) revoke.mutate(w); }} />
                   </div>
@@ -93,6 +95,7 @@ export function TeamPage() {
 
       <AddAdminDialog open={adding} onClose={() => setAdding(false)} roles={roles} />
       <RoleDialog role={editingRole} onClose={() => setEditingRole(null)} />
+      <PasswordDialog worker={passwordFor} onClose={() => setPasswordFor(null)} />
     </div>
   );
 }
@@ -112,6 +115,22 @@ function AddAdminDialog({ open, onClose, roles }: { open: boolean; onClose: () =
           {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
         </SelectField>
       </div>
+    </Modal>
+  );
+}
+
+function PasswordDialog({ worker, onClose }: { worker: Worker | null; onClose: () => void }) {
+  const [password, setPassword] = useState("");
+  useEffect(() => { if (worker) setPassword(""); }, [worker]);
+  const save = useAction({
+    fn: () => put(`/admin/workers/${worker!.id}/password`, { password }),
+    success: `Wachtwoord van ${worker?.name} gewijzigd`,
+    onSuccess: onClose,
+  });
+  return (
+    <Modal open={!!worker} onOpenChange={(o) => !o && onClose()} title={`Wachtwoord van ${worker?.name}`} description="Het oude wachtwoord werkt meteen niet meer. Deel het nieuwe zelf met je collega."
+      footer={<><Button onClick={onClose}>Annuleren</Button><Button variant="primary" loading={save.isPending} disabled={password.length < 8} onClick={() => save.mutate()}>Wijzigen</Button></>}>
+      <TextField label="Nieuw wachtwoord" type="text" autoComplete="off" value={password} onChange={(e) => setPassword(e.target.value)} hint="Minstens 8 tekens" />
     </Modal>
   );
 }

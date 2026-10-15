@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { Check, Plus, Shield, Trash2 } from "lucide-react";
+import { Check, KeyRound, Plus, Shield, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useApi, useQuery } from "../useApi";
 import type { Role, Worker } from "../api";
@@ -113,6 +113,7 @@ function PeopleTab({
   const toast = useToast();
   const [pendingDelete, setPendingDelete] = useState<Worker | null>(null);
   const [roleFor, setRoleFor] = useState<Worker | null>(null);
+  const [passwordFor, setPasswordFor] = useState<Worker | null>(null);
 
   async function remove(worker: Worker) {
     setPendingDelete(null);
@@ -185,6 +186,13 @@ function PeopleTab({
                         <Shield size={15} />
                       </Press>
                       <Press
+                        onClick={() => setPasswordFor(w)}
+                        aria-label="Wachtwoord wijzigen"
+                        style={{ width: 36, height: 36, display: "grid", placeItems: "center", color: c.fg3 }}
+                      >
+                        <KeyRound size={15} />
+                      </Press>
+                      <Press
                         onClick={() => setPendingDelete(w)}
                         aria-label="Verwijderen"
                         style={{ width: 36, height: 36, display: "grid", placeItems: "center", color: c.fg4 }}
@@ -242,6 +250,8 @@ function PeopleTab({
         body="Dit account verliest direct toegang tot het admin panel."
       />
 
+      <PasswordSheet worker={passwordFor} onClose={() => setPasswordFor(null)} />
+
       <AddWorkerSheet
         open={adding}
         roles={roles}
@@ -252,6 +262,61 @@ function PeopleTab({
         }}
       />
     </>
+  );
+}
+
+function PasswordSheet({ worker, onClose }: { worker: Worker | null; onClose: () => void }) {
+  const api = useApi();
+  const toast = useToast();
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  function close() {
+    setPassword("");
+    onClose();
+  }
+
+  async function submit() {
+    if (!worker) return;
+    if (password.length < 8) {
+      toast("Kies een wachtwoord van 8+ tekens", "error");
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.setWorkerPassword(worker.id, password);
+      toast("Wachtwoord gewijzigd", "success");
+      close();
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Wijzigen mislukt", "error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Sheet
+      open={!!worker}
+      onClose={close}
+      title={`Wachtwoord van ${worker?.name}`}
+      subtitle="Het oude wachtwoord werkt meteen niet meer. Geef het nieuwe persoonlijk door."
+      footer={
+        <Button full busy={busy} onClick={submit}>
+          Wijzigen
+        </Button>
+      }
+    >
+      <Stack gap={14} style={{ paddingBottom: 4 }}>
+        <Field label="Nieuw wachtwoord" hint="Minimaal 8 tekens">
+          <Input
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </Field>
+      </Stack>
+    </Sheet>
   );
 }
 

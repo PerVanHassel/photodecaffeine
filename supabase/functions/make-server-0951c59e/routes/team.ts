@@ -165,6 +165,39 @@ r.put("/make-server-0951c59e/admin/workers/:id/role", async (c) => {
   }
 });
 
+// --- PUT /admin/workers/:id/password — set a new password for an admin (requires manageAdmins permission) ---
+// Only for admin accounts: client portal logins live in the same auth table
+// and must stay out of reach. The owner's password is the owner's alone.
+r.put("/make-server-0951c59e/admin/workers/:id/password", async (c) => {
+  try {
+    const admin = await verifyAdmin(c.req.header("Authorization"));
+    if (!admin) return c.json({ error: "Unauthorized" }, 401);
+    if (!(await hasPermission(admin, "manageAdmins"))) {
+      return c.json({ error: "Je hebt geen rechten om wachtwoorden te wijzigen" }, 403);
+    }
+
+    const targetId = c.req.param("id");
+    const { password } = await c.req.json();
+    const pwProblem = await passwordProblem(password);
+    if (pwProblem) return c.json({ error: pwProblem }, 400);
+
+    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const { data: { user: target }, error: lookupError } = await supabase.auth.admin.getUserById(targetId);
+    if (lookupError || !target || !isAdminUser(target)) return c.json({ error: "Admin niet gevonden" }, 404);
+    if (target.email === OWNER_EMAIL && admin.email !== OWNER_EMAIL) {
+      return c.json({ error: "Het wachtwoord van de eigenaar kan alleen de eigenaar zelf wijzigen" }, 403);
+    }
+
+    const { error: updateError } = await supabase.auth.admin.updateUserById(targetId, { password });
+    if (updateError) return c.json({ error: updateError.message || "Wachtwoord wijzigen mislukt" }, 400);
+
+    return c.json({ success: true });
+  } catch (err) {
+    console.log("Set password error:", err);
+    return c.json({ error: `Failed to set password: ${err}` }, 500);
+  }
+});
+
 // --- DELETE /admin/workers/:id — revoke admin access (requires manageAdmins permission) ---
 r.delete("/make-server-0951c59e/admin/workers/:id", async (c) => {
   try {
