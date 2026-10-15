@@ -3,14 +3,15 @@ import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordi
 import { CSS } from "@dnd-kit/utilities";
 import { useQueryClient } from "@tanstack/react-query";
 import { Heart, ImagePlus, Mail, Star, Trash2, Upload } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { api, del, errorMessage, post, put } from "../../api";
 import { keys, useAction } from "../../queries";
 import type { EarlyDownloads, GalleryImage, Project } from "../../types";
 import { Button, Card, Empty, Field, isVideo, Photo, Pill, Segmented, TextField, useConfirm } from "../../ui";
 import { useUnsavedChanges } from "../../unsaved";
-import { watermark } from "../../watermark";
+import { StylePicker } from "../../gallery/StylePicker";
+import { prepareUpload, watermark } from "../../watermark";
 
 const BATCH = 8;
 
@@ -24,7 +25,8 @@ export function GalleryTab({ project: p }: { project: Project }) {
   const [onlyFavorites, setOnlyFavorites] = useState(false);
   const favorites = p.favorites || {};
   const favoriteCount = Object.keys(favorites).length;
-  const coverId = (p.gallerySettings as any).coverImageId as string | undefined;
+  const coverId = p.gallerySettings.coverImageId;
+  const reportSize = useSizeBackfill(p);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
@@ -41,8 +43,9 @@ export function GalleryTab({ project: p }: { project: Project }) {
         const form = new FormData();
         for (const [j, file] of chunk.entries()) {
           form.append("files", file);
-          const preview = await watermark(file, file.name);
+          const { preview, w, h } = await prepareUpload(file, file.name);
           if (preview) form.append(`preview-${j}`, preview);
+          if (w && h) form.append(`size-${j}`, `${w}x${h}`);
         }
         const r = await api<{ project: Project; added: number }>(`/admin/project/${p.id}/gallery`, { method: "POST", form });
         added += r.added;
@@ -166,6 +169,7 @@ export function GalleryTab({ project: p }: { project: Project }) {
                   image={g}
                   index={i}
                   isCover={g.id === coverId}
+                  onSize={(w, h) => reportSize(g, w, h)}
                   favoritedBy={favorites[g.id]}
                   onCover={() => setCover.mutate(g)}
                   onRemove={async () => {
@@ -178,18 +182,20 @@ export function GalleryTab({ project: p }: { project: Project }) {
         </DndContext>
       )}
 
+      <StylePicker project={p} />
       <GallerySettings project={p} />
     </div>
   );
 }
 
-function SortablePhoto({ image, index, isCover, favoritedBy, onCover, onRemove }: {
+function SortablePhoto({ image, index, isCover, favoritedBy, onCover, onRemove, onSize }: {
   image: GalleryImage; index: number; isCover: boolean; favoritedBy?: string[]; onCover: () => void; onRemove: () => void;
+  onSize: (w: number, h: number) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: image.id });
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }} {...attributes} {...listeners}>
-      <Photo src={image.url} video={isVideo(image.fileName || image.url)} caption={String(index + 1).padStart(3, "0")}>
+      <Photo src={image.url} video={isVideo(image.fileName || image.url)} caption={String(index + 1).padStart(3, "0")} onSize={image.w ? undefined : onSize}>
         <div className="corner">
           {favoritedBy && <span className="s-fav on" title={`Favoriet van ${favoritedBy.join(", ")}`}><Heart /></span>}
           <button type="button" className={`s-fav ${isCover ? "on" : ""}`} title={isCover ? "Omslagfoto" : "Maak omslagfoto"} aria-label="Maak omslagfoto" onPointerDown={(e) => e.stopPropagation()} onClick={onCover}><Star /></button>
@@ -198,6 +204,36 @@ function SortablePhoto({ image, index, isCover, favoritedBy, onCover, onRemove }
       </Photo>
     </div>
   );
+}
+
+/**
+ * Photos from before sizes were stored get theirs here: the contact sheet
+ * loads them anyway, so their size is sent along once they have loaded.
+ */
+function useSizeBackfill(p: Project) {
+  const qc = useQueryClient();
+  const pending = useRef(new Map<string, { id: string; w: number; h: number }>());
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  return (img: GalleryImage, w: number, h: number) => {
+    if (img.w || !w || !h) return;
+    pending.current.set(img.id, { id: img.id, w, h });
+    clearTimeout(timer.current);
+    timer.current = setTimeout(async () => {
+      const sizes = [...pending.current.values()];
+      pending.current.clear();
+      try {
+        await put(`/admin/project/${p.id}/gallery/sizes`, { sizes });
+        const byId = new Map(sizes.map((s) => [s.id, s]));
+        qc.setQueryData(keys.project(p.id), (old: Project | undefined) => old && {
+          ...old,
+          gallery: old.gallery.map((g) => (byId.has(g.id) ? { ...g, w: byId.get(g.id)!.w, h: byId.get(g.id)!.h } : g)),
+        });
+      } catch {
+        // Not worth bothering anyone: the client's browser measures them too.
+      }
+    }, 1500);
+  };
 }
 
 function GallerySettings({ project: p }: { project: Project }) {

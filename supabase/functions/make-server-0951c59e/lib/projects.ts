@@ -35,7 +35,7 @@ export function stageForStatus(status: Status, current: Stage): Stage {
 export const PROJECT_SELECT = `
   *,
   project_clients ( client_id, position, clients ( id, name, email, company, user_id ) ),
-  gallery_images ( id, url, storage_path, preview_path, file_name, sort ),
+  gallery_images ( id, url, storage_path, preview_path, file_name, sort, width, height ),
   events ( id, kind, title, starts_at, ends_at, all_day, location_text, link, notes, location_id, client_visible )
 `;
 
@@ -143,6 +143,10 @@ export function projectToApi(row: ProjectRow, sign: Signer, opts: { forClient?: 
     const img: Record<string, any> = { id: g.id, url: sign(g, watermarked), fileName: g.file_name };
     if (opts.forClient) img.download = downloads === "original" || (downloads === "watermark" && Boolean(g.preview_path));
     else img.watermark = Boolean(g.preview_path);
+    if (g.width > 0 && g.height > 0) {
+      img.w = g.width;
+      img.h = g.height;
+    }
     return img;
   });
   const meeting = primaryMeeting(row);

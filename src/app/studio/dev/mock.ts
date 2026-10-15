@@ -31,6 +31,17 @@ const PHOTOS = [
   "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=900&q=70",
 ];
 
+// A wedding with every shape a real shoot has: portraits, landscapes, a
+// panorama, squares. Some come without a size, as older uploads do.
+const pic = (n: number, w: number, h: number, sized = true) => ({ url: `https://picsum.photos/id/${n}/${w}/${h}`, ...(sized ? { w, h } : {}) });
+const WEDDING = [
+  pic(1015, 1500, 1000), pic(1027, 800, 1200), pic(1011, 800, 1000), pic(1016, 1800, 640), pic(1025, 1000, 1000),
+  pic(1035, 1280, 720), pic(1036, 1500, 1000), pic(1039, 800, 1200, false), pic(1040, 800, 1200), pic(1041, 1500, 1000),
+  pic(1043, 1000, 1250), pic(1044, 1500, 1000, false), pic(1045, 1200, 800), pic(1047, 800, 1200), pic(1048, 1600, 900),
+  pic(1049, 900, 1350), pic(1050, 2000, 700), pic(1051, 1200, 1200), pic(1053, 1500, 1000), pic(1054, 800, 1000, false),
+  pic(1055, 1200, 800), pic(1056, 800, 1200), pic(1057, 1500, 1000), pic(1058, 1000, 1250),
+];
+
 const clients: Json[] = [
   { id: id(1), userId: id(101), hasAccount: true, name: "Joris de Wit", email: "joris@garagedewit.nl", company: "Garage De Wit", phone: "06 12345678", notes: "Klassieke Porsches, liefst avondlicht.", projectCount: 1, lastSignIn: iso(-1), createdAt: iso(-60), updatedAt: iso(-2) },
   { id: id(2), userId: id(102), hasAccount: true, name: "Sanne Veldhuis", email: "sanne@studioveldhuis.nl", company: "Studio Veldhuis", phone: "", notes: "", projectCount: 1, lastSignIn: iso(0, 9), createdAt: iso(-40), updatedAt: iso(-1) },
@@ -58,6 +69,9 @@ const projects: Json[] = [
   mkProject(53, "Portret Noor Bakker", "photo", "quote", [id(3)], { valueCents: 45000 }),
   mkProject(54, "Najaarsmenu", "photo", "lead", [id(4)], { events: [{ id: id(63), kind: "shoot", title: "", startsAt: iso(4, 9, 30), endsAt: iso(4, 12), allDay: false, locationId: null, locationText: "Witte de Withstraat", link: "", notes: "", clientVisible: true }] }),
   mkProject(55, "Zomerterras", "photo", "delivered", [id(4)], { valueCents: 54000, gallery: PHOTOS.slice(8, 11) }),
+  mkProject(56, "Bruiloft Lotte & Sem", "photo", "editing", [id(2)], { valueCents: 125000, gallery: WEDDING, favorites: [1, 4, 9],
+    gallerySettings: { style: "editorial", subtitle: "Kasteel Wouw, 14 juni 2026" },
+    events: [{ id: id(64), kind: "shoot", title: "Bruiloft", startsAt: iso(-20, 11), endsAt: iso(-20, 23), allDay: false, locationId: null, locationText: "Kasteel Wouw", link: "", notes: "", clientVisible: true }] }),
 ];
 
 // Mirrors projectToApi's client view: watermarked copies and download rights.
@@ -66,7 +80,7 @@ function forClient(x: Json) {
   const done = ["delivered", "review", "archived"].includes(x.stage);
   const downloads = done ? "original" : x.gallerySettings.earlyDownloads || "original";
   const gallery = x.gallery.map((g: Json) => ({
-    id: g.id, fileName: g.fileName,
+    id: g.id, fileName: g.fileName, w: g.w, h: g.h,
     url: downloads === "watermark" && g.previewUrl ? g.previewUrl : g.url,
     download: downloads === "original" || (downloads === "watermark" && !!g.previewUrl),
   }));
@@ -74,14 +88,14 @@ function forClient(x: Json) {
 }
 
 function mkProject(n: number, title: string, type: string, stage: string, clientIds: string[], extra: Json = {}) {
-  const gallery = (extra.gallery || []).map((url: string, i: number) => ({ id: id(n * 100 + i), url, fileName: `IMG_${2200 + i}.jpg` }));
+  const gallery = (extra.gallery || []).map((g: string | Json, i: number) => ({ id: id(n * 100 + i), fileName: `IMG_${2200 + i}.jpg`, ...(typeof g === "string" ? { url: g } : g) }));
   const favorites: Record<string, string[]> = {};
   for (const i of extra.favorites || []) if (gallery[i]) favorites[gallery[i].id] = ["Sanne Veldhuis"];
   const cl = clients.filter((c) => clientIds.includes(c.id));
   return {
     id: id(n), title, type, stage, status: stage === "delivered" ? "delivered" : stage === "editing" ? "in_review" : "in_progress",
     phase: "", description: extra.description || "", dueDate: extra.dueDate || "", deliverables: extra.deliverables || [],
-    gallerySettings: {}, galleryUrls: gallery.map((g: Json) => g.url), gallery, events: extra.events || [], demos: [], demoUrl: "", demoNotes: "",
+    gallerySettings: extra.gallerySettings || {}, galleryUrls: gallery.map((g: Json) => g.url), gallery, events: extra.events || [], demos: [], demoUrl: "", demoNotes: "",
     locationId: extra.locationId || null, clientIds, clientId: clientIds[0], clients: cl.map((c) => ({ id: c.id, name: c.name, email: c.email, company: c.company, userId: c.userId })),
     clientNames: cl.map((c) => c.name), briefing: "Intake: wil vooral de Targa-beugel en het interieur. Geen kentekens zichtbaar.", briefingUpdatedAt: iso(-4),
     valueCents: extra.valueCents ?? null, inquiryId: null, favorites, favoriteIds: Object.keys(favorites), unreadMessages: n === 52 ? 1 : 0,
@@ -260,6 +274,11 @@ export async function mockApi(path: string, method: string, body: Json): Promise
   }
 
   // Writes: apply the obvious change in memory and answer like the server.
+  if ((r = m(/^\/admin\/project\/([^/]+)\/gallery\/sizes$/)) && method === "PUT") {
+    const x = projects.find((y) => y.id === r![1]);
+    for (const s of body.sizes) Object.assign(x.gallery.find((g: Json) => g.id === s.id) || {}, { w: s.w, h: s.h });
+    return { success: true, updated: body.sizes.length };
+  }
   if ((r = m(/^\/admin\/project\/([^/]+)\/gallery\/([^/]+)\/preview$/)) && method === "PUT") {
     const g = projects.find((y) => y.id === r![1])?.gallery.find((y: Json) => y.id === r![2]);
     g.previewUrl = URL.createObjectURL((body as FormData).get("file") as File);

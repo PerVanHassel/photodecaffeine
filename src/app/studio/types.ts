@@ -15,6 +15,9 @@ export interface GalleryImage {
   watermark?: boolean;
   /** Portal: the client may download this one. */
   download?: boolean;
+  /** Pixel size when known; the gallery lays photos out by their shape. */
+  w?: number;
+  h?: number;
 }
 
 /** What a client may download before delivery; after delivery always the original. */
@@ -64,7 +67,11 @@ export interface Project {
   description: string;
   dueDate: string;
   deliverables: Deliverable[];
-  gallerySettings: { title?: string; subtitle?: string; coverUrl?: string; accentColor?: string; earlyDownloads?: EarlyDownloads };
+  gallerySettings: {
+    title?: string; subtitle?: string; coverUrl?: string; coverImageId?: string; accentColor?: string; earlyDownloads?: EarlyDownloads;
+    /** The look of the client's gallery; see gallery/styles.ts. */
+    style?: string;
+  };
   /** Portal only: what this client may download right now. */
   downloads?: EarlyDownloads;
   galleryUrls: string[];

@@ -6,13 +6,22 @@ const MARK = "PHOTODECAFFEINE";
 
 /** A JPEG of at most 2000px with the studio name across it, or null when the browser can't read the file. */
 export async function watermark(source: Blob, name: string): Promise<File | null> {
-  if (source.type.startsWith("video/")) return null;
+  return (await prepareUpload(source, name)).preview;
+}
+
+/**
+ * For an upload: the watermarked copy (photos only) and the pixel size as
+ * shown, rotation included, from a single decode. 0 × 0 when unreadable.
+ */
+export async function prepareUpload(source: Blob, name: string): Promise<{ preview: File | null; w: number; h: number }> {
+  if (source.type.startsWith("video/")) return { preview: null, ...(await videoSize(source)) };
   let bitmap: ImageBitmap;
   try {
     bitmap = await createImageBitmap(source, { imageOrientation: "from-image" });
   } catch {
-    return null; // HEIC and TIFF outside Safari, for instance
+    return { preview: null, w: 0, h: 0 }; // HEIC and TIFF outside Safari, for instance
   }
+  const dims = { w: bitmap.width, h: bitmap.height };
   const scale = Math.min(1, LONG_EDGE / Math.max(bitmap.width, bitmap.height));
   const w = Math.round(bitmap.width * scale);
   const h = Math.round(bitmap.height * scale);
@@ -46,6 +55,21 @@ export async function watermark(source: Blob, name: string): Promise<File | null
   }
 
   const blob = await new Promise<Blob | null>((done) => canvas.toBlob(done, "image/jpeg", 0.85));
-  if (!blob) return null;
-  return new File([blob], `${name.replace(/\.\w+$/, "") || "foto"}.jpg`, { type: "image/jpeg" });
+  if (!blob) return { preview: null, ...dims };
+  return { preview: new File([blob], `${name.replace(/\.\w+$/, "") || "foto"}.jpg`, { type: "image/jpeg" }), ...dims };
+}
+
+function videoSize(file: Blob): Promise<{ w: number; h: number }> {
+  return new Promise((resolve) => {
+    const video = document.createElement("video");
+    const url = URL.createObjectURL(file);
+    const done = (w = 0, h = 0) => {
+      URL.revokeObjectURL(url);
+      resolve({ w, h });
+    };
+    video.preload = "metadata";
+    video.onloadedmetadata = () => done(video.videoWidth, video.videoHeight);
+    video.onerror = () => done();
+    video.src = url;
+  });
 }

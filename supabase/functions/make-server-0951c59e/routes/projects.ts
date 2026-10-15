@@ -335,7 +335,9 @@ r.post(`${P}/project/:id/gallery`, async (c) => {
     // could make one (not for video, nor for formats it can't decode).
     const preview = form.get(`preview-${i}`);
     const previewPath = preview instanceof File ? await uploadPrivate(`galleries/${id}/wm`, preview) : "";
-    rows.push({ project_id: id, url: "", storage_path: path, preview_path: previewPath, file_name: file.name, sort: sort++ });
+    // And its size as "<width>x<height>", so the client gallery can lay it out before it loads.
+    const [width, height] = String(form.get(`size-${i}`) || "").split("x").map((n) => Math.min(100000, Math.max(0, parseInt(n, 10) || 0)));
+    rows.push({ project_id: id, url: "", storage_path: path, preview_path: previewPath, file_name: file.name, sort: sort++, width: width || 0, height: height || 0 });
   }
   must(await db.from("gallery_images").insert(rows));
   return c.json({ project: await respond(id), added: rows.length });
@@ -348,6 +350,19 @@ r.put(`${P}/project/:id/gallery/order`, async (c) => {
     db.from("gallery_images").update({ sort }).eq("id", imageId).eq("project_id", id)
   ));
   return c.json({ project: await respond(id) });
+});
+
+// Sizes for photos uploaded before sizes were stored, measured by the admin's browser.
+r.put(`${P}/project/:id/gallery/sizes`, async (c) => {
+  const id = c.req.param("id");
+  const dim = z.number().int().min(1).max(100000);
+  const { sizes } = await readBody(c, z.object({ sizes: z.array(z.object({ id: uuid, w: dim, h: dim })).max(5000) }));
+  for (let i = 0; i < sizes.length; i += 50) {
+    await Promise.all(sizes.slice(i, i + 50).map((s) =>
+      db.from("gallery_images").update({ width: s.w, height: s.h }).eq("id", s.id).eq("project_id", id)
+    ));
+  }
+  return c.json({ success: true, updated: sizes.length });
 });
 
 r.delete(`${P}/project/:id/gallery/:imageId`, async (c) => {

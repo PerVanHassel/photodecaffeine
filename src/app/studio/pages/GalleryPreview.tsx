@@ -1,9 +1,11 @@
-import { ArrowLeft, Heart } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Link, useParams } from "react-router";
+import { ClientGallery } from "../gallery/ClientGallery";
+import { styleOf } from "../gallery/styles";
 import { useProject } from "../queries";
-import { ErrorState, isVideo, Photo, Pill, Skeleton } from "../ui";
+import { ErrorState, Skeleton } from "../ui";
 
-/** The gallery the way the client sees it, with their favourites marked. */
+/** The gallery the way the client sees it, in its chosen style, with their favourites marked. */
 export function GalleryPreviewPage() {
   const { id = "" } = useParams();
   const project = useProject(id);
@@ -13,20 +15,11 @@ export function GalleryPreviewPage() {
   const favs = p.favorites || {};
   return (
     <div className="s-view">
-      <Link to={`/admin/project/${p.id}?tab=gallery`} className="s-back"><ArrowLeft size={14} /> Terug naar project</Link>
-      <div className="s-stack sm">
-        <p className="s-eyebrow">Voorbeeld zoals de klant het ziet</p>
-        <h1 style={{ fontSize: 30 }}>{p.gallerySettings.title || p.title}</h1>
-        {p.gallerySettings.subtitle && <p className="s-muted">{p.gallerySettings.subtitle}</p>}
-        <div className="s-row"><Pill plain>{p.gallery.length} foto's</Pill>{Object.keys(favs).length > 0 && <Pill tone="acc"><Heart size={11} /> {Object.keys(favs).length} favorieten</Pill>}</div>
+      <div className="s-row between">
+        <Link to={`/admin/project/${p.id}?tab=gallery`} className="s-back"><ArrowLeft size={14} /> Terug naar project</Link>
+        <span className="s-small s-muted">Voorbeeld zoals de klant het ziet · stijl {styleOf(p).name}</span>
       </div>
-      <div className="p-proof">
-        {p.gallery.map((g) => (
-          <Photo key={g.id} src={g.url} video={isVideo(g.fileName || g.url)} alt={g.fileName}>
-            {favs[g.id] && <div className="corner"><span className="s-fav on" title={`Favoriet van ${favs[g.id].join(", ")}`}><Heart fill="currentColor" /></span></div>}
-          </Photo>
-        ))}
-      </div>
+      <ClientGallery project={p} favs={new Set(Object.keys(favs))} favNames={favs} actions={{}} back={null} preview />
     </div>
   );
 }

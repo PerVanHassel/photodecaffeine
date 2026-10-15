@@ -147,16 +147,20 @@ export function ErrorState({ error, retry }: { error: unknown; retry?: () => voi
 }
 
 /** A photo, or a neutral tile when there is none (or it fails to load). */
-export function Photo({ src, alt = "", caption, className, style, children, onClick, openLabel, video }: {
+export function Photo({ src, alt = "", caption, className, style, children, onClick, openLabel, video, onSize }: {
   src?: string | null; alt?: string; caption?: string; className?: string; style?: React.CSSProperties; children?: ReactNode;
   onClick?: () => void; openLabel?: string; video?: boolean;
+  /** Called with the pixel size once the photo or video has loaded. */
+  onSize?: (w: number, h: number) => void;
 }) {
   const [failed, setFailed] = useState(false);
   return (
     <div className={cx("s-ph", (!src || failed) && "s-ph-empty", className)} style={style}>
       {onClick && <button type="button" className="s-ph-open" aria-label={openLabel || alt || "Openen"} onClick={onClick} />}
       {src && !failed ? (
-        video ? <video src={src} muted playsInline preload="metadata" /> : <img src={src} alt={alt} loading="lazy" decoding="async" onError={() => setFailed(true)} />
+        video
+          ? <video src={src} muted playsInline preload="metadata" onLoadedMetadata={onSize && ((e) => onSize(e.currentTarget.videoWidth, e.currentTarget.videoHeight))} />
+          : <img src={src} alt={alt} loading="lazy" decoding="async" onError={() => setFailed(true)} onLoad={onSize && ((e) => onSize(e.currentTarget.naturalWidth, e.currentTarget.naturalHeight))} />
       ) : (
         <ImageOff aria-hidden="true" />
       )}
