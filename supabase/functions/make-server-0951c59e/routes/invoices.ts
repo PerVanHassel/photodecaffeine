@@ -1,7 +1,7 @@
 import { Hono, type MiddlewareHandler } from "npm:hono";
 import * as kv from "../kv_store.tsx";
 import { hasPermission } from "../lib/auth.ts";
-import { EMAIL_ADMIN_NOTIFY, EMAIL_RE, SITE_URL } from "../lib/config.ts";
+import { EMAIL_ADMIN_NOTIFY, EMAIL_INVOICE_BCC, EMAIL_RE, SITE_URL } from "../lib/config.ts";
 import { db, found, must, nextDocumentNumber } from "../lib/db.ts";
 import { emailWrap, escapeHtml, sendEmail } from "../lib/email.ts";
 import { type Env, fail, isoDate, readBody, requireAdmin, text, uuid, z } from "../lib/http.ts";
@@ -250,7 +250,7 @@ r.post(`${A}/:id/send`, async (c) => {
   const b = await readBody(c, z.object({ email: z.string().optional(), message: text(2000).default("") }));
   const to = String(b.email || inv.client_email || "").trim().toLowerCase();
   if (!EMAIL_RE.test(to)) fail(400, "Vul een geldig e-mailadres in om naar te versturen.");
-  const sent = await sendEmail({ to, subject: `Factuur ${inv.number} — PhotoDeCaffeine`, replyTo: EMAIL_ADMIN_NOTIFY, html: invoiceEmail(inv, b.message, false) });
+  const sent = await sendEmail({ to, subject: `Factuur ${inv.number} — PhotoDeCaffeine`, replyTo: EMAIL_ADMIN_NOTIFY, bcc: EMAIL_INVOICE_BCC, html: invoiceEmail(inv, b.message, false) });
   if (!sent.ok) fail(502, sent.error || "De factuur kon niet verstuurd worden.");
   const row = must(await db.from("invoices").update({
     client_email: to,
@@ -266,7 +266,7 @@ r.post(`${A}/:id/remind`, async (c) => {
   if (inv.status !== "sent") fail(409, "Alleen een verstuurde, onbetaalde factuur krijgt een herinnering.");
   if (!EMAIL_RE.test(inv.client_email)) fail(400, "Deze factuur heeft geen geldig e-mailadres.");
   const b = await readBody(c, z.object({ message: text(2000).default("") }));
-  const sent = await sendEmail({ to: inv.client_email, subject: `Herinnering: factuur ${inv.number}`, replyTo: EMAIL_ADMIN_NOTIFY, html: invoiceEmail(inv, b.message, true) });
+  const sent = await sendEmail({ to: inv.client_email, subject: `Herinnering: factuur ${inv.number}`, replyTo: EMAIL_ADMIN_NOTIFY, bcc: EMAIL_INVOICE_BCC, html: invoiceEmail(inv, b.message, true) });
   if (!sent.ok) fail(502, sent.error || "De herinnering kon niet verstuurd worden.");
   const row = must(await db.from("invoices").update({ reminded_at: new Date().toISOString() }).eq("id", id).select("*").single());
   return c.json({ invoice: toApi(row) });

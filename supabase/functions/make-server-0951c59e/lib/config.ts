@@ -1,6 +1,8 @@
 // --- Email ---
 export const EMAIL_FROM = "PhotoDeCaffeine <noreply@photodecaffeine.com>";
 export const EMAIL_ADMIN_NOTIFY = "contact@photodecaffeine.com";
+// Gets a blind copy of every invoice and reminder, so the owner sees it went out.
+export const EMAIL_INVOICE_BCC = "pervanhassel@gmail.com";
 export const SITE_URL = "https://www.photodecaffeine.com";
 
 // The site owner — always has every permission regardless of what's stored in

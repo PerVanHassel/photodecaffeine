@@ -10,6 +10,7 @@ export async function sendEmail(opts: {
   subject: string;
   html: string;
   replyTo?: string;
+  bcc?: string | string[];
 }): Promise<{ ok: boolean; error?: string }> {
   const apiKey = Deno.env.get("RESEND_API_KEY");
   if (!apiKey) {
@@ -29,6 +30,7 @@ export async function sendEmail(opts: {
         subject: opts.subject,
         html: opts.html,
         reply_to: opts.replyTo,
+        bcc: opts.bcc,
       }),
     });
     if (!res.ok) {
