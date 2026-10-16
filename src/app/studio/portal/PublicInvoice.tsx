@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { Printer } from "lucide-react";
+import { Download, Printer } from "lucide-react";
+import { useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { get } from "../api";
 import { InvoiceDocument } from "../components/InvoiceDocument";
+import { downloadInvoicePdf } from "../components/invoicePdf";
 import { StudioFonts } from "../fonts";
 import { queryClient } from "../queries";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -29,6 +31,11 @@ function Inner() {
     retry: false,
   });
   const inv = data.data?.invoice;
+  const [saving, setSaving] = useState(false);
+  async function download() {
+    setSaving(true);
+    try { await downloadInvoicePdf(inv!, data.data!.business); } finally { setSaving(false); }
+  }
 
   return (
     <div className="studio" style={{ background: "var(--sunken)", padding: "32px 16px" }}>
@@ -38,7 +45,10 @@ function Inner() {
           <>
             <div className="s-row between no-print">
               <Pill tone={inv.status === "paid" ? "ok" : inv.overdue ? "bad" : "info"}>{inv.status === "paid" ? "Betaald" : inv.overdue ? "Te laat" : inv.status === "void" ? "Vervallen" : "Open"}</Pill>
-              <Button icon={<Printer />} onClick={() => window.print()}>Printen of opslaan als PDF</Button>
+              <div className="s-row">
+                <Button icon={<Printer />} onClick={() => window.print()}>Printen</Button>
+                <Button variant="primary" icon={<Download />} loading={saving} onClick={download}>Download PDF</Button>
+              </div>
             </div>
             <InvoiceDocument invoice={inv} business={data.data!.business} />
           </>
