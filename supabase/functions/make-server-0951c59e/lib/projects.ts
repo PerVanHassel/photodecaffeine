@@ -1,5 +1,6 @@
 import { db, found, must } from "./db.ts";
-import { imageKey, removePrivate, signPaths } from "./storage.ts";
+import { fail } from "./http.ts";
+import { imageKey, removePrivate, signDownload, signPaths } from "./storage.ts";
 import { projectDemos } from "./util.ts";
 
 // ---------------------------------------------------------------------------
@@ -114,6 +115,24 @@ export function clientDownloads(row: ProjectRow): Downloads {
   if (DONE_STAGES.includes(row.stage)) return "original";
   const early = row.gallery_settings?.earlyDownloads;
   return early === "watermark" || early === "none" ? early : "original";
+}
+
+/** The name a watermarked copy is saved under. */
+export function watermarkedName(name: string): string {
+  return `${(name || "foto").replace(/\.\w+$/, "")}-voorbeeld.jpg`;
+}
+
+/** A link that saves one gallery photo, as far as `downloads` allows; fails when it allows nothing. */
+export async function downloadLink(img: any, downloads: Downloads): Promise<{ url: string; fileName: string }> {
+  if (downloads === "none" || (downloads === "watermark" && !img.preview_path)) {
+    fail(403, "Downloaden kan zodra de foto's geleverd zijn.");
+  }
+  if (downloads === "watermark") {
+    const fileName = watermarkedName(img.file_name);
+    return { url: await signDownload(img.preview_path, fileName), fileName };
+  }
+  const url = img.storage_path ? await signDownload(img.storage_path, img.file_name) : img.url;
+  return { url, fileName: img.file_name };
 }
 
 export type Signer = (img: any, preview?: boolean) => string;

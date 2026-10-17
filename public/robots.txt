@@ -4,6 +4,7 @@ Disallow: /portal/
 Disallow: /app/
 Disallow: /offerte/
 Disallow: /factuur/
+Disallow: /galerij/
 Disallow: /demo/
 Disallow: /fotoproef.html
 Allow: /

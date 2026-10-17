@@ -1,10 +1,10 @@
-import { ArrowDown, ArrowRight, ArrowUp, ChevronLeft, ChevronRight, Download, Grid3x3, Heart, Play, Rows2, X } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUp, ChevronLeft, ChevronRight, Download, Flame, Grid3x3, Heart, Play, Rows2, Share2, Users, X } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Helmet } from "react-helmet-async";
 import { useModalFocus } from "../../lib/dialog";
 import { fmt } from "../format";
 import { useT } from "../portal/i18n";
-import type { GalleryImage, Project } from "../types";
+import type { GalleryImage, GalleryProject } from "../types";
 import { cx, isVideo } from "../ui";
 import { useUrlState } from "../urlState";
 import { DEFAULT_RATIO, justify, masonry, rowBoxes, story, type Box } from "./layout";
@@ -12,11 +12,15 @@ import { accentOf, onAccent, styleOf, type StyleDef } from "./styles";
 import "./gallery.css";
 
 // The client's gallery in the look the studio chose for the project. Used by
-// the portal (hearts, downloads, sending the choice) and by the admin preview
+// the portal (hearts, downloads, sending the choice), by the group link's page
+// (everyone's hearts counted, shared photos) and by the admin preview
 // (read-only, with everyone's favourites).
 
 type T = ReturnType<typeof useT>;
 type View = "large" | "compact";
+type Filter = "all" | "fav" | "popular";
+/** How a photo's hearts from the group show: in the heart itself (guests), as a badge (the client), or not. */
+type CountAs = "heart" | "badge" | "none";
 type TileFn = (g: GalleryImage, i: number, opts?: { heart?: boolean; eager?: boolean }) => ReactNode;
 
 export interface GalleryActions {
@@ -25,6 +29,10 @@ export interface GalleryActions {
   downloadAll?: (list: GalleryImage[]) => void;
   zip?: { done: number; total: number } | null;
   submit?: () => void;
+  /** Opens the panel to pass the group link on. */
+  share?: () => void;
+  /** Passes on a link to one photo. */
+  sharePhoto?: (img: GalleryImage) => void;
 }
 
 const DONE = ["delivered", "review", "archived"];
@@ -52,19 +60,27 @@ function tempo(ratios: number[], w: number) {
   return rowBoxes(rows, ratios, w, gap);
 }
 
-export function ClientGallery({ project: p, favs, favNames, actions, back, preview }: {
-  project: Project;
+export function ClientGallery({ project: p, favs, favNames, counts, guest, actions, back, after, openId, preview }: {
+  project: GalleryProject;
   favs: Set<string>;
   /** Preview: who picked each photo. */
   favNames?: Record<string, string[]>;
+  /** Hearts per photo from the people the group link reached. */
+  counts?: Record<string, number>;
+  /** Someone who came in with the group link: their texts, and the hearts counted in the heart. */
+  guest?: { name: string; guests: number };
   actions: GalleryActions;
   back: ReactNode;
+  /** Under the photos, above the footer. */
+  after?: ReactNode;
+  /** A photo to open straight away (a link to one photo). */
+  openId?: string;
   preview?: boolean;
 }) {
   const t = useT();
   const style = styleOf(p);
   const accent = accentOf(p);
-  const [filter, setFilter] = useUrlState<"all" | "fav">("filter", "all", ["all", "fav"]);
+  const [filter, setFilter] = useUrlState<Filter>("filter", "all", ["all", "fav", "popular"]);
   const [view, setView] = useUrlState<View>("view", "large", ["large", "compact"]);
   const [open, setOpen] = useState<{ list: GalleryImage[]; index: number } | null>(null);
   const { ratioOf, report } = useRatios();
@@ -73,10 +89,21 @@ export function ClientGallery({ project: p, favs, favNames, actions, back, previ
 
   const delivered = DONE.includes(p.stage);
   const downloads = preview ? "none" : p.downloads || "original";
-  const shown = filter === "fav" ? p.gallery.filter((g) => favs.has(g.id)) : p.gallery;
-  const ratios = shown.map(ratioOf);
   const numberOf = useMemo(() => new Map(p.gallery.map((g, i) => [g.id, i + 1])), [p.gallery]);
+  const countOf = (g: GalleryImage) => counts?.[g.id] || 0;
+  // Most hearts first; equal ones keep the studio's order.
+  const popular = p.gallery.filter((g) => countOf(g) > 0).sort((a, b) => countOf(b) - countOf(a) || numberOf.get(a.id)! - numberOf.get(b.id)!);
+  const showPopular = popular.length > 0 || filter === "popular";
+  const shown = filter === "fav" ? p.gallery.filter((g) => favs.has(g.id)) : filter === "popular" ? popular : p.gallery;
+  const countAs: CountAs = guest ? "heart" : filter === "popular" ? "badge" : "none";
+  const ratios = shown.map(ratioOf);
   const videos = p.gallery.filter((g) => isVideo(g.fileName || g.url)).length;
+
+  // A link to one photo opens it once the gallery is there.
+  useEffect(() => {
+    const index = openId ? p.gallery.findIndex((g) => g.id === openId) : -1;
+    if (index >= 0) setOpen({ list: p.gallery, index });
+  }, [openId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const coverImage = p.gallery.find((g) => g.id === p.gallerySettings.coverImageId) || p.gallery.find((g) => !isVideo(g.fileName || g.url));
   const cover = p.gallerySettings.coverUrl || coverImage?.url || "";
@@ -92,6 +119,8 @@ export function ClientGallery({ project: p, favs, favNames, actions, back, previ
       alt={t.photoOf(numberOf.get(g.id) || i + 1, p.gallery.length)}
       fav={favs.has(g.id)}
       favBy={favNames?.[g.id]}
+      count={countOf(g)}
+      countAs={countAs}
       onOpen={() => setOpen({ list: shown, index: i })}
       onToggle={actions.toggle && (() => actions.toggle!(g))}
       onSize={(w, h) => report(g, w, h)}
@@ -104,7 +133,9 @@ export function ClientGallery({ project: p, favs, favNames, actions, back, previ
   const layout = view === "compact" ? "compact" : style.layout;
   let body: ReactNode;
   if (layout === "story") body = <StoryLayout images={shown} ratios={ratios} tile={tile} numberOf={numberOf} total={p.gallery.length} />;
-  else if (layout === "sheet") body = <SheetLayout images={shown} ratios={ratios} tile={tile} numberOf={numberOf} favs={favs} favNames={favNames} onToggle={actions.toggle} t={t} />;
+  else if (layout === "sheet") {
+    body = <SheetLayout images={shown} ratios={ratios} tile={tile} numberOf={numberOf} favs={favs} favNames={favNames} counts={countAs === "heart" ? counts : undefined} onToggle={actions.toggle} t={t} />;
+  }
   else if (layout === "tempo") body = <PlacedLayout images={shown} tile={tile} place={(w) => tempo(ratios, w)} />;
   else if (layout === "masonry") {
     body = <PlacedLayout images={shown} tile={tile} place={(w) => masonry(ratios, w, w < 620 ? 2 : w < 1080 ? 3 : 4, w < 620 ? 8 : 16)} />;
@@ -124,15 +155,23 @@ export function ClientGallery({ project: p, favs, favNames, actions, back, previ
       <div><dt>{t.statPhotos}</dt><dd>{p.gallery.length - videos}</dd></div>
       {videos > 0 && <div><dt>{t.statVideos}</dt><dd>{videos}</dd></div>}
       {favs.size > 0 && <div><dt>{t.statFavorites}</dt><dd>{favs.size}</dd></div>}
+      {guest && guest.guests > 0 && <div><dt>{t.statGuests}</dt><dd>{guest.guests}</dd></div>}
     </dl>
   );
   const intro = (
     <>
-      <p className="g-intro">{delivered ? t.galleryDownloadIntro : t.galleryChooseIntro}</p>
-      {downloads === "watermark" && <p className="g-small">{t.watermarkNote}</p>}
+      <p className="g-intro">
+        {guest ? t.guestIntro(guest.name.split(" ")[0], downloads !== "none") : delivered ? t.galleryDownloadIntro : t.galleryChooseIntro}
+      </p>
+      {(downloads === "watermark" || p.watermarked) && <p className="g-small">{guest ? t.watermarkNoteGuest : t.watermarkNote}</p>}
+      {actions.share && !guest && (
+        <button type="button" className="g-share-cta" onClick={actions.share}><Users />{t.shareCta}</button>
+      )}
     </>
   );
   const title = p.gallerySettings.title || p.title;
+  // Catalogus shows three figures; for a guest the last one is how many came by.
+  const third: [string, string] = guest ? [t.statGuests, String(guest.guests)] : [t.statStatus, delivered ? t.statusReady : t.statusChoosing];
 
   return (
     <main
@@ -149,44 +188,58 @@ export function ClientGallery({ project: p, favs, favNames, actions, back, previ
       {back && <div className="g-back">{back}</div>}
 
       <Hero style={style} title={title} kicker={kicker} cover={cover} strip={strip} intro={intro} facts={facts} t={t}
-        status={delivered ? t.statusReady : t.statusChoosing} count={p.gallery.length} favCount={favs.size}
+        third={third} count={p.gallery.length} favCount={favs.size}
         onScroll={() => grid.current?.scrollIntoView({ behavior: "smooth" })} />
 
       <section ref={grid} className="g-wrap" aria-label={t.yourGallery} style={{ scrollMarginTop: top }}
         onContextMenu={downloads === "original" || preview ? undefined : (e) => e.preventDefault()}>
         {p.gallery.length === 0 ? (
-          <div className="g-empty"><p className="g-title">{t.noPhotos}</p><p>{t.noPhotosHint}</p></div>
+          <div className="g-empty"><p className="g-title">{t.noPhotos}</p><p>{guest ? t.noPhotosGuest : t.noPhotosHint}</p></div>
         ) : (
           <>
             <div className="g-bar">
-              <div className="g-tabs" role="group" aria-label="Filter">
+              <div className={cx("g-tabs", showPopular && "three")} role="group" aria-label="Filter">
                 <button type="button" className="g-tab" aria-pressed={filter === "all"} onClick={() => setFilter("all")}>
                   {t.allShort}<span className="n">{p.gallery.length}</span>
                 </button>
                 <button type="button" className="g-tab" aria-pressed={filter === "fav"} onClick={() => setFilter("fav")}>
-                  <Heart fill={filter === "fav" ? "currentColor" : "none"} />{t.favoritesShort}<span className="n">{favs.size}</span>
+                  <Heart fill={filter === "fav" ? "currentColor" : "none"} /><span className="g-tab-label">{t.favoritesShort}</span><span className="n">{favs.size}</span>
                 </button>
+                {showPopular && (
+                  <button type="button" className="g-tab" aria-pressed={filter === "popular"} onClick={() => setFilter("popular")}>
+                    <Flame /><span className="g-tab-label">{t.popularShort}</span><span className="n">{popular.length}</span>
+                  </button>
+                )}
               </div>
               <div className="g-tools">
                 <div className="g-views" role="group" aria-label={t.viewLabel}>
                   <button type="button" aria-pressed={view === "large"} title={t.viewLarge} aria-label={t.viewLarge} onClick={() => setView("large")}><Rows2 /></button>
                   <button type="button" aria-pressed={view === "compact"} title={t.viewCompact} aria-label={t.viewCompact} onClick={() => setView("compact")}><Grid3x3 /></button>
                 </div>
-                {actions.downloadAll && downloads !== "none" && shown.length > 0 && (
+                {actions.downloadAll && downloads !== "none" && shown.length > 0 && filter !== "popular" && (
                   <button type="button" className="g-btn" disabled={!!actions.zip} onClick={() => actions.downloadAll!(shown)}
                     aria-label={filter === "fav" ? t.downloadFavorites : t.downloadAll}>
                     <Download />
                     <span className="g-btn-label">{actions.zip ? t.zipping(actions.zip.done, actions.zip.total) : filter === "fav" ? t.downloadFavorites : t.downloadAll}</span>
                   </button>
                 )}
+                {actions.share && (
+                  <button type="button" className="g-btn" onClick={actions.share} aria-label={guest ? t.share : t.shareWithGroup}>
+                    <Share2 /><span className="g-btn-label">{guest ? t.share : t.shareWithGroup}</span>
+                  </button>
+                )}
               </div>
             </div>
-            {shown.length === 0 ? (
+            {shown.length > 0 ? body : filter === "popular" ? (
+              <div className="g-empty"><Flame /><p className="g-title">{t.noHearts}</p><p>{t.noHeartsHint}</p></div>
+            ) : (
               <div className="g-empty"><Heart /><p className="g-title">{t.noFavorites}</p><p>{t.noFavoritesHint}</p></div>
-            ) : body}
+            )}
           </>
         )}
       </section>
+
+      {after}
 
       <footer className="g-foot">
         <span>{t.madeBy}</span>
@@ -204,7 +257,8 @@ export function ClientGallery({ project: p, favs, favNames, actions, back, previ
 
       {open && (
         <Lightbox list={open.list} start={open.index} total={p.gallery.length} numberOf={numberOf} favs={favs} favNames={favNames}
-          onToggle={actions.toggle} onDownload={downloads === "none" ? undefined : actions.downloadOne}
+          counts={counts} countAs={guest ? "heart" : "badge"}
+          onToggle={actions.toggle} onDownload={downloads === "none" ? undefined : actions.downloadOne} onShare={actions.sharePhoto}
           protect={downloads !== "original" && !preview} onClose={() => setOpen(null)} t={t} />
       )}
     </main>
@@ -215,8 +269,10 @@ export function ClientGallery({ project: p, favs, favNames, actions, back, previ
 // The opening of each look
 // ---------------------------------------------------------------------------
 
-function Hero({ style, title, kicker, cover, strip, intro, facts, status, count, favCount, onScroll, t }: {
-  style: StyleDef; title: string; kicker: string; cover: string; strip: string[]; intro: ReactNode; facts: ReactNode; status: string;
+function Hero({ style, title, kicker, cover, strip, intro, facts, third, count, favCount, onScroll, t }: {
+  style: StyleDef; title: string; kicker: string; cover: string; strip: string[]; intro: ReactNode; facts: ReactNode;
+  /** Catalogus's third figure, as [label, value]. */
+  third: [string, string];
   count: number; favCount: number; onScroll: () => void; t: T;
 }) {
   const coverFig = cover ? <figure className="g-cover"><img src={cover} alt="" /></figure> : null;
@@ -284,7 +340,7 @@ function Hero({ style, title, kicker, cover, strip, intro, facts, status, count,
           <dl className="g-spec">
             <div><dt>{t.statPhotos}</dt><dd>{count}</dd></div>
             <div><dt>{t.statFavorites}</dt><dd>{favCount}</dd></div>
-            <div><dt>{t.statStatus}</dt><dd>{status}</dd></div>
+            <div><dt>{third[0]}</dt><dd>{third[1]}</dd></div>
           </dl>
         </header>
       );
@@ -353,9 +409,12 @@ function StoryLayout({ images, ratios, tile, numberOf, total }: { images: Galler
 }
 
 /** A contact sheet: every photo whole, centred in a square, with its number and name. */
-function SheetLayout({ images, ratios, tile, numberOf, favs, favNames, onToggle, t }: {
+function SheetLayout({ images, ratios, tile, numberOf, favs, favNames, counts, onToggle, t }: {
   images: GalleryImage[]; ratios: number[]; tile: TileFn; numberOf: Map<string, number>; favs: Set<string>;
-  favNames?: Record<string, string[]>; onToggle?: (g: GalleryImage) => void; t: T;
+  favNames?: Record<string, string[]>;
+  /** Hearts to count in the heart itself (a guest's view). */
+  counts?: Record<string, number>;
+  onToggle?: (g: GalleryImage) => void; t: T;
 }) {
   return (
     <ul className="g-sheet">
@@ -365,7 +424,7 @@ function SheetLayout({ images, ratios, tile, numberOf, favs, favNames, onToggle,
           <div className="g-cap">
             <span className="g-num">{String(numberOf.get(g.id) || i + 1).padStart(3, "0")}</span>
             <span className="g-file">{g.fileName}</span>
-            <HeartButton on={favs.has(g.id)} by={favNames?.[g.id]} onToggle={onToggle && (() => onToggle(g))} t={t} inline />
+            <HeartButton on={favs.has(g.id)} by={favNames?.[g.id]} count={counts?.[g.id]} onToggle={onToggle && (() => onToggle(g))} t={t} inline />
           </div>
         </li>
       ))}
@@ -380,8 +439,8 @@ function SheetLayout({ images, ratios, tile, numberOf, favs, favNames, onToggle,
 /** Photos already shown once this visit appear without fading in again. */
 const seen = new Set<string>();
 
-function Tile({ img, label, alt, fav, favBy, onOpen, onToggle, onSize, eager, heart = true, t }: {
-  img: GalleryImage; label: string; alt: string; fav: boolean; favBy?: string[]; onOpen: () => void; onToggle?: () => void;
+function Tile({ img, label, alt, fav, favBy, count, countAs, onOpen, onToggle, onSize, eager, heart = true, t }: {
+  img: GalleryImage; label: string; alt: string; fav: boolean; favBy?: string[]; count: number; countAs: CountAs; onOpen: () => void; onToggle?: () => void;
   onSize: (w: number, h: number) => void; eager?: boolean; heart?: boolean; t: T;
 }) {
   const video = isVideo(img.fileName || img.url);
@@ -404,17 +463,31 @@ function Tile({ img, label, alt, fav, favBy, onOpen, onToggle, onSize, eager, he
         />
       )}
       {video && <span className="g-play" aria-hidden="true"><Play fill="currentColor" /></span>}
-      {heart && <HeartButton on={fav} by={favBy} onToggle={onToggle} t={t} />}
+      {heart && <HeartButton on={fav} by={favBy} count={countAs === "heart" ? count : 0} onToggle={onToggle} t={t} />}
+      {countAs === "badge" && count > 0 && (
+        <span className="g-group" title={t.groupLikes(count)}>
+          <Users aria-hidden="true" /><span aria-hidden="true">{count}</span><span className="s-sr">{t.groupLikes(count)}</span>
+        </span>
+      )}
     </figure>
   );
 }
 
-function HeartButton({ on, by, onToggle, t, inline }: { on: boolean; by?: string[]; onToggle?: () => void; t: T; inline?: boolean }) {
-  const cls = cx("g-heart", inline && "inline", on && "on");
-  if (!onToggle) return on ? <span className={cls} title={by?.length ? t.favoriteOf(by.join(", ")) : t.favorite}><Heart fill="currentColor" /></span> : null;
+/** The heart: someone's own pick. On the group page it also carries how many hearts the photo has. */
+function HeartButton({ on, by, count = 0, onToggle, t, inline }: { on: boolean; by?: string[]; count?: number; onToggle?: () => void; t: T; inline?: boolean }) {
+  const cls = cx("g-heart", inline && "inline", on && "on", count > 0 && "counted");
+  const n = count > 0 ? <span className="g-heart-n">{count}</span> : null;
+  if (!onToggle) {
+    if (!on && !n) return null;
+    return (
+      <span className={cls} title={by?.length ? t.favoriteOf(by.join(", ")) : n ? t.favoriteWithCount(count) : t.favorite}>
+        <Heart fill={on ? "currentColor" : "none"} />{n}
+      </span>
+    );
+  }
   return (
-    <button type="button" className={cls} aria-pressed={on} aria-label={t.favorite} onClick={(e) => { e.stopPropagation(); onToggle(); }}>
-      <Heart fill={on ? "currentColor" : "none"} />
+    <button type="button" className={cls} aria-pressed={on} aria-label={n ? t.favoriteWithCount(count) : t.favorite} onClick={(e) => { e.stopPropagation(); onToggle(); }}>
+      <Heart fill={on ? "currentColor" : "none"} />{n}
     </button>
   );
 }
@@ -423,9 +496,11 @@ function HeartButton({ on, by, onToggle, t, inline }: { on: boolean; by?: string
 // Lightbox
 // ---------------------------------------------------------------------------
 
-function Lightbox({ list, start, total, numberOf, favs, favNames, onToggle, onDownload, protect, onClose, t }: {
+function Lightbox({ list, start, total, numberOf, favs, favNames, counts, countAs, onToggle, onDownload, onShare, protect, onClose, t }: {
   list: GalleryImage[]; start: number; total: number; numberOf: Map<string, number>; favs: Set<string>; favNames?: Record<string, string[]>;
-  onToggle?: (g: GalleryImage) => void; onDownload?: (g: GalleryImage) => void; protect: boolean; onClose: () => void; t: T;
+  counts?: Record<string, number>; countAs: CountAs;
+  onToggle?: (g: GalleryImage) => void; onDownload?: (g: GalleryImage) => void; onShare?: (g: GalleryImage) => void;
+  protect: boolean; onClose: () => void; t: T;
 }) {
   const [index, setIndex] = useState(start);
   const img = list[index];
@@ -458,6 +533,7 @@ function Lightbox({ list, start, total, numberOf, favs, favNames, onToggle, onDo
   const n = numberOf.get(img.id) || index + 1;
   const fav = favs.has(img.id);
   const by = favNames?.[img.id];
+  const hearts = counts?.[img.id] || 0;
   return (
     <div ref={box} className="g-lightbox" role="dialog" aria-modal="true" aria-label={t.photoOf(n, total)}
       onTouchStart={(e) => setTouchX(e.touches[0].clientX)}
@@ -476,8 +552,13 @@ function Lightbox({ list, start, total, numberOf, favs, favNames, onToggle, onDo
           {onToggle ? (
             <button type="button" className={cx("g-btn", fav && "on")} aria-pressed={fav} onClick={() => onToggle(img)}>
               <Heart fill={fav ? "currentColor" : "none"} /><span className="g-btn-label">{fav ? t.favorite : t.makeFavorite}</span>
+              {countAs === "heart" && hearts > 0 && <span className="g-btn-n">{hearts}</span>}
             </button>
-          ) : fav && <span className="g-lb-fav"><Heart fill="currentColor" />{by?.length ? t.favoriteOf(by.join(", ")) : t.favorite}</span>}
+          ) : fav ? <span className="g-lb-fav"><Heart fill="currentColor" />{by?.length ? t.favoriteOf(by.join(", ")) : t.favorite}</span>
+            : countAs === "heart" && hearts > 0 && <span className="g-lb-fav"><Heart />{t.favoriteWithCount(hearts)}</span>}
+          {onShare && (
+            <button type="button" className="g-btn" onClick={() => onShare(img)} aria-label={t.sharePhoto}><Share2 /><span className="g-btn-label">{t.share}</span></button>
+          )}
           {onDownload && img.download !== false && (
             <button type="button" className="g-btn" onClick={() => onDownload(img)} aria-label={t.download}><Download /><span className="g-btn-label">{t.download}</span></button>
           )}
@@ -495,7 +576,10 @@ function Lightbox({ list, start, total, numberOf, favs, favNames, onToggle, onDo
           </>
         )}
       </div>
-      <p className="g-lb-foot">{onToggle ? t.lightboxHint : `${index + 1} / ${list.length}`}</p>
+      <p className="g-lb-foot">
+        {countAs === "badge" && hearts > 0 && <span className="g-lb-group"><Users aria-hidden="true" />{t.groupLikes(hearts)}</span>}
+        <span>{onToggle ? t.lightboxHint : `${index + 1} / ${list.length}`}</span>
+      </p>
     </div>
   );
 }

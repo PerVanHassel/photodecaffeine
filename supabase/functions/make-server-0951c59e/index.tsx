@@ -17,6 +17,7 @@ import portfolio from "./routes/portfolio.ts";
 import projects from "./routes/projects.ts";
 import quotes from "./routes/quotes.ts";
 import settings from "./routes/settings.ts";
+import share from "./routes/share.ts";
 import storage from "./routes/storage.ts";
 import tasks from "./routes/tasks.ts";
 import team from "./routes/team.ts";
@@ -43,7 +44,7 @@ app.onError(onError);
 
 const modules: Hono<any>[] = [
   clients, portal, projects, quotes, invoices, inquiries, tasks, locations, events, overview,
-  engagement, portfolio, team, declarations, settings, notifications, storage,
+  engagement, portfolio, team, declarations, settings, notifications, storage, share,
 ];
 for (const module of modules) app.route("/", module);
 

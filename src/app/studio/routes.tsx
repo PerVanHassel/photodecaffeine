@@ -102,6 +102,7 @@ const PortalFeedback = page(() => import("./portal/Feedback"), "PortalFeedbackPa
 const Login = lazy(() => import("./portal/Auth").then((m) => ({ default: () => <m.LoginPage /> })));
 const ResetPassword = page(() => import("./portal/Auth"), "ResetPasswordPage");
 export const PublicInvoice = wrap(page(() => import("./portal/PublicInvoice"), "PublicInvoicePage"));
+export const GuestGallery = wrap(page(() => import("./share/GuestGallery"), "GuestGalleryPage"));
 
 export const portalRoutes: RouteObject = {
   path: "/portal",

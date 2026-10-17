@@ -237,13 +237,14 @@
  */
 .g-hero--arena { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px 48px; align-items: end; padding-top: clamp(20px, 3vw, 40px); }
 .g-hero--arena > * { grid-column: 1 / -1; }
-.g-hero--arena .g-kicker {
+.g-hero--arena .g-kicker, .g-gate[data-style="arena"] .g-kicker {
   justify-self: start; display: inline-block; padding: 5px 14px; background: var(--g-accent); color: var(--g-on-accent);
   font-size: 12.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; transform: skewX(-12deg);
 }
-.g-hero--arena .g-kicker span { display: inline-block; transform: skewX(12deg); }
+.g-hero--arena .g-kicker span, .g-gate[data-style="arena"] .g-kicker span { display: inline-block; transform: skewX(12deg); }
 .g-hero--arena .g-title { font-size: clamp(46px, 9vw, 152px); line-height: 0.88; padding-bottom: 0.04em; text-transform: uppercase; }
-.g-burst { --slant: clamp(14px, 2.6vw, 44px); --burst-gap: 6px; display: flex; height: clamp(190px, 30vw, 460px); margin-top: 6px; }
+/* Clipped, so the frames sliding in don't widen a phone's page while they arrive. */
+.g-burst { --slant: clamp(14px, 2.6vw, 44px); --burst-gap: 6px; display: flex; height: clamp(190px, 30vw, 460px); margin-top: 6px; overflow: hidden; }
 .g-burst figure {
   flex: 1 1 0; min-width: 0; margin: 0 0 0 calc(var(--burst-gap) - var(--slant)); overflow: hidden; background: var(--g-tile);
   clip-path: polygon(var(--slant) 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
@@ -348,6 +349,21 @@
 .g-heart.inline:hover { color: var(--g-text); }
 .g-heart.inline.on { background: none; color: var(--g-accent-ink); }
 
+/* On the group page the heart carries everyone's count, and is always in view once there is one. */
+.g-heart.counted { display: inline-flex; gap: 5px; width: auto; min-width: 36px; padding: 0 11px 0 10px; border-radius: 999px; opacity: 1; transform: none; }
+.g-heart-n { font-size: 12.5px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.g-page[data-view="compact"] .g-heart.counted { width: auto; min-width: 30px; padding: 0 8px; gap: 4px; }
+.g-heart.inline.counted { min-width: 28px; padding: 0 4px; }
+/* The client's view of what the group liked: a badge, apart from their own heart. */
+.g-group {
+  position: absolute; z-index: 2; left: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px;
+  border-radius: 999px; background: rgba(20, 16, 12, 0.5); color: #fff; font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); pointer-events: none;
+}
+.g-group svg { width: 14px; height: 14px; }
+.g-page[data-view="compact"] .g-group { left: 6px; bottom: 6px; height: 24px; padding: 0 8px; font-size: 11.5px; }
+.g-page[data-style="arena"] .g-group { border-radius: 0; }
+
 /* Story (editorial): spreads with room between them. */
 .g-story { display: flex; flex-direction: column; gap: clamp(24px, 6vw, 104px); }
 .g-full { width: min(100%, calc(var(--r) * 84svh)); aspect-ratio: var(--r); margin-inline: auto; }
@@ -421,7 +437,8 @@
 .g-lb-actions { display: flex; align-items: center; gap: 8px; }
 .g-lb-fav { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--g-accent-ink); }
 .g-lb-fav svg { width: 15px; height: 15px; }
-.g-lb-stage { position: relative; display: grid; place-items: center; min-height: 0; padding: 0 clamp(8px, 7vw, 96px); }
+/* One fixed cell, so a tall photo's max-height is the stage's height and not its own. */
+.g-lb-stage { position: relative; display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); place-items: center; min-height: 0; padding: 0 clamp(8px, 7vw, 96px); }
 .g-lb-stage img, .g-lb-stage video { max-width: 100%; max-height: 100%; object-fit: contain; animation: g-fade 0.4s ease-out; }
 .g-page[data-tone="light"] .g-lb-stage img { box-shadow: 0 30px 60px -30px rgba(29, 25, 21, 0.35); }
 .g-lb-nav {
@@ -433,7 +450,10 @@
 .g-lb-nav:active { transform: translateY(-50%) scale(0.94); }
 .g-lb-nav.prev { left: clamp(8px, 2vw, 28px); }
 .g-lb-nav.next { right: clamp(8px, 2vw, 28px); }
-.g-lb-foot { margin: 0; padding: 10px 16px 14px; text-align: center; font-size: 12px; color: var(--g-faint); }
+.g-lb-foot { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; margin: 0; padding: 10px 16px 14px; text-align: center; font-size: 12px; color: var(--g-faint); }
+.g-lb-group { display: inline-flex; align-items: center; gap: 6px; color: var(--g-accent-ink); font-weight: 600; }
+.g-lb-group svg { width: 14px; height: 14px; }
+.g-btn-n { font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; opacity: 0.85; }
 @keyframes g-fade { from { opacity: 0; } }
 
 /* ---------- Arena details ---------- */
@@ -454,6 +474,73 @@
 }
 .g-page[data-style="arena"] .g-tile.is-fav::after { transform: none; }
 
+/* ---------- sharing ---------- */
+.g-share-cta {
+  display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; margin-top: 18px; padding: 0; border: 0; background: none;
+  color: var(--g-accent-ink); font-size: 14px; font-weight: 600; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px;
+}
+.g-share-cta:hover { text-decoration-thickness: 2px; }
+.g-share-cta svg { width: 16px; height: 16px; }
+.g-hero--zacht .g-share-cta { align-self: center; }
+
+/* ---------- the group page ---------- */
+.g-guest-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--g-muted); font-size: 12.5px; }
+.g-brand { color: var(--g-text); font-weight: 600; letter-spacing: 0.01em; text-decoration: none; }
+.g-lang { display: inline-flex; padding: 3px; border: 1px solid var(--g-line); border-radius: var(--g-control); }
+.g-lang button {
+  height: 24px; padding: 0 10px; border: 0; border-radius: var(--g-control); background: none;
+  color: var(--g-faint); font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; transition: background 0.2s, color 0.2s;
+}
+.g-lang button:hover { color: var(--g-text); }
+.g-lang button[aria-pressed="true"] { background: var(--g-text); color: var(--g-bg); }
+.g-preview-note { margin-top: 12px; padding: 10px 14px; border-radius: max(var(--g-radius), 4px); background: color-mix(in srgb, var(--g-accent) 14%, var(--g-bg)); color: var(--g-text); font-size: 13px; }
+
+/* The door: the cover on one side, the name and e-mail on the other. */
+.g-gate {
+  display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas: "cover top" "cover body"; padding-bottom: 0;
+}
+.g-gate.no-cover { grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "body"; }
+.g-gate-top { grid-area: top; padding: clamp(16px, 2.4vw, 30px) clamp(20px, 5vw, 80px) 0; }
+.g-gate-cover { grid-area: cover; position: relative; min-height: 100dvh; margin: 0; overflow: hidden; background: var(--g-tile); }
+.g-gate-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: g-settle 1.6s var(--g-ease) both; }
+.g-gate-body { grid-area: body; align-self: center; display: flex; flex-direction: column; width: 100%; max-width: 520px; padding: clamp(32px, 6vh, 72px) clamp(20px, 5vw, 80px); }
+.g-gate.no-cover .g-gate-body { justify-self: center; }
+.g-gate .g-kicker { margin-bottom: 14px; }
+.g-gate .g-title { font-size: clamp(40px, 4.6vw, 72px); }
+.g-gate[data-style="arena"] .g-kicker { align-self: flex-start; margin-left: 4px; }
+.g-gate[data-style="arena"] .g-title { font-size: clamp(38px, 4.2vw, 64px); line-height: 0.9; text-transform: uppercase; }
+.g-gate .g-intro { margin-top: 16px; }
+.g-gate-form { display: grid; gap: 14px; margin-top: 28px; }
+.g-field { display: grid; gap: 6px; color: var(--g-muted); font-size: 12.5px; font-weight: 500; }
+.g-field input {
+  width: 100%; height: 48px; padding: 0 14px; border: 1px solid color-mix(in srgb, var(--g-text) 20%, transparent); border-radius: max(var(--g-radius), 4px);
+  background: color-mix(in srgb, var(--g-text) 3%, transparent); color: var(--g-text); font-size: 16px; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.g-field input:focus { outline: none; border-color: var(--g-accent-ink); box-shadow: 0 0 0 3px color-mix(in srgb, var(--g-accent) 24%, transparent); }
+.g-field input[aria-invalid="true"] { border-color: #c0392b; }
+.g-gate-error { color: #c0392b; font-size: 13px; }
+.g-page[data-tone="dark"] .g-gate-error { color: #ff9a8b; }
+.g-page[data-tone="dark"] .g-field input[aria-invalid="true"] { border-color: #ff9a8b; }
+.g-gate-go { height: 50px; margin-top: 4px; font-size: 14.5px; }
+.g-gate-go svg { transition: transform 0.25s var(--g-ease); }
+.g-gate-go:hover:not(:disabled) svg { transform: translateX(3px); }
+.g-gate .g-small a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.g-gate-admin { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--g-line); color: var(--g-muted); font-size: 13px; }
+.g-gate-admin button { padding: 0; border: 0; background: none; color: var(--g-accent-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.g-closed { display: grid; place-items: center; }
+
+/* Under the photos: an invitation to book a shoot of their own. */
+.g-cta { max-width: var(--g-maxw); margin: clamp(56px, 8vw, 120px) auto 0; padding: 0 var(--g-pad); }
+.g-cta-inner {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 24px 48px; padding: clamp(26px, 4vw, 56px);
+  border: 1px solid var(--g-line); border-radius: max(var(--g-radius), 2px); background: color-mix(in srgb, var(--g-accent) 7%, var(--g-bg));
+}
+.g-cta .g-title { font-size: clamp(30px, 3.6vw, 54px); }
+.g-cta .g-intro { margin-top: 12px; }
+.g-cta a.g-btn { height: 46px; padding: 0 22px; font-size: 14px; text-decoration: none; }
+.g-cta + .g-foot { margin-top: 40px; }
+
 /* ---------- smaller screens ---------- */
 @media (max-width: 820px) {
   .g-hero--atelier, .g-hero--catalogus { grid-template-columns: 1fr; }
@@ -470,11 +557,23 @@
   .g-aside .g-fig, .g-aside[data-side="end"] .g-fig { grid-column: 1 / -1; justify-self: center; }
   .g-aside .g-note, .g-aside[data-side="end"] .g-note { grid-column: 1 / -1; grid-row: 2; }
   .g-note .g-num { font-size: 44px; }
+  .g-gate { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr); grid-template-areas: "top" "cover" "body"; }
+  .g-gate.no-cover { grid-template-rows: auto minmax(0, 1fr); }
+  .g-gate-top { padding-bottom: 16px; }
+  .g-gate-cover { min-height: 0; height: min(34svh, 320px); }
+  .g-gate-body { align-self: start; padding-top: 28px; }
+  .g-cta-inner { grid-template-columns: minmax(0, 1fr); align-items: start; }
 }
 @media (max-width: 600px) {
   .g-pair.wide { flex-direction: column; width: 100%; }
   .g-btn-label { display: none; }
   .g-bar .g-btn, .g-lb-actions .g-btn { width: 36px; padding: 0; }
+  .g-lb-actions .g-btn:has(.g-btn-n) { width: auto; padding: 0 11px; }
+  /* Three tabs and the tools share one row: tabs with an icon drop their word, and the row scrolls if it still doesn't fit. */
+  .g-tabs { overflow-x: auto; scrollbar-width: none; }
+  .g-tabs::-webkit-scrollbar { display: none; }
+  .g-tools { flex: none; }
+  .g-tabs.three .g-tab:has(svg) .g-tab-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .g-tab { padding: 0 10px; }
   .g-page[data-style="editorial"] .g-tab, .g-page[data-style="catalogus"] .g-tab { margin-right: 10px; }
   .g-masthead span:nth-child(2) { display: none; }

@@ -21,6 +21,7 @@ export const keys = {
   project: (id: string) => ["project", id] as const,
   messages: (id: string) => ["messages", id] as const,
   shots: (id: string) => ["shots", id] as const,
+  groupLink: (id: string) => ["group-link", id] as const,
   clients: ["clients"] as const,
   client: (id: string) => ["client", id] as const,
   inquiries: ["inquiries"] as const,

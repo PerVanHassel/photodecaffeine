@@ -3,7 +3,7 @@ import type { RouteObject } from "react-router";
 import { Root } from "./Root";
 import { AppError } from "./components/AppError";
 import { appRoutes } from "./mobile/routes";
-import { portalRoutes, PublicInvoice, studioRoutes } from "./studio/routes";
+import { GuestGallery, portalRoutes, PublicInvoice, studioRoutes } from "./studio/routes";
 import { Home } from "./pages/Home";
 
 /**
@@ -52,6 +52,9 @@ export const routes: RouteObject[] = [
       { path: "/offerte/:id", lazy: chunk(() => import("./pages/QuotePage"), (m) => m.QuotePage) },
       // The client's copy of an invoice, by token like the quote page.
       { path: "/factuur/:id", Component: PublicInvoice },
+      // A client gallery passed round a group: a name and e-mail at the door
+      // instead of a login.
+      { path: "/galerij/:token", Component: GuestGallery },
       // The mobile admin app. Its whole subtree is lazily loaded (see
       // src/app/mobile/routes.tsx), so the public site never pays for it.
       appRoutes,

@@ -20,6 +20,7 @@ import {
   syncGalleryUrls,
 } from "../lib/projects.ts";
 import { deliveredEmail, galleryGrewEmail, meetingEmail, studioMessageToClientEmail } from "../lib/projectEmails.ts";
+import { guestHearts, shareFor, shareToken, shareUrl } from "../lib/shares.ts";
 import { removePrivate, uploadPrivate } from "../lib/storage.ts";
 import { demoSlugOf, projectDemos } from "../lib/util.ts";
 
@@ -429,6 +430,80 @@ r.post(`${P}/project/:id/gallery/notify`, async (c) => {
   if (recipients.length === 0) fail(400, "Er staat geen klant met een e-mailadres bij dit project.");
   await notifyClients(row, project, { added, justDelivered: false, meetingChanged: false });
   return c.json({ success: true, sentTo: recipients.map((p) => p.email) });
+});
+
+// ---------------------------------------------------------------------------
+// Group link
+// ---------------------------------------------------------------------------
+// The link a group passes round (see lib/shares.ts), and who came in with it.
+
+async function shareState(id: string) {
+  const share = await shareFor(id);
+  if (!share) return { share: null, guests: [], hearts: {}, totals: { guests: 0, visits: 0, hearts: 0, downloads: 0 } };
+  const [rows, hearts] = await Promise.all([
+    db.from("gallery_guests").select("id, name, email, visits, downloads, first_seen_at, last_seen_at")
+      .eq("project_id", id).order("last_seen_at", { ascending: false }),
+    guestHearts(id),
+  ]);
+  const guests = (must(rows) || []).map((g: any) => ({
+    id: g.id,
+    name: g.name,
+    email: g.email,
+    visits: g.visits,
+    downloads: g.downloads,
+    hearts: hearts.guests[g.id] || 0,
+    firstSeenAt: g.first_seen_at,
+    lastSeenAt: g.last_seen_at,
+  }));
+  const sum = (list: number[]) => list.reduce((s, n) => s + n, 0);
+  return {
+    share: { url: shareUrl(share.token), active: share.active, downloads: share.downloads, createdAt: share.created_at },
+    guests,
+    hearts: hearts.images,
+    totals: {
+      guests: guests.length,
+      visits: sum(guests.map((g) => g.visits)),
+      hearts: sum(Object.values(hearts.images)),
+      downloads: sum(guests.map((g) => g.downloads)),
+    },
+  };
+}
+
+r.get(`${P}/project/:id/share`, async (c) => c.json(await shareState(c.req.param("id"))));
+
+// Makes the link, or switches an existing one back on with the same address.
+r.post(`${P}/project/:id/share`, async (c) => {
+  const id = c.req.param("id");
+  found(await db.from("projects").select("id").eq("id", id).maybeSingle(), "Project niet gevonden");
+  if (await shareFor(id)) must(await db.from("gallery_shares").update({ active: true }).eq("project_id", id));
+  else must(await db.from("gallery_shares").insert({ project_id: id, token: shareToken() }));
+  return c.json(await shareState(id));
+});
+
+r.put(`${P}/project/:id/share`, async (c) => {
+  const id = c.req.param("id");
+  const b = await readBody(c, z.object({ active: z.boolean().optional(), downloads: z.boolean().optional() }));
+  if (Object.keys(b).length) {
+    found(await db.from("gallery_shares").update(b).eq("project_id", id).select("project_id").maybeSingle(), "Deze galerij heeft nog geen groepslink.");
+  }
+  return c.json(await shareState(id));
+});
+
+// A new address: the old one stops working. Guests and their hearts stay.
+r.post(`${P}/project/:id/share/renew`, async (c) => {
+  const id = c.req.param("id");
+  found(
+    await db.from("gallery_shares").update({ token: shareToken(), active: true }).eq("project_id", id).select("project_id").maybeSingle(),
+    "Deze galerij heeft nog geen groepslink.",
+  );
+  return c.json(await shareState(id));
+});
+
+// Someone who asks to be forgotten, with their hearts.
+r.delete(`${P}/project/:id/share/guests/:guestId`, async (c) => {
+  const id = c.req.param("id");
+  must(await db.from("gallery_guests").delete().eq("id", c.req.param("guestId")).eq("project_id", id));
+  return c.json(await shareState(id));
 });
 
 // ---------------------------------------------------------------------------

@@ -2,7 +2,7 @@ import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useQueryClient } from "@tanstack/react-query";
-import { Heart, ImagePlus, Mail, Star, Trash2, Upload } from "lucide-react";
+import { Heart, ImagePlus, Mail, Star, Trash2, Upload, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { api, del, errorMessage, post, put } from "../../api";
@@ -12,6 +12,7 @@ import { Button, Card, Empty, Field, isVideo, Photo, Pill, Segmented, TextField,
 import { useUnsavedChanges } from "../../unsaved";
 import { StylePicker } from "../../gallery/StylePicker";
 import { prepareUpload, watermark } from "../../watermark";
+import { GroupLink, useGroupLink } from "./GroupLink";
 
 const BATCH = 8;
 
@@ -27,6 +28,7 @@ export function GalleryTab({ project: p }: { project: Project }) {
   const favoriteCount = Object.keys(favorites).length;
   const coverId = p.gallerySettings.coverImageId;
   const reportSize = useSizeBackfill(p);
+  const groupLink = useGroupLink(p.id).data;
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
@@ -142,6 +144,10 @@ export function GalleryTab({ project: p }: { project: Project }) {
           {favoriteCount > 0 && (
             <Button size="sm" aria-pressed={onlyFavorites} variant={onlyFavorites ? "primary" : "default"} onClick={() => setOnlyFavorites((v) => !v)}>Alleen favorieten</Button>
           )}
+          {/* The card sits under a gallery that can be long; this jumps there. */}
+          <Button size="sm" icon={<Users />} onClick={() => document.getElementById("groepslink")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+            Groepslink{groupLink?.share?.active ? ` · ${groupLink.totals.guests} ${groupLink.totals.guests === 1 ? "bezoeker" : "bezoekers"}` : ""}
+          </Button>
           <Button
             size="sm"
             icon={<Mail />}
@@ -184,6 +190,7 @@ export function GalleryTab({ project: p }: { project: Project }) {
 
       <StylePicker project={p} />
       <GallerySettings project={p} />
+      <GroupLink project={p} />
     </div>
   );
 }

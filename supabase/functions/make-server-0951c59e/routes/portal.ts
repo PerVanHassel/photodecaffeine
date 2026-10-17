@@ -5,9 +5,9 @@ import { db, found, must } from "../lib/db.ts";
 import { emailWrap, escapeHtml, sendEmail } from "../lib/email.ts";
 import { type Env, fail, readBody, requireUser, text, uuid, z } from "../lib/http.ts";
 import { notify } from "../lib/notify.ts";
-import { clientDownloads, eventToApi, gallerySigner, loadProject, loadProjects, projectToApi } from "../lib/projects.ts";
+import { clientDownloads, downloadLink, eventToApi, gallerySigner, loadProject, loadProjects, projectToApi } from "../lib/projects.ts";
 import { clientMessageToStudioEmail } from "../lib/projectEmails.ts";
-import { signDownload } from "../lib/storage.ts";
+import { guestCount, guestHearts, shareFor, shareUrl } from "../lib/shares.ts";
 import { invoiceTotals } from "./invoices.ts";
 import { quoteLines, quoteSum } from "./quotes.ts";
 import { messageToApi } from "./projects.ts";
@@ -84,7 +84,17 @@ r.get(`${P}/project/:id`, async (c) => {
     ? must(await db.from("gallery_favorites").select("image_id").eq("client_id", client.id).in("image_id", imageIds)) || []
     : [];
   const locations = await locationsFor([row.location_id, ...(row.events || []).map((e: any) => e.location_id)]);
-  return c.json({ project: { ...project, favoriteIds: favs.map((f: any) => f.image_id) }, locations });
+  // The group link, for the client to pass on, and what the group liked.
+  const [share, hearts, guests] = await Promise.all([shareFor(id), guestHearts(id), guestCount(id)]);
+  return c.json({
+    project: {
+      ...project,
+      favoriteIds: favs.map((f: any) => f.image_id),
+      share: share?.active ? { url: shareUrl(share.token), guests } : null,
+      groupHearts: hearts.images,
+    },
+    locations,
+  });
 });
 
 // --- messages ---
@@ -180,10 +190,6 @@ r.post(`${P}/project/:id/favorites/submit`, async (c) => {
 });
 
 // --- downloads ---
-function watermarkedName(name: string): string {
-  return `${(name || "foto").replace(/\.\w+$/, "")}-voorbeeld.jpg`;
-}
-
 r.get(`${P}/project/:id/download/:imageId`, async (c) => {
   const id = c.req.param("id");
   await access(c, id);
@@ -192,16 +198,7 @@ r.get(`${P}/project/:id/download/:imageId`, async (c) => {
     "Foto niet gevonden",
   ) as any;
   const project = found(await db.from("projects").select("stage, gallery_settings").eq("id", id).maybeSingle(), "Project niet gevonden") as any;
-  const downloads = clientDownloads(project);
-  if (downloads === "none" || (downloads === "watermark" && !img.preview_path)) {
-    fail(403, "Downloaden kan zodra de foto's geleverd zijn.");
-  }
-  if (downloads === "watermark") {
-    const fileName = watermarkedName(img.file_name);
-    return c.json({ url: await signDownload(img.preview_path, fileName), fileName });
-  }
-  const url = img.storage_path ? await signDownload(img.storage_path, img.file_name) : img.url;
-  return c.json({ url, fileName: img.file_name });
+  return c.json(await downloadLink(img, clientDownloads(project)));
 });
 
 // --- agenda ---

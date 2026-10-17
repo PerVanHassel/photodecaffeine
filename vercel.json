@@ -6,6 +6,7 @@
     { "source": "/demo/:path*", "destination": "/app-shell.html" },
     { "source": "/offerte/:path*", "destination": "/app-shell.html" },
     { "source": "/factuur/:path*", "destination": "/app-shell.html" },
+    { "source": "/galerij/:path*", "destination": "/app-shell.html" },
     { "source": "/portfolio/:id", "destination": "/app-shell.html" }
   ]
 }

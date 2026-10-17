@@ -93,8 +93,39 @@ export interface Project {
   favorites?: Record<string, string[]>;
   favoriteIds?: string[];
   unreadMessages?: number;
+  /** Portal: the group link the client can pass on, while it is switched on, and how many came in with it. */
+  share?: { url: string; guests: number } | null;
+  /** Portal: hearts per photo from the people the group link reached. */
+  groupHearts?: Record<string, number>;
   createdAt: string;
   updatedAt: string;
+}
+
+/** What the client gallery shows: the portal's project, or the part a group link gets to see. */
+export type GalleryProject = Pick<Project, "title" | "stage" | "gallerySettings" | "gallery" | "downloads"> & {
+  events?: Pick<StudioEvent, "kind" | "startsAt">[];
+  /** The photos are watermarked copies, also when there is nothing to download. */
+  watermarked?: boolean;
+};
+
+/** Admin: a project's group link and everyone who came in with it. */
+export interface ShareState {
+  share: { url: string; active: boolean; downloads: boolean; createdAt: string } | null;
+  guests: ShareGuest[];
+  /** Hearts per photo. */
+  hearts: Record<string, number>;
+  totals: { guests: number; visits: number; hearts: number; downloads: number };
+}
+
+export interface ShareGuest {
+  id: string;
+  name: string;
+  email: string;
+  visits: number;
+  downloads: number;
+  hearts: number;
+  firstSeenAt: string;
+  lastSeenAt: string;
 }
 
 export interface Client {
