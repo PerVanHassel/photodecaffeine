@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { post } from "../api";
-import { PIPELINE, STAGE_LABEL, TYPE_LABEL } from "../format";
+import { fromLocalInput, PIPELINE, STAGE_LABEL, TYPE_LABEL } from "../format";
 import { keys, useAction, useClients, useLocations } from "../queries";
 import type { Client, Project, ProjectType, Stage } from "../types";
 import { Button, Field, Input, Modal, Select, SelectField, TextField } from "../ui";
 
 const NEW_CLIENT = "__new__";
+// As in the event dialog: a shoot with a start time blocks two hours.
+const SHOOT_HOURS = 2;
 
 /** Create a project: pick or add the client, name it, choose where it starts in the pipeline. */
 export function NewProjectDialog({ open, onOpenChange, defaults }: {
@@ -23,6 +25,8 @@ export function NewProjectDialog({ open, onOpenChange, defaults }: {
   const [type, setType] = useState<ProjectType>("photo");
   const [stage, setStage] = useState<Stage>(defaults?.stage || "booked");
   const [dueDate, setDueDate] = useState("");
+  const [shootDate, setShootDate] = useState("");
+  const [shootTime, setShootTime] = useState("");
   const [locationId, setLocationId] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -31,6 +35,8 @@ export function NewProjectDialog({ open, onOpenChange, defaults }: {
       setClientId(defaults?.clientId || "");
       setStage(defaults?.stage || "booked");
       setTitle(defaults?.title || "");
+      setShootDate("");
+      setShootTime("");
       setError(null);
     }
   }, [open, defaults?.clientId, defaults?.stage, defaults?.title]);
@@ -42,11 +48,20 @@ export function NewProjectDialog({ open, onOpenChange, defaults }: {
         const r = await post<{ client: Client }>("/admin/client", newClient);
         id = r.client.id;
       }
-      return post<{ project: Project }>("/admin/project", {
+      const r = await post<{ project: Project }>("/admin/project", {
         title, type, stage, clientIds: [id], dueDate: dueDate || "", locationId: locationId || null,
       });
+      // The shoot goes on the calendar, so it shows in the week on Vandaag and in Planning.
+      if (shootDate && type !== "web") {
+        const start = fromLocalInput(`${shootDate}T${shootTime || "00:00"}`)!;
+        await post("/admin/events", {
+          kind: "shoot", projectId: r.project.id, locationId: locationId || null, startsAt: start, allDay: !shootTime,
+          endsAt: shootTime ? new Date(new Date(start).getTime() + SHOOT_HOURS * 3600000).toISOString() : null,
+        });
+      }
+      return r;
     },
-    invalidate: () => [keys.projects, keys.clients, keys.overview],
+    invalidate: () => [keys.projects, keys.clients, keys.overview, ["events"]],
     success: "Project aangemaakt",
     onSuccess: (r) => {
       onOpenChange(false);
@@ -100,6 +115,16 @@ export function NewProjectDialog({ open, onOpenChange, defaults }: {
           <SelectField label="Stap in de pijplijn" value={stage} onChange={(e) => setStage(e.target.value as Stage)}>
             {PIPELINE.map((s) => <option key={s} value={s}>{STAGE_LABEL[s]}</option>)}
           </SelectField>
+          {type !== "web" && (
+            <>
+              <Field label="Datum shoot" htmlFor="np-shoot">
+                <Input id="np-shoot" type="date" value={shootDate} onChange={(e) => setShootDate(e.target.value)} />
+              </Field>
+              <Field label="Tijd (optioneel)" htmlFor="np-shoot-time" hint={shootDate && !shootTime ? "Zonder tijd: de hele dag" : undefined}>
+                <Input id="np-shoot-time" type="time" value={shootTime} onChange={(e) => setShootTime(e.target.value)} disabled={!shootDate} />
+              </Field>
+            </>
+          )}
           <Field label="Deadline (optioneel)" htmlFor="np-due">
             <Input id="np-due" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
           </Field>

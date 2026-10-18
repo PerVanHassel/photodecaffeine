@@ -13,6 +13,7 @@ import { useAuth } from "../context/AuthContext";
 import { CommandPalette } from "./CommandPalette";
 import { StudioFonts } from "./fonts";
 import { initials } from "./format";
+import { useLiveOverview } from "./live";
 import { queryClient, useMe, useOverview } from "./queries";
 import "./studio.css";
 import { Button, ConfirmProvider, Sheet, skipToMain } from "./ui";
@@ -42,6 +43,7 @@ function Shell() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const overview = useOverview();
+  useLiveOverview();
   const me = useMe();
   // Until the role is known everything shows; the server checks each request anyway.
   const can = (perm?: string) => !perm || !me.data || me.data.permissions[perm] !== false;
