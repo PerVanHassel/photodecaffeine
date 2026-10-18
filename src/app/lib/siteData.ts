@@ -35,7 +35,11 @@ export interface PortfolioArticle {
 
 export interface PublicReview {
   id: string;
+  /** "google" for reviews from the Google business profile; older ones were written in the portal. */
+  source?: "google" | "portal";
   clientName: string;
+  /** The reviewer's Google profile picture, when there is one. */
+  photoUrl?: string;
   rating: number;
   text: string;
   projectTitle: string;
@@ -46,13 +50,22 @@ export interface PublicReview {
 /** The pseudo-article that holds the photo strip on the automotive page. */
 export const AUTOMOTIVE_GALLERY_TITLE = "__automotive_gallery__";
 
+/** The business profile as a whole: Google's own average and count. */
+export interface GoogleSummary {
+  rating: number;
+  count: number;
+  url: string;
+}
+
 export interface SiteData {
   settings?: SiteSettings | null;
   articles?: PortfolioArticle[];
   reviews?: PublicReview[];
+  /** Comes with the reviews; `null` when Google is not connected. */
+  googleSummary?: GoogleSummary | null;
 }
 
-type Key = keyof SiteData;
+type Key = "settings" | "articles" | "reviews";
 
 declare global {
   interface Window {
@@ -62,10 +75,10 @@ declare global {
 
 const BASE = `https://${projectId}.supabase.co/functions/v1/make-server-0951c59e`;
 const ENDPOINT: Record<Key, string> = { settings: "/settings", articles: "/portfolio", reviews: "/reviews" };
-const PICK: { [K in Key]: (json: any) => SiteData[K] } = {
-  settings: (j) => j?.settings ?? null,
-  articles: (j) => j?.articles ?? [],
-  reviews: (j) => j?.reviews ?? [],
+const PICK: Record<Key, (json: any) => Partial<SiteData>> = {
+  settings: (j) => ({ settings: j?.settings ?? null }),
+  articles: (j) => ({ articles: j?.articles ?? [] }),
+  reviews: (j) => ({ reviews: j?.reviews ?? [], googleSummary: j?.google ?? null }),
 };
 
 let data: SiteData = (typeof window !== "undefined" && window.__PDC_DATA__) || {};
@@ -103,7 +116,7 @@ export function loadSiteData(key: Key, force = false): Promise<void> {
       return res.json();
     })
     .then((json) => {
-      data = { ...data, [key]: PICK[key](json) };
+      data = { ...data, ...PICK[key](json) };
       emit();
     })
     .catch(() => {
@@ -132,6 +145,15 @@ export const useSiteSettings = () => useSiteData("settings");
 export const usePortfolio = () => useSiteData("articles");
 /** Reviews an admin has published. */
 export const useReviews = () => useSiteData("reviews");
+
+/** Google's average and count for the whole profile, loaded with the reviews. */
+export function useGoogleSummary() {
+  const value = useSyncExternalStore(subscribe, () => data.googleSummary, () => data.googleSummary);
+  useEffect(() => {
+    void loadSiteData("reviews");
+  }, []);
+  return value ?? null;
+}
 
 /** The portfolio as visitors browse it: without the automotive gallery record. */
 export function visibleArticles(articles: PortfolioArticle[] | undefined) {

@@ -164,7 +164,11 @@ export interface Role {
 
 export interface Review {
   id: string;
-  projectId: string;
+  /** "google" from the business profile or typed in by hand; "portal" from before the switch. */
+  source?: "google" | "portal";
+  /** Set when it came from the connected Google profile; those can only be hidden, not deleted. */
+  googleId?: string | null;
+  projectId: string | null;
   projectTitle: string;
   clientId: string;
   clientName: string;

@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { Check, Globe, Mail, MessageSquareHeart, Plus, Star, Trash2, UserCheck, UserMinus, X } from "lucide-react";
+import { Check, Copy, Globe, Mail, MessageSquareHeart, Plus, RotateCw, Star, Trash2, UserCheck, UserMinus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { get, post, put } from "../../api";
 import { ago, euro, TYPE_LABEL } from "../../format";
+import { copyText } from "../../gallery/share";
 import { keys, useAction, useClients } from "../../queries";
 import type { Deliverable, Project, ProjectType } from "../../types";
 import { Button, Card, Field, Input, Pill, Select, SelectField, TextAreaField, TextField, undoToast, useConfirm } from "../../ui";
@@ -224,33 +225,49 @@ function ClientsCard({ project: p }: { project: Project }) {
 }
 
 type Engagement = {
-  reviewRequest: { status: string; requestedAt: string } | null;
+  reviewRequest: { status: "pending" | "clicked" | "submitted"; requestedAt: string; clickedAt?: string; link: string | null } | null;
   feedbackRequest: { status: string; requestedAt: string } | null;
-  review: { rating: number; text: string; published: boolean } | null;
+  review: { rating: number; source: "google" | "portal"; published: boolean } | null;
   feedback: { id: string; items: { text: string }[]; createdAt: string }[];
 };
 
 function EngagementCard({ project: p }: { project: Project }) {
   const data = useQuery({ queryKey: ["engagement", p.id], queryFn: () => get<Engagement>(`/admin/project/${p.id}/engagement`) });
+  const confirm = useConfirm();
+  const [copied, setCopied] = useState(false);
   const request = useAction({
     fn: (kind: "review" | "feedback") => post<{ sentTo: string }>(`/admin/project/${p.id}/request-${kind}`),
     invalidate: () => [["engagement", p.id]],
     success: (r) => `Verzoek verstuurd naar ${r.sentTo}`,
   });
   const e = data.data;
+  const asked = e?.reviewRequest;
   const delivered = ["delivered", "review", "archived"].includes(p.stage);
 
   return (
     <Card title="Na de levering">
       <div className="s-stack">
-        {!delivered && <p className="s-small s-muted">Vraag om een review of feedback zodra het werk geleverd is.</p>}
+        {!delivered && <p className="s-small s-muted">Vraag om een Google-review of feedback zodra het werk geleverd is.</p>}
         <div className="s-kv">
-          <span className="s-row" style={{ gap: 6 }}><Star size={14} /> Review</span>
-          <span>
+          <span className="s-row" style={{ gap: 6 }}><Star size={14} /> Google-review</span>
+          <span className="s-row nowrap" style={{ gap: 4, justifyContent: "flex-end" }}>
             {e?.review ? (
-              <Link to="/admin/reviews" className="s-pill ok plain" style={{ textDecoration: "none" }}>{"★".repeat(e.review.rating)} {e.review.published ? "gepubliceerd" : "nog niet gepubliceerd"}</Link>
-            ) : e?.reviewRequest ? <Pill tone="warn">Gevraagd {ago(e.reviewRequest.requestedAt)}</Pill> : (
-              <Button size="sm" loading={request.isPending && request.variables === "review"} onClick={() => request.mutate("review")}>Vraag om review</Button>
+              <Link to="/admin/reviews" className="s-pill ok plain" style={{ textDecoration: "none" }}>
+                {"★".repeat(e.review.rating)} {e.review.source === "portal" ? "via portaal" : "op Google"}{e.review.published ? ", op de site" : ""}
+              </Link>
+            ) : asked ? (
+              <>
+                <Pill tone="warn">{asked.status === "clicked" && asked.clickedAt ? `Link geopend ${ago(asked.clickedAt)}` : `Gevraagd ${ago(asked.requestedAt)}`}</Pill>
+                {asked.link && (
+                  <Button size="sm" variant="ghost" iconOnly aria-label="Link kopiëren" title="Kopieer de link, bijvoorbeeld voor WhatsApp"
+                    icon={copied ? <Check /> : <Copy />} onClick={async () => setCopied(await copyText(asked.link!))} />
+                )}
+                <Button size="sm" variant="ghost" iconOnly aria-label="Opnieuw vragen" title="Stuur de mail nog een keer" icon={<RotateCw />}
+                  loading={request.isPending && request.variables === "review"}
+                  onClick={async () => { if (await confirm({ title: "Nog een keer vragen?", body: "De klant krijgt de mail met de link naar Google opnieuw.", confirm: "Versturen" })) request.mutate("review"); }} />
+              </>
+            ) : (
+              <Button size="sm" loading={request.isPending && request.variables === "review"} onClick={() => request.mutate("review")}>Vraag om Google-review</Button>
             )}
           </span>
         </div>

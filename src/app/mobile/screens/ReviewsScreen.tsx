@@ -122,7 +122,7 @@ function ReviewsTab({ query }: { query: ReturnType<typeof useQuery<Review[]>> })
       <Empty
         icon={<Star size={22} />}
         title="Nog geen reviews"
-        body="Vraag een klant om een beoordeling vanuit hun projectpagina in het portaal."
+        body="Vraag een klant om een Google-review vanaf het project. Koppelen met Google doe je in de admin op de computer."
       />
     );
   }
@@ -163,7 +163,7 @@ function ReviewsTab({ query }: { query: ReturnType<typeof useQuery<Review[]>> })
                     {r.clientName}
                   </Ellipsis>
                   <Ellipsis style={{ fontSize: 11.5, color: c.fg4, marginTop: 2 }}>
-                    {r.projectTitle} · {dateShort(r.createdAt)}
+                    {r.projectTitle || (r.source === "portal" ? "Portaal" : "Google")} · {dateShort(r.createdAt)}
                   </Ellipsis>
                   <div style={{ marginTop: 8 }}>
                     <Stars rating={r.rating} size={13} />
@@ -202,13 +202,15 @@ function ReviewsTab({ query }: { query: ReturnType<typeof useQuery<Review[]>> })
                   {r.published ? <Eye size={14} /> : <EyeOff size={14} />}
                   {r.published ? "Zichtbaar" : "Publiceren"}
                 </Press>
-                <Press
-                  onClick={() => setPendingDelete(r)}
-                  aria-label="Verwijderen"
-                  style={{ width: 36, height: 36, display: "grid", placeItems: "center", color: c.fg4 }}
-                >
-                  <Trash2 size={15} />
-                </Press>
+                {!r.googleId && (
+                  <Press
+                    onClick={() => setPendingDelete(r)}
+                    aria-label="Verwijderen"
+                    style={{ width: 36, height: 36, display: "grid", placeItems: "center", color: c.fg4 }}
+                  >
+                    <Trash2 size={15} />
+                  </Press>
+                )}
               </Row>
             </Card>
           </motion.div>

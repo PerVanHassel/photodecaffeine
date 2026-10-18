@@ -2,8 +2,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Check, Globe, Images, MessageSquareHeart, Send, Star } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
+import { toast } from "sonner";
+import { GoogleG } from "../../components/GoogleG";
 import { get, post } from "../api";
 import { dayLabel, fmtDateTime, fmtTime } from "../format";
+import { copyText } from "../gallery/share";
 import { useLiveMessages } from "../live";
 import { useAction } from "../queries";
 import { Button, Card, Empty, ErrorState, Photo, Skeleton, Textarea } from "../ui";
@@ -135,38 +138,47 @@ function Thread({ projectId }: { projectId: string }) {
   );
 }
 
-type EngagementData = { reviewRequested: boolean; feedbackRequested: boolean; review: { rating: number; text: string } | null; feedbackCount: number };
+type EngagementData = {
+  reviewRequested: boolean;
+  /** Google's review form, through the studio's counted link when the client was asked. */
+  reviewLink: string;
+  review: { rating: number; text: string; source: "google" | "portal" } | null;
+  feedbackRequested: boolean;
+  feedbackCount: number;
+};
 
 function Engagement({ projectId, delivered }: { projectId: string; delivered: boolean }) {
   const t = useT();
   const data = useQuery({ queryKey: ["portal", "engagement", projectId], queryFn: () => get<EngagementData>(`/portal/project/${projectId}/engagement`) });
-  const [rating, setRating] = useState(0);
-  const [text, setText] = useState("");
-  const submit = useAction({
-    fn: () => post(`/portal/project/${projectId}/review`, { rating, text }),
-    invalidate: () => [["portal", "engagement", projectId]],
-    success: t.reviewThanks,
-  });
   const e = data.data;
   if (!e || (!delivered && !e.reviewRequested && !e.feedbackRequested)) return null;
+  const review = e.review;
 
   return (
     <Card title={t.howWasIt}>
       <div className="s-stack">
-        {e.review ? <p className="s-small">{t.youRated("★".repeat(e.review.rating))}</p> : e.reviewRequested ? (
+        {review ? (
           <>
-            <div className="s-row" role="radiogroup" aria-label={t.rating}>
-              {[1, 2, 3, 4, 5].map((n) => (
-                <button key={n} type="button" role="radio" aria-checked={rating === n} aria-label={t.stars(n)} onClick={() => setRating(n)}
-                  style={{ border: 0, background: "none", padding: 2, color: n <= rating ? "var(--accent)" : "var(--line-strong)" }}>
-                  <Star size={26} fill={n <= rating ? "currentColor" : "none"} />
-                </button>
-              ))}
-            </div>
-            <Textarea aria-label={t.howWasIt} placeholder={t.reviewPlaceholder} rows={3} value={text} onChange={(ev) => setText(ev.target.value)} />
-            <Button variant="primary" style={{ alignSelf: "flex-start" }} disabled={!rating || !text.trim()} loading={submit.isPending} onClick={() => submit.mutate()}>{t.sendReview}</Button>
+            <p className="s-small">{t.youRated("★".repeat(review.rating))}</p>
+            {/* Written here before reviews moved to Google: offer to take it along. */}
+            {review.source === "portal" && (
+              <>
+                <p className="s-small s-muted">{t.alsoOnGoogleHint}</p>
+                <a className="s-btn primary" style={{ alignSelf: "flex-start" }} href={e.reviewLink} target="_blank" rel="noopener noreferrer"
+                  onClick={() => { void copyText(review.text).then((ok) => ok && toast.success(t.reviewCopied)); }}>
+                  <GoogleG size={15} />{t.alsoOnGoogle}
+                </a>
+              </>
+            )}
           </>
-        ) : null}
+        ) : (
+          <>
+            <p className="s-small s-muted">{t.googleReviewAsk}</p>
+            <a className="s-btn primary" style={{ alignSelf: "flex-start" }} href={e.reviewLink} target="_blank" rel="noopener noreferrer">
+              <Star size={15} aria-hidden="true" />{t.writeGoogleReview}
+            </a>
+          </>
+        )}
         {(e.feedbackRequested || delivered) && (
           <Link to={`/portal/project/${projectId}/feedback`} className="s-btn" style={{ alignSelf: "flex-start" }}><MessageSquareHeart size={15} />{t.giveFeedback}</Link>
         )}

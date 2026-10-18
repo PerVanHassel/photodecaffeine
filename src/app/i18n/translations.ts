@@ -189,6 +189,9 @@ export const translations = {
       rating: (stars: number) => `${stars} van de 5 sterren`,
       label: "Wat klanten zeggen",
       testimonialsLabel: "Reviews",
+      googleReview: "Review op Google",
+      googleScore: (rating: string, count: number) => `${rating} van de 5 sterren uit ${count} review${count === 1 ? "" : "s"} op Google`,
+      googleCount: (count: number) => `${count} review${count === 1 ? "" : "s"} op Google`,
     },
     customCta: {
       label: "Projecten op maat",

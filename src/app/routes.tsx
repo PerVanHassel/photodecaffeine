@@ -3,7 +3,7 @@ import type { RouteObject } from "react-router";
 import { Root } from "./Root";
 import { AppError } from "./components/AppError";
 import { appRoutes } from "./mobile/routes";
-import { GuestGallery, portalRoutes, PublicInvoice, studioRoutes } from "./studio/routes";
+import { GuestGallery, portalRoutes, PublicInvoice, ReviewRedirect, studioRoutes } from "./studio/routes";
 import { Home } from "./pages/Home";
 
 /**
@@ -55,6 +55,7 @@ export const routes: RouteObject[] = [
       // A client gallery passed round a group: a name and e-mail at the door
       // instead of a login.
       { path: "/galerij/:token", Component: GuestGallery },
+      { path: "/review/:token", Component: ReviewRedirect },
       // The mobile admin app. Its whole subtree is lazily loaded (see
       // src/app/mobile/routes.tsx), so the public site never pays for it.
       appRoutes,

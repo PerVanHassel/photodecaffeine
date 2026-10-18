@@ -86,7 +86,10 @@ async function loadSiteData() {
     data.settings = { heroImageUrl, heroImageMobileUrl, frameImageUrl, sections };
   }
   if (portfolio.status === "fulfilled") data.articles = (portfolio.value?.articles || []).map(publicArticle);
-  if (reviews.status === "fulfilled") data.reviews = reviews.value?.reviews || [];
+  if (reviews.status === "fulfilled") {
+    data.reviews = reviews.value?.reviews || [];
+    data.googleSummary = reviews.value?.google || null;
+  }
   for (const [name, result] of [["settings", settings], ["portfolio", portfolio], ["reviews", reviews]]) {
     if (result.status === "rejected") console.warn(`prerender: ${name} niet opgehaald (${result.reason?.message}); de pagina laadt het zelf`);
   }

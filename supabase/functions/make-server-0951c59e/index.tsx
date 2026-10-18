@@ -7,6 +7,7 @@ import clients from "./routes/clients.ts";
 import declarations from "./routes/declarations.ts";
 import engagement from "./routes/engagement.ts";
 import events from "./routes/events.ts";
+import google from "./routes/google.ts";
 import inquiries from "./routes/inquiries.ts";
 import invoices from "./routes/invoices.ts";
 import locations from "./routes/locations.ts";
@@ -25,8 +26,8 @@ import team from "./routes/team.ts";
 // One edge function serves the site, the portal and the admin. Every module
 // registers its own full paths (/make-server-0951c59e/...), so they are all
 // mounted at the root. Studio data lives in Postgres; public site content
-// (portfolio, settings, reviews, declarations, roles, notifications) in the
-// kv store.
+// (portfolio, settings, reviews, declarations, roles, notifications) and the
+// Google connection in the kv store.
 const app = new Hono<any>();
 
 app.use("*", logger(console.log));
@@ -44,7 +45,7 @@ app.onError(onError);
 
 const modules: Hono<any>[] = [
   clients, portal, projects, quotes, invoices, inquiries, tasks, locations, events, overview,
-  engagement, portfolio, team, declarations, settings, notifications, storage, share,
+  engagement, google, portfolio, team, declarations, settings, notifications, storage, share,
 ];
 for (const module of modules) app.route("/", module);
 

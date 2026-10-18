@@ -249,6 +249,22 @@ function mkInvoice(n: number, number: string, clientName: string, clientEmail: s
   };
 }
 
+// Reviews as they come back from the Google profile, plus one from the portal era.
+const reviews: Json[] = [
+  { id: "g-AbC1", source: "google", googleId: "AbC1", googleName: "accounts/1/locations/2/reviews/AbC1", clientName: "Café Maas", photoUrl: "", rating: 5, text: "Prachtige foto's, snel geleverd en heel prettig samengewerkt.", reply: { text: "Dank jullie wel! Het was een mooie zomeravond om te shooten.", updatedAt: iso(-11) }, projectId: id(55), projectTitle: "Zomerterras", portfolioArticleId: id(403), published: true, createdAt: iso(-12) },
+  { id: "g-DeF2", source: "google", googleId: "DeF2", googleName: "accounts/1/locations/2/reviews/DeF2", clientName: "Thomas Rooijmans", photoUrl: "https://lh3.googleusercontent.com/a/mock-thomas", rating: 5, text: "Per is een fijne, vriendelijke kerel en gaat professioneel te werk. Dat zie je terug in de kwaliteit van de foto's. Zeker een aanrader!", reply: null, projectId: null, projectTitle: "", portfolioArticleId: null, published: false, createdAt: iso(0, 9) },
+  { id: "g-GhI3", source: "google", googleId: "GhI3", googleName: "accounts/1/locations/2/reviews/GhI3", clientName: "Jeroen de Vries", photoUrl: "", rating: 4, text: "", reply: null, projectId: null, projectTitle: "", portfolioArticleId: null, published: false, createdAt: iso(-20) },
+  { id: id(412), source: "portal", googleId: null, googleName: null, clientName: "Sanne Veldhuis", photoUrl: "", rating: 4, text: "Mooi resultaat, iedereen blij.", reply: null, projectId: id(52), projectTitle: "Teamfoto's 2026", portfolioArticleId: null, published: false, createdAt: iso(-1) },
+];
+const google: Json = {
+  configured: false, clientId: "", fromEnv: false, connected: false, email: "", title: "", mapsUrl: "", reviewUrl: "",
+  rating: 0, count: 0, lastSyncAt: null, lastError: "",
+};
+const reviewRequests: Record<string, Json> = {
+  [id(57)]: { status: "clicked", requestedAt: iso(-2), clickedAt: iso(-1), link: "http://localhost/review/0123456789abcdef0123456789abcdef" },
+  [id(52)]: { status: "submitted", requestedAt: iso(-3), link: "http://localhost/review/fedcba9876543210fedcba9876543210" },
+};
+
 function eventsWithContext() {
   return projects.flatMap((p) => p.events.map((e: Json) => {
     const loc = locations.find((l) => l.id === e.locationId);
@@ -290,7 +306,7 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     if ((r = m(/^\/admin\/project\/([^/]+)$/))) return { project: projects.find((x) => x.id === r![1]) };
     if ((r = m(/^\/admin\/project\/([^/]+)\/messages$/))) return { messages: messages.filter((x) => x.projectId === r![1]) };
     if ((r = m(/^\/admin\/project\/([^/]+)\/shots$/))) return { shots: shots.filter((x) => x.projectId === r![1]).sort((a, b) => a.sort - b.sort) };
-    if ((r = m(/^\/admin\/project\/([^/]+)\/engagement$/))) return { reviewRequest: null, feedbackRequest: null, review: null, feedback: [] };
+    if ((r = m(/^\/admin\/project\/([^/]+)\/engagement$/))) return { reviewRequest: reviewRequests[r[1]] || null, feedbackRequest: null, review: structuredClone(reviews.find((x) => x.projectId === r![1]) || null), feedback: [] };
     if ((r = m(/^\/admin\/project\/([^/]+)\/share$/))) return shareState(r[1]);
     if ((r = m(/^\/share\/([^/]+)$/))) return shareReply(r[1], url.searchParams.get("key") || "", url.searchParams.get("preview") === "1");
     if (p === "/admin/clients") return { clients };
@@ -328,10 +344,9 @@ export async function mockApi(path: string, method: string, body: Json): Promise
       { id: id(403), title: "Café Maas zomer", category: "Horeca", coverUrl: PHOTOS[9], coverType: "image", description: "", galleryUrls: [], published: false, featured: false, createdAt: iso(-5), updatedAt: iso(-1) },
       { id: id(404), title: "__automotive_gallery__", category: "_automotive-gallery", coverUrl: PHOTOS[1], coverType: "image", description: "", galleryUrls: PHOTOS.slice(0, 6), published: true, featured: false, createdAt: iso(-90), updatedAt: iso(-2) },
     ] };
-    if (p === "/admin/reviews") return { reviews: [
-      { id: id(411), projectId: id(55), projectTitle: "Zomerterras", clientName: "Café Maas", rating: 5, text: "Prachtige foto's, snel geleverd en heel prettig samengewerkt.", portfolioArticleId: id(403), published: true, createdAt: iso(-12) },
-      { id: id(412), projectId: id(52), projectTitle: "Teamfoto's 2026", clientName: "Sanne Veldhuis", rating: 4, text: "Mooi resultaat, iedereen blij.", portfolioArticleId: null, published: false, createdAt: iso(-1) },
-    ] };
+    // Copies: react-query keeps its old data when the objects it holds were changed in place.
+    if (p === "/admin/reviews") return { reviews: structuredClone(reviews).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) };
+    if (p === "/admin/google") return { ...google };
     if (p === "/admin/feedback") return { feedback: [{ id: id(421), projectId: id(52), projectTitle: "Teamfoto's 2026", clientName: "Sanne Veldhuis", createdAt: iso(-1), items: [{ id: id(422), scope: "photos", photoUrls: PHOTOS.slice(4, 6), category: "", text: "Kan de achtergrond hier iets warmer?" }] }] };
     if (p === "/admin/workers") return { workers: [
       { id: id(999), email: "per@example.nl", name: "Per van Hassel", lastSignIn: iso(0, 9), isOwner: true, roleId: null, roleName: "Eigenaar" },
@@ -367,7 +382,10 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     if (p === "/portal/quotes") return { quotes: quotes.filter((q) => q.status !== "draft").map((q) => ({ ...q, token: "abc" })) };
     if (p === "/portal/invoices") return { invoices: invoices.filter((i) => i.status !== "draft").map((i) => ({ id: i.id, number: i.number, status: i.status, issuedOn: i.issuedOn, dueOn: i.dueOn, paidAt: i.paidAt, totals: i.totals, token: "abc" })) };
     if (p === "/portal/me") return { client: clients[1] };
-    if ((r = m(/^\/portal\/project\/([^/]+)\/engagement$/))) return { reviewRequested: false, feedbackRequested: false, review: null, feedbackCount: 0 };
+    if ((r = m(/^\/portal\/project\/([^/]+)\/engagement$/))) {
+      const rv = reviews.find((x) => x.projectId === r![1]);
+      return { reviewRequested: !!reviewRequests[r[1]], reviewLink: "https://g.page/r/CUkHU8gqLEm4EBI/review", review: rv ? { rating: rv.rating, text: rv.text, source: rv.source } : null, feedbackRequested: false, feedbackCount: 0 };
+    }
     if ((r = m(/^\/portal\/project\/([^/]+)\/download\/([^/]+)$/))) return { url: PHOTOS[0], fileName: "foto.jpg" };
     if ((r = m(/^\/invoice\/([^/]+)$/))) {
       const { quoteId: _q, projectId: _p, clientId: _c, link: _l, ...pub } = invoices.find((x) => x.id === r![1]) || invoices[0];
@@ -498,6 +516,32 @@ export async function mockApi(path: string, method: string, body: Json): Promise
       return { event: e };
     }
   }
+  if (p === "/admin/google/client" && method === "PUT") { Object.assign(google, { configured: true, clientId: body.clientId }); return google; }
+  if (p === "/admin/google/start" && method === "POST") return { url: `${window.location.origin}/admin/reviews/google?code=mock&state=mock` };
+  if (p === "/admin/google/connect" && method === "POST") {
+    Object.assign(google, { configured: true, connected: true, email: "pervanhassel@gmail.com", title: "PhotoDeCaffeine", mapsUrl: "https://www.google.com/maps?cid=13279193538539751241", rating: 4.8, count: 14, lastSyncAt: new Date().toISOString() });
+    return { ...google, synced: { added: 3, updated: 0, removed: 0 } };
+  }
+  if (p === "/admin/google/sync" && method === "POST") { google.lastSyncAt = new Date().toISOString(); return { ...google, synced: { added: 0, updated: 1, removed: 0 } }; }
+  if (p === "/admin/google" && method === "DELETE") { Object.assign(google, { connected: false, email: "", title: "" }); return google; }
+  if (p === "/admin/reviews" && method === "POST") {
+    const rv = { id: crypto.randomUUID(), source: "google", googleId: null, googleName: null, photoUrl: "", reply: null, portfolioArticleId: null, ...body, projectTitle: projects.find((x) => x.id === body.projectId)?.title || "" };
+    reviews.push(rv);
+    return { review: rv };
+  }
+  if ((r = m(/^\/admin\/reviews\/([^/]+)\/reply$/))) {
+    const rv = reviews.find((x) => x.id === r![1]);
+    rv.reply = method === "DELETE" ? null : { text: body.text, updatedAt: new Date().toISOString() };
+    return { review: rv };
+  }
+  if ((r = m(/^\/admin\/reviews\/([^/]+)$/))) {
+    const rv = reviews.find((x) => x.id === r![1]);
+    if (method === "DELETE") { reviews.splice(reviews.indexOf(rv), 1); return { success: true }; }
+    Object.assign(rv, body);
+    if ("projectId" in body) rv.projectTitle = projects.find((x) => x.id === body.projectId)?.title || "";
+    return { review: rv };
+  }
+  if (p === "/review/open" && method === "POST") return { url: "https://g.page/r/CUkHU8gqLEm4EBI/review" };
   if ((r = m(/^\/admin\/inquiry\/([^/]+)$/)) && method === "PUT") {
     const i = inquiries.find((x) => x.id === r![1]);
     i.handled = body.handled; i.handledAt = body.handled ? new Date().toISOString() : null;

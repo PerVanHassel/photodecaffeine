@@ -5,6 +5,7 @@ Disallow: /app/
 Disallow: /offerte/
 Disallow: /factuur/
 Disallow: /galerij/
+Disallow: /review/
 Disallow: /demo/
 Disallow: /fotoproef.html
 Allow: /

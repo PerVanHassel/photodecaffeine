@@ -44,6 +44,7 @@ const Invoice = page(() => import("./pages/Invoices"), "InvoicePage");
 const Portfolio = page(() => import("./pages/Content"), "PortfolioPage");
 const Automotive = page(() => import("./pages/Content"), "AutomotivePage");
 const Reviews = page(() => import("./pages/Reviews"), "ReviewsPage");
+const GoogleCallback = page(() => import("./pages/Reviews"), "GoogleCallbackPage");
 const Ads = page(() => import("./pages/Ads"), "AdsPage");
 const Demos = page(() => import("./pages/Demos"), "DemosPage");
 const Team = page(() => import("./pages/Team"), "TeamPage");
@@ -77,6 +78,7 @@ export const studioRoutes: RouteObject = {
         { path: "portfolio", Component: wrap(Portfolio) },
         { path: "services/automotive", Component: wrap(Automotive) },
         { path: "reviews", Component: wrap(Reviews) },
+        { path: "reviews/google", Component: wrap(GoogleCallback) },
         { path: "ads", Component: wrap(Ads) },
         { path: "demos", Component: wrap(Demos) },
         { path: "team", Component: wrap(Team) },
@@ -103,6 +105,7 @@ const Login = lazy(() => import("./portal/Auth").then((m) => ({ default: () => <
 const ResetPassword = page(() => import("./portal/Auth"), "ResetPasswordPage");
 export const PublicInvoice = wrap(page(() => import("./portal/PublicInvoice"), "PublicInvoicePage"));
 export const GuestGallery = wrap(page(() => import("./share/GuestGallery"), "GuestGalleryPage"));
+export const ReviewRedirect = wrap(page(() => import("./share/ReviewRedirect"), "ReviewRedirectPage"));
 
 export const portalRoutes: RouteObject = {
   path: "/portal",

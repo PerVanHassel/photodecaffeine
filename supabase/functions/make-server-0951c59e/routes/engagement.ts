@@ -1,14 +1,21 @@
 import { Hono } from "npm:hono";
-import { requireAdmin, requirePermission } from "../lib/http.ts";
+import { fail, isoDateTime, readBody, requireAdmin, requirePermission, text as textField, uuid, z } from "../lib/http.ts";
 import * as kv from "../kv_store.tsx";
 import { verifyAdmin, verifyAuth } from "../lib/auth.ts";
 import { clientForUser, projectIdsForClient, projectRecipients } from "../lib/clients.ts";
 import { EMAIL_ADMIN_NOTIFY, SITE_URL } from "../lib/config.ts";
 import { emailWrap, escapeHtml, sendEmail } from "../lib/email.ts";
+import { deleteReply, googleConnection, putReply } from "../lib/google.ts";
 import { notify } from "../lib/notify.ts";
 import { clientIdsOf, gallerySigner, loadProject, projectToApi } from "../lib/projects.ts";
 import { db } from "../lib/db.ts";
+import {
+  googleLinks, linkProject, loadReview, loadReviews, removeReview, type Review, reviewsForProject, saveReviews, syncIfStale,
+} from "../lib/reviews.ts";
 import { imageKey, signPaths } from "../lib/storage.ts";
+import { randomToken } from "../lib/util.ts";
+
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
 
 /** Feedback keeps gallery image ids; turn them into URLs that work right now. */
 async function withFreshPhotos(entries: any[]): Promise<any[]> {
@@ -35,26 +42,22 @@ r.use("/make-server-0951c59e/admin/feedback", requireAdmin as any, requirePermis
 // REVIEWS & FEEDBACK
 // ============================================================================
 //
-// Two separate things that share one shape: the studio asks, the client
-// answers from inside the portal.
+// Two separate things that both start with the studio asking:
 //
-//   Review   — one per project: 1-5 stars + a short text, meant for the public
-//              site. Never public until an admin publishes it, and optionally
-//              tied to a portfolio piece so a reader can jump to the work.
+//   Review   — written on Google. The request mails the client a link that
+//              records the click and goes on to Google's review form; the
+//              review comes back through the connected business profile (see
+//              lib/reviews.ts). Never on the site until an admin publishes
+//              it, and optionally tied to a project and a portfolio piece.
 //   Feedback — private, and can be many per project: notes attached to one
 //              photo, to several photos at once, or to no photo at all
 //              (service, communication, whatever the client wants to raise).
 //
-// Requests are keyed by project rather than by a token: the client reaches the
-// form by logging in, so the project + their own user id is all the
-// authorisation needed.
+// Requests are keyed by project. Feedback is given in the portal, so the
+// project + the client's own login is all the authorisation needed; the
+// review link carries a token instead, so it works without logging in.
 
 const GENERAL_FEEDBACK_SCOPE = "general";
-
-function starString(rating: number): string {
-  const n = Math.max(0, Math.min(5, Math.round(Number(rating) || 0)));
-  return "★".repeat(n) + "☆".repeat(5 - n);
-}
 
 async function loadProjectForClient(projectId: string, user: any) {
   const client = await clientForUser(user);
@@ -73,27 +76,32 @@ async function createRequest(kind: "review" | "feedback", projectId: string, adm
   const clients = await projectRecipients(projectId);
   if (clients.length === 0) return { error: "Klant niet gevonden bij dit project.", status: 404 };
   const client = clients[0];
+  const isReview = kind === "review";
 
+  // Asking again keeps the link from the first mail working.
+  const previous = JSON.parse((await kv.get(`${kind}:request:${projectId}`)) || "null");
+  const token = isReview ? previous?.token || randomToken() : undefined;
   const request = {
     projectId,
     clientId: project.clientId,
     clientIds: clientIdsOf(row),
     kind,
-    status: "pending",
+    status: previous?.status === "clicked" ? "clicked" : "pending",
     requestedAt: new Date().toISOString(),
     requestedBy: adminName,
+    ...(isReview ? { token, clickedAt: previous?.clickedAt, clicks: previous?.clicks || 0 } : {}),
   };
   await kv.set(`${kind}:request:${projectId}`, JSON.stringify(request));
+  if (token) await kv.set(`review:token:${token}`, JSON.stringify(projectId));
 
   const firstName = client.name.split(" ")[0];
-  const link = `${SITE_URL}/portal/project/${projectId}`;
-  const isReview = kind === "review";
+  const link = isReview ? `${SITE_URL}/review/${token}` : `${SITE_URL}/portal/project/${projectId}`;
 
   const sent = await sendEmail({
     to: clients.map((c2) => c2.email),
     replyTo: EMAIL_ADMIN_NOTIFY,
     subject: isReview
-      ? `Wil je een review achterlaten? — ${project.title}`
+      ? `Wil je ons een review geven op Google? — ${project.title}`
       : `We horen graag je feedback — ${project.title}`,
     html: emailWrap(`
       <tr>
@@ -107,18 +115,20 @@ async function createRequest(kind: "review" | "feedback", projectId: string, adm
       <tr>
         <td style="padding:22px 36px 0;">
           <span style="color:rgba(255,251,224,0.55);font-size:14px;font-weight:300;line-height:1.75;">Hallo ${escapeHtml(firstName)}, ${isReview
-            ? "we zijn benieuwd hoe je de samenwerking hebt ervaren. Een korte review met een sterbeoordeling helpt ons enorm — en helpt anderen kiezen."
+            ? "we zijn benieuwd hoe je de samenwerking hebt ervaren. Een korte review op Google kost je een minuutje, helpt ons enorm — en helpt anderen kiezen."
             : "we willen graag weten wat je van het resultaat vindt. Je kunt opmerkingen achterlaten bij losse foto&#39;s, bij meerdere foto&#39;s tegelijk, of over de samenwerking in het algemeen."}</span>
         </td>
       </tr>
       <tr>
         <td style="padding:26px 36px 40px;">
-          <a href="${link}" style="display:inline-block;background-color:#c8905a;color:#0d0703;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 30px;">${isReview ? "Review achterlaten" : "Feedback geven"}</a>
+          <a href="${link}" style="display:inline-block;background-color:#c8905a;color:#0d0703;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 30px;">${isReview ? "Review schrijven op Google" : "Feedback geven"}</a>
         </td>
       </tr>
       <tr>
         <td style="padding:18px 36px 28px;border-top:1px solid rgba(255,251,224,0.06);">
-          <span style="color:rgba(255,251,224,0.2);font-size:11px;">Log in op je klantenportaal met dit e-mailadres; het formulier staat klaar bij je project. Vragen? Antwoord gerust op deze mail.</span>
+          <span style="color:rgba(255,251,224,0.2);font-size:11px;">${isReview
+            ? "De knop opent het reviewformulier van Google; daarvoor heb je een Google-account nodig. Vragen? Antwoord gerust op deze mail."
+            : "Log in op je klantenportaal met dit e-mailadres; het formulier staat klaar bij je project. Vragen? Antwoord gerust op deze mail."}</span>
         </td>
       </tr>
     `),
@@ -165,22 +175,23 @@ r.get("/make-server-0951c59e/admin/project/:id/engagement", async (c) => {
     if (!admin) return c.json({ error: "Unauthorized" }, 401);
     const projectId = c.req.param("id");
 
-    const [reviewReqStr, feedbackReqStr, reviewIdStr, feedbackIdsStr] = await Promise.all([
+    const [reviewReqStr, feedbackReqStr, reviews, feedbackIdsStr] = await Promise.all([
       kv.get(`review:request:${projectId}`),
       kv.get(`feedback:request:${projectId}`),
-      kv.get(`review:byProject:${projectId}`),
+      reviewsForProject(projectId),
       kv.get(`feedback:byProject:${projectId}`),
     ]);
 
-    const review = reviewIdStr ? JSON.parse((await kv.get(`review:${reviewIdStr}`)) || "null") : null;
     const feedbackIds: string[] = feedbackIdsStr ? JSON.parse(feedbackIdsStr) : [];
     const feedbackValues = await Promise.all(feedbackIds.map((id) => kv.get(`feedback:${id}`)));
     const feedback = await withFreshPhotos(feedbackValues.filter(Boolean).map((v) => JSON.parse(v as string)));
+    const { token, ...reviewRequest } = reviewReqStr ? JSON.parse(reviewReqStr) : { token: null };
 
     return c.json({
-      reviewRequest: reviewReqStr ? JSON.parse(reviewReqStr) : null,
+      // The link from the mail, to pass on by WhatsApp or text as well.
+      reviewRequest: reviewReqStr ? { ...reviewRequest, link: token ? `${SITE_URL}/review/${token}` : null } : null,
       feedbackRequest: feedbackReqStr ? JSON.parse(feedbackReqStr) : null,
-      review,
+      review: reviews[0] || null,
       feedback,
     });
   } catch (err) {
@@ -191,86 +202,115 @@ r.get("/make-server-0951c59e/admin/project/:id/engagement", async (c) => {
 
 // --- GET /admin/reviews — every review, published or not ---
 r.get("/make-server-0951c59e/admin/reviews", async (c) => {
-  try {
-    const admin = await verifyAdmin(c.req.header("Authorization"));
-    if (!admin) return c.json({ error: "Unauthorized" }, 401);
-
-    const idsStr = await kv.get("review:reviewIds");
-    const ids: string[] = idsStr ? JSON.parse(idsStr) : [];
-    const values = await Promise.all(ids.map((id) => kv.get(`review:${id}`)));
-    const reviews = values
-      .filter(Boolean)
-      .map((v) => JSON.parse(v as string))
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-    return c.json({ reviews });
-  } catch (err) {
-    console.log("Get reviews error:", err);
-    return c.json({ error: `Failed to fetch reviews: ${err}` }, 500);
-  }
+  // Opening the page is the natural moment to look for new ones on Google.
+  await syncIfStale(10);
+  return c.json({ reviews: await loadReviews() });
 });
 
-// --- PUT /admin/reviews/:id — publish/unpublish, link a portfolio piece ---
+const stars = z.number().int().min(1, "Kies 1 tot 5 sterren.").max(5, "Kies 1 tot 5 sterren.");
+
+// --- POST /admin/reviews — a Google review typed in by hand ---
+// For before the business profile is connected. Once it is, the real review
+// replaces this one (same name and stars) and keeps its links.
+r.post("/make-server-0951c59e/admin/reviews", async (c) => {
+  const body = await readBody(c, z.object({
+    clientName: textField(120).min(1, "Vul de naam in zoals die op Google staat."),
+    rating: stars,
+    text: textField(5000),
+    createdAt: isoDateTime.optional(),
+    projectId: uuid.nullable().optional(),
+    published: z.boolean().optional(),
+  }));
+  const now = new Date().toISOString();
+  let review: Review = {
+    id: crypto.randomUUID(),
+    source: "google",
+    googleId: null,
+    googleName: null,
+    clientName: body.clientName,
+    photoUrl: "",
+    rating: body.rating,
+    text: body.text,
+    reply: null,
+    projectId: null,
+    projectTitle: "",
+    portfolioArticleId: null,
+    published: body.published ?? false,
+    createdAt: body.createdAt || now,
+    updatedAt: now,
+  };
+  if (body.projectId) review = await linkProject(review, body.projectId);
+  await saveReviews([review]);
+  return c.json({ review });
+});
+
+// --- PUT /admin/reviews/:id — publish, link to a project or portfolio piece ---
+// What a reviewer wrote stays theirs; only a review typed in by hand can be
+// corrected here.
 r.put("/make-server-0951c59e/admin/reviews/:id", async (c) => {
-  try {
-    const admin = await verifyAdmin(c.req.header("Authorization"));
-    if (!admin) return c.json({ error: "Unauthorized" }, 401);
-
-    const id = c.req.param("id");
-    const existingStr = await kv.get(`review:${id}`);
-    if (!existingStr) return c.json({ error: "Review niet gevonden" }, 404);
-    const existing = JSON.parse(existingStr);
-
-    const updates = await c.req.json();
-    const updated = {
-      ...existing,
-      ...updates,
-      // The client owns what they wrote; an admin may only publish it and
-      // decide which portfolio piece it belongs to.
-      id: existing.id,
-      projectId: existing.projectId,
-      clientId: existing.clientId,
-      clientName: existing.clientName,
-      rating: existing.rating,
-      text: existing.text,
-      createdAt: existing.createdAt,
-      updatedAt: new Date().toISOString(),
-    };
-    await kv.set(`review:${id}`, JSON.stringify(updated));
-    return c.json({ review: updated });
-  } catch (err) {
-    console.log("Update review error:", err);
-    return c.json({ error: `Failed to update review: ${err}` }, 500);
+  const body = await readBody(c, z.object({
+    published: z.boolean().optional(),
+    portfolioArticleId: z.string().trim().min(1).nullable().optional(),
+    projectId: uuid.nullable().optional(),
+    clientName: textField(120).min(1).optional(),
+    rating: stars.optional(),
+    text: textField(5000).optional(),
+    createdAt: isoDateTime.optional(),
+  }));
+  let review = await loadReview(c.req.param("id"));
+  const typedByHand = review.source === "google" && !review.googleId;
+  if (!typedByHand && (body.clientName !== undefined || body.rating !== undefined || body.text !== undefined || body.createdAt !== undefined)) {
+    fail(400, "Wat de klant schreef kun je niet aanpassen.");
   }
+  if (body.projectId !== undefined && body.projectId !== review.projectId) review = await linkProject(review, body.projectId);
+  review = {
+    ...review,
+    ...(body.published !== undefined ? { published: body.published } : {}),
+    ...(body.portfolioArticleId !== undefined ? { portfolioArticleId: body.portfolioArticleId } : {}),
+    ...(typedByHand ? {
+      clientName: body.clientName ?? review.clientName,
+      rating: body.rating ?? review.rating,
+      text: body.text ?? review.text,
+      createdAt: body.createdAt ?? review.createdAt,
+    } : {}),
+    updatedAt: new Date().toISOString(),
+  };
+  await saveReviews([review]);
+  return c.json({ review });
+});
+
+// --- PUT /admin/reviews/:id/reply — answer a review on Google ---
+r.put("/make-server-0951c59e/admin/reviews/:id/reply", async (c) => {
+  const { text } = await readBody(c, z.object({ text: textField(4000).min(1, "Schrijf eerst een antwoord.") }));
+  const review = await loadReview(c.req.param("id"));
+  const conn = await googleConnection();
+  if (!review.googleName) fail(400, "Deze review komt niet van het gekoppelde Google-profiel; antwoorden kan alleen op Google zelf.");
+  if (!conn) fail(400, "Koppel eerst Google om te kunnen antwoorden.");
+  const reply = await putReply(conn, review.googleName, text);
+  const updated = { ...review, reply: { text: reply.comment || text, updatedAt: reply.updateTime || new Date().toISOString() } };
+  await saveReviews([updated]);
+  return c.json({ review: updated });
+});
+
+// --- DELETE /admin/reviews/:id/reply ---
+r.delete("/make-server-0951c59e/admin/reviews/:id/reply", async (c) => {
+  const review = await loadReview(c.req.param("id"));
+  const conn = await googleConnection();
+  if (!review.googleName || !conn) fail(400, "Koppel eerst Google om je antwoord te verwijderen.");
+  await deleteReply(conn, review.googleName);
+  const updated = { ...review, reply: null };
+  await saveReviews([updated]);
+  return c.json({ review: updated });
 });
 
 // --- DELETE /admin/reviews/:id ---
+// A review from the Google profile would only come back with the next sync;
+// it leaves the site by unpublishing it, or for good by deleting it on Google.
 r.delete("/make-server-0951c59e/admin/reviews/:id", async (c) => {
-  try {
-    const admin = await verifyAdmin(c.req.header("Authorization"));
-    if (!admin) return c.json({ error: "Unauthorized" }, 401);
-
-    const id = c.req.param("id");
-    const existingStr = await kv.get(`review:${id}`);
-    if (!existingStr) return c.json({ error: "Review niet gevonden" }, 404);
-    const existing = JSON.parse(existingStr);
-
-    await kv.del(`review:${id}`);
-    await kv.del(`review:byProject:${existing.projectId}`);
-    // Drop the request too, so the project can be asked again.
-    await kv.del(`review:request:${existing.projectId}`);
-
-    const idsStr = await kv.get("review:reviewIds");
-    if (idsStr) {
-      const ids = JSON.parse(idsStr).filter((rid: string) => rid !== id);
-      await kv.set("review:reviewIds", JSON.stringify(ids));
-    }
-
-    return c.json({ success: true });
-  } catch (err) {
-    console.log("Delete review error:", err);
-    return c.json({ error: `Failed to delete review: ${err}` }, 500);
-  }
+  const review = await loadReview(c.req.param("id"));
+  if (review.googleId) fail(400, "Deze review staat op Google. Haal hem van de site met Verbergen.");
+  await removeReview(review);
+  return c.json({ success: true });
 });
 
 // --- GET /admin/feedback — all feedback across projects ---
@@ -304,20 +344,24 @@ r.get("/make-server-0951c59e/portal/project/:id/engagement", async (c) => {
     const loaded = await loadProjectForClient(projectId, user);
     if (loaded.error) return c.json({ error: loaded.error }, loaded.status);
 
-    const [reviewReqStr, feedbackReqStr, reviewIdStr, feedbackIdsStr] = await Promise.all([
+    const [reviewReqStr, feedbackReqStr, reviews, feedbackIdsStr, links] = await Promise.all([
       kv.get(`review:request:${projectId}`),
       kv.get(`feedback:request:${projectId}`),
-      kv.get(`review:byProject:${projectId}`),
+      reviewsForProject(projectId),
       kv.get(`feedback:byProject:${projectId}`),
+      googleLinks(),
     ]);
 
-    const review = reviewIdStr ? JSON.parse((await kv.get(`review:${reviewIdStr}`)) || "null") : null;
     const feedbackIds: string[] = feedbackIdsStr ? JSON.parse(feedbackIdsStr) : [];
+    const request = reviewReqStr ? JSON.parse(reviewReqStr) : null;
+    const review = reviews[0];
 
     return c.json({
-      reviewRequested: !!reviewReqStr,
+      reviewRequested: !!request,
+      // Through the request's link when there is one, so the click is counted.
+      reviewLink: request?.token ? `${SITE_URL}/review/${request.token}` : links.reviewUrl,
+      review: review ? { rating: review.rating, text: review.text, source: review.source } : null,
       feedbackRequested: !!feedbackReqStr,
-      review,
       feedbackCount: feedbackIds.length,
     });
   } catch (err) {
@@ -326,107 +370,26 @@ r.get("/make-server-0951c59e/portal/project/:id/engagement", async (c) => {
   }
 });
 
-// --- POST /portal/project/:id/review — client submits their review ---
-r.post("/make-server-0951c59e/portal/project/:id/review", async (c) => {
-  try {
-    const user = await verifyAuth(c.req.header("Authorization"));
-    if (!user) return c.json({ error: "Unauthorized" }, 401);
-
-    const projectId = c.req.param("id");
-    const loaded = await loadProjectForClient(projectId, user);
-    if (loaded.error) return c.json({ error: loaded.error }, loaded.status);
-    const project = loaded.project;
-
-    const { rating, text } = await c.req.json();
-    const stars = Math.round(Number(rating));
-    if (!Number.isFinite(stars) || stars < 1 || stars > 5) {
-      return c.json({ error: "Kies een beoordeling van 1 tot 5 sterren." }, 400);
-    }
-    if (!String(text || "").trim()) {
-      return c.json({ error: "Schrijf er een korte toelichting bij." }, 400);
-    }
-
-    // One review per project — a second submit edits the first rather than
-    // stacking duplicates.
-    const existingId = await kv.get(`review:byProject:${projectId}`);
-    const id = existingId || crypto.randomUUID();
+// --- POST /review/open — the link in the review mail ---
+// Public: the token stands in for a login. Counts the click and says where
+// Google's review form is; an unknown token still gets the form.
+r.post("/make-server-0951c59e/review/open", async (c) => {
+  const { token } = await readBody(c, z.object({ token: z.string().regex(/^[a-f0-9]{32}$/, "Ongeldige link.") }));
+  const links = await googleLinks();
+  const projectId = JSON.parse((await kv.get(`review:token:${token}`)) || "null");
+  const key = `review:request:${projectId}`;
+  const request = projectId ? JSON.parse((await kv.get(key)) || "null") : null;
+  if (request?.token === token) {
     const now = new Date().toISOString();
-    const previousStr = existingId ? await kv.get(`review:${id}`) : null;
-    const previous = previousStr ? JSON.parse(previousStr) : null;
-
-    const review = {
-      id,
-      projectId,
-      projectTitle: project.title,
-      clientId: user.id,
-      clientName: user.user_metadata?.name || user.email,
-      rating: stars,
-      text: String(text).trim(),
-      portfolioArticleId: previous?.portfolioArticleId || null,
-      published: previous?.published || false,
-      createdAt: previous?.createdAt || now,
-      updatedAt: now,
-    };
-    await kv.set(`review:${id}`, JSON.stringify(review));
-    await kv.set(`review:byProject:${projectId}`, id);
-
-    if (!existingId) {
-      const idsStr = await kv.get("review:reviewIds");
-      const ids = idsStr ? JSON.parse(idsStr) : [];
-      ids.push(id);
-      await kv.set("review:reviewIds", JSON.stringify(ids));
-    }
-
-    const requestStr = await kv.get(`review:request:${projectId}`);
-    if (requestStr) {
-      const request = JSON.parse(requestStr);
-      await kv.set(`review:request:${projectId}`, JSON.stringify({ ...request, status: "submitted", submittedAt: now }));
-    }
-
-    await sendEmail({
-      to: EMAIL_ADMIN_NOTIFY,
-      subject: `${stars}/5 sterren van ${review.clientName} — ${project.title}`,
-      html: emailWrap(`
-        <tr>
-          <td style="padding:32px 36px 0;">
-            <span style="color:#c8905a;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;">Nieuwe Review</span>
-            <div style="height:10px;line-height:10px;font-size:0;">&nbsp;</div>
-            <span style="display:block;color:#c8905a;font-size:26px;letter-spacing:0.12em;">${starString(stars)}</span>
-            <div style="height:8px;line-height:8px;font-size:0;">&nbsp;</div>
-            <span style="display:block;color:#fffbe0;font-size:18px;font-weight:800;">${escapeHtml(review.clientName)}</span>
-            <span style="display:block;color:rgba(255,251,224,0.3);font-size:12px;margin-top:4px;">${escapeHtml(project.title)}</span>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:20px 36px 0;">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:rgba(255,251,224,0.03);border-left:2px solid #c8905a;">
-              <tr><td style="padding:16px 18px;color:rgba(255,251,224,0.65);font-size:13.5px;line-height:1.7;">${escapeHtml(review.text).replace(/\n/g, "<br>")}</td></tr>
-            </table>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:26px 36px 36px;">
-            <a href="${SITE_URL}/admin/reviews" style="display:inline-block;background-color:#fffbe0;color:#1a0c04;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 26px;">Beoordelen &amp; publiceren</a>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:18px 36px 28px;border-top:1px solid rgba(255,251,224,0.06);"><span style="color:rgba(255,251,224,0.2);font-size:11px;">Deze review staat nog niet op de site. Publiceren doe je zelf in de admin.</span></td>
-        </tr>
-      `),
-    });
-
-    await notify({
-      type: "review",
-      title: `${stars}/5 sterren van ${review.clientName}`,
-      body: review.text,
-      link: "/admin/reviews",
-    });
-
-    return c.json({ review });
-  } catch (err) {
-    console.log("Submit review error:", err);
-    return c.json({ error: `Review opslaan mislukt: ${err}` }, 500);
+    await kv.set(key, JSON.stringify({
+      ...request,
+      status: request.status === "submitted" ? "submitted" : "clicked",
+      clickedAt: request.clickedAt || now,
+      lastClickAt: now,
+      clicks: (request.clicks || 0) + 1,
+    }));
   }
+  return c.json({ url: links.reviewUrl });
 });
 
 // --- POST /portal/project/:id/feedback — client submits feedback notes ---
@@ -564,30 +527,28 @@ r.post("/make-server-0951c59e/portal/project/:id/feedback", async (c) => {
 
 // --- GET /reviews — published reviews for the public site ---
 r.get("/make-server-0951c59e/reviews", async (c) => {
-  try {
-    const idsStr = await kv.get("review:reviewIds");
-    const ids: string[] = idsStr ? JSON.parse(idsStr) : [];
-    const values = await Promise.all(ids.map((id) => kv.get(`review:${id}`)));
-    const reviews = values
-      .filter(Boolean)
-      .map((v) => JSON.parse(v as string))
-      .filter((r) => r.published)
-      // Only what a visitor needs — no client id, no project id.
-      .map((r) => ({
-        id: r.id,
-        clientName: r.clientName,
-        rating: r.rating,
-        text: r.text,
-        projectTitle: r.projectTitle,
-        portfolioArticleId: r.portfolioArticleId || null,
-        createdAt: r.createdAt,
-      }))
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  // The site is visited far more often than the admin, so it keeps the
+  // Google reviews fresh too — after the answer has gone out.
+  const sync = syncIfStale(6 * 60);
+  if (typeof EdgeRuntime !== "undefined") EdgeRuntime.waitUntil(sync);
+  else await sync;
 
-    return c.json({ reviews });
-  } catch (err) {
-    console.log("Get public reviews error:", err);
-    return c.json({ error: `Failed to fetch reviews: ${err}` }, 500);
-  }
+  const [all, links] = await Promise.all([loadReviews(), googleLinks()]);
+  const reviews = all
+    .filter((r) => r.published)
+    // Only what a visitor needs — no client id, no project id.
+    .map((r) => ({
+      id: r.id,
+      source: r.source,
+      clientName: r.clientName,
+      photoUrl: r.photoUrl,
+      rating: r.rating,
+      text: r.text,
+      projectTitle: r.projectTitle,
+      portfolioArticleId: r.portfolioArticleId,
+      createdAt: r.createdAt,
+    }));
+  const google = links.count ? { rating: links.rating, count: links.count, url: links.mapsUrl } : null;
+  return c.json({ reviews, google });
 });
 
