@@ -1,11 +1,12 @@
 import { Helmet } from "react-helmet-async";
 import { useState } from "react";
 import { Link, useParams } from "react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Star } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
+import { GoogleG } from "../components/GoogleG";
 import { Lightbox } from "../components/Lightbox";
 import { useLanguage } from "../context/LanguageContext";
-import { usePortfolio } from "../lib/siteData";
+import { usePortfolio, useReviews, type PublicReview } from "../lib/siteData";
 
 export function PortfolioDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -16,6 +17,8 @@ export function PortfolioDetailPage() {
   const portfolio = usePortfolio();
   const article = portfolio.data?.find((a) => a.id === id) ?? null;
   const loading = portfolio.data === undefined && !portfolio.error;
+  // Published reviews the studio linked to this piece in the admin.
+  const reviews = useReviews().data?.filter((r) => r.portfolioArticleId === id) ?? [];
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   if (loading) {
@@ -232,6 +235,8 @@ export function PortfolioDetailPage() {
           </div>
         )}
 
+        {reviews.length > 0 && <ArticleReviews reviews={reviews} />}
+
         <div
           style={{
             marginTop: "80px",
@@ -272,5 +277,62 @@ export function PortfolioDetailPage() {
         />
       )}
     </div>
+  );
+}
+
+/** What the client of this shoot said, between the photos and the call to action. */
+function ArticleReviews({ reviews }: { reviews: PublicReview[] }) {
+  const { t } = useLanguage();
+  return (
+    <section aria-labelledby="article-reviews" style={{ maxWidth: "820px", margin: "96px auto 0", textAlign: "center" }}>
+      <h2
+        id="article-reviews"
+        style={{
+          color: "rgba(255,251,224,0.5)",
+          fontSize: "11px",
+          fontWeight: 500,
+          letterSpacing: "0.3em",
+          textTransform: "uppercase",
+          margin: "0 0 36px",
+        }}
+      >
+        {t.portfolioDetail.reviewLabel}
+      </h2>
+      <div style={{ display: "flex", flexDirection: "column", gap: "56px" }}>
+        {reviews.map((review) => (
+          <figure key={review.id} style={{ margin: 0 }}>
+            <div role="img" aria-label={t.socialProof.rating(review.rating)} style={{ display: "flex", justifyContent: "center", gap: "4px", marginBottom: "24px" }}>
+              {[1, 2, 3, 4, 5].map((n) => (
+                <Star key={n} size={16} color="#c8905a" fill={n <= review.rating ? "#c8905a" : "none"} strokeWidth={2} aria-hidden="true" />
+              ))}
+            </div>
+            <blockquote
+              style={{
+                color: "rgba(255,251,224,0.82)",
+                fontSize: "clamp(17px, 2vw, 21px)",
+                fontWeight: 300,
+                lineHeight: 1.7,
+                margin: 0,
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              “{review.text}”
+            </blockquote>
+            <figcaption style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "center", gap: "10px", marginTop: "28px" }}>
+              {review.photoUrl && (
+                <img src={review.photoUrl} alt="" width={28} height={28} referrerPolicy="no-referrer" loading="lazy"
+                  style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }} />
+              )}
+              <span style={{ color: "#fffbe0", fontSize: "13px", fontWeight: 600, letterSpacing: "0.02em" }}>{review.clientName}</span>
+              {review.source === "google" && (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "rgba(255,251,224,0.5)", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                  · <GoogleG size={13} /> {t.socialProof.googleReview}
+                </span>
+              )}
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+    </section>
   );
 }

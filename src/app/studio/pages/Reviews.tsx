@@ -186,6 +186,13 @@ function ReviewItem({ review: r, canReply, onEdit }: { review: Review; canReply:
           </span>
         )}
       </div>
+      {r.portfolioArticleId && (
+        <span className="s-small s-muted">
+          {r.published
+            ? <>Staat ook bij <a href={`/portfolio/${r.portfolioArticleId}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "underline" }}>het portfoliostuk</a> op de site.</>
+            : "Komt bij het portfoliostuk te staan zodra je hem publiceert."}
+        </span>
+      )}
     </li>
   );
 }

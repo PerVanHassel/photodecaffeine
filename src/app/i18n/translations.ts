@@ -358,6 +358,7 @@ export const translations = {
       next: "Volgende foto",
       photoAlt: (title: string, n: number) => `${title}, foto ${n}`,
       photoOf: (n: number, total: number) => `Foto ${n} van ${total}`,
+      reviewLabel: "Wat de klant zegt",
     },
     notFound: {
       title: "Frame niet gevonden",
