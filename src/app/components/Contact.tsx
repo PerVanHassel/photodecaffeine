@@ -4,6 +4,7 @@ import { FormPrivacyNote } from "./form/FormPrivacyNote";
 import { track } from "../lib/analytics";
 import type { InquiryForm } from "../pages/ThankYouPage";
 import { Select } from "./portal/Select";
+import { ChoiceChips } from "./form/ChoiceChips";
 import { EMAIL_INPUT, PHONE_INPUT, PublicInput, PublicTextarea } from "./form/PublicField";
 import { useLanguage } from "../context/LanguageContext";
 import { portalFetch } from "../../lib/supabase";
@@ -22,6 +23,14 @@ export function Contact() {
 
   const set = (field: keyof typeof EMPTY) => (value: string) => setFormData((f) => ({ ...f, [field]: value }));
 
+  // Picking a service category offers its options to tick, as on its own page.
+  const [choices, setChoices] = useState<string[]>([]);
+  const category = t.servicePages.pages.find((p) => p.name === formData.package);
+  const choosePackage = (value: string) => {
+    set("package")(value);
+    setChoices([]);
+  };
+
   // Screen readers hear the confirmation, and keyboard focus is not left on
   // a form that no longer exists.
 
@@ -35,6 +44,7 @@ export function Contact() {
         method: "POST",
         body: JSON.stringify({
           ...formData,
+          package: category && choices.length ? `${category.name}: ${choices.join(", ")}` : formData.package,
           message: ref ? `${formData.message}\n\n[ref:${ref}]` : formData.message,
         }),
       });
@@ -51,7 +61,7 @@ export function Contact() {
   // The packages only appear while the packages section is shown on the home page.
   const showPackages = useSiteSettings().data?.sections?.services !== false;
   const packages = [
-    ...t.contact.topics,
+    ...t.servicePages.pages.map((p) => ({ value: p.name, label: p.name })),
     ...(showPackages ? t.services.packages.map((p) => ({ value: p.id, label: `${p.name} (${p.price} ${p.per})` })) : []),
     { value: "custom", label: t.contact.packageCustom },
   ];
@@ -300,11 +310,15 @@ export function Contact() {
               <Select
                 id={packageId}
                 value={formData.package}
-                onChange={set("package")}
+                onChange={choosePackage}
                 placeholder={t.contact.packageDefault}
                 options={packages}
               />
             </div>
+
+            {category && (
+              <ChoiceChips legend={t.contact.choiceLabel} options={category.options} value={choices} onChange={setChoices} />
+            )}
 
             <PublicTextarea
               label={t.contact.messageLabel}

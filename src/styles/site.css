@@ -433,6 +433,25 @@
 .pdc-stretched-link { color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 7px; }
 .pdc-stretched-link::after { content: ""; position: absolute; inset: 0; }
 
+/* Homepage service cards (WhatWeDo): the whole card links to its page. */
+.pdc-service-card {
+  position: relative; display: flex; flex-direction: column; padding: 40px 32px;
+  background-color: rgba(255,251,224,0.02); border: 1px solid rgba(255,251,224,0.05);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+.pdc-service-card:hover, .pdc-service-card:focus-within { background-color: rgba(200,144,90,0.05); border-color: rgba(200,144,90,0.3); }
+.pdc-service-card-options { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 32px; padding: 0; list-style: none; }
+.pdc-service-card-options li {
+  padding: 6px 10px; border: 1px solid rgba(255,251,224,0.1); color: rgba(255,251,224,0.6);
+  font-family: 'Inter', sans-serif; font-size: 11px; letter-spacing: 0.04em;
+}
+.pdc-service-card-link {
+  margin-top: auto; color: #c8905a; font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.22em; text-transform: uppercase;
+}
+.pdc-service-card-link:focus-visible { outline: none; }
+.pdc-service-card:has(.pdc-service-card-link:focus-visible) { outline: 2px solid #c8905a; outline-offset: 2px; }
+
 /* Small uppercase text links ("Meer over ons →"). */
 .pdc-text-link {
   font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 500; line-height: 1.5;
@@ -465,6 +484,26 @@ textarea.pdc-input { resize: none; }
 .pdc-field-error, .pdc-form-error { color: #e87c6a; }
 .pdc-form-error { margin: 0; font-family: 'Inter', sans-serif; font-size: 12px; line-height: 1.6; }
 .pdc-submit:disabled { cursor: not-allowed; }
+/* Tick-what-you-want chips (ChoiceChips): a checkbox hidden behind its label. */
+.pdc-choices { margin: 0; padding: 0; border: 0; min-width: 0; }
+.pdc-choices-hint { margin: -2px 0 14px; }
+.pdc-choices-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.pdc-choice { position: relative; cursor: pointer; }
+.pdc-choice input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; pointer-events: none; }
+.pdc-choice span {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; box-sizing: border-box; padding: 10px 16px;
+  border: 1px solid rgba(255,251,224,0.18); color: rgba(255,251,224,0.7);
+  font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 400; letter-spacing: 0.02em;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+.pdc-choice span::before {
+  content: ""; width: 8px; height: 8px; border: 1px solid rgba(255,251,224,0.35); border-radius: 50%;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.pdc-choice:hover span { border-color: rgba(255,251,224,0.4); color: #fffbe0; }
+.pdc-choice input:checked + span { border-color: #c8905a; background-color: rgba(200,144,90,0.12); color: #fffbe0; }
+.pdc-choice input:checked + span::before { background-color: #c8905a; border-color: #c8905a; }
+.pdc-choice input:focus-visible + span { outline: 2px solid #c8905a; outline-offset: 2px; }
 .pdc-contact-detail, .pdc-contact-link {
   color: rgba(255,251,224,0.65); font-size: 13px; font-weight: 300; letter-spacing: 0.02em; text-decoration: none;
 }

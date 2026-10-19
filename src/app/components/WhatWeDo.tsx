@@ -1,5 +1,8 @@
+import { Link } from "react-router";
 import { useLanguage } from "../context/LanguageContext";
 
+// The three service categories on the homepage, each leading to its own page
+// where the visitor puts together what they want.
 export function WhatWeDo() {
   const { t } = useLanguage();
   const tw = t.whatWeDo;
@@ -72,19 +75,12 @@ export function WhatWeDo() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
             gap: "2px",
           }}
         >
-          {tw.items.map((item, i) => (
-            <div
-              key={item.title}
-              style={{
-                backgroundColor: "rgba(255,251,224,0.02)",
-                border: "1px solid rgba(255,251,224,0.05)",
-                padding: "40px 32px",
-              }}
-            >
+          {t.servicePages.pages.map((page, i) => (
+            <div key={page.id} className="pdc-service-card">
               <div
                 style={{
                   color: "rgba(200,144,90,0.8)",
@@ -100,7 +96,7 @@ export function WhatWeDo() {
               <h3
                 style={{
                   color: "#fffbe0",
-                  fontSize: "22px",
+                  fontSize: "26px",
                   fontWeight: 800,
                   letterSpacing: "-0.01em",
                   textTransform: "uppercase",
@@ -108,7 +104,7 @@ export function WhatWeDo() {
                   marginBottom: "16px",
                 }}
               >
-                {item.title}
+                {page.name}
               </h3>
               <p
                 style={{
@@ -117,10 +113,20 @@ export function WhatWeDo() {
                   fontWeight: 300,
                   lineHeight: 1.75,
                   margin: 0,
+                  marginBottom: "28px",
                 }}
               >
-                {item.body}
+                {page.summary}
               </p>
+              <ul className="pdc-service-card-options">
+                {page.options.map((option) => (
+                  <li key={option}>{option}</li>
+                ))}
+              </ul>
+              <Link to={page.path} className="pdc-stretched-link pdc-service-card-link">
+                <span className="sr-only">{page.name}: </span>
+                {tw.cardCta}
+              </Link>
             </div>
           ))}
         </div>

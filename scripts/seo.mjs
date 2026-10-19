@@ -1,7 +1,7 @@
 // Fills in the two SEO details that depend on live data, after the pages have
 // been prerendered.
 //
-//  * sitemap.xml — the five marketing routes are fixed, but the portfolio
+//  * sitemap.xml — the marketing routes are fixed, but the portfolio
 //    articles are not: they are the site's actual content and they change.
 //    They are read from the public API and written out with their own lastmod.
 //  * og:image — the share picture follows the hero photo chosen in the admin,
@@ -23,8 +23,11 @@ const TIMEOUT_MS = 15000;
 const STATIC_ROUTES = [
   { loc: "/", changefreq: "monthly", priority: "1.0" },
   { loc: "/portfolio", changefreq: "weekly", priority: "0.9" },
-  { loc: "/services/automotive", changefreq: "monthly", priority: "0.9" },
-  { loc: "/services/social-media", changefreq: "monthly", priority: "0.9" },
+  { loc: "/services/fotografie", changefreq: "monthly", priority: "0.9" },
+  { loc: "/services/videografie", changefreq: "monthly", priority: "0.9" },
+  { loc: "/services/website", changefreq: "monthly", priority: "0.9" },
+  { loc: "/services/automotive", changefreq: "monthly", priority: "0.8" },
+  { loc: "/services/social-media", changefreq: "monthly", priority: "0.8" },
   { loc: "/about", changefreq: "monthly", priority: "0.7" },
 ];
 

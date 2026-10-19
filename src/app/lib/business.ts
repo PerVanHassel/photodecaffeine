@@ -32,14 +32,17 @@ export const BUSINESS_JSON_LD = {
     itemListElement: [
       {
         "@type": "Offer",
+        url: "https://www.photodecaffeine.com/services/fotografie",
         itemOffered: { "@type": "Service", name: "Fotografie", description: "Portretten, evenementen, auto's, sport en concerten." },
       },
       {
         "@type": "Offer",
+        url: "https://www.photodecaffeine.com/services/videografie",
         itemOffered: { "@type": "Service", name: "Videografie", description: "Korte films, sfeervideo's en content voor social media." },
       },
       {
         "@type": "Offer",
+        url: "https://www.photodecaffeine.com/services/website",
         itemOffered: { "@type": "Service", name: "Websites op maat", description: "Websites op maat, gebouwd met eigen beeldmateriaal." },
       },
       {

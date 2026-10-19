@@ -109,7 +109,8 @@ export function AutomotivePage() {
           "@type": "BreadcrumbList",
           "itemListElement": [
             { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.photodecaffeine.com/" },
-            { "@type": "ListItem", "position": 2, "name": "Automotive Fotografie", "item": "https://www.photodecaffeine.com/services/automotive" }
+            { "@type": "ListItem", "position": 2, "name": "Fotografie", "item": "https://www.photodecaffeine.com/services/fotografie" },
+            { "@type": "ListItem", "position": 3, "name": "Automotive Fotografie", "item": "https://www.photodecaffeine.com/services/automotive" }
           ]
         })}</script>
       </Helmet>
@@ -122,7 +123,7 @@ export function AutomotivePage() {
         }}
       >
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-          <Link to="/" className="pdc-back-link">
+          <Link to="/services/fotografie" className="pdc-back-link">
             <ArrowLeft size={14} aria-hidden="true" />
             {ta.backLabel}
           </Link>

@@ -51,10 +51,7 @@ export function Navigation() {
 
   const isServicesPage = location.pathname.startsWith("/services/");
 
-  const SERVICES = [
-    { label: t.nav.automotive, path: "/services/automotive" },
-    { label: t.nav.socialMedia, path: "/services/social-media" },
-  ];
+  const SERVICES = t.servicePages.pages.map((p) => ({ label: p.name, path: p.path }));
 
   function closeServices(e: KeyboardEvent) {
     if (e.key !== "Escape") return;
