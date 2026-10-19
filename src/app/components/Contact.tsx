@@ -8,6 +8,7 @@ import { EMAIL_INPUT, PHONE_INPUT, PublicInput, PublicTextarea } from "./form/Pu
 import { useLanguage } from "../context/LanguageContext";
 import { portalFetch } from "../../lib/supabase";
 import { getStoredAdRef } from "../hooks/useAdTracking";
+import { useSiteSettings } from "../lib/siteData";
 
 const EMPTY = { name: "", email: "", phone: "", brand: "", message: "", package: "" };
 
@@ -47,9 +48,11 @@ export function Contact() {
     }
   };
 
-  // The same packages, names and prices as the packages section.
+  // The packages only appear while the packages section is shown on the home page.
+  const showPackages = useSiteSettings().data?.sections?.services !== false;
   const packages = [
-    ...t.services.packages.map((p) => ({ value: p.id, label: `${p.name} (${p.price} ${p.per})` })),
+    ...t.contact.topics,
+    ...(showPackages ? t.services.packages.map((p) => ({ value: p.id, label: `${p.name} (${p.price} ${p.per})` })) : []),
     { value: "custom", label: t.contact.packageCustom },
   ];
 

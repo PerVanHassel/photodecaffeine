@@ -10,9 +10,9 @@ import DARKROOM from "@/assets/web/darkroom-1200.webp";
 import { scrollBehavior } from "../lib/scroll";
 
 const TEAM = [
-  { id: "per", name: "Per van Hassel", role: "Medeoprichter & creative director / strategie", tag: "Strategie & merkidentiteit" },
-  { id: "ryan", name: "Ryan Chantre", role: "Medeoprichter & creative lead", tag: "Grafisch ontwerp & postproductie" },
-  { id: "majd", name: "Majd Tawashe", role: "Fotografie & creative director", tag: "Medeoprichter" },
+  { id: "per", name: "Per van Hassel", role: "Medeoprichter & creative director / strategie", tag: "Video & storytelling" },
+  { id: "ryan", name: "Ryan Chantre", role: "Medeoprichter & creative lead", tag: "Automotive, sport & concerten" },
+  { id: "majd", name: "Majd Tawashe", role: "Fotografie & creative director", tag: "6+ jaar fotografie" },
 ] as const;
 
 const PORTRAITS = { majd: image_IMG_9694, per: image_IMG_0114_TIF, ryan: image_IMG_0115_TIF };
@@ -244,15 +244,15 @@ export function AboutPage() {
       }}>
       <Helmet>
         <title>Over ons: het team achter de lens | PhotoDeCaffeine</title>
-        <meta name="description" content="Maak kennis met het team van PhotoDeCaffeine. Gepassioneerde automotive fotografen en videomakers, actief door heel Nederland, met een oog voor detail en een liefde voor het vak." />
+        <meta name="description" content="Maak kennis met Per, Ryan en Majd van PhotoDeCaffeine: een jong team uit Roosendaal voor fotografie, videografie en websites op maat, door heel Nederland." />
         <link rel="canonical" href="https://www.photodecaffeine.com/about" />
         <meta property="og:title" content="Over ons | PhotoDeCaffeine" />
-        <meta property="og:description" content="Maak kennis met het team van PhotoDeCaffeine: gepassioneerde automotive fotografen door heel Nederland." />
+        <meta property="og:description" content="Maak kennis met het team van PhotoDeCaffeine: fotografie, videografie en websites op maat." />
         <meta property="og:url" content="https://www.photodecaffeine.com/about" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Over ons | PhotoDeCaffeine" />
-        <meta name="twitter:description" content="Maak kennis met het team van PhotoDeCaffeine: gepassioneerde automotive fotografen door heel Nederland." />
+        <meta name="twitter:description" content="Maak kennis met het team van PhotoDeCaffeine: fotografie, videografie en websites op maat." />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "BreadcrumbList",
@@ -346,6 +346,101 @@ export function AboutPage() {
               {ta.subtitle}
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* ── STORY ── */}
+      <div className="pdc-band" style={{ backgroundColor: "#080401" }}>
+        <div
+          className="grid grid-cols-1 md:grid-cols-[1fr_1.4fr]"
+          style={{ maxWidth: "1400px", margin: "0 auto", gap: "48px 80px" }}
+        >
+          <div>
+            <span
+              style={{
+                color: "rgba(255,251,224,0.5)",
+                fontSize: "10px",
+                fontWeight: 500,
+                letterSpacing: "0.3em",
+                textTransform: "uppercase",
+                display: "block",
+                marginBottom: "16px",
+              }}
+            >
+              {ta.storyLabel}
+            </span>
+            <h2
+              style={{
+                color: "#fffbe0",
+                fontSize: "clamp(28px, 3.5vw, 48px)",
+                fontWeight: 800,
+                letterSpacing: "-0.03em",
+                lineHeight: 1,
+                margin: 0,
+                textTransform: "uppercase",
+              }}
+            >
+              {ta.storyTitle1}
+              <br />
+              <span style={{ color: "rgba(255,251,224,0.4)" }}>{ta.storyTitle2}</span>
+            </h2>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            {ta.story.map((p) => (
+              <p
+                key={p}
+                style={{
+                  color: "rgba(255,251,224,0.6)",
+                  fontSize: "15px",
+                  fontWeight: 300,
+                  lineHeight: 1.8,
+                  margin: 0,
+                }}
+              >
+                {p}
+              </p>
+            ))}
+          </div>
+
+          {[
+            { title: ta.whyTitle, body: ta.whyBody },
+            { title: ta.visionTitle, body: ta.visionBody },
+          ].map((block) => (
+            <div
+              key={block.title}
+              style={{
+                borderTop: "1px solid rgba(200,144,90,0.25)",
+                paddingTop: "28px",
+              }}
+            >
+              <h3
+                style={{
+                  color: "#c8905a",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  letterSpacing: "0.25em",
+                  textTransform: "uppercase",
+                  margin: 0,
+                  marginBottom: "16px",
+                  fontFamily: "'Courier New', monospace",
+                }}
+              >
+                {block.title}
+              </h3>
+              <p
+                style={{
+                  color: "rgba(255,251,224,0.6)",
+                  fontSize: "14px",
+                  fontWeight: 300,
+                  lineHeight: 1.8,
+                  margin: 0,
+                }}
+              >
+                {block.body}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
 

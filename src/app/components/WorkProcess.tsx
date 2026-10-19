@@ -4,7 +4,7 @@ export function WorkProcess() {
   const { t } = useLanguage();
   const steps = t.workProcess.steps.map((s, i) => ({
     ...s,
-    icon: ["📍", "🎬", "🎞️"][i],
+    icon: ["💬", "🧭", "🎬", "☕"][i],
   }));
 
   return (

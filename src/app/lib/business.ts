@@ -7,8 +7,14 @@ export const BUSINESS_JSON_LD = {
   "@type": "ProfessionalService",
   "@id": "https://www.photodecaffeine.com/#bedrijf",
   name: "PhotoDeCaffeine",
-  alternateName: ["Photo De Caffeine", "PDC Productions"],
-  description: "Automotive fotografie, videografie en social media beheer door heel Nederland. Voor auto's, motoren en de mensen erachter.",
+  alternateName: ["Photo De Caffeine", "PDC"],
+  description: "Fotografie, videografie en websites op maat uit Roosendaal, door heel Nederland. Voor ondernemers, makers en particulieren.",
+  slogan: "Gemaakt als koffie, geschoten als cinema.",
+  foundingDate: "2026",
+  founder: [
+    { "@type": "Person", name: "Per van Hassel" },
+    { "@type": "Person", name: "Ryan Chantre" },
+  ],
   url: "https://www.photodecaffeine.com/",
   logo: "https://www.photodecaffeine.com/icons/icon-512.png",
   image: "https://uunwhesmymkwmkgqkmxy.supabase.co/storage/v1/object/public/portfolio-images-0951c59e/web/1780794457379-bikersoul-041-2560.jpg",
@@ -19,11 +25,23 @@ export const BUSINESS_JSON_LD = {
   priceRange: "Vanaf €50",
   vatID: "NL823807071B01",
   identifier: { "@type": "PropertyValue", propertyID: "KvK", value: "94948933" },
-  knowsAbout: ["Automotive fotografie", "Videografie", "Social media beheer"],
+  knowsAbout: ["Fotografie", "Videografie", "Webdevelopment", "Automotive fotografie", "Social media beheer"],
   hasOfferCatalog: {
     "@type": "OfferCatalog",
     name: "Diensten",
     itemListElement: [
+      {
+        "@type": "Offer",
+        itemOffered: { "@type": "Service", name: "Fotografie", description: "Portretten, evenementen, auto's, sport en concerten." },
+      },
+      {
+        "@type": "Offer",
+        itemOffered: { "@type": "Service", name: "Videografie", description: "Korte films, sfeervideo's en content voor social media." },
+      },
+      {
+        "@type": "Offer",
+        itemOffered: { "@type": "Service", name: "Websites op maat", description: "Websites op maat, gebouwd met eigen beeldmateriaal." },
+      },
       {
         "@type": "Offer",
         url: "https://www.photodecaffeine.com/services/automotive",
