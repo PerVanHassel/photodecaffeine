@@ -17,6 +17,8 @@ export interface SiteSettings {
   heroImageMobileUrl?: string;
   frameImageUrl?: string;
   sections?: Partial<Record<SectionKey, boolean>>;
+  /** The photography niche: a portfolio category the photography page leads with. Empty for none. */
+  photoFocus?: string;
 }
 
 export interface PortfolioArticle {

@@ -10,6 +10,7 @@ import { useLanguage } from "../context/LanguageContext";
 import { portalFetch } from "../../lib/supabase";
 import { getStoredAdRef } from "../hooks/useAdTracking";
 import { useSiteSettings } from "../lib/siteData";
+import { focusFirst } from "../lib/photoFocus";
 
 const EMPTY = { name: "", email: "", phone: "", brand: "", message: "", package: "" };
 
@@ -59,7 +60,8 @@ export function Contact() {
   };
 
   // The packages only appear while the packages section is shown on the home page.
-  const showPackages = useSiteSettings().data?.sections?.services !== false;
+  const settings = useSiteSettings().data;
+  const showPackages = settings?.sections?.services !== false;
   const packages = [
     ...t.servicePages.pages.map((p) => ({ value: p.name, label: p.name })),
     ...(showPackages ? t.services.packages.map((p) => ({ value: p.id, label: `${p.name} (${p.price} ${p.per})` })) : []),
@@ -317,7 +319,12 @@ export function Contact() {
             </div>
 
             {category && (
-              <ChoiceChips legend={t.contact.choiceLabel} options={category.options} value={choices} onChange={setChoices} />
+              <ChoiceChips
+                legend={t.contact.choiceLabel}
+                options={category.id === "fotografie" ? focusFirst(category.options, settings?.photoFocus) : category.options}
+                value={choices}
+                onChange={setChoices}
+              />
             )}
 
             <PublicTextarea

@@ -452,6 +452,24 @@
 .pdc-service-card-link:focus-visible { outline: none; }
 .pdc-service-card:has(.pdc-service-card-link:focus-visible) { outline: 2px solid #c8905a; outline-offset: 2px; }
 
+/* Photography page: photos from the niche picked in the admin (ServicePage). */
+.pdc-niche { max-width: 1400px; margin: 0 auto; padding: 72px 40px 0; box-sizing: border-box; }
+.pdc-niche-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 12px 24px; margin-bottom: 24px; }
+.pdc-niche-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
+.pdc-niche-grid a { display: block; aspect-ratio: 4 / 3; overflow: hidden; }
+.pdc-niche-grid img {
+  display: block; width: 100%; height: 100%; object-fit: cover;
+  filter: contrast(1.05) saturate(0.75) brightness(0.85); transition: transform 0.6s ease, filter 0.6s ease;
+}
+.pdc-niche-grid a:hover img, .pdc-niche-grid a:focus-visible img { transform: scale(1.04); filter: none; }
+.pdc-niche-grid a:focus-visible { outline: 2px solid #c8905a; outline-offset: -2px; }
+@media (max-width: 767px) {
+  .pdc-niche { padding: 48px 20px 0; }
+  .pdc-niche-grid { grid-template-columns: repeat(2, 1fr); }
+  .pdc-niche-grid a { aspect-ratio: 1; }
+}
+@media (prefers-reduced-motion: reduce) { .pdc-niche-grid img { transition: none; } }
+
 /* Small uppercase text links ("Meer over ons →"). */
 .pdc-text-link {
   font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 500; line-height: 1.5;

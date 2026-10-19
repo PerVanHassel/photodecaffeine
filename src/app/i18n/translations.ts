@@ -45,6 +45,10 @@ export const translations = {
       otherTitle: "Combineer",
       otherTitleDim: "gerust.",
       otherBody: "Eigen beeld maakt een website persoonlijker, en een goede website geeft dat beeld een thuis.",
+      workLabel: "Recent werk",
+      workLabelFocus: (niche: string) => `In de focus: ${niche}`,
+      workLink: "Bekijk het hele portfolio →",
+      photoAlt: (title: string) => `Foto uit ${title}`,
       pages: [
         {
           id: "fotografie",

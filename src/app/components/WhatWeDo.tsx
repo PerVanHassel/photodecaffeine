@@ -1,11 +1,15 @@
 import { Link } from "react-router";
 import { useLanguage } from "../context/LanguageContext";
+import { focusFirst } from "../lib/photoFocus";
+import { useSiteSettings } from "../lib/siteData";
 
 // The three service categories on the homepage, each leading to its own page
 // where the visitor puts together what they want.
 export function WhatWeDo() {
   const { t } = useLanguage();
   const tw = t.whatWeDo;
+  // The photography niche picked in the admin comes first on its card.
+  const focus = useSiteSettings().data?.photoFocus;
 
   return (
     <section
@@ -119,7 +123,7 @@ export function WhatWeDo() {
                 {page.summary}
               </p>
               <ul className="pdc-service-card-options">
-                {page.options.map((option) => (
+                {(page.id === "fotografie" ? focusFirst(page.options, focus) : page.options).map((option) => (
                   <li key={option}>{option}</li>
                 ))}
               </ul>

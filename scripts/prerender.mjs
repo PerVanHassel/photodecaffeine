@@ -36,7 +36,7 @@ const PAGES = [
   { route: "/", data: ["settings", "articles", "reviews"] },
   { route: "/portfolio", data: ["articles"] },
   { route: "/about", data: [] },
-  { route: "/services/fotografie", data: [] },
+  { route: "/services/fotografie", data: ["settings", "articles"] },
   { route: "/services/videografie", data: [] },
   { route: "/services/website", data: [] },
   { route: "/services/automotive", data: ["articles"] },

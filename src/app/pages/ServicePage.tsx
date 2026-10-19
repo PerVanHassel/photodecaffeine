@@ -7,6 +7,8 @@ import { ChoiceChips } from "../components/form/ChoiceChips";
 import { EMAIL_INPUT, PHONE_INPUT, PublicInput, PublicTextarea } from "../components/form/PublicField";
 import { track } from "../lib/analytics";
 import { HIGH_PRIORITY } from "../lib/images";
+import { focusFirst, focusPhotos, webSrcSet } from "../lib/photoFocus";
+import { usePortfolio, useSiteSettings } from "../lib/siteData";
 import type { InquiryForm } from "./ThankYouPage";
 import { portalFetch } from "../../lib/supabase";
 import { useAdTracking, getStoredAdRef } from "../hooks/useAdTracking";
@@ -37,13 +39,20 @@ const label = {
   display: "block",
 } as const;
 
-function ServicePage({ id }: { id: ServiceId }) {
+const NO_WORK: ReturnType<typeof focusPhotos> = { photos: [], focused: false };
+
+function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: string; work?: ReturnType<typeof focusPhotos> }) {
   const { t } = useLanguage();
   const ts = t.servicePages;
   const page = ts.pages.find((p) => p.id === id)!;
   const others = ts.pages.filter((p) => p.id !== id);
   const hero = HERO[id];
   useAdTracking(page.path);
+
+  // A niche's photos fill the hero and the work grid, and its option comes first.
+  const heroPhoto = work.focused ? work.photos[0] : undefined;
+  const gridPhotos = (heroPhoto ? work.photos.slice(1) : work.photos).slice(0, 6);
+  const options = focusFirst(page.options, focus);
 
   const [choices, setChoices] = useState<string[]>([]);
   const [form, setForm] = useState({ name: "", email: "", phone: "", company: "", message: "" });
@@ -202,22 +211,39 @@ function ServicePage({ id }: { id: ServiceId }) {
 
       {/* ── Hero image ── */}
       <div className="pdc-svc-hero" style={{ position: "relative", minHeight: "320px", overflow: "hidden" }}>
-        <img
-          src={hero.src}
-          srcSet={hero.srcSet}
-          sizes={hero.srcSet ? "100vw" : undefined}
-          width={hero.width}
-          height={hero.height}
-          {...HIGH_PRIORITY}
-          alt={page.heroAlt}
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            objectPosition: hero.position,
-            filter: "brightness(0.5) contrast(1.08) saturate(0.7)",
-          }}
-        />
+        {heroPhoto ? (
+          <img
+            src={heroPhoto.url}
+            srcSet={webSrcSet(heroPhoto.url)}
+            sizes="100vw"
+            {...HIGH_PRIORITY}
+            alt={ts.photoAlt(heroPhoto.article.title)}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              objectPosition: "center 45%",
+              filter: "brightness(0.5) contrast(1.08) saturate(0.7)",
+            }}
+          />
+        ) : (
+          <img
+            src={hero.src}
+            srcSet={hero.srcSet}
+            sizes={hero.srcSet ? "100vw" : undefined}
+            width={hero.width}
+            height={hero.height}
+            {...HIGH_PRIORITY}
+            alt={page.heroAlt}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              objectPosition: hero.position,
+              filter: "brightness(0.5) contrast(1.08) saturate(0.7)",
+            }}
+          />
+        )}
       </div>
 
       {/* ── Keyword intro ── */}
@@ -235,6 +261,34 @@ function ServicePage({ id }: { id: ServiceId }) {
           {page.introStart} <strong style={{ color: "rgba(255,251,224,0.8)" }}>{page.introStrong}</strong> {page.introEnd}
         </p>
       </div>
+
+      {/* ── Work from the niche (photography only) ── */}
+      {gridPhotos.length > 0 && (
+        <section className="pdc-niche" aria-labelledby="niche-work">
+          <div className="pdc-niche-head">
+            <h2 id="niche-work" style={{ ...label, margin: 0 }}>
+              {work.focused && focus ? ts.workLabelFocus(focus) : ts.workLabel}
+            </h2>
+            <Link to="/portfolio" className="pdc-text-link">
+              {ts.workLink}
+            </Link>
+          </div>
+          <div className="pdc-niche-grid">
+            {gridPhotos.map((photo) => (
+              <Link key={photo.url} to={`/portfolio/${photo.article.id}`} aria-label={ts.photoAlt(photo.article.title)}>
+                <img
+                  src={photo.url}
+                  srcSet={webSrcSet(photo.url)}
+                  sizes="(max-width: 767px) 50vw, 33vw"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                />
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ── What to expect + the request form ── */}
       <div
@@ -323,7 +377,7 @@ function ServicePage({ id }: { id: ServiceId }) {
           </p>
 
           <form noValidate onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
-            <ChoiceChips legend={ts.chooseLabel} hint={ts.chooseHint} options={page.options} value={choices} onChange={setChoices} />
+            <ChoiceChips legend={ts.chooseLabel} hint={ts.chooseHint} options={options} value={choices} onChange={setChoices} />
             <PublicInput
               ref={nameInput}
               label={ts.nameLabel}
@@ -450,6 +504,14 @@ function ServicePage({ id }: { id: ServiceId }) {
   );
 }
 
-export const PhotographyPage = () => <ServicePage id="fotografie" />;
+/**
+ * Photography leads with the niche picked in the admin (Instellingen →
+ * Fotografie). Without one, the grid shows recent work from the whole portfolio.
+ */
+export function PhotographyPage() {
+  const focus = useSiteSettings().data?.photoFocus;
+  const work = focusPhotos(usePortfolio().data, focus, 7);
+  return <ServicePage id="fotografie" focus={focus} work={work} />;
+}
 export const VideographyPage = () => <ServicePage id="videografie" />;
 export const WebsitePage = () => <ServicePage id="website" />;

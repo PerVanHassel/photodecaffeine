@@ -5,7 +5,7 @@ import { get, put } from "../api";
 import { uploadPublic } from "../components/MediaGrid";
 import { useAction } from "../queries";
 import type { Business } from "../types";
-import { Button, Card, Modal, PageHead, Photo, Skeleton, TextAreaField, TextField } from "../ui";
+import { Button, Card, Modal, PageHead, Photo, SelectField, Skeleton, TextAreaField, TextField } from "../ui";
 import type { Article } from "./Content";
 import { useUnsavedChanges } from "../unsaved";
 
@@ -15,6 +15,8 @@ type Settings = {
   heroImageMobileUrl: string;
   frameImageUrl: string;
   sections: Sections;
+  /** The photography niche: a portfolio category the photography page leads with. */
+  photoFocus: string;
   studioName: string;
   contactEmail: string;
   business: Business;
@@ -37,6 +39,7 @@ const IMAGES: { key: "heroImageUrl" | "heroImageMobileUrl" | "frameImageUrl"; la
 const EMPTY: Settings = {
   heroImageUrl: "", heroImageMobileUrl: "", frameImageUrl: "",
   sections: { workProcess: true, portfolio: true, about: true, services: true, socialProof: true, customCTA: true },
+  photoFocus: "",
   studioName: "", contactEmail: "",
   business: { name: "", address: "", kvk: "", vatNumber: "", iban: "", email: "" },
 };
@@ -89,6 +92,9 @@ export function SettingsPage() {
           ))}
         </div>
       </Card>
+      <Card title="Fotografie">
+        <PhotoFocus value={s.photoFocus} onChange={(photoFocus) => setS({ ...s, photoFocus })} />
+      </Card>
       <Card title="Studio">
         <div className="s-form-grid">
           <TextField label="Naam van de studio" value={s.studioName} onChange={(e) => setS({ ...s, studioName: e.target.value })} />
@@ -107,6 +113,36 @@ export function SettingsPage() {
       </Card>
       <PortfolioPicker open={!!picking} onClose={() => setPicking(null)} onPick={(url) => { if (picking) setS({ ...s, [picking]: url }); setPicking(null); }} />
     </div>
+  );
+}
+
+/** The niche to lead with, picked from the categories the published portfolio uses. */
+function PhotoFocus({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const articles = useQuery({ queryKey: ["portfolio"], queryFn: () => get<{ articles: Article[] }>("/admin/portfolio").then((r) => r.articles) });
+  const counts = new Map<string, { name: string; count: number }>();
+  for (const a of articles.data || []) {
+    const name = (a.category || "").trim();
+    // The automotive page's photo strip is stored as an article with an "_" category.
+    if (!a.published || !name || name.startsWith("_")) continue;
+    const key = name.toLowerCase();
+    counts.set(key, { name: counts.get(key)?.name ?? name, count: (counts.get(key)?.count ?? 0) + 1 });
+  }
+  const niches = [...counts.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  const missing = !!value && !niches.some((n) => n.name.toLowerCase() === value.trim().toLowerCase());
+  return (
+    <SelectField
+      label="Focus (niche)"
+      hint="De fotografiepagina laat vooral foto's uit deze portfoliocategorie zien. De categorie geef je per portfoliostuk op."
+      value={value}
+      disabled={articles.isLoading}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      <option value="">Geen focus: recent werk uit alle categorieën</option>
+      {niches.map((n) => (
+        <option key={n.name} value={n.name}>{n.name} ({n.count} {n.count === 1 ? "stuk" : "stukken"})</option>
+      ))}
+      {missing && <option value={value}>{value} (staat niet meer in het portfolio)</option>}
+    </SelectField>
   );
 }
 
