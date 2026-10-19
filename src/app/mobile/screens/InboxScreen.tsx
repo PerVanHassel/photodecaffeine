@@ -334,6 +334,7 @@ function InquirySheet({
             <ContactAction
               icon={<Mail size={17} />}
               label="Mail"
+              disabled={!inquiry.email}
               onClick={() => contactVia(`mailto:${inquiry.email}`)}
             />
             <ContactAction
@@ -352,10 +353,12 @@ function InquirySheet({
 
           <Card padded={false} style={{ padding: 14 }}>
             <Stack gap={12}>
-              <DetailRow label="E-mail" value={inquiry.email} onCopy={() => copy(inquiry.email, "E-mailadres")} />
+              {inquiry.email && (
+                <DetailRow label="E-mail" value={inquiry.email} onCopy={() => copy(inquiry.email, "E-mailadres")} />
+              )}
               {inquiry.phone && (
                 <>
-                  <Divider />
+                  {inquiry.email && <Divider />}
                   <DetailRow
                     label="Telefoon"
                     value={inquiry.phone}
@@ -365,7 +368,7 @@ function InquirySheet({
               )}
               {inquiry.brand && (
                 <>
-                  <Divider />
+                  {(inquiry.email || inquiry.phone) && <Divider />}
                   <DetailRow label="Merk / bedrijf" value={inquiry.brand} />
                 </>
               )}

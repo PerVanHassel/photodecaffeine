@@ -32,11 +32,13 @@ async function withinContactLimit(forwardedFor: string | undefined): Promise<boo
 r.post("/make-server-0951c59e/contact", async (c) => {
   try {
     const { name, email, phone, brand, message, package: pkg } = await c.req.json();
-    if (!name?.trim() || !email?.trim() || !message?.trim()) {
-      return c.json({ error: "Name, email, and message are required" }, 400);
+    // The automotive and social media forms ask for an email or a phone
+    // number; either one is enough to get back to someone.
+    if (!name?.trim() || !(email?.trim() || phone?.trim()) || !message?.trim()) {
+      return c.json({ error: "Name, email or phone, and message are required" }, 400);
     }
     if (name !== AD_VISIT_MARKER) {
-      if (!EMAIL_RE.test(String(email).trim())) {
+      if (email?.trim() && !EMAIL_RE.test(String(email).trim())) {
         return c.json({ error: "Vul een geldig e-mailadres in." }, 400);
       }
       if (String(message).length > 5000 || String(name).length > 200) {
@@ -60,7 +62,7 @@ r.post("/make-server-0951c59e/contact", async (c) => {
 
     const inquiry = must(await db.from("inquiries").insert({
       name: name.trim(),
-      email: email.trim(),
+      email: email?.trim() || "",
       phone: phone?.trim() || "",
       brand: brand?.trim() || "",
       message: message.trim(),
@@ -74,10 +76,12 @@ r.post("/make-server-0951c59e/contact", async (c) => {
       link: `/admin/inquiries?open=${inquiry.id}`,
     });
 
-    // Notify admin — reply-to set to the visitor so replying goes straight to them
+    // Notify admin — reply-to set to the visitor so replying goes straight to
+    // them. A phone-only lead gets a call button instead of a reply button.
+    const firstName = escapeHtml(inquiry.name.split(" ")[0]);
     await sendEmail({
       to: EMAIL_ADMIN_NOTIFY,
-      replyTo: inquiry.email,
+      replyTo: inquiry.email || undefined,
       subject: `Nieuwe aanvraag van ${inquiry.name}${inquiry.brand ? ` (${inquiry.brand})` : ""}`,
       html: emailWrap(`
         <tr>
@@ -90,11 +94,11 @@ r.post("/make-server-0951c59e/contact", async (c) => {
         <tr>
           <td style="padding:22px 36px 0;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-              <tr>
+              ${inquiry.email ? `<tr>
                 <td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);width:88px;color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;vertical-align:top;">E-mail</td>
-                <td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);"><a href="mailto:${inquiry.email}" style="color:#c8905a;font-size:13px;text-decoration:none;">${inquiry.email}</a></td>
-              </tr>
-              ${inquiry.phone ? `<tr><td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;vertical-align:top;">Telefoon</td><td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);color:#fffbe0;font-size:13px;">${escapeHtml(inquiry.phone)}</td></tr>` : ""}
+                <td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);"><a href="mailto:${escapeHtml(inquiry.email)}" style="color:#c8905a;font-size:13px;text-decoration:none;">${escapeHtml(inquiry.email)}</a></td>
+              </tr>` : ""}
+              ${inquiry.phone ? `<tr><td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);width:88px;color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;vertical-align:top;">Telefoon</td><td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);color:#fffbe0;font-size:13px;">${escapeHtml(inquiry.phone)}</td></tr>` : ""}
               ${inquiry.brand ? `<tr><td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;vertical-align:top;">Merk</td><td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);color:#fffbe0;font-size:13px;">${escapeHtml(inquiry.brand)}</td></tr>` : ""}
               ${inquiry.package ? `<tr><td style="padding:9px 0;color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;vertical-align:top;">Pakket</td><td style="padding:9px 0;color:#fffbe0;font-size:13px;">${escapeHtml(inquiry.package)}</td></tr>` : ""}
             </table>
@@ -112,7 +116,7 @@ r.post("/make-server-0951c59e/contact", async (c) => {
         </tr>
         <tr>
           <td style="padding:28px 36px 36px;">
-            <a href="mailto:${inquiry.email}" style="display:inline-block;background-color:#fffbe0;color:#1a0c04;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 26px;">Reageer naar ${inquiry.name.split(" ")[0]}</a>
+            <a href="${inquiry.email ? `mailto:${escapeHtml(inquiry.email)}` : `tel:${inquiry.phone.replace(/[^\d+]/g, "")}`}" style="display:inline-block;background-color:#fffbe0;color:#1a0c04;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 26px;">${inquiry.email ? "Reageer naar" : "Bel"} ${firstName}</a>
           </td>
         </tr>
         <tr>
@@ -120,6 +124,9 @@ r.post("/make-server-0951c59e/contact", async (c) => {
         </tr>
       `),
     });
+
+    // A phone-only lead has no address to confirm to.
+    if (!inquiry.email) return c.json({ success: true });
 
     // Confirmation to the visitor, with an optional "meer van ons werk" promo card
     const promo = await getPromoPortfolioArticle();

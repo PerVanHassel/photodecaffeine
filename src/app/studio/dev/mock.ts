@@ -214,6 +214,8 @@ const tasks: Json[] = [
 const inquiries: Json[] = [
   { id: id(41), name: "Lotte en Sem", email: "lotte@example.nl", phone: "06 11112222", brand: "", message: "Wij gaan trouwen in juni en zoeken een fotograaf voor de hele dag. Hebben jullie nog plek?", package: "", handledAt: null, handled: false, clientId: null, projectId: null, createdAt: iso(0, 8, 5) },
   { id: id(42), name: "Marco Visser", email: "marco@example.nl", phone: "", brand: "BMW M3 Touring", message: "Automotive shoot van mijn M3 voor Instagram.", package: "Automotive", handledAt: null, handled: false, clientId: null, projectId: null, createdAt: iso(-3) },
+  // The automotive and social media forms take a phone number instead of an email.
+  { id: id(43), name: "Daan Mulder", email: "", phone: "06 33334444", brand: "", message: "Boeking automotive-pakket: €50 per voertuig, 1 uur op locatie.\n\nVehicle: Audi RS4 Avant", package: "automotive", handledAt: null, handled: false, clientId: null, projectId: null, createdAt: iso(-1) },
 ];
 
 const quotes: Json[] = [

@@ -286,7 +286,7 @@ function CampaignSheet({
                           {lead.name}
                         </Ellipsis>
                         <Ellipsis style={{ fontSize: 11.5, color: c.fg4, marginTop: 2 }}>
-                          {lead.email}
+                          {lead.email || lead.phone}
                         </Ellipsis>
                       </div>
                       <span style={{ fontSize: 10.5, color: c.fg4, fontWeight: 600, flexShrink: 0 }}>

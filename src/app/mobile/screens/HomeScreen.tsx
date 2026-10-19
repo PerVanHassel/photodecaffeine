@@ -278,7 +278,7 @@ export function HomeScreen() {
                         {q.name}
                       </Ellipsis>
                       <Ellipsis style={{ fontSize: 12, color: c.fg3, marginTop: 2 }}>
-                        {q.brand || q.email}
+                        {q.brand || q.email || q.phone}
                       </Ellipsis>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>

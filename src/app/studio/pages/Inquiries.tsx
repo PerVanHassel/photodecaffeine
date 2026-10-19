@@ -73,7 +73,7 @@ function InquiryDetail({ inquiry: i }: { inquiry: Inquiry }) {
     >
       <div className="s-stack lg">
         <div className="s-stack sm">
-          <div className="s-kv"><span>E-mail</span><a href={`mailto:${i.email}`}>{i.email}</a></div>
+          {i.email && <div className="s-kv"><span>E-mail</span><a href={`mailto:${i.email}`}>{i.email}</a></div>}
           {i.phone && <div className="s-kv"><span>Telefoon</span><a href={`tel:${i.phone}`}>{i.phone}</a></div>}
           {i.brand && <div className="s-kv"><span>Merk / bedrijf</span><span>{i.brand}</span></div>}
           {i.package && <div className="s-kv"><span>Pakket</span><span>{i.package}</span></div>}
@@ -87,8 +87,8 @@ function InquiryDetail({ inquiry: i }: { inquiry: Inquiry }) {
         )}
         <div className="s-row">
           {!i.clientId && <Button variant="primary" icon={<ArrowRightCircle />} onClick={() => setConverting(true)}>Omzetten</Button>}
-          <a className="s-btn" href={`mailto:${i.email}?subject=${replySubject}`}><Mail size={15} />Beantwoorden</a>
-          {i.phone && <a className="s-btn ghost" href={`tel:${i.phone}`}><Phone size={15} />Bellen</a>}
+          {i.email && <a className="s-btn" href={`mailto:${i.email}?subject=${replySubject}`}><Mail size={15} />Beantwoorden</a>}
+          {i.phone && <a className={i.email ? "s-btn ghost" : "s-btn"} href={`tel:${i.phone}`}><Phone size={15} />Bellen</a>}
           <Button variant="ghost" icon={i.handled ? <Undo2 /> : <Check />} loading={toggle.isPending} onClick={() => toggle.mutate()}>{i.handled ? "Terug naar nieuw" : "Afgehandeld"}</Button>
           <Button variant="ghost" iconOnly aria-label="Verwijderen" icon={<Trash2 />} style={{ marginLeft: "auto" }}
             onClick={async () => { if (await confirm({ title: "Aanvraag verwijderen?", danger: true, confirm: "Verwijderen" })) remove.mutate(); }} />
