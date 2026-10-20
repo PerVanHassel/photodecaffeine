@@ -4,6 +4,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { ImagePlus, Star, Trash2, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { webCopies } from "../../lib/webPhoto";
 import { api, errorMessage } from "../api";
 import { Button, isVideo, Photo, useConfirm } from "../ui";
 
@@ -11,9 +12,12 @@ import { Button, isVideo, Photo, useConfirm } from "../ui";
 // bucket; client galleries and scouting photos do not.
 export const PUBLIC_BUCKET = "portfolio-images-0951c59e";
 
+/** Uploads to the public bucket; a photo goes up as its two web copies. */
 export async function uploadPublic(file: File): Promise<string> {
+  const copies = await webCopies(file);
   const form = new FormData();
-  form.append("file", file);
+  form.append("file", copies?.large ?? file);
+  if (copies) form.append("small", copies.small);
   form.append("bucketName", PUBLIC_BUCKET);
   const r = await api<{ url: string }>("/admin/storage/upload", { method: "POST", form });
   return r.url;

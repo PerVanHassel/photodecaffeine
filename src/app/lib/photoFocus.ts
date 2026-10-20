@@ -55,11 +55,3 @@ export function focusFirst(options: string[], focus: string | undefined) {
   const hit = focus?.trim() ? options.find((o) => same(o, focus)) : undefined;
   return hit ? [hit, ...options.filter((o) => o !== hit)] : options;
 }
-
-/**
- * publish_web_images.py stores a 1280 px copy next to each 2560 px photo, so
- * those can be offered at both sizes. Other photos have only their own size.
- */
-export function webSrcSet(url: string) {
-  return /-2560\.jpg$/.test(url) ? `${url.replace(/-2560\.jpg$/, "-1280.jpg")} 1280w, ${url} 2560w` : undefined;
-}

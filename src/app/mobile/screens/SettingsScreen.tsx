@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
 import { ImagePlus, Save } from "lucide-react";
 import { useEffect, useState } from "react";
+import { smallImage } from "../../lib/images";
 import { useApi, useQuery } from "../useApi";
 import { BUCKETS, type SiteSettings } from "../api";
 import { c, radius, spring } from "../theme";
@@ -149,7 +150,7 @@ export function SettingsScreen() {
                         >
                           {url ? (
                             <img
-                              src={url}
+                              src={smallImage(url)}
                               alt=""
                               style={{ width: "100%", height: "100%", objectFit: "cover" }}
                             />

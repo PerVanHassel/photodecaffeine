@@ -2,6 +2,7 @@ import { Hono } from "npm:hono";
 import { requireAdmin, requirePermission } from "../lib/http.ts";
 import * as kv from "../kv_store.tsx";
 import { verifyAdmin } from "../lib/auth.ts";
+import { loadArticles } from "../lib/portfolio.ts";
 
 
 const r = new Hono();
@@ -29,21 +30,7 @@ function publicArticle(a: Record<string, unknown>) {
 // --- GET /portfolio — list all published portfolio articles ---
 r.get("/make-server-0951c59e/portfolio", async (c) => {
   try {
-    const allIdsStr = await kv.get("portfolio:articleIds");
-    if (!allIdsStr) return c.json({ articles: [] });
-
-    const allIds = JSON.parse(allIdsStr) as string[];
-    const values = await Promise.all(
-      allIds.map((id) => kv.get(`portfolio:article:${id}`))
-    );
-
-    const articles = values
-      .filter(Boolean)
-      .map((v) => JSON.parse(v as string))
-      .filter((a) => a.published)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .map(publicArticle);
-
+    const articles = (await loadArticles()).filter((a) => a.published).map(publicArticle);
     return c.json({ articles });
   } catch (err) {
     console.log("Get portfolio error:", err);
@@ -74,20 +61,7 @@ r.get("/make-server-0951c59e/admin/portfolio", async (c) => {
     const admin = await verifyAdmin(c.req.header("Authorization"));
     if (!admin) return c.json({ error: "Unauthorized" }, 401);
 
-    const allIdsStr = await kv.get("portfolio:articleIds");
-    if (!allIdsStr) return c.json({ articles: [] });
-
-    const allIds = JSON.parse(allIdsStr) as string[];
-    const values = await Promise.all(
-      allIds.map((id) => kv.get(`portfolio:article:${id}`))
-    );
-
-    const articles = values
-      .filter(Boolean)
-      .map((v) => JSON.parse(v as string))
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-    return c.json({ articles });
+    return c.json({ articles: await loadArticles() });
   } catch (err) {
     console.log("Admin get portfolio error:", err);
     return c.json({ error: `Failed to fetch portfolio: ${err}` }, 500);

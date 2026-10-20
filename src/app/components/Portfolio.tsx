@@ -4,6 +4,9 @@ import { usePortfolio, visibleArticles } from "../lib/siteData";
 import { PortfolioTile } from "./PortfolioTile";
 
 const SLOTS = 6;
+// The two tall tiles crop a landscape photo to their height, and the bottom
+// pair is half the page wide: both need more than a third-of-the-page photo.
+const WIDE_TILE = "(max-width: 767px) 100vw, 50vw";
 
 export function Portfolio() {
   const { t } = useLanguage();
@@ -158,7 +161,7 @@ export function Portfolio() {
             }}
           >
             {displayItems[0] && (
-              <PortfolioTile item={displayItems[0]} layout="fill" />
+              <PortfolioTile item={displayItems[0]} layout="fill" sizes={WIDE_TILE} />
             )}
           </div>
 
@@ -182,7 +185,7 @@ export function Portfolio() {
             }}
           >
             {displayItems[3] && (
-              <PortfolioTile item={displayItems[3]} layout="fill" />
+              <PortfolioTile item={displayItems[3]} layout="fill" sizes={WIDE_TILE} />
             )}
           </div>
         </div>
@@ -197,12 +200,12 @@ export function Portfolio() {
         >
           <div style={{ overflow: "hidden", height: "280px" }}>
             {displayItems[4] && (
-              <PortfolioTile item={displayItems[4]} layout="fill" />
+              <PortfolioTile item={displayItems[4]} layout="fill" sizes={WIDE_TILE} />
             )}
           </div>
           <div style={{ overflow: "hidden", height: "280px" }}>
             {displayItems[5] && (
-              <PortfolioTile item={displayItems[5]} layout="fill" />
+              <PortfolioTile item={displayItems[5]} layout="fill" sizes={WIDE_TILE} />
             )}
           </div>
         </div>

@@ -252,7 +252,7 @@ export function PortfolioPage() {
           >
 
             {filtered.map((item) => (
-              <PortfolioTile key={item.id} item={item} layout="masonry" />
+              <PortfolioTile key={item.id} item={item} layout="masonry" sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 34vw" />
             ))}
           </div>
         )}

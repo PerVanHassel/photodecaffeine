@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link } from "react-router";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { webSrcSet, type FocusPhoto } from "../lib/photoFocus";
+import { webSrcSet } from "../lib/images";
+import type { FocusPhoto } from "../lib/photoFocus";
 import { useReveal } from "../hooks/useReveal";
 import { scrollBehavior } from "../lib/scroll";
 

@@ -1,5 +1,5 @@
-import * as kv from "../kv_store.tsx";
 import { EMAIL_FROM, SITE_URL } from "./config.ts";
+import { loadArticles } from "./portfolio.ts";
 
 // Returns whether the message actually left the building. Notification callers
 // fire-and-forget it (a failed notification must never fail the request that
@@ -147,16 +147,9 @@ export function glassImageCard(opts: {
 // featured pieces, picks randomly among the pool for variety.
 export async function getPromoPortfolioArticle() {
   try {
-    const allIdsStr = await kv.get("portfolio:articleIds");
-    if (!allIdsStr) return null;
-    const allIds = JSON.parse(allIdsStr) as string[];
-    const values = await Promise.all(allIds.map((id) => kv.get(`portfolio:article:${id}`)));
-    const articles = values
-      .filter(Boolean)
-      .map((v) => JSON.parse(v as string))
-      .filter(
-        (a) => a.published && a.coverType === "image" && a.coverUrl && !String(a.category || "").startsWith("_")
-      );
+    const articles = (await loadArticles()).filter(
+      (a) => a.published && a.coverType === "image" && a.coverUrl && !String(a.category || "").startsWith("_")
+    );
     if (articles.length === 0) return null;
     const featured = articles.filter((a) => a.featured);
     const pool = featured.length > 0 ? featured : articles;

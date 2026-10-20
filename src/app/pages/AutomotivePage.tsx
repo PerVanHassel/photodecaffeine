@@ -13,7 +13,7 @@ import { useAdTracking, getStoredAdRef } from "../hooks/useAdTracking";
 import { ArrowLeft } from "lucide-react";
 import heroSmall from "@/assets/web/automotive-hero-1000.webp";
 import heroImage from "@/assets/web/automotive-hero-1920.webp";
-import { HIGH_PRIORITY } from "../lib/images";
+import { HIGH_PRIORITY, webSrcSet } from "../lib/images";
 import { EMAIL_INPUT, PHONE_INPUT, PublicInput } from "../components/form/PublicField";
 
 export function AutomotivePage() {
@@ -546,6 +546,8 @@ export function AutomotivePage() {
             <div key={i} style={{ aspectRatio: "4/3", overflow: "hidden" }}>
               <img
                 src={src}
+                srcSet={webSrcSet(src)}
+                sizes="(max-width: 767px) 100vw, 34vw"
                 alt={ta.galleryAlt(i + 1)}
                 loading="lazy"
                 style={{

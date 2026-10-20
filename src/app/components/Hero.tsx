@@ -3,13 +3,18 @@ import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { Link } from "react-router";
 import { useLanguage } from "../context/LanguageContext";
 import { useSiteSettings } from "../lib/siteData";
-import { HIGH_PRIORITY } from "../lib/images";
+import { HIGH_PRIORITY, webSrcSet } from "../lib/images";
 
 const DEFAULT_HERO_BG =
   "https://images.unsplash.com/photo-1613158556069-e7d8eae76214?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkYXJrJTIwY2luZW1hdGljJTIwZXNwcmVzc28lMjBjb2ZmZWUlMjBzdHVkaW8lMjBtb29keXxlbnwxfHx8fDE3NzY1OTY2NTB8MA&ixlib=rb-4.1.0&q=80&w=1080";
 
 // Phone and desktop layouts live in src/styles/site.css (.pdc-hero-*), so the
 // prerendered HTML is already right for either screen before any script runs.
+
+// The frame photo is full width at the top of a phone and 360 px wide on a
+// computer. Both copies of it share these sizes, so a browser that loads the
+// hidden one as well still picks the same file for both.
+const FRAME_SIZES = "(max-width: 767px) 100vw, 360px";
 
 export function Hero() {
   const { t } = useLanguage();
@@ -34,9 +39,11 @@ export function Hero() {
       {/* Background Image */}
       <div className="pdc-hero-bg" style={{ position: "absolute", inset: 0, zIndex: 0 }}>
         <picture>
-          <source media="(max-width: 767px)" srcSet={heroImageMobileUrl} />
+          <source media="(max-width: 767px)" srcSet={webSrcSet(heroImageMobileUrl) ?? heroImageMobileUrl} sizes="100vw" />
           <img
             src={heroImageUrl}
+            srcSet={webSrcSet(heroImageUrl)}
+            sizes="100vw"
             alt=""
             {...HIGH_PRIORITY}
             style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
@@ -56,6 +63,8 @@ export function Hero() {
       <div className="pdc-hero-phone-photo" style={{ position: "absolute", top: 0, left: 0, right: 0, height: "55vh", zIndex: 1, overflow: "hidden" }}>
         <ImageWithFallback
           src={frameImageUrl}
+          srcSet={webSrcSet(frameImageUrl)}
+          sizes={FRAME_SIZES}
           alt=""
           style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 20%" }}
         />
@@ -152,6 +161,8 @@ export function Hero() {
               </div>
               <ImageWithFallback
                 src={frameImageUrl}
+                srcSet={webSrcSet(frameImageUrl)}
+                sizes={FRAME_SIZES}
                 alt={t.hero.frameAlt}
                 loading="lazy"
                 style={{

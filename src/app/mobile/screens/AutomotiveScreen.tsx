@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { Car, ImagePlus, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import { smallImage } from "../../lib/images";
 import { useApi, useQuery } from "../useApi";
 import { BUCKETS, type Article } from "../api";
 import { c, radius, spring } from "../theme";
@@ -187,7 +188,7 @@ export function AutomotiveScreen() {
                   }}
                 >
                   <img
-                    src={url}
+                    src={smallImage(url)}
                     alt=""
                     loading="lazy"
                     style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}

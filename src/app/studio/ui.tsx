@@ -5,6 +5,7 @@ import {
   type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes,
 } from "react";
 import { toast } from "sonner";
+import { smallImage } from "../lib/images";
 import { errorMessage } from "./api";
 
 const cx = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(" ");
@@ -146,7 +147,10 @@ export function ErrorState({ error, retry }: { error: unknown; retry?: () => voi
   );
 }
 
-/** A photo, or a neutral tile when there is none (or it fails to load). */
+/**
+ * A photo, or a neutral tile when there is none (or it fails to load). Always
+ * shown small, so a site photo comes from its 1280 px copy.
+ */
 export function Photo({ src, alt = "", caption, className, style, children, onClick, openLabel, video, onSize }: {
   src?: string | null; alt?: string; caption?: string; className?: string; style?: React.CSSProperties; children?: ReactNode;
   onClick?: () => void; openLabel?: string; video?: boolean;
@@ -160,7 +164,7 @@ export function Photo({ src, alt = "", caption, className, style, children, onCl
       {src && !failed ? (
         video
           ? <video src={src} muted playsInline preload="metadata" onLoadedMetadata={onSize && ((e) => onSize(e.currentTarget.videoWidth, e.currentTarget.videoHeight))} />
-          : <img src={src} alt={alt} loading="lazy" decoding="async" onError={() => setFailed(true)} onLoad={onSize && ((e) => onSize(e.currentTarget.naturalWidth, e.currentTarget.naturalHeight))} />
+          : <img src={smallImage(src)} alt={alt} loading="lazy" decoding="async" onError={() => setFailed(true)} onLoad={onSize && ((e) => onSize(e.currentTarget.naturalWidth, e.currentTarget.naturalHeight))} />
       ) : (
         <ImageOff aria-hidden="true" />
       )}

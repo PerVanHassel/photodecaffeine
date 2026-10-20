@@ -7,6 +7,7 @@ import { emailWrap, escapeHtml, getPromoPortfolioArticle, glassImageCard, sendEm
 import { EMAIL_ADMIN_NOTIFY } from "../lib/config.ts";
 import { type Env, fail, readBody, requireAdmin, requirePermission, text, uuid, z } from "../lib/http.ts";
 import { notify } from "../lib/notify.ts";
+import { smallCopy } from "../lib/portfolio.ts";
 
 const r = new Hono<Env>();
 export default r;
@@ -136,7 +137,7 @@ r.post("/make-server-0951c59e/contact", async (c) => {
           <td style="padding:40px 36px 0;"><span style="color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;">Meer Van Ons Werk</span></td>
         </tr>
         ${glassImageCard({
-          imageUrl: promo.coverUrl,
+          imageUrl: smallCopy(promo.coverUrl),
           eyebrow: promo.category || "Portfolio",
           title: promo.title,
           ctaText: "Bekijk in de portfolio &rarr;",

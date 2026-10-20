@@ -13,6 +13,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useAuth } from "../../context/AuthContext";
+import { smallImage } from "../../lib/images";
 import { useApi, useQuery } from "../useApi";
 import { BUCKETS, type Deliverable, type Message, type Project, type ProjectPatch } from "../api";
 import { c, dateFull, GUTTER, radius, spring, timeAgo } from "../theme";
@@ -746,7 +747,7 @@ function GalleryTab({
               }}
             >
               <img
-                src={url}
+                src={smallImage(url)}
                 alt=""
                 loading="lazy"
                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}

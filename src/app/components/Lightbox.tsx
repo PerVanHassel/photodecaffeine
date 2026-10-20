@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useModalFocus } from "../lib/dialog";
+import { webSrcSet } from "../lib/images";
 
 // Full-screen photo viewer for the public portfolio. Arrow keys and swipes
 // move between photos, Escape or the close button leaves, and keyboard focus
@@ -88,6 +89,8 @@ export function Lightbox({ photos, index, onIndex, onClose, labels }: {
 
       <img
         src={photos[index]}
+        srcSet={webSrcSet(photos[index])}
+        sizes="100vw"
         alt={labels.alt(index + 1)}
         className="pdc-lightbox-photo"
         onClick={(e) => e.stopPropagation()}

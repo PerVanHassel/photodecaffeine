@@ -3,6 +3,7 @@ import { Eye, EyeOff, ImagePlus, Images, Pencil, Plus, Star, Trash2, X } from "l
 import { useMemo, useState } from "react";
 import { useApi, useQuery } from "../useApi";
 import { AUTOMOTIVE_GALLERY_ID } from "../../lib/actionItems";
+import { smallImage } from "../../lib/images";
 import { BUCKETS, type Article } from "../api";
 import { c, dateShort, radius, spring } from "../theme";
 import { Card, Chip, Ellipsis, Press, Row, Stack } from "../ui/base";
@@ -162,7 +163,7 @@ export function PortfolioScreen() {
                         />
                       ) : (
                         <img
-                          src={a.coverUrl}
+                          src={smallImage(a.coverUrl)}
                           alt=""
                           loading="lazy"
                           style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
@@ -441,7 +442,7 @@ function ArticleSheet({
                   />
                 ) : (
                   <img
-                    src={form.coverUrl}
+                    src={smallImage(form.coverUrl)}
                     alt=""
                     style={{ width: "100%", height: "100%", objectFit: "cover" }}
                   />
@@ -473,7 +474,7 @@ function ArticleSheet({
                 {form.galleryUrls.map((url) => (
                   <div key={url} style={{ position: "relative", aspectRatio: "1" }}>
                     <img
-                      src={url}
+                      src={smallImage(url)}
                       alt=""
                       loading="lazy"
                       style={{

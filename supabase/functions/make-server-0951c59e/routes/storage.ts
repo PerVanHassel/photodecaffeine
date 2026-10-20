@@ -75,6 +75,11 @@ r.post("/make-server-0951c59e/admin/storage/upload", async (c) => {
     const formData = await c.req.formData();
     const file = formData.get("file") as File;
     const bucketName = formData.get("bucketName") as string;
+    // A photo for the site arrives as a pair made in the browser: the large
+    // copy as `file`, named "<name>-2560.jpg", and the 1280 px copy as `small`.
+    // Both go under web/ with the same timestamp, so the site finds the small
+    // one by name (src/app/lib/images.ts).
+    const small = formData.get("small");
 
     if (!file || !bucketName) {
       return c.json({ error: "file and bucketName are required" }, 400);
@@ -85,7 +90,10 @@ r.post("/make-server-0951c59e/admin/storage/upload", async (c) => {
 
     // Sanitize the original filename to remove problematic characters
     const sanitizedOriginalName = sanitizeFileName(file.name);
-    const fileName = `${Date.now()}-${sanitizedOriginalName}`;
+    const fileName = `${small instanceof File ? "web/" : ""}${Date.now()}-${sanitizedOriginalName}`;
+    if (small instanceof File && !fileName.endsWith("-2560.jpg")) {
+      return c.json({ error: "De grote versie van een foto moet op -2560.jpg eindigen." }, 400);
+    }
 
     console.log("Upload file:", {
       original: file.name,
@@ -98,16 +106,20 @@ r.post("/make-server-0951c59e/admin/storage/upload", async (c) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { error } = await supabase.storage
-      .from(bucketName)
-      .upload(fileName, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
-
-    if (error) {
-      console.log("Upload error:", error);
-      throw error;
+    // Every upload gets a new name and is never overwritten, so browsers may
+    // keep it for a year instead of checking back every hour.
+    const options = { cacheControl: "31536000", upsert: false };
+    // The small copy first: the large one is what gets linked, and it must
+    // not be there without its partner.
+    const uploads: [string, File][] = small instanceof File
+      ? [[fileName.replace(/-2560\.jpg$/, "-1280.jpg"), small], [fileName, file]]
+      : [[fileName, file]];
+    for (const [name, body] of uploads) {
+      const { error } = await supabase.storage.from(bucketName).upload(name, body, options);
+      if (error) {
+        console.log("Upload error:", error);
+        throw error;
+      }
     }
 
     const {

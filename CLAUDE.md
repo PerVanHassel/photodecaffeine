@@ -71,6 +71,13 @@ Drie Python-scripts, in deze volgorde te draaien. Alle drie doen niets zonder
 De kv-waarden zijn soms een JSON-object en soms JSON als tekst. Vervang URL's
 altijd op hele strings, nooit als tekstfragment.
 
+Uploads via de admin en de app verkleint de browser zelf
+(`src/app/lib/webPhoto.ts`): ze komen als `-2560.jpg` + `-1280.jpg` in `web/`.
+Site en admin nemen de 1280-versie waar die genoeg is (`src/app/lib/images.ts`).
+`publish_web_images.py` is dus alleen nog voor oude originelen. Draai het via de
+workflow "Foto's webklaar maken"; een lege `limit` wordt daar 3, geef dus een
+getal op.
+
 ## Taal
 
 De site is tweetalig (`src/app/i18n/translations.ts`, standaard Nederlands).

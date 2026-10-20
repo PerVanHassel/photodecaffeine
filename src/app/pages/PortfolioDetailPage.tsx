@@ -8,8 +8,7 @@ import { Lightbox } from "../components/Lightbox";
 import { CoverVideo } from "../components/PortfolioTile";
 import { useLanguage } from "../context/LanguageContext";
 import { useReveal } from "../hooks/useReveal";
-import { HIGH_PRIORITY } from "../lib/images";
-import { webSrcSet } from "../lib/photoFocus";
+import { HIGH_PRIORITY, webSrcSet } from "../lib/images";
 import { usePortfolio, useReviews, type PublicReview } from "../lib/siteData";
 
 const pad = (n: number) => String(n).padStart(2, "0");

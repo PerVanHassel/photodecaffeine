@@ -7,6 +7,7 @@
  * supabase/functions/server/index.tsx) rather than what would be convenient.
  */
 import { portalFetch } from "../../lib/supabase";
+import { webCopies } from "../lib/webPhoto";
 import { projectId } from "/utils/supabase/info";
 
 const API_BASE = `https://${projectId}.supabase.co/functions/v1/make-server-0951c59e`;
@@ -335,11 +336,14 @@ export function createApi(token: string) {
      * Uploads through the edge function rather than straight to Storage: the
      * bucket is private to the service role, and this route is what mints the
      * public URL. `fetch` is used directly because portalFetch always sets a
-     * JSON content-type, which would break the multipart boundary.
+     * JSON content-type, which would break the multipart boundary. A photo for
+     * the site goes up as its two web copies (lib/webPhoto.ts).
      */
     async upload(file: File, bucket: string = BUCKETS.images): Promise<string> {
+      const copies = bucket === BUCKETS.images ? await webCopies(file) : null;
       const form = new FormData();
-      form.append("file", file);
+      form.append("file", copies?.large ?? file);
+      if (copies) form.append("small", copies.small);
       form.append("bucketName", bucket);
 
       const res = await fetch(`${API_BASE}/admin/storage/upload`, {
