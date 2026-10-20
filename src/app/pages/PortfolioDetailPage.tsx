@@ -1,12 +1,18 @@
 import { Helmet } from "react-helmet-async";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useParams } from "react-router";
-import { ArrowLeft, Star } from "lucide-react";
+import { ArrowDown, ArrowLeft, Star } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { GoogleG } from "../components/GoogleG";
 import { Lightbox } from "../components/Lightbox";
+import { CoverVideo } from "../components/PortfolioTile";
 import { useLanguage } from "../context/LanguageContext";
+import { useReveal } from "../hooks/useReveal";
+import { HIGH_PRIORITY } from "../lib/images";
+import { webSrcSet } from "../lib/photoFocus";
 import { usePortfolio, useReviews, type PublicReview } from "../lib/siteData";
+
+const pad = (n: number) => String(n).padStart(2, "0");
 
 export function PortfolioDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -20,6 +26,8 @@ export function PortfolioDetailPage() {
   // Published reviews the studio linked to this piece in the admin.
   const reviews = useReviews().data?.filter((r) => r.portfolioArticleId === id) ?? [];
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const spread = useRef<HTMLDivElement>(null);
+  useReveal(spread, ".pdc-shot", article?.galleryUrls.join("|"));
 
   if (loading) {
     return (
@@ -74,14 +82,19 @@ export function PortfolioDetailPage() {
   }
 
   const photoAlt = (n: number) => td.photoAlt(article.title, n);
+  const photos = article.galleryUrls;
+  const total = photos.length;
+  // The band shows the cover, or the first photo when there is no cover.
+  const coverUrl = article.coverUrl || photos[0] || "";
+  const coverIsVideo = article.coverType === "video" && !!article.coverUrl;
+  const description = article.description?.trim();
 
   return (
     <div
       style={{
-        backgroundColor: "#080401",
+        backgroundColor: "#fcf9ef",
         minHeight: "100vh",
         fontFamily: "'Inter', sans-serif",
-        paddingTop: "72px",
       }}
     >
       <Helmet>
@@ -120,143 +133,113 @@ export function PortfolioDetailPage() {
           ]
         })}</script>
       </Helmet>
-      <div
-        className="pdc-svc-head"
-        style={{
-          backgroundColor: "#0d0703",
-          borderBottom: "1px solid rgba(255,251,224,0.06)",
-        }}
-      >
-        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-          <Link to="/portfolio" className="pdc-back-link">
-            <ArrowLeft size={14} aria-hidden="true" />
-            {td.back}
-          </Link>
-
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-end",
-              justifyContent: "space-between",
-              flexWrap: "wrap",
-              gap: "32px",
-            }}
-          >
-            <div>
-              <span
-                style={{
-                  color: "rgba(200,144,90,0.8)",
-                  fontSize: "9px",
-                  fontWeight: 600,
-                  letterSpacing: "0.28em",
-                  textTransform: "uppercase",
-                  display: "block",
-                  marginBottom: "16px",
-                }}
-              >
-                {article.category}
-              </span>
-              <h1
-                style={{
-                  color: "#fffbe0",
-                  fontSize: "clamp(40px, 6vw, 72px)",
-                  fontWeight: 900,
-                  letterSpacing: "-0.03em",
-                  lineHeight: 1,
-                  margin: 0,
-                  textTransform: "uppercase",
-                }}
-              >
-                {article.title}
-              </h1>
-            </div>
+      {/* ── The cover as a black-and-white band, the title in wide capitals ── */}
+      <header className="pdc-cover">
+        {coverUrl && (
+          <div className="pdc-cover-media" aria-hidden="true">
+            {coverIsVideo ? (
+              <CoverVideo src={coverUrl} />
+            ) : (
+              <img src={coverUrl} srcSet={webSrcSet(coverUrl)} sizes="100vw" alt="" {...HIGH_PRIORITY} />
+            )}
           </div>
-
-          {article.description && (
-            <p
-              style={{
-                color: "rgba(255,251,224,0.5)",
-                fontSize: "15px",
-                fontWeight: 300,
-                lineHeight: 1.8,
-                marginTop: "32px",
-                maxWidth: "700px",
-              }}
-            >
-              {article.description}
-            </p>
+        )}
+        <Link to="/portfolio" className="pdc-back-link pdc-cover-back">
+          <ArrowLeft size={14} aria-hidden="true" />
+          {td.back}
+        </Link>
+        <div className="pdc-cover-inner">
+          {article.category && <span className="pdc-cover-kicker">{article.category}</span>}
+          <h1 className="pdc-cover-title">{article.title}</h1>
+          {total > 0 && (
+            <>
+              <p className="pdc-cover-meta">{td.photoCount(total)}</p>
+              <Link to="#serie" className="pdc-cover-view">
+                {td.viewSeries}
+                <ArrowDown size={14} strokeWidth={1.5} aria-hidden="true" />
+              </Link>
+            </>
           )}
         </div>
-      </div>
+      </header>
 
-      <div
-        className="pdc-detail-body"
-        style={{
-          maxWidth: "1400px",
-          margin: "0 auto",
-        }}
-      >
-        {article.galleryUrls.length === 0 ? (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "80px 0",
-              color: "rgba(255,251,224,0.5)",
-              fontSize: "12px",
-              letterSpacing: "0.2em",
-              textTransform: "uppercase",
-            }}
-          >
+      {/* ── The series on light paper ── */}
+      <div className="pdc-paper pdc-article">
+        <div className={`pdc-article-intro${description ? "" : " pdc-article-intro--meta"}`}>
+          {description && (
+            <div>
+              <span className="pdc-kicker">{td.aboutLabel}</span>
+              <p className={`pdc-article-lede${description.length > 220 ? " pdc-article-lede--long" : ""}`}>{description}</p>
+            </div>
+          )}
+          <dl className="pdc-article-meta">
+            {article.category && (
+              <>
+                <dt>{td.metaCategory}</dt>
+                <dd>{article.category}</dd>
+              </>
+            )}
+            <dt>{td.metaPhotos}</dt>
+            <dd>{total}</dd>
+          </dl>
+        </div>
+
+        {total === 0 ? (
+          <p className="pdc-kicker" style={{ textAlign: "center", margin: "48px 0" }}>
             {td.noImages}
-          </div>
+          </p>
         ) : (
-          <div
-            className="pdc-detail-masonry"
-            style={{
-              columnGap: "3px",
-            }}
-          >
-            {article.galleryUrls.map((url, idx) => (
-              <button
-                key={url}
-                type="button"
-                className="pdc-detail-photo"
-                onClick={() => setLightboxIndex(idx)}
-              >
-                <ImageWithFallback
-                  src={url}
-                  alt={photoAlt(idx + 1)}
-                  // The first row is in view on arrival; the rest can wait.
-                  loading={idx < 3 ? "eager" : "lazy"}
-                  decoding="async"
-                />
-              </button>
-            ))}
+          <div id="serie" ref={spread} className={`pdc-spread${total === 1 ? " pdc-spread--single" : ""}`}>
+            {photos.map((url, idx) => {
+              // Photos two and three of every four are the small ones.
+              const small = idx % 4 === 1 || idx % 4 === 2;
+              return (
+                <button key={url} type="button" className="pdc-shot" onClick={() => setLightboxIndex(idx)}>
+                  <span className="pdc-shot-frame">
+                    <ImageWithFallback
+                      src={url}
+                      srcSet={webSrcSet(url)}
+                      sizes={small && total > 1 ? "(max-width: 767px) 100vw, 34vw" : "(max-width: 767px) 100vw, 60vw"}
+                      alt={photoAlt(idx + 1)}
+                      // The first pair is close to view on arrival; the rest can wait.
+                      loading={idx < 2 ? "eager" : "lazy"}
+                      decoding="async"
+                    />
+                  </span>
+                  <span className="pdc-shot-caption" aria-hidden="true">
+                    <span>
+                      {pad(idx + 1)} / {pad(total)}
+                    </span>
+                    <span className="pdc-shot-zoom">{td.enlarge}</span>
+                  </span>
+                </button>
+              );
+            })}
           </div>
         )}
 
         {reviews.length > 0 && <ArticleReviews reviews={reviews} />}
 
-        <div
-          style={{
-            marginTop: "80px",
-            textAlign: "center",
-          }}
-        >
-          <Link
-            to="/#contact"
-            className="pdc-btn pdc-btn-solid"
-            style={{ padding: "16px 48px", fontSize: "10px", fontWeight: 700, letterSpacing: "0.22em" }}
-          >
-            {td.cta}
-          </Link>
-          {/automotive/i.test(article.category) && (
-            <p style={{ marginTop: "28px" }}>
+        <div className="pdc-article-cta">
+          <h2>{td.ctaTitle}</h2>
+          <div className="pdc-article-cta-actions">
+            <Link
+              to="/#contact"
+              className="pdc-btn pdc-btn-ink"
+              style={{ padding: "16px 40px", fontSize: "10px", fontWeight: 700, letterSpacing: "0.22em" }}
+            >
+              {td.cta}
+            </Link>
+            {/automotive/i.test(article.category) ? (
               <Link to="/services/automotive" className="pdc-text-link">
                 {td.serviceLink}
               </Link>
-            </p>
-          )}
+            ) : (
+              <Link to="/services/fotografie" className="pdc-text-link">
+                {td.photographyLink}
+              </Link>
+            )}
+          </div>
         </div>
       </div>
 
@@ -284,18 +267,8 @@ export function PortfolioDetailPage() {
 function ArticleReviews({ reviews }: { reviews: PublicReview[] }) {
   const { t } = useLanguage();
   return (
-    <section aria-labelledby="article-reviews" style={{ maxWidth: "820px", margin: "96px auto 0", textAlign: "center" }}>
-      <h2
-        id="article-reviews"
-        style={{
-          color: "rgba(255,251,224,0.5)",
-          fontSize: "11px",
-          fontWeight: 500,
-          letterSpacing: "0.3em",
-          textTransform: "uppercase",
-          margin: "0 0 36px",
-        }}
-      >
+    <section aria-labelledby="article-reviews" className="pdc-article-reviews">
+      <h2 id="article-reviews" className="pdc-kicker" style={{ margin: "0 0 36px" }}>
         {t.portfolioDetail.reviewLabel}
       </h2>
       <div style={{ display: "flex", flexDirection: "column", gap: "56px" }}>
@@ -303,15 +276,16 @@ function ArticleReviews({ reviews }: { reviews: PublicReview[] }) {
           <figure key={review.id} style={{ margin: 0 }}>
             <div role="img" aria-label={t.socialProof.rating(review.rating)} style={{ display: "flex", justifyContent: "center", gap: "4px", marginBottom: "24px" }}>
               {[1, 2, 3, 4, 5].map((n) => (
-                <Star key={n} size={16} color="#c8905a" fill={n <= review.rating ? "#c8905a" : "none"} strokeWidth={2} aria-hidden="true" />
+                <Star key={n} size={16} color="#a96f38" fill={n <= review.rating ? "#a96f38" : "none"} strokeWidth={2} aria-hidden="true" />
               ))}
             </div>
             <blockquote
               style={{
-                color: "rgba(255,251,224,0.82)",
-                fontSize: "clamp(17px, 2vw, 21px)",
+                color: "rgba(26,12,4,0.85)",
+                fontFamily: "'Space Grotesk', sans-serif",
+                fontSize: "clamp(18px, 2vw, 24px)",
                 fontWeight: 300,
-                lineHeight: 1.7,
+                lineHeight: 1.6,
                 margin: 0,
                 whiteSpace: "pre-wrap",
               }}
@@ -323,9 +297,9 @@ function ArticleReviews({ reviews }: { reviews: PublicReview[] }) {
                 <img src={review.photoUrl} alt="" width={28} height={28} referrerPolicy="no-referrer" loading="lazy"
                   style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }} />
               )}
-              <span style={{ color: "#fffbe0", fontSize: "13px", fontWeight: 600, letterSpacing: "0.02em" }}>{review.clientName}</span>
+              <span style={{ color: "#1a0c04", fontSize: "13px", fontWeight: 600, letterSpacing: "0.02em" }}>{review.clientName}</span>
               {review.source === "google" && (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "rgba(255,251,224,0.5)", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "rgba(26,12,4,0.6)", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase" }}>
                   · <GoogleG size={13} /> {t.socialProof.googleReview}
                 </span>
               )}

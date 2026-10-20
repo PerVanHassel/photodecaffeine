@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router";
 import { ArrowLeft } from "lucide-react";
 import { FormPrivacyNote } from "../components/form/FormPrivacyNote";
 import { ChoiceChips } from "../components/form/ChoiceChips";
+import { PhotoReel } from "../components/PhotoReel";
 import { EMAIL_INPUT, PHONE_INPUT, PublicInput, PublicTextarea } from "../components/form/PublicField";
 import { track } from "../lib/analytics";
 import { HIGH_PRIORITY } from "../lib/images";
@@ -51,7 +52,7 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
 
   // A niche's photos fill the hero and the work grid, and its option comes first.
   const heroPhoto = work.focused ? work.photos[0] : undefined;
-  const gridPhotos = (heroPhoto ? work.photos.slice(1) : work.photos).slice(0, 6);
+  const gridPhotos = (heroPhoto ? work.photos.slice(1) : work.photos).slice(0, 8);
   const options = focusFirst(page.options, focus);
 
   const [choices, setChoices] = useState<string[]>([]);
@@ -264,30 +265,15 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
 
       {/* ── Work from the niche (photography only) ── */}
       {gridPhotos.length > 0 && (
-        <section className="pdc-niche" aria-labelledby="niche-work">
-          <div className="pdc-niche-head">
-            <h2 id="niche-work" style={{ ...label, margin: 0 }}>
-              {work.focused && focus ? ts.workLabelFocus(focus) : ts.workLabel}
-            </h2>
-            <Link to="/portfolio" className="pdc-text-link">
-              {ts.workLink}
-            </Link>
-          </div>
-          <div className="pdc-niche-grid">
-            {gridPhotos.map((photo) => (
-              <Link key={photo.url} to={`/portfolio/${photo.article.id}`} aria-label={ts.photoAlt(photo.article.title)}>
-                <img
-                  src={photo.url}
-                  srcSet={webSrcSet(photo.url)}
-                  sizes="(max-width: 767px) 50vw, 33vw"
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                />
-              </Link>
-            ))}
-          </div>
-        </section>
+        <PhotoReel
+          id="niche-work"
+          kicker={work.focused ? ts.workKickerFocus : ts.workKicker}
+          title={work.focused && focus ? focus : ts.workTitle}
+          body={ts.workBody}
+          link={ts.workLink}
+          photos={gridPhotos}
+          labels={{ previous: ts.workPrevious, next: ts.workNext }}
+        />
       )}
 
       {/* ── What to expect + the request form ── */}
@@ -510,7 +496,7 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
  */
 export function PhotographyPage() {
   const focus = useSiteSettings().data?.photoFocus;
-  const work = focusPhotos(usePortfolio().data, focus, 7);
+  const work = focusPhotos(usePortfolio().data, focus, 9);
   return <ServicePage id="fotografie" focus={focus} work={work} />;
 }
 export const VideographyPage = () => <ServicePage id="videografie" />;
