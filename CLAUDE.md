@@ -2,7 +2,7 @@
 
 ## Antwoorden
 
-De eigenaar heeft dyslexie. Houd antwoorden kort.
+De eigenaar heeft dyslexie. Houd antwoorden kort maar duidelijk.
 
 - Een paar regels na elke opdracht, niet meer.
 - Zeg wat er af is en of er nog iets moet gebeuren.
@@ -76,3 +76,6 @@ altijd op hele strings, nooit als tekstfragment.
 De site is tweetalig (`src/app/i18n/translations.ts`, standaard Nederlands).
 De adminkant is gemengd: sidebar, reviews en team zijn Nederlands, de
 portfoliomodal is Engels. Sluit aan bij het scherm waar je in werkt.
+
+Teksten voor klanten en de site: je in plaats van u, gewone woorden, geen
+gedachtestreepjes (—) en geen AI-slop.
