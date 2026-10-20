@@ -14,6 +14,7 @@ export const BUSINESS_JSON_LD = {
   founder: [
     { "@type": "Person", name: "Per van Hassel" },
     { "@type": "Person", name: "Ryan Chantre" },
+    { "@type": "Person", name: "Majd Tawashe" },
   ],
   url: "https://www.photodecaffeine.com/",
   logo: "https://www.photodecaffeine.com/icons/icon-512.png",

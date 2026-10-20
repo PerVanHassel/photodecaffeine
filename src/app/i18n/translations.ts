@@ -215,9 +215,9 @@ export const translations = {
         { label: "Werkgebied", value: "Heel Nederland" },
       ],
       owners: [
-        { name: "Per van Hassel", role: "Medeoprichter & creative director / strategie" },
+        { name: "Per van Hassel", role: "Medeoprichter & strategie" },
         { name: "Ryan Chantre", role: "Medeoprichter & creative lead" },
-        { name: "Majd Tawashe", role: "Fotografie & creative director" },
+        { name: "Majd Tawashe", role: "Medeoprichter & creative director" },
       ],
       learnMore: "Meer over PDC →",
     },
@@ -603,7 +603,7 @@ export const translations = {
       previous: "Vorige",
       next: "Volgende",
       team: {
-        majd: "Verhalen vertellen is altijd de kern geweest van wat ik doe. Met meer dan zes jaar ervaring in fotografie en film richt ik me op beelden die echt, filmisch en krachtig aanvoelen.\n\nBij PhotoDeCaffeine bewaak ik de creatieve visie achter onze projecten, van het eerste concept tot de oplevering. Samen met Per en Ryan maak ik beelden die mensen verbinden met hun publiek.\n\nVoor mij gaat goede content niet alleen over mooie beelden. Het gaat om verhalen die mensen onthouden.",
+        majd: "Verhalen vertellen is altijd de kern geweest van wat ik doe. Met meer dan zes jaar ervaring in fotografie en film richt ik me op beelden die echt, filmisch en krachtig aanvoelen.\n\nBij PhotoDeCaffeine bewaak ik de creatieve visie achter onze projecten, van het eerste concept tot de oplevering. Samen met mijn medeoprichters Per en Ryan maak ik beelden die mensen verbinden met hun publiek.\n\nVoor mij gaat goede content niet alleen over mooie beelden. Het gaat om verhalen die mensen onthouden.",
         per: "Ik ben een creatieveling uit Nederland met een achtergrond in de horeca en een sterke focus op videoproductie en storytelling. Muziek inspireert me enorm en speelt een grote rol in hoe ik denk en maak. Ik schakel snel tussen ideeën en projecten, waardoor mijn werk dynamisch blijft en steeds verder groeit. Op dit moment bouw ik verder aan mijn vaardigheden in videografie, met als doel in het buitenland te wonen en te werken, waar ik mijn vak verder kan ontwikkelen en mijn creatieve werk naar een hoger niveau kan tillen.",
         ryan: "Mijn passie voor fotografie begon begin 2026, vanuit de vrijheid om bijzondere momenten vast te leggen en mensen iets te geven waar ze altijd op terug kunnen kijken. Met een focus op automotive-, sport- en concertfotografie maak ik beelden die niet alleen een moment laten zien, maar ook het gevoel erachter overbrengen.\n\nSamen met Per en Majd zijn we PhotoDeCaffeine begonnen: een creatief merk voor fotografie, video en websites, waarin we onze passie delen en samenwerken om sterke, blijvende herinneringen vast te leggen.",
       },
