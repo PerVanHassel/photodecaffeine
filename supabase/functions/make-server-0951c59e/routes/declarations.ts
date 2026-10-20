@@ -5,7 +5,6 @@ import { getPortalUser } from "../lib/people.ts";
 import { computeQuarter, computeVatAmount, sanitizeFileName } from "../lib/util.ts";
 import { db } from "../lib/db.ts";
 import { PRIVATE_BUCKET, signPaths } from "../lib/storage.ts";
-import { readReceipt } from "../lib/receipts.ts";
 
 
 const r = new Hono();
@@ -78,9 +77,8 @@ r.get("/make-server-0951c59e/admin/declarations", async (c) => {
 
 const PRIVATE_PREFIX = "private:";
 
-// --- POST /admin/declarations/receipt — store a receipt privately and read it ---
-// The answer carries what the invoice says (fields), so the form can fill
-// itself in, and a notice for the person when it could not be read.
+// --- POST /admin/declarations/receipt — store a receipt privately ---
+// The admin reads the invoice in the browser to fill the form in; this only keeps the file.
 r.post("/make-server-0951c59e/admin/declarations/receipt", async (c) => {
   const admin = await verifyAdmin(c.req.header("Authorization"));
   if (!admin) return c.json({ error: "Unauthorized" }, 401);
@@ -91,12 +89,9 @@ r.post("/make-server-0951c59e/admin/declarations/receipt", async (c) => {
     return c.json({ error: "Upload een foto of pdf van het bonnetje." }, 400);
   }
   const path = `receipts/${admin.id}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}-${sanitizeFileName(file.name)}`;
-  const [{ error }, reading] = await Promise.all([
-    db.storage.from(PRIVATE_BUCKET).upload(path, file, { contentType: file.type }),
-    readReceipt(file),
-  ]);
+  const { error } = await db.storage.from(PRIVATE_BUCKET).upload(path, file, { contentType: file.type });
   if (error) return c.json({ error: "Het bonnetje kon niet worden opgeslagen." }, 500);
-  return c.json({ receiptRef: PRIVATE_PREFIX + path, ...reading });
+  return c.json({ receiptRef: PRIVATE_PREFIX + path });
 });
 
 // --- POST /admin/declarations — submit a declaration ---

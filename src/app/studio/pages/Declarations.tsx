@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { api, del, get, post, put } from "../api";
 import { euro, fmtDate } from "../format";
 import { useAction, useMe } from "../queries";
+import { parseReceipt, type Parsed } from "../receipt/parse";
 import { Button, Card, cx, Empty, ErrorState, Field, Input, Modal, PageHead, Pill, Select, SelectField, SkeletonList, TextField, useConfirm } from "../ui";
 import { useUrlState } from "../urlState";
 
@@ -34,12 +35,6 @@ type Declaration = {
   category: string; description: string; receiptUrl: string; receiptRef: string; createdAt: string;
 };
 type Listing = { declarations: Declaration[]; canViewAll: boolean; totals: { amount: number; vatAmount: number; count: number; byCategory: Record<string, number> } };
-/** What the server read on the invoice; see readReceipt in the edge function. */
-type Reading = {
-  receiptRef: string;
-  fields: { amount: number | null; vatRate: number; date: string | null; description: string; category: string } | null;
-  notice?: string;
-};
 /** The dialog: an existing declaration, or a new one, perhaps starting from a file. */
 type Editing = { item?: Declaration; file?: File };
 
@@ -190,8 +185,8 @@ function DeclarationDialog({ editing, onClose, onSaved, canViewAll, people, meId
   const fileInput = useRef<HTMLInputElement>(null);
   const [f, setF] = useState({ amount: "", vatRate: "21", date: "", category: "", description: "", receiptRef: "", adminId: "" });
   const [receipt, setReceipt] = useState<{ name: string; url: string } | null>(null);
-  const [reading, setReading] = useState<string | null>(null);
-  const [outcome, setOutcome] = useState<{ filled: boolean; notice?: string } | null>(null);
+  const [reading, setReading] = useState<{ name: string; done: number } | null>(null);
+  const [outcome, setOutcome] = useState<{ filled: boolean; photo: boolean; notice?: string } | null>(null);
   const [over, setOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Counts uploads, so the answer for a file that has since been replaced, or
@@ -232,31 +227,39 @@ function DeclarationDialog({ editing, onClose, onSaved, canViewAll, people, meId
     onSuccess: () => onSaved(f.date),
   });
 
-  // Stores the file and fills the form in with what the invoice says.
+  // Stores the file and, meanwhile, reads it here in the browser to fill the form in.
   async function attach(picked: File) {
     const mine = ++latest.current;
     setError(null);
     setOutcome(null);
-    setReading(picked.name);
+    setReading({ name: picked.name, done: 0 });
     try {
+      const file = await shrinkPhoto(picked);
       const form = new FormData();
-      form.append("file", await shrinkPhoto(picked));
-      const r = await api<Reading>("/admin/declarations/receipt", { method: "POST", form });
+      form.append("file", file);
+      const [stored, read] = await Promise.all([
+        api<{ receiptRef: string }>("/admin/declarations/receipt", { method: "POST", form }),
+        readInvoice(file, (done) => { if (mine === latest.current) setReading({ name: picked.name, done }); }),
+      ]);
       if (mine !== latest.current) return;
-      const read = r.fields;
+      const found = read?.fields;
       setF((x) => ({
         ...x,
-        receiptRef: r.receiptRef,
-        ...(read && {
-          amount: read.amount !== null ? read.amount.toFixed(2).replace(".", ",") : x.amount,
-          vatRate: String(read.vatRate),
-          date: read.date || x.date,
-          category: read.category,
-          description: read.description || x.description,
+        receiptRef: stored.receiptRef,
+        ...(found && {
+          amount: found.amount !== null ? found.amount.toFixed(2).replace(".", ",") : x.amount,
+          vatRate: found.vatRate !== null ? String(found.vatRate) : x.vatRate,
+          date: found.date || x.date,
+          category: found.category || x.category,
+          description: found.description || x.description,
         }),
       }));
       setReceipt({ name: picked.name, url: URL.createObjectURL(picked) });
-      setOutcome({ filled: !!read, notice: r.notice });
+      setOutcome({
+        filled: !!found && (found.amount !== null || !!found.date || !!found.description),
+        photo: !!read?.ocr,
+        notice: read ? read.notice : "De factuur kon niet worden gelezen. Vul de gegevens zelf in.",
+      });
     } catch (err) {
       if (mine === latest.current) setError((err as Error).message);
     } finally {
@@ -288,7 +291,10 @@ function DeclarationDialog({ editing, onClose, onSaved, canViewAll, people, meId
         {busy ? (
           <div className="s-receipt-row" role="status">
             <span className="s-ico acc"><Loader2 className="spin" /></span>
-            <div className="s-stack sm"><b>Factuur lezen…</b><span className="s-small s-muted s-ellipsis">{reading}</span></div>
+            <div className="s-stack sm">
+              <b>Factuur lezen…{reading.done > 0.05 && ` ${Math.round(reading.done * 100)}%`}</b>
+              <span className="s-small s-muted s-ellipsis">{reading.name}</span>
+            </div>
           </div>
         ) : receipt ? (
           <div className="s-receipt-row">
@@ -305,7 +311,11 @@ function DeclarationDialog({ editing, onClose, onSaved, canViewAll, people, meId
         )}
       </div>
       <input ref={fileInput} type="file" accept={ACCEPT} hidden onChange={(e) => { const x = e.target.files?.[0]; e.target.value = ""; if (x) attach(x); }} />
-      {outcome?.filled && <p className="s-small" style={{ color: "var(--ok)" }}><Check size={14} aria-hidden="true" /> Ingevuld vanaf de factuur. Kijk het even na.</p>}
+      {outcome?.filled && (
+        <p className="s-small" style={{ color: "var(--ok)" }}>
+          <Check size={14} aria-hidden="true" /> {outcome.photo ? "Ingevuld vanaf de foto. Kijk alles goed na." : "Ingevuld vanaf de factuur. Kijk het even na."}
+        </p>
+      )}
       {outcome?.notice && <p className="s-small" style={{ color: "var(--warn)" }}>{outcome.notice}</p>}
       <div className="s-form-grid">
         <TextField label="Bedrag incl. btw (€)" inputMode="decimal" value={f.amount} disabled={busy} onChange={(e) => setF({ ...f, amount: e.target.value })} />
@@ -330,14 +340,26 @@ function DeclarationDialog({ editing, onClose, onSaved, canViewAll, people, meId
   );
 }
 
+/** The text of the file, read into form fields; null when it could not be read at all. */
+async function readInvoice(file: File, progress: (done: number) => void): Promise<(Parsed & { ocr: boolean }) | null> {
+  try {
+    const { readReceiptText } = await import("../receipt/read");
+    const { text, ocr } = await readReceiptText(file, progress);
+    return { ...parseReceipt(text), ocr };
+  } catch (err) {
+    console.error("reading the invoice failed:", err);
+    return null;
+  }
+}
+
 /** The file name a receipt was uploaded with, from its stored path. */
 function receiptName(ref: string) {
   const file = decodeURIComponent(ref.replace(/^private:/, "").split("?")[0].split("/").pop() || "");
   return file.replace(/^\d+-([0-9a-f]{8}-)?/, "") || "Bonnetje";
 }
 
-// Phone photos are scaled to a sharp, small JPEG before they leave the phone:
-// quicker on mobile data, and within the size the invoice reader takes.
+// Phone photos are scaled to a sharp, small JPEG before they are read and
+// stored: quicker to OCR and to send over mobile data.
 const PHOTO_EDGE = 2400;
 
 async function shrinkPhoto(file: File): Promise<File> {
