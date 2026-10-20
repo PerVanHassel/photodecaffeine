@@ -267,8 +267,9 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
       {gridPhotos.length > 0 && (
         <PhotoReel
           id="niche-work"
-          kicker={work.focused ? ts.workKickerFocus : ts.workKicker}
-          title={work.focused && focus ? focus : ts.workTitle}
+          label={work.focused ? ts.workLabelFocus : ts.workLabel}
+          titleLine1={work.focused && focus ? focus : ts.workTitle1}
+          titleLine2={work.focused ? ts.workTitleFocus2 : ts.workTitle2}
           body={ts.workBody}
           link={ts.workLink}
           photos={gridPhotos}

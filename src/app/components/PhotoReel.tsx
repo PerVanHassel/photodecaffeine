@@ -5,21 +5,24 @@ import { webSrcSet, type FocusPhoto } from "../lib/photoFocus";
 import { useReveal } from "../hooks/useReveal";
 import { scrollBehavior } from "../lib/scroll";
 
-// Photos as a strip of prints on a light wall, running off the right edge:
-// black and white until the pointer finds one, a small caption under each, and
-// each leading to its portfolio article. The look is in site.css (.pdc-reel*).
+// Photos as a strip that starts at the content edge and runs off the right of
+// the screen, each with a copper number and its series under it, leading to
+// the portfolio article. The header follows the other homepage-style sections;
+// the strip itself is in site.css (.pdc-reel*).
 export function PhotoReel({
   id,
-  kicker,
-  title,
+  label,
+  titleLine1,
+  titleLine2,
   body,
   link,
   photos,
   labels,
 }: {
   id: string;
-  kicker: string;
-  title: string;
+  label: string;
+  titleLine1: string;
+  titleLine2: string;
   body: string;
   link: string;
   photos: FocusPhoto[];
@@ -53,48 +56,94 @@ export function PhotoReel({
     const el = strip.current;
     if (!el) return;
     const item = el.querySelector<HTMLElement>(".pdc-reel-item");
-    el.scrollBy({ left: direction * (item?.offsetWidth ?? el.clientWidth * 0.8), behavior: scrollBehavior() });
+    el.scrollBy({ left: direction * ((item?.offsetWidth ?? el.clientWidth * 0.8) + 3), behavior: scrollBehavior() });
   };
 
   return (
-    <section ref={root} className="pdc-paper pdc-reel" aria-labelledby={id}>
-      <div className="pdc-reel-head">
-        <div>
-          <span className="pdc-kicker">{kicker}</span>
-          <h2 id={id} className="pdc-reel-title">
-            {title}
-          </h2>
-        </div>
-        <div className="pdc-reel-aside">
-          <p>{body}</p>
-          <div className="pdc-reel-tools">
-            {!(edges.start && edges.end) && (
-              <div className="pdc-reel-arrows">
-                <button
-                  type="button"
-                  className="pdc-reel-arrow"
-                  aria-label={labels.previous}
-                  aria-controls={`${id}-strip`}
-                  disabled={edges.start}
-                  onClick={() => step(-1)}
-                >
-                  <ArrowLeft size={16} strokeWidth={1.5} aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  className="pdc-reel-arrow"
-                  aria-label={labels.next}
-                  aria-controls={`${id}-strip`}
-                  disabled={edges.end}
-                  onClick={() => step(1)}
-                >
-                  <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" />
-                </button>
-              </div>
-            )}
-            <Link to="/portfolio" className="pdc-text-link">
-              {link}
-            </Link>
+    <section ref={root} className="pdc-section pdc-reel" aria-labelledby={id}>
+      <div className="pdc-wrap" style={{ maxWidth: "1400px", margin: "0 auto" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "space-between",
+            marginBottom: "56px",
+            flexWrap: "wrap",
+            gap: "20px",
+          }}
+        >
+          <div>
+            <span
+              style={{
+                color: "rgba(255,251,224,0.5)",
+                fontSize: "10px",
+                fontWeight: 500,
+                letterSpacing: "0.3em",
+                textTransform: "uppercase",
+                display: "block",
+                marginBottom: "16px",
+              }}
+            >
+              {label}
+            </span>
+            <h2
+              id={id}
+              style={{
+                color: "#fffbe0",
+                fontSize: "clamp(32px, 4vw, 52px)",
+                fontWeight: 800,
+                letterSpacing: "-0.03em",
+                lineHeight: 1,
+                margin: 0,
+                textTransform: "uppercase",
+              }}
+            >
+              {titleLine1}
+              <br />
+              <span style={{ color: "rgba(255,251,224,0.4)" }}>{titleLine2}</span>
+            </h2>
+          </div>
+          <div style={{ maxWidth: "320px" }}>
+            <p
+              style={{
+                color: "rgba(255,251,224,0.5)",
+                fontSize: "14px",
+                fontWeight: 300,
+                lineHeight: 1.7,
+                margin: "0 0 24px",
+              }}
+            >
+              {body}
+            </p>
+            <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "16px 24px" }}>
+              {!(edges.start && edges.end) && (
+                <div className="pdc-reel-arrows">
+                  <button
+                    type="button"
+                    className="pdc-reel-arrow"
+                    aria-label={labels.previous}
+                    aria-controls={`${id}-strip`}
+                    disabled={edges.start}
+                    onClick={() => step(-1)}
+                  >
+                    <ArrowLeft size={18} strokeWidth={1.5} aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    className="pdc-reel-arrow"
+                    aria-label={labels.next}
+                    aria-controls={`${id}-strip`}
+                    disabled={edges.end}
+                    onClick={() => step(1)}
+                  >
+                    <ArrowRight size={18} strokeWidth={1.5} aria-hidden="true" />
+                  </button>
+                </div>
+              )}
+              <Link to="/portfolio" className="pdc-text-link">
+                {link}
+              </Link>
+            </div>
           </div>
         </div>
       </div>

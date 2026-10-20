@@ -1,7 +1,7 @@
 import { Helmet } from "react-helmet-async";
 import { useRef, useState } from "react";
 import { Link, useParams } from "react-router";
-import { ArrowDown, ArrowLeft, Star } from "lucide-react";
+import { ArrowLeft, Star } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { GoogleG } from "../components/GoogleG";
 import { Lightbox } from "../components/Lightbox";
@@ -84,7 +84,7 @@ export function PortfolioDetailPage() {
   const photoAlt = (n: number) => td.photoAlt(article.title, n);
   const photos = article.galleryUrls;
   const total = photos.length;
-  // The band shows the cover, or the first photo when there is no cover.
+  // The wide photo under the title: the cover, or the first photo without one.
   const coverUrl = article.coverUrl || photos[0] || "";
   const coverIsVideo = article.coverType === "video" && !!article.coverUrl;
   const description = article.description?.trim();
@@ -92,9 +92,10 @@ export function PortfolioDetailPage() {
   return (
     <div
       style={{
-        backgroundColor: "#fcf9ef",
+        backgroundColor: "#080401",
         minHeight: "100vh",
         fontFamily: "'Inter', sans-serif",
+        paddingTop: "72px",
       }}
     >
       <Helmet>
@@ -133,61 +134,153 @@ export function PortfolioDetailPage() {
           ]
         })}</script>
       </Helmet>
-      {/* ── The cover as a black-and-white band, the title in wide capitals ── */}
-      <header className="pdc-cover">
-        {coverUrl && (
-          <div className="pdc-cover-media" aria-hidden="true">
-            {coverIsVideo ? (
-              <CoverVideo src={coverUrl} />
-            ) : (
-              <img src={coverUrl} srcSet={webSrcSet(coverUrl)} sizes="100vw" alt="" {...HIGH_PRIORITY} />
+      {/* ── Header, as on the service pages ── */}
+      <div
+        className="pdc-svc-head"
+        style={{
+          backgroundColor: "#0d0703",
+          borderBottom: "1px solid rgba(255,251,224,0.06)",
+        }}
+      >
+        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
+          <Link to="/portfolio" className="pdc-back-link">
+            <ArrowLeft size={14} aria-hidden="true" />
+            {td.back}
+          </Link>
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-end",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "32px",
+            }}
+          >
+            <div>
+              <span
+                style={{
+                  color: "rgba(255,251,224,0.5)",
+                  fontSize: "10px",
+                  fontWeight: 500,
+                  letterSpacing: "0.3em",
+                  textTransform: "uppercase",
+                  display: "block",
+                  marginBottom: "16px",
+                }}
+              >
+                {td.label}
+              </span>
+              <h1
+                className="pdc-svc-title pdc-svc-title--social"
+                style={{
+                  color: "#fffbe0",
+                  fontWeight: 900,
+                  letterSpacing: "-0.03em",
+                  lineHeight: 0.92,
+                  margin: 0,
+                  textTransform: "uppercase",
+                }}
+              >
+                {article.title}
+                {article.category && (
+                  <>
+                    <br />
+                    <em
+                      style={{
+                        fontStyle: "italic",
+                        fontWeight: 300,
+                        color: "#c8905a",
+                        fontSize: "0.6em",
+                        textTransform: "none",
+                      }}
+                    >
+                      {article.category}
+                    </em>
+                  </>
+                )}
+              </h1>
+            </div>
+            {total > 0 && (
+              <p
+                className="pdc-desktop-only"
+                style={{
+                  color: "rgba(255,251,224,0.5)",
+                  fontSize: "10px",
+                  fontWeight: 500,
+                  letterSpacing: "0.3em",
+                  textTransform: "uppercase",
+                  margin: 0,
+                }}
+              >
+                <span style={{ color: "rgba(200,144,90,0.8)", fontFamily: "'Courier New', monospace", fontWeight: 600, marginRight: "12px" }}>
+                  {pad(total)}
+                </span>
+                {td.photos(total)}
+              </p>
             )}
           </div>
-        )}
-        <Link to="/portfolio" className="pdc-back-link pdc-cover-back">
-          <ArrowLeft size={14} aria-hidden="true" />
-          {td.back}
-        </Link>
-        <div className="pdc-cover-inner">
-          {article.category && <span className="pdc-cover-kicker">{article.category}</span>}
-          <h1 className="pdc-cover-title">{article.title}</h1>
-          {total > 0 && (
-            <>
-              <p className="pdc-cover-meta">{td.photoCount(total)}</p>
-              <Link to="#serie" className="pdc-cover-view">
-                {td.viewSeries}
-                <ArrowDown size={14} strokeWidth={1.5} aria-hidden="true" />
-              </Link>
-            </>
+        </div>
+      </div>
+
+      {/* ── The cover, wide and dimmed like the service pages' photo ── */}
+      {coverUrl && (
+        <div className="pdc-svc-hero" style={{ position: "relative", minHeight: "320px", overflow: "hidden" }} aria-hidden="true">
+          {coverIsVideo ? (
+            <CoverVideo src={coverUrl} />
+          ) : (
+            <img
+              className="pdc-cover-photo"
+              src={coverUrl}
+              srcSet={webSrcSet(coverUrl)}
+              sizes="100vw"
+              alt=""
+              {...HIGH_PRIORITY}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: "center 40%",
+                filter: "brightness(0.5) contrast(1.08) saturate(0.7)",
+              }}
+            />
           )}
         </div>
-      </header>
+      )}
 
-      {/* ── The series on light paper ── */}
-      <div className="pdc-paper pdc-article">
-        <div className={`pdc-article-intro${description ? "" : " pdc-article-intro--meta"}`}>
-          {description && (
-            <div>
-              <span className="pdc-kicker">{td.aboutLabel}</span>
-              <p className={`pdc-article-lede${description.length > 220 ? " pdc-article-lede--long" : ""}`}>{description}</p>
-            </div>
-          )}
-          <dl className="pdc-article-meta">
-            {article.category && (
-              <>
-                <dt>{td.metaCategory}</dt>
-                <dd>{article.category}</dd>
-              </>
-            )}
-            <dt>{td.metaPhotos}</dt>
-            <dd>{total}</dd>
-          </dl>
-        </div>
-
-        {total === 0 ? (
-          <p className="pdc-kicker" style={{ textAlign: "center", margin: "48px 0" }}>
-            {td.noImages}
+      {description && (
+        <div className="pdc-svc-intro" style={{ maxWidth: "800px", margin: "0 auto", textAlign: "center" }}>
+          <p
+            style={{
+              color: "rgba(255,251,224,0.55)",
+              fontSize: "15px",
+              fontWeight: 300,
+              lineHeight: 1.85,
+              letterSpacing: "0.02em",
+              margin: 0,
+              whiteSpace: "pre-line",
+            }}
+          >
+            {description}
           </p>
+        </div>
+      )}
+
+      {/* ── The series ── */}
+      <div className="pdc-article">
+        {total === 0 ? (
+          <div
+            style={{
+              textAlign: "center",
+              padding: "80px 0",
+              color: "rgba(255,251,224,0.5)",
+              fontSize: "12px",
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+            }}
+          >
+            {td.noImages}
+          </div>
         ) : (
           <div id="serie" ref={spread} className={`pdc-spread${total === 1 ? " pdc-spread--single" : ""}`}>
             {photos.map((url, idx) => {
@@ -207,7 +300,7 @@ export function PortfolioDetailPage() {
                     />
                   </span>
                   <span className="pdc-shot-caption" aria-hidden="true">
-                    <span>
+                    <span className="pdc-shot-num">
                       {pad(idx + 1)} / {pad(total)}
                     </span>
                     <span className="pdc-shot-zoom">{td.enlarge}</span>
@@ -219,27 +312,60 @@ export function PortfolioDetailPage() {
         )}
 
         {reviews.length > 0 && <ArticleReviews reviews={reviews} />}
+      </div>
 
-        <div className="pdc-article-cta">
-          <h2>{td.ctaTitle}</h2>
-          <div className="pdc-article-cta-actions">
-            <Link
-              to="/#contact"
-              className="pdc-btn pdc-btn-ink"
-              style={{ padding: "16px 40px", fontSize: "10px", fontWeight: 700, letterSpacing: "0.22em" }}
-            >
-              {td.cta}
+      {/* ── Call to action, as the service pages close ── */}
+      <div
+        className="pdc-svc-cta"
+        style={{
+          borderTop: "1px solid rgba(255,251,224,0.06)",
+          backgroundColor: "#0d0703",
+          textAlign: "center",
+        }}
+      >
+        <span
+          style={{
+            color: "rgba(255,251,224,0.5)",
+            fontSize: "10px",
+            fontWeight: 500,
+            letterSpacing: "0.3em",
+            textTransform: "uppercase",
+            display: "block",
+            marginBottom: "20px",
+          }}
+        >
+          {td.ctaLabel}
+        </span>
+        <h2
+          className="pdc-svc-cta-title"
+          style={{
+            color: "#fffbe0",
+            fontWeight: 900,
+            letterSpacing: "-0.03em",
+            lineHeight: 0.95,
+            textTransform: "uppercase",
+            margin: "0 0 40px",
+          }}
+        >
+          {td.ctaTitle1} <span style={{ color: "rgba(255,251,224,0.4)" }}>{td.ctaTitle2}</span>
+        </h2>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "28px" }}>
+          <Link
+            to="/#contact"
+            className="pdc-btn pdc-btn-solid"
+            style={{ padding: "16px 48px", fontSize: "10px", fontWeight: 700, letterSpacing: "0.22em" }}
+          >
+            {td.cta}
+          </Link>
+          {/automotive/i.test(article.category) ? (
+            <Link to="/services/automotive" className="pdc-text-link">
+              {td.serviceLink}
             </Link>
-            {/automotive/i.test(article.category) ? (
-              <Link to="/services/automotive" className="pdc-text-link">
-                {td.serviceLink}
-              </Link>
-            ) : (
-              <Link to="/services/fotografie" className="pdc-text-link">
-                {td.photographyLink}
-              </Link>
-            )}
-          </div>
+          ) : (
+            <Link to="/services/fotografie" className="pdc-text-link">
+              {td.photographyLink}
+            </Link>
+          )}
         </div>
       </div>
 
@@ -268,7 +394,17 @@ function ArticleReviews({ reviews }: { reviews: PublicReview[] }) {
   const { t } = useLanguage();
   return (
     <section aria-labelledby="article-reviews" className="pdc-article-reviews">
-      <h2 id="article-reviews" className="pdc-kicker" style={{ margin: "0 0 36px" }}>
+      <h2
+        id="article-reviews"
+        style={{
+          color: "rgba(255,251,224,0.5)",
+          fontSize: "11px",
+          fontWeight: 500,
+          letterSpacing: "0.3em",
+          textTransform: "uppercase",
+          margin: "0 0 36px",
+        }}
+      >
         {t.portfolioDetail.reviewLabel}
       </h2>
       <div style={{ display: "flex", flexDirection: "column", gap: "56px" }}>
@@ -276,16 +412,15 @@ function ArticleReviews({ reviews }: { reviews: PublicReview[] }) {
           <figure key={review.id} style={{ margin: 0 }}>
             <div role="img" aria-label={t.socialProof.rating(review.rating)} style={{ display: "flex", justifyContent: "center", gap: "4px", marginBottom: "24px" }}>
               {[1, 2, 3, 4, 5].map((n) => (
-                <Star key={n} size={16} color="#a96f38" fill={n <= review.rating ? "#a96f38" : "none"} strokeWidth={2} aria-hidden="true" />
+                <Star key={n} size={16} color="#c8905a" fill={n <= review.rating ? "#c8905a" : "none"} strokeWidth={2} aria-hidden="true" />
               ))}
             </div>
             <blockquote
               style={{
-                color: "rgba(26,12,4,0.85)",
-                fontFamily: "'Space Grotesk', sans-serif",
-                fontSize: "clamp(18px, 2vw, 24px)",
+                color: "rgba(255,251,224,0.82)",
+                fontSize: "clamp(17px, 2vw, 21px)",
                 fontWeight: 300,
-                lineHeight: 1.6,
+                lineHeight: 1.7,
                 margin: 0,
                 whiteSpace: "pre-wrap",
               }}
@@ -297,9 +432,9 @@ function ArticleReviews({ reviews }: { reviews: PublicReview[] }) {
                 <img src={review.photoUrl} alt="" width={28} height={28} referrerPolicy="no-referrer" loading="lazy"
                   style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }} />
               )}
-              <span style={{ color: "#1a0c04", fontSize: "13px", fontWeight: 600, letterSpacing: "0.02em" }}>{review.clientName}</span>
+              <span style={{ color: "#fffbe0", fontSize: "13px", fontWeight: 600, letterSpacing: "0.02em" }}>{review.clientName}</span>
               {review.source === "google" && (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "rgba(26,12,4,0.6)", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "rgba(255,251,224,0.5)", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase" }}>
                   · <GoogleG size={13} /> {t.socialProof.googleReview}
                 </span>
               )}
