@@ -396,6 +396,14 @@ export async function mockApi(path: string, method: string, body: Json): Promise
   }
 
   // Writes: apply the obvious change in memory and answer like the server.
+  if (p === "/admin/declarations/receipt") {
+    await delay(1600); // the real reading takes a few seconds; long enough to see the form wait
+    const file = (body as FormData).get("file") as File;
+    return {
+      receiptRef: `private:receipts/${id(999)}/${Date.now()}-0a1b2c3d-${file.name}`,
+      fields: { amount: 130.05, vatRate: 21, date: dateOnly(-68), description: "Cameranu — Peak Design statiefplaat", category: "Apparatuur" },
+    };
+  }
   if ((r = m(/^\/admin\/project\/([^/]+)\/share(\/renew)?$/)) && method !== "GET") {
     const share = shares.find((s) => s.projectId === r![1]);
     const token = () => Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10);
