@@ -14,6 +14,11 @@ De eigenaar heeft dyslexie. Houd antwoorden kort.
 - Als iets af is: committen, mergen naar `main` en pushen. Niet eerst vragen.
 - `main` heeft een lineaire historie. Merge met `--ff-only` of rebase, nooit een merge-commit.
 - Vragen alleen bij een keuze die tot wezenlijk ander werk leidt, niet bij afronding.
+- Zet elke afgeronde taak in het Notion-database `Agent-logboek`
+  (data source `collection://03ebfc69-36b2-4a0c-ac62-0bba835f7d62`): taak,
+  agent, tijdstip, venster, project, status. Venster is `Dag 08–17` of
+  `Avond & nacht 17–08`, Nederlandse tijd. Daaruit komen de briefing vóór
+  17:00 en die van 08:30.
 
 Voor het pushen altijd:
 
