@@ -104,13 +104,19 @@ r.get(`${A}/search`, async (c) => {
 // Web demos
 // ---------------------------------------------------------------------------
 
+// More than one project can point at the same demo (a test project next to
+// the client's own). The demo is live when any of them has it switched on, and
+// that project is the one it answers for; rows come back in no fixed order.
 async function findDemo(slug: string) {
   const rows = must(await db.from("projects").select("id, title, demos").eq("type", "web")) || [];
+  let first: { project: any; demo: { slug: string; live: boolean } } | null = null;
   for (const p of rows as any[]) {
     const demo = projectDemos(p).find((d) => d.slug === slug);
-    if (demo) return { project: p, demo };
+    if (!demo) continue;
+    if (demo.live) return { project: p, demo };
+    first ??= { project: p, demo };
   }
-  return null;
+  return first;
 }
 
 // Public on purpose: an unknown and a switched-off demo answer the same way,
