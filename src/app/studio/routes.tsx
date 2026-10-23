@@ -49,6 +49,7 @@ const Ads = page(() => import("./pages/Ads"), "AdsPage");
 const Demos = page(() => import("./pages/Demos"), "DemosPage");
 const Team = page(() => import("./pages/Team"), "TeamPage");
 const Declarations = page(() => import("./pages/Declarations"), "DeclarationsPage");
+const Documents = page(() => import("./pages/Documents"), "DocumentsPage");
 const GalleryPreview = page(() => import("./pages/GalleryPreview"), "GalleryPreviewPage");
 const Settings = page(() => import("./pages/Settings"), "SettingsPage");
 
@@ -83,6 +84,8 @@ export const studioRoutes: RouteObject = {
         { path: "demos", Component: wrap(Demos) },
         { path: "team", Component: wrap(Team) },
         { path: "declarations", Component: wrap(Declarations) },
+        { path: "documents", Component: wrap(Documents) },
+        { path: "documents/:docId", Component: wrap(Documents) },
         { path: "settings", Component: wrap(Settings) },
       ],
     },

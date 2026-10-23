@@ -2,7 +2,7 @@ import { PdcLogo } from "../components/PdcLogo";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Helmet } from "react-helmet-async";
 import {
-  CalendarDays, CheckSquare, Euro, FileText, Globe, Images, Inbox, Kanban, Layers, LogOut, MapPin, Megaphone, Menu, Receipt,
+  BookOpen, CalendarDays, CheckSquare, Euro, FileText, Globe, Images, Inbox, Kanban, Layers, LogOut, MapPin, Megaphone, Menu, Receipt,
   Search, Settings, Shield, Star, Sun, Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -166,6 +166,7 @@ function NavSections({ can, waiting, tasks, inquiries }: { can: (perm?: string) 
         <span className="s-eyebrow">Beheer</span>
         <NavItem show={can("manageAdmins")} to="/admin/team" icon={<Shield />} label="Team & rollen" />
         <NavItem to="/admin/declarations" icon={<Receipt />} label="Declaraties" />
+        <NavItem to="/admin/documents" icon={<BookOpen />} label="Documenten" />
       </nav>
     </>
   );

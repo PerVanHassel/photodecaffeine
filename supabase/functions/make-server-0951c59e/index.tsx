@@ -5,6 +5,7 @@ import { onError } from "./lib/http.ts";
 
 import clients from "./routes/clients.ts";
 import declarations from "./routes/declarations.ts";
+import documents from "./routes/documents.ts";
 import engagement from "./routes/engagement.ts";
 import events from "./routes/events.ts";
 import google from "./routes/google.ts";
@@ -45,7 +46,7 @@ app.onError(onError);
 
 const modules: Hono<any>[] = [
   clients, portal, projects, quotes, invoices, inquiries, tasks, locations, events, overview,
-  engagement, google, portfolio, team, declarations, settings, notifications, storage, share,
+  engagement, google, portfolio, team, declarations, documents, settings, notifications, storage, share,
 ];
 for (const module of modules) app.route("/", module);
 

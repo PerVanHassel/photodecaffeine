@@ -274,6 +274,21 @@ function eventsWithContext() {
   }));
 }
 
+// Notes on the reader documents, with one from Majd so the panel is not empty.
+const docNotes: Json[] = [
+  { id: id(950), sectionId: "p3--2-portretten-artikel-19-auteurswet", text: "Goed dat dit erin staat. Moeten we dit ook op de offerte zetten?", authorId: id(902), authorName: "Majd", createdAt: iso(-1, 14), updatedAt: iso(-1, 14) },
+];
+const docRead: Record<string, Json> = {};
+function me(): { id: string; name: string } {
+  try {
+    const key = Object.keys(localStorage).find((k) => k.startsWith("sb-") && k.endsWith("-auth-token"));
+    const user = key ? JSON.parse(localStorage.getItem(key) || "{}").user : null;
+    return { id: user?.id || id(901), name: user?.user_metadata?.name || "Per" };
+  } catch {
+    return { id: id(901), name: "Per" };
+  }
+}
+
 function overview() {
   const evs = eventsWithContext().filter((e) => new Date(e.startsAt).getTime() > now - 12 * 3600000 && new Date(e.startsAt).getTime() < now + 8 * day).sort((a, b) => a.startsAt.localeCompare(b.startsAt));
   const stageCounts: Record<string, number> = {};
@@ -303,6 +318,7 @@ export async function mockApi(path: string, method: string, body: Json): Promise
   let r: RegExpMatchArray | null;
 
   if (method === "GET") {
+    if ((r = m(/^\/admin\/documents\/([^/]+)$/))) return structuredClone({ notes: docNotes, read: docRead[r[1]] || { done: [], at: null } });
     if (p === "/admin/overview") return overview();
     if (p === "/admin/projects") return { projects };
     if ((r = m(/^\/admin\/project\/([^/]+)$/))) return { project: projects.find((x) => x.id === r![1]) };
@@ -473,6 +489,18 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     messages.push(msg);
     return { message: msg };
   }
+  if (m(/^\/admin\/documents\/[^/]+\/notes$/) && method === "POST") {
+    const note = { id: id(960 + docNotes.length), sectionId: body.sectionId, text: body.text, authorId: me().id, authorName: me().name, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    docNotes.push(note);
+    return { note };
+  }
+  if ((r = m(/^\/admin\/documents\/[^/]+\/notes\/([^/]+)$/))) {
+    const note = docNotes.find((x) => x.id === r![1]);
+    if (method === "DELETE") { docNotes.splice(docNotes.indexOf(note), 1); return { success: true }; }
+    Object.assign(note, { text: body.text, updatedAt: new Date().toISOString() });
+    return { note };
+  }
+  if ((r = m(/^\/admin\/documents\/([^/]+)\/read$/))) { docRead[r[1]] = body; return { read: body }; }
   if (m(/\/messages\/read$/)) { messages.forEach((x) => { x.readAt ||= new Date().toISOString(); }); return { success: true }; }
   if ((r = m(/^\/admin\/project\/([^/]+)\/shots$/)) && method === "POST") {
     const s = { id: id(800 + shots.length), projectId: r[1], label: body.label, required: !!body.required, done: false, sort: shots.length };
