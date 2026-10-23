@@ -490,7 +490,7 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     return { message: msg };
   }
   if (m(/^\/admin\/documents\/[^/]+\/notes$/) && method === "POST") {
-    const note = { id: id(960 + docNotes.length), sectionId: body.sectionId, text: body.text, authorId: me().id, authorName: me().name, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    const note = { id: id(960 + docNotes.length), sectionId: body.sectionId, text: body.text || "", quote: body.quote || null, authorId: me().id, authorName: me().name, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     docNotes.push(note);
     return { note };
   }

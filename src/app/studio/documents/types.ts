@@ -31,10 +31,18 @@ export type ReaderDocument = {
   sections: ReaderSection[];
 };
 
+/**
+ * Marked words in a piece: the block they sit in and where, counted in the
+ * text as it shows on screen. `text` is kept so the quote survives an edit.
+ */
+export type DocQuote = { block: number; start: number; end: number; text: string };
+
 export type DocNote = {
   id: string;
   sectionId: string;
+  /** Empty for a marking without words. */
   text: string;
+  quote?: DocQuote | null;
   authorId: string;
   authorName: string;
   createdAt: string;

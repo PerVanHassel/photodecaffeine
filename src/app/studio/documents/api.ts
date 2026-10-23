@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { del, errorMessage, get, post, put } from "../api";
-import type { DocNote, DocState } from "./types";
+import type { DocNote, DocQuote, DocState } from "./types";
 
 const key = (doc: string) => ["document", doc] as const;
 
@@ -17,7 +17,7 @@ export function useNoteActions(doc: string) {
   const onError = (err: unknown) => toast.error(errorMessage(err));
 
   const add = useMutation({
-    mutationFn: (b: { sectionId: string; text: string }) => post<{ note: DocNote }>(`/admin/documents/${doc}/notes`, b),
+    mutationFn: (b: { sectionId: string; text: string; quote?: DocQuote | null }) => post<{ note: DocNote }>(`/admin/documents/${doc}/notes`, b),
     onSuccess: ({ note }) => patch((notes) => [...notes, note]),
     onError,
   });

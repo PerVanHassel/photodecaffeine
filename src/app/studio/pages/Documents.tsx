@@ -1,15 +1,18 @@
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import {
-  ArrowLeft, ArrowRight, BookOpen, Check, Info, Lock, MessageSquare, Pencil, RotateCcw, Sparkles, Square, Trash2, Volume2, X,
+  ArrowLeft, ArrowRight, BookOpen, Check, Highlighter, Info, Lock, MessageSquare, MessageSquarePlus, Pencil, Plus, RotateCcw,
+  Sparkles, Square, Tablet, Trash2, Volume2, X,
 } from "lucide-react";
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject,
+} from "react";
 import { Link, useParams } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { DOCUMENTS, minutes, sectionText } from "../documents";
 import { useDocState, useNoteActions, useReadProgress } from "../documents/api";
 import "../documents/reader.css";
-import type { DocNote, DocState, ReaderBlock, ReaderDocument, ReaderPart, ReaderSection } from "../documents/types";
+import type { DocNote, DocQuote, DocState, ReaderBlock, ReaderDocument, ReaderPart, ReaderSection } from "../documents/types";
 import { ago, initials } from "../format";
 import { Button, cx, Empty, ErrorState, Textarea, useConfirm } from "../ui";
 import { useSearchPatch } from "../urlState";
@@ -18,10 +21,14 @@ gsap.registerPlugin(useGSAP);
 
 // A long document, one short piece at a time. Made for reading with ADHD and
 // dyslexia: one thing on screen, large calm type, a clear way forward, notes
-// right next to the text and the option to have it read aloud.
+// right next to the text and the option to have it read aloud. Words can be
+// marked by selecting them, by holding a sentence, or with a pencil.
 
 const EMPTY: DocState = { notes: [], read: { done: [], at: null } };
+const HOLD_MS = 450;
 const still = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const looksLikeTablet = () =>
+  typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches && navigator.maxTouchPoints > 1 && Math.min(screen.width, screen.height) >= 700;
 
 export function DocumentsPage() {
   const { docId } = useParams();
@@ -44,8 +51,10 @@ function Reader({ doc }: { doc: ReaderDocument }) {
   const onlyChanged = params.get("modus") === "wijzigingen";
   const list = useMemo(() => (onlyChanged ? doc.sections.filter((s) => s.changed) : doc.sections), [doc, onlyChanged]);
   const index = list.findIndex((s) => s.id === params.get("stuk"));
-  // Drafts survive paging back and forth, so a half-written thought is never lost.
+  // Drafts and marked-but-unsaved words survive paging back and forth, so a
+  // half-written thought is never lost.
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [pending, setPending] = useState<Record<string, DocQuote | null>>({});
 
   const open = (id: string, mode: "wijzigingen" | null = null) => {
     patch({ stuk: id, modus: mode, klaar: null });
@@ -68,6 +77,7 @@ function Reader({ doc }: { doc: ReaderDocument }) {
   if (query.isError) return <div className="s-view"><ErrorState error={query.error} retry={() => query.refetch()} /></div>;
 
   if (index >= 0) {
+    const id = list[index].id;
     return (
       <ReadingView
         doc={doc}
@@ -75,8 +85,10 @@ function Reader({ doc }: { doc: ReaderDocument }) {
         index={index}
         state={state}
         onlyChanged={onlyChanged}
-        draft={drafts[list[index].id] || ""}
-        setDraft={(text) => setDrafts((d) => ({ ...d, [list[index].id]: text }))}
+        draft={drafts[id] || ""}
+        setDraft={(text) => setDrafts((d) => ({ ...d, [id]: text }))}
+        pending={pending[id] || null}
+        setPending={(q) => setPending((p) => ({ ...p, [id]: q }))}
         onMove={move}
         onFinish={finish}
         onExit={overview}
@@ -105,6 +117,7 @@ function StartView({ doc, state, loading, onOpen }: {
   const resumeAt = doc.sections.indexOf(resume) + 1;
   const left = doc.sections.filter((s) => !done.has(s.id)).reduce((sum, s) => sum + minutes(s), 0);
   const lastNote = [...state.notes].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+  const lastText = lastNote ? lastNote.text || lastNote.quote?.text || "" : "";
   const cta = done.size === 0 ? "Begin met lezen" : done.size === total ? "Opnieuw lezen" : `Verder bij stuk ${resumeAt}`;
 
   useGSAP(() => {
@@ -120,7 +133,7 @@ function StartView({ doc, state, loading, onOpen }: {
 
   return (
     <div className="rd rd-start" ref={root}>
-      <Ambient />
+      <Ambient moving />
       <section className="rd-hero">
         <p className="rd-by">Van {doc.author} · versie {doc.version}</p>
         <h1 className="rd-h1">
@@ -129,7 +142,7 @@ function StartView({ doc, state, loading, onOpen }: {
           <Words text="stuk voor stuk." />
         </h1>
         <p className="rd-lead">
-          {total} korte stukken. Je ziet er steeds maar één. Schrijf op wat je opvalt, dan ziet de rest van het team het ook.
+          {total} korte stukken. Je ziet er steeds maar één. Markeer wat je opvalt en schrijf er iets bij, dan ziet de rest van het team het ook.
         </p>
         <div className="rd-ctas">
           <button className="rd-cta dark" type="button" onClick={() => onOpen(resume.id)} disabled={loading}>
@@ -153,7 +166,7 @@ function StartView({ doc, state, loading, onOpen }: {
         <a className="rd-tile" href="#rd-alle-notities">
           <MessageSquare className="rd-tile-icon" />
           <b className="rd-tile-num">{state.notes.length} <span>{state.notes.length === 1 ? "notitie" : "notities"}</span></b>
-          <span className="rd-tile-sub">{lastNote ? <>{lastNote.authorName.split(" ")[0]}: “{lastNote.text.slice(0, 70)}{lastNote.text.length > 70 ? "…" : ""}”</> : "Nog niets opgeschreven."}</span>
+          <span className="rd-tile-sub">{lastNote ? <>{lastNote.authorName.split(" ")[0]}: “{lastText.slice(0, 70)}{lastText.length > 70 ? "…" : ""}”</> : "Nog niets opgeschreven."}</span>
         </a>
         <div className="rd-tile">
           <Info className="rd-tile-icon" />
@@ -229,7 +242,7 @@ function Parts({ doc, state, done, current, onOpen }: {
 
 function AllNotes({ doc, notes, onOpen }: { doc: ReaderDocument; notes: DocNote[]; onOpen: (id: string) => void }) {
   const bySection = doc.sections
-    .map((s) => ({ section: s, notes: notes.filter((n) => n.sectionId === s.id) }))
+    .map((s) => ({ section: s, notes: inTextOrder(notes.filter((n) => n.sectionId === s.id)) }))
     .filter((g) => g.notes.length);
   return (
     <section className="rd-allnotes" id="rd-alle-notities">
@@ -242,7 +255,10 @@ function AllNotes({ doc, notes, onOpen }: { doc: ReaderDocument; notes: DocNote[
                 <span>{section.title}</span> <ArrowRight />
               </button>
               {notes.map((n) => (
-                <p className="rd-allnotes-note" key={n.id}><b>{n.authorName.split(" ")[0]}</b> {n.text}</p>
+                <div className="rd-allnotes-note" key={n.id}>
+                  {n.quote && <q className="rd-quote">{n.quote.text}</q>}
+                  <p><b>{n.authorName.split(" ")[0]}</b> {n.text || <span className="rd-quiet">markeerde dit</span>}</p>
+                </div>
               ))}
             </div>
           ))}
@@ -258,18 +274,31 @@ function AllNotes({ doc, notes, onOpen }: { doc: ReaderDocument; notes: DocNote[
 // Reading: one card, notes beside it, a clear way forward
 // ---------------------------------------------------------------------------
 
-function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, onMove, onFinish, onExit }: {
+/** What is being marked right now, before it is saved or attached to a note. */
+type Selecting = { quote: DocQuote; source: "drag" | "hold" | "pen"; range?: Range; saving?: boolean };
+
+function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, pending, setPending, onMove, onFinish, onExit }: {
   doc: ReaderDocument; list: ReaderSection[]; index: number; state: DocState; onlyChanged: boolean;
-  draft: string; setDraft: (text: string) => void;
+  draft: string; setDraft: (text: string) => void; pending: DocQuote | null; setPending: (q: DocQuote | null) => void;
   onMove: (delta: 1 | -1) => void; onFinish: () => void; onExit: () => void;
 }) {
   const section = list[index];
   const next = list[index + 1];
+  const root = useRef<HTMLDivElement>(null);
   const deck = useRef<HTMLDivElement>(null);
+  const body = useRef<HTMLDivElement>(null);
   const bar = useRef<HTMLSpanElement>(null);
+  const composer = useRef<HTMLTextAreaElement>(null);
   const [size, setSize] = useStored("pdc-reader-size", "m");
+  const [tabletPref, setTablet] = useStored("pdc-reader-tablet", looksLikeTablet() ? "1" : "0");
+  const tablet = tabletPref === "1";
+  const [notesOpen, setNotesOpen] = useState(false);
   const speech = useSpeech();
-  const notesHere = state.notes.filter((n) => n.sectionId === section.id).length;
+  const { add } = useNoteActions(doc.id);
+  const notesHere = useMemo(() => state.notes.filter((n) => n.sectionId === section.id), [state.notes, section.id]);
+  const part = doc.parts.find((p) => p.id === section.part)!;
+  const forward = () => (next ? onMove(1) : onFinish());
+  const back = () => index > 0 && onMove(-1);
 
   // The card that was just on screen stays for a moment, so it can step back
   // while the new one comes up over it.
@@ -280,6 +309,9 @@ function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, on
     setShown({ id: section.id, index });
     setLeaving(before ? { section: before, dir: index > shown.index ? 1 : -1 } : null);
   }
+
+  const marking = useMarking(body, section.id);
+  const sel = marking.sel;
 
   useGSAP(() => {
     const card = deck.current?.querySelector<HTMLElement>(".rd-card.is-current");
@@ -292,45 +324,170 @@ function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, on
     if (old) {
       const id = leaving?.section.id;
       tl.to(old, {
-        y: dir > 0 ? -36 : 110, scale: dir > 0 ? 0.9 : 1.02, opacity: 0, filter: "blur(8px)", duration: 0.6, ease: "power3.inOut",
+        y: dir > 0 ? -36 : 110, scale: dir > 0 ? 0.9 : 1.02, opacity: 0, duration: 0.55, ease: "power3.inOut",
         onComplete: () => setLeaving((l) => (l?.section.id === id ? null : l)),
       }, 0);
     }
     tl.fromTo(card,
       { y: dir > 0 ? 140 : -60, scale: dir > 0 ? 1 : 0.93, opacity: 0, rotateX: dir > 0 ? 10 : -6 },
-      { y: 0, scale: 1, opacity: 1, rotateX: 0, duration: 0.9, ease: "expo.out", clearProps: "transform,opacity" }, old ? 0.12 : 0)
-      .fromTo(card.querySelectorAll(".rd-title .rd-w"), { opacity: 0.1, y: 10 }, { opacity: 1, y: 0, duration: 0.55, stagger: 0.04, ease: "power2.out" }, "<0.15")
-      .fromTo(card.querySelectorAll(".rd-block"), { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.06, ease: "power2.out" }, "<0.1")
+      { y: 0, scale: 1, opacity: 1, rotateX: 0, duration: 0.85, ease: "expo.out", clearProps: "transform,opacity" }, old ? 0.12 : 0)
+      .fromTo(card.querySelectorAll(".rd-title .rd-w"), { opacity: 0.1, y: 10 }, { opacity: 1, y: 0, duration: 0.5, stagger: 0.04, ease: "power2.out" }, "<0.15")
+      .fromTo(card.querySelectorAll(".rd-block"), { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.55, stagger: 0.05, ease: "power2.out", clearProps: "transform,opacity" }, "<0.1")
       .fromTo(deck.current!.querySelectorAll(".rd-ghost"), { y: 14 }, { y: 0, duration: 0.8, stagger: 0.06, ease: "back.out(2)" }, 0.1);
   }, { dependencies: [section.id], scope: deck });
 
   useEffect(() => {
     speech.stop();
+    setNotesOpen(false);
     const top = deck.current?.getBoundingClientRect().top ?? 0;
-    if (top < 0) window.scrollTo({ top: window.scrollY + top - 90, behavior: still() ? "auto" : "smooth" });
+    if (top >= 0) return;
+    const behavior = still() ? "auto" : "smooth";
+    if (tablet && root.current) root.current.scrollTo({ top: root.current.scrollTop + top - 90, behavior });
+    else window.scrollTo({ top: window.scrollY + top - 90, behavior });
   }, [section.id]);
+
+  // Keys and swipes always call the latest handlers without re-binding.
+  const latest = useRef({ forward, back, onExit, sel, clear: marking.clear });
+  latest.current = { forward, back, onExit, sel, clear: marking.clear };
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const el = e.target as HTMLElement;
       if (el.closest("input, textarea, select, [contenteditable=true], [role=dialog]") || e.ctrlKey || e.metaKey || e.altKey) return;
-      if (e.key === "ArrowRight") { e.preventDefault(); next ? onMove(1) : onFinish(); }
-      if (e.key === "ArrowLeft" && index > 0) { e.preventDefault(); onMove(-1); }
-      if (e.key === "Escape") onExit();
+      const l = latest.current;
+      if (e.key === "ArrowRight") { e.preventDefault(); l.forward(); }
+      if (e.key === "ArrowLeft") { e.preventDefault(); l.back(); }
+      if (e.key === "Escape") { if (l.sel) l.clear(); else l.onExit(); }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  });
+  }, []);
 
-  const part = doc.parts.find((p) => p.id === section.part)!;
+  // iPad: swipe the card sideways to page. The card follows the finger a
+  // little, so it is clear something is happening.
+  useEffect(() => {
+    const el = deck.current;
+    if (!tablet || !el) return;
+    let start: { x: number; y: number; id: number } | null = null;
+    let dragging = false;
+    const card = () => el.querySelector<HTMLElement>(".rd-card.is-current");
+    const down = (e: PointerEvent) => {
+      if (e.pointerType !== "touch") return;
+      start = { x: e.clientX, y: e.clientY, id: e.pointerId };
+      dragging = false;
+    };
+    const move = (e: PointerEvent) => {
+      if (!start || e.pointerId !== start.id) return;
+      const dx = e.clientX - start.x, dy = e.clientY - start.y;
+      if (!dragging && Math.abs(dx) > 14 && Math.abs(dx) > Math.abs(dy) * 1.5) dragging = true;
+      if (dragging && !still()) gsap.set(card(), { x: dx * 0.4, rotate: dx * 0.008 });
+    };
+    const up = (e: PointerEvent) => {
+      if (!start || e.pointerId !== start.id) return;
+      const dx = e.clientX - start.x;
+      start = null;
+      if (!dragging) return;
+      dragging = false;
+      if (Math.abs(dx) > 80) {
+        gsap.set(card(), { x: 0, rotate: 0 });
+        if (dx < 0) latest.current.forward(); else latest.current.back();
+      } else {
+        gsap.to(card(), { x: 0, rotate: 0, duration: 0.5, ease: "back.out(2)" });
+      }
+    };
+    el.addEventListener("pointerdown", down);
+    window.addEventListener("pointermove", move, { passive: true });
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+    return () => {
+      el.removeEventListener("pointerdown", down);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+    };
+  }, [tablet]);
+
+  // A mouse selection is drawn by the browser itself; re-rendering the text
+  // for it would only throw that selection away.
+  const selQuote = sel && sel.source !== "drag" ? sel.quote : null;
+  const marks = useMemo(() => {
+    const out = marksFor(section, notesHere);
+    if (pending) out.push({ id: "pending", ...pending, kind: "pending" });
+    if (selQuote) out.push({ id: "selecting", ...selQuote, kind: "selecting" });
+    return out;
+  }, [section, notesHere, pending, selQuote]);
+  const leavingMarks = useMemo(
+    () => (leaving ? marksFor(leaving.section, state.notes.filter((n) => n.sectionId === leaving.section.id)) : []),
+    [leaving, state.notes],
+  );
+
+  // A new marking sweeps in like a highlighter.
+  const fresh = useRef<string | null>(null);
+  useEffect(() => {
+    const id = fresh.current;
+    if (!id || !body.current) return;
+    const els = body.current.querySelectorAll(`[data-note="${id}"]`);
+    if (!els.length) return;
+    fresh.current = null;
+    if (!still()) gsap.fromTo(els, { backgroundSize: "0% 100%" }, { backgroundSize: "100% 100%", duration: 0.45, stagger: 0.12, ease: "power2.out" });
+  }, [marks]);
+
+  const markOnly = () => {
+    if (!sel) return;
+    const quote = sel.quote;
+    window.getSelection()?.removeAllRanges();
+    marking.set({ ...sel, source: "hold", saving: true });
+    add.mutate({ sectionId: section.id, text: "", quote }, {
+      onSuccess: ({ note }) => { fresh.current = note.id; marking.clear(); },
+      onError: () => marking.clear(),
+    });
+  };
+  const noteOnIt = () => {
+    if (!sel) return;
+    setPending(sel.quote);
+    window.getSelection()?.removeAllRanges();
+    marking.clear();
+    setNotesOpen(true);
+    setTimeout(() => {
+      composer.current?.focus({ preventScroll: true });
+      composer.current?.scrollIntoView({ block: "center", behavior: still() ? "auto" : "smooth" });
+    }, 80);
+  };
+
+  const flashNote = useCallback((id: string) => {
+    const el = root.current?.querySelector<HTMLElement>(`.rd-note[data-id="${id}"]`);
+    if (!el) return;
+    setNotesOpen(true);
+    el.scrollIntoView({ block: "nearest", behavior: still() ? "auto" : "smooth" });
+    if (!still()) gsap.fromTo(el, { boxShadow: "0 0 0 4px rgba(176, 106, 44, 0.45)" }, { boxShadow: "0 0 0 0px rgba(176, 106, 44, 0)", duration: 1.4, ease: "power2.out" });
+  }, []);
+  const flashMark = useCallback((id: string) => {
+    const els = body.current?.querySelectorAll<HTMLElement>(`[data-note="${id}"]`);
+    if (!els?.length) return;
+    setNotesOpen(false);
+    els[0].scrollIntoView({ block: "center", behavior: still() ? "auto" : "smooth" });
+    els.forEach((el) => { el.classList.remove("is-flash"); void el.offsetWidth; el.classList.add("is-flash"); });
+  }, []);
+  const hoverNote = useCallback((id: string | null) => {
+    body.current?.querySelectorAll(".rd-hl.is-active").forEach((el) => el.classList.remove("is-active"));
+    if (id) body.current?.querySelectorAll(`[data-note="${id}"]`).forEach((el) => el.classList.add("is-active"));
+  }, []);
+
+  const onBodyClick = useCallback((e: React.MouseEvent) => {
+    const id = (e.target as Element).closest<HTMLElement>("mark[data-note]")?.dataset.note;
+    if (id && id !== "pending" && id !== "selecting" && window.getSelection()?.isCollapsed !== false) flashNote(id);
+  }, [flashNote]);
 
   return (
-    <div className={cx("rd rd-reading", size === "l" && "is-large")}>
+    <div ref={root} className={cx("rd rd-reading", size === "l" && "is-large", tablet && "is-tablet", notesOpen && "notes-open")}>
       <Ambient />
       <header className="rd-bar">
         <button type="button" className="rd-exit" onClick={onExit}><X /> <span>Overzicht</span></button>
         <span className="rd-where s-truncate">{onlyChanged ? "Alleen de wijzigingen" : partLabel(part)}</span>
         <div className="rd-tools">
+          <button type="button" className="rd-tool" aria-pressed={tablet} onClick={() => setTablet(tablet ? "0" : "1")} title="iPad-modus: hele scherm, vegen om te bladeren">
+            <Tablet /> <span className="rd-tool-label">iPad</span>
+          </button>
           <button type="button" className="rd-tool" aria-pressed={size === "l"} onClick={() => setSize(size === "l" ? "m" : "l")} title="Grotere letters">
             <span className="rd-aa">Aa</span>
           </button>
@@ -354,19 +511,37 @@ function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, on
           <span className="rd-ghost two" aria-hidden="true" />
           <span className="rd-ghost one" aria-hidden="true" />
           {leaving && (
-            <SectionCard key={`was-${leaving.section.id}`} doc={doc} section={leaving.section} className="is-leaving" style={{ zIndex: leaving.dir > 0 ? 1 : 3 }} />
+            <SectionCard key={`was-${leaving.section.id}`} doc={doc} section={leaving.section} marks={leavingMarks} className="is-leaving" z={leaving.dir > 0 ? 1 : 3} />
           )}
-          <SectionCard key={section.id} doc={doc} section={section} className="is-current" style={{ zIndex: 2 }} />
+          <SectionCard key={section.id} doc={doc} section={section} marks={marks} className="is-current" z={2} bodyRef={body} onBodyClick={onBodyClick} />
         </div>
-        <NotesPanel doc={doc} section={section} notes={state.notes} draft={draft} setDraft={setDraft} />
+        <NotesPanel
+          doc={doc}
+          section={section}
+          notes={notesHere}
+          draft={draft}
+          setDraft={setDraft}
+          pending={pending}
+          setPending={setPending}
+          composer={composer}
+          tablet={tablet}
+          onClose={() => setNotesOpen(false)}
+          onSaved={(id) => { fresh.current = id; }}
+          onQuote={flashMark}
+          onHover={hoverNote}
+        />
       </div>
+      <button type="button" className="rd-scrim" aria-label="Notities sluiten" tabIndex={-1} onClick={() => setNotesOpen(false)} />
 
       <nav className="rd-nav" aria-label="Bladeren">
-        <Button variant="ghost" icon={<ArrowLeft />} disabled={index === 0} onClick={() => onMove(-1)}>Vorige</Button>
-        <span className="rd-keys" aria-hidden="true"><kbd>←</kbd> <kbd>→</kbd> bladeren</span>
-        {notesHere ? <span className="rd-notes-chip"><MessageSquare /> {notesHere}</span> : null}
+        <Button variant="ghost" icon={<ArrowLeft />} disabled={index === 0} onClick={back}>Vorige</Button>
+        <span className="rd-keys" aria-hidden="true">{tablet ? "Veeg om te bladeren" : <><kbd>←</kbd> <kbd>→</kbd> bladeren</>}</span>
+        <button type="button" className="rd-notes-toggle" onClick={() => setNotesOpen((o) => !o)} aria-expanded={notesOpen}>
+          <MessageSquare /> Notities{notesHere.length ? <span className="rd-notes-count">{notesHere.length}</span> : null}
+        </button>
+        {notesHere.length && !tablet ? <span className="rd-notes-chip"><MessageSquare /> {notesHere.length}</span> : null}
         <Magnetic>
-          <button type="button" className="rd-next" onClick={() => (next ? onMove(1) : onFinish())}>
+          <button type="button" className="rd-next" onClick={forward}>
             <span className="rd-next-text">
               <small>{next ? "Volgende" : "Laatste stuk"}</small>
               <b>{next ? next.title : "Klaar met lezen"}</b>
@@ -375,17 +550,52 @@ function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, on
           </button>
         </Magnetic>
       </nav>
+
+      {sel && !sel.saving && (
+        <MarkToolbar
+          sel={sel}
+          body={body}
+          canGrow={!!grow(body.current, sel.quote)}
+          onMark={markOnly}
+          onNote={noteOnIt}
+          onGrow={() => { const q = grow(body.current, sel.quote); if (q) { window.getSelection()?.removeAllRanges(); marking.set({ quote: q, source: "hold" }); } }}
+          onClose={marking.clear}
+        />
+      )}
+      <HoldRing ring={marking.ring} />
     </div>
   );
 }
 
-function SectionCard({ doc, section, className, style }: {
-  doc: ReaderDocument; section: ReaderSection; className: string; style?: React.CSSProperties;
+type Mark = DocQuote & { id: string; kind: "saved" | "pending" | "selecting" };
+
+function marksFor(section: ReaderSection, notes: DocNote[]): Mark[] {
+  const out: Mark[] = [];
+  for (const n of notes) {
+    const at = n.quote && placeQuote(section, n.quote);
+    if (at) out.push({ ...at, id: n.id, kind: "saved" });
+  }
+  return out;
+}
+
+/** Where a saved quote sits now; it follows its words if the text around them moved. */
+function placeQuote(section: ReaderSection, q: DocQuote): DocQuote | null {
+  const b = section.blocks[q.block];
+  if (!b || b.t === "table" || b.t === "meta") return null;
+  const text = displayText(b.text);
+  if (text.slice(q.start, q.end) === q.text) return q;
+  const at = text.indexOf(q.text);
+  return at >= 0 ? { ...q, start: at, end: at + q.text.length } : null;
+}
+
+const SectionCard = memo(function SectionCard({ doc, section, marks, className, z, bodyRef, onBodyClick }: {
+  doc: ReaderDocument; section: ReaderSection; marks: Mark[]; className: string; z: number;
+  bodyRef?: RefObject<HTMLDivElement | null>; onBodyClick?: (e: React.MouseEvent) => void;
 }) {
   const part = doc.parts.find((p) => p.id === section.part)!;
   const firstOfPart = doc.sections.find((s) => s.part === part.id)?.id === section.id;
   return (
-    <article className={cx("rd-card", className)} style={style} aria-hidden={className === "is-leaving" || undefined}>
+    <article className={cx("rd-card", className)} style={{ zIndex: z }} aria-hidden={className === "is-leaving" || undefined}>
       <div className="rd-card-top">
         <span className="rd-part">{partLabel(part)}</span>
         {section.changed && <span className="rd-new"><Sparkles /> Nieuw in {doc.version}</span>}
@@ -393,52 +603,81 @@ function SectionCard({ doc, section, className, style }: {
       </div>
       <h2 className="rd-title"><Words text={section.title} /></h2>
       {firstOfPart && part.meta.length > 0 && <p className="rd-meta rd-block">{part.meta.join(" · ")}</p>}
-      <div className="rd-body"><Blocks blocks={section.blocks} /></div>
+      <div className="rd-body" ref={bodyRef} onClick={onBodyClick}><Blocks blocks={section.blocks} marks={marks} /></div>
     </article>
   );
-}
+});
 
-function Blocks({ blocks }: { blocks: ReaderBlock[] }) {
+function Blocks({ blocks, marks }: { blocks: ReaderBlock[]; marks: Mark[] }) {
   const out: ReactNode[] = [];
-  let items: string[] = [];
+  let items: { i: number; text: string }[] = [];
+  const own = (i: number) => marks.filter((m) => m.block === i);
   const flush = (key: number) => {
     if (!items.length) return;
-    out.push(<ul className="rd-block" key={`ul-${key}`}>{items.map((t, i) => <li key={i}>{rich(t)}</li>)}</ul>);
+    out.push(<ul className="rd-block" key={`ul-${key}`}>{items.map((it) => <li key={it.i} data-b={it.i}><Rich text={it.text} marks={own(it.i)} /></li>)}</ul>);
     items = [];
   };
   blocks.forEach((b, i) => {
-    if (b.t === "li") { items.push(b.text); return; }
+    if (b.t === "li") { items.push({ i, text: b.text }); return; }
     flush(i);
     if (b.t === "table") {
       out.push(
         <div className="rd-table rd-block" key={i}>
           <table>
             <thead><tr>{b.rows[0].map((c, j) => <th key={j}>{c}</th>)}</tr></thead>
-            <tbody>{b.rows.slice(1).map((r, j) => <tr key={j}>{r.map((c, k) => <td key={k}>{rich(c)}</td>)}</tr>)}</tbody>
+            <tbody>{b.rows.slice(1).map((r, j) => <tr key={j}>{r.map((c, k) => <td key={k}><Rich text={c} /></td>)}</tr>)}</tbody>
           </table>
         </div>,
       );
     } else if (b.t === "note") {
-      out.push(<div className="rd-callout rd-block" key={i}><Info /> <p>{rich(b.text)}</p></div>);
+      out.push(<div className="rd-callout rd-block" key={i}><Info /> <p data-b={i}><Rich text={b.text} marks={own(i)} /></p></div>);
     } else if (b.t === "meta") {
       out.push(<p className="rd-meta rd-block" key={i}>{b.text}</p>);
     } else {
-      out.push(<p className="rd-block" key={i}>{rich(b.text)}</p>);
+      out.push(<p className="rd-block" key={i} data-b={i}><Rich text={b.text} marks={own(i)} /></p>);
     }
   });
   flush(blocks.length);
   return <>{out}</>;
 }
 
-/** Bold lead-ins and links; everything else is plain text. */
-function rich(text: string): ReactNode {
-  return text.split(/(\*\*[^*]+\*\*|https?:\/\/[^\s)]+)/g).filter(Boolean).map((part, i) => {
-    if (part.startsWith("**")) return <strong key={i}>{part.slice(2, -2)}</strong>;
-    if (/^https?:\/\//.test(part)) {
-      return <a key={i} href={part} target="_blank" rel="noreferrer">{part.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}</a>;
-    }
-    return <Fragment key={i}>{part}</Fragment>;
+type Token = { text: string; bold?: boolean; href?: string };
+
+/** Bold lead-ins and links; everything else is plain text. Offsets of marks count these display strings. */
+function tokens(src: string): Token[] {
+  return src.split(/(\*\*[^*]+\*\*|https?:\/\/[^\s)]+)/g).filter(Boolean).map((part) => {
+    if (part.startsWith("**")) return { text: part.slice(2, -2), bold: true };
+    if (/^https?:\/\//.test(part)) return { text: part.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, ""), href: part };
+    return { text: part };
   });
+}
+const displayText = (src: string) => tokens(src).map((t) => t.text).join("");
+
+function Rich({ text, marks = [] }: { text: string; marks?: Mark[] }) {
+  const out: ReactNode[] = [];
+  const cuts = [...new Set(marks.flatMap((m) => [m.start, m.end]))];
+  let pos = 0;
+  tokens(text).forEach((t, ti) => {
+    const end = pos + t.text.length;
+    const points = [pos, ...cuts.filter((c) => c > pos && c < end).sort((a, b) => a - b), end];
+    for (let k = 0; k < points.length - 1; k++) {
+      const a = points[k], b = points[k + 1];
+      const piece = t.text.slice(a - pos, b - pos);
+      let node: ReactNode = t.href ? <a href={t.href} target="_blank" rel="noreferrer">{piece}</a> : t.bold ? <strong>{piece}</strong> : piece;
+      const cover = marks.filter((m) => m.start <= a && m.end >= b);
+      if (cover.length) {
+        const top = cover.find((m) => m.kind !== "saved") || cover[0];
+        node = (
+          <mark className={cx("rd-hl", top.kind !== "saved" && `is-${top.kind}`, cover.length > 1 && "is-double")} data-note={top.id}>
+            {node}
+          </mark>
+        );
+      }
+      out.push(<Fragment key={`${ti}-${k}`}>{node}</Fragment>);
+    }
+    pos = end;
+  });
+  return <>{out}</>;
 }
 
 function Words({ text }: { text: string }) {
@@ -456,15 +695,308 @@ function Words({ text }: { text: string }) {
 }
 
 // ---------------------------------------------------------------------------
+// Marking: select with the mouse, hold a sentence, or draw with a pencil
+// ---------------------------------------------------------------------------
+
+type RingApi = { el: RefObject<HTMLSpanElement | null>; show: (x: number, y: number) => void; hide: () => void; done: () => void };
+
+function useMarking(body: RefObject<HTMLDivElement | null>, key: string) {
+  const [sel, setSel] = useState<Selecting | null>(null);
+  const holding = useRef(false);
+  const ringEl = useRef<HTMLSpanElement>(null);
+  const ring = useMemo<RingApi>(() => {
+    const circle = () => ringEl.current?.querySelector("circle");
+    return {
+      el: ringEl,
+      show(x, y) {
+        const el = ringEl.current;
+        if (!el || still()) return;
+        gsap.killTweensOf([el, circle()]);
+        gsap.set(el, { x: x - 28, y: y - 28, opacity: 0, scale: 0.6 });
+        gsap.to(el, { opacity: 1, scale: 1, duration: 0.2, delay: 0.12, ease: "power2.out" });
+        gsap.fromTo(circle()!, { strokeDashoffset: 151 }, { strokeDashoffset: 0, duration: HOLD_MS / 1000, ease: "none" });
+      },
+      hide() {
+        const el = ringEl.current;
+        if (!el) return;
+        gsap.killTweensOf([el, circle()]);
+        gsap.to(el, { opacity: 0, duration: 0.15 });
+      },
+      done() {
+        const el = ringEl.current;
+        if (el && !still()) gsap.to(el, { scale: 1.5, opacity: 0, duration: 0.35, ease: "power2.out" });
+      },
+    };
+  }, []);
+
+  const clear = useCallback(() => {
+    setSel(null);
+    window.getSelection()?.removeAllRanges();
+  }, []);
+
+  useEffect(() => setSel(null), [key]);
+
+  // Mouse or keyboard selection: the browser selects, we offer to mark it.
+  useEffect(() => {
+    let t = 0;
+    const onChange = () => {
+      clearTimeout(t);
+      t = window.setTimeout(() => {
+        if (holding.current) return;
+        const s = window.getSelection();
+        const root = body.current;
+        if (!s || !root || !s.rangeCount || s.isCollapsed) {
+          setSel((cur) => (cur?.source === "drag" ? null : cur));
+          return;
+        }
+        const range = s.getRangeAt(0);
+        if (!root.contains(range.commonAncestorContainer) && !root.contains(range.startContainer)) return;
+        const quote = quoteFromRange(range, root);
+        if (quote) setSel({ quote, source: "drag", range: range.cloneRange() });
+      }, 120);
+    };
+    document.addEventListener("selectionchange", onChange);
+    return () => { clearTimeout(t); document.removeEventListener("selectionchange", onChange); };
+  }, [key]);
+
+  // Hold a sentence still for a moment, or draw over words with a pencil.
+  useEffect(() => {
+    const root = body.current;
+    if (!root) return;
+    let timer = 0;
+    let start: { x: number; y: number; id: number } | null = null;
+    let pen: { block: number; offset: number; id: number } | null = null;
+    let lastType = "mouse";
+    let frame = 0;
+    const cancel = () => { clearTimeout(timer); timer = 0; start = null; ring.hide(); };
+    const down = (e: PointerEvent) => {
+      lastType = e.pointerType;
+      if (e.button !== 0 || (e.target as Element).closest("a")) return;
+      const at = posAt(root, e.clientX, e.clientY);
+      if (!at) return;
+      if (e.pointerType === "pen") {
+        e.preventDefault();
+        holding.current = true;
+        pen = { ...at, id: e.pointerId };
+        setSel(null);
+        return;
+      }
+      start = { x: e.clientX, y: e.clientY, id: e.pointerId };
+      ring.show(e.clientX, e.clientY);
+      timer = window.setTimeout(() => {
+        timer = 0;
+        const text = blockText(root, at.block);
+        const [a, b] = sentenceAt(text, at.offset);
+        if (b - a < 2) return cancel();
+        holding.current = true;
+        window.getSelection()?.removeAllRanges();
+        navigator.vibrate?.(12);
+        ring.done();
+        setSel({ quote: { block: at.block, start: a, end: b, text: text.slice(a, b) }, source: "hold" });
+      }, HOLD_MS);
+    };
+    const move = (e: PointerEvent) => {
+      if (pen && e.pointerId === pen.id) {
+        const { clientX: x, clientY: y } = e;
+        cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() => {
+          const at = pen && posAt(root, x, y);
+          if (!pen || !at || at.block !== pen.block) return;
+          const text = blockText(root, pen.block);
+          const [a, b] = trimSpan(text, Math.min(pen.offset, at.offset), Math.max(pen.offset, at.offset));
+          if (b - a >= 2) setSel({ quote: { block: pen.block, start: a, end: b, text: text.slice(a, b) }, source: "pen" });
+        });
+        return;
+      }
+      if (start && e.pointerId === start.id && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 8) cancel();
+    };
+    const up = () => {
+      pen = null;
+      if (timer) cancel();
+      start = null;
+      setTimeout(() => { holding.current = false; }, 50);
+    };
+    const noMenu = (e: Event) => { if (lastType !== "mouse" || holding.current) e.preventDefault(); };
+    const noSelect = (e: Event) => { if (holding.current) e.preventDefault(); };
+    root.addEventListener("pointerdown", down);
+    root.addEventListener("contextmenu", noMenu);
+    document.addEventListener("selectstart", noSelect);
+    window.addEventListener("pointermove", move, { passive: true });
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+    return () => {
+      cancel();
+      cancelAnimationFrame(frame);
+      root.removeEventListener("pointerdown", down);
+      root.removeEventListener("contextmenu", noMenu);
+      document.removeEventListener("selectstart", noSelect);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+    };
+  }, [key, ring, body]);
+
+  return { sel, set: setSel, clear, ring };
+}
+
+function HoldRing({ ring }: { ring: RingApi }) {
+  return (
+    <span className="rd-holdring" ref={ring.el} aria-hidden="true">
+      <svg viewBox="0 0 56 56"><circle cx="28" cy="28" r="24" strokeDasharray="151" strokeDashoffset="151" /></svg>
+    </span>
+  );
+}
+
+/** Floats above what you marked: keep it, or write something about it. */
+function MarkToolbar({ sel, body, canGrow, onMark, onNote, onGrow, onClose }: {
+  sel: Selecting; body: RefObject<HTMLDivElement | null>; canGrow: boolean;
+  onMark: () => void; onNote: () => void; onGrow: () => void; onClose: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ x: number; y: number; below: boolean } | null>(null);
+
+  useLayoutEffect(() => {
+    let frame = 0;
+    const place = () => {
+      const rect = sel.range ? sel.range.getBoundingClientRect() : unionRect(body.current?.querySelectorAll(`[data-note="selecting"]`));
+      if (!rect || (!rect.width && !rect.height)) return;
+      const below = rect.top < 120;
+      const half = (ref.current?.offsetWidth || 300) / 2 + 12;
+      const x = Math.min(Math.max(rect.left + rect.width / 2, half), window.innerWidth - half);
+      setPos({ x, y: below ? rect.bottom + 12 : rect.top - 12, below });
+    };
+    const onScroll = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(place); };
+    place();
+    window.addEventListener("scroll", onScroll, { capture: true, passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll, { capture: true });
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [sel, body]);
+
+  useGSAP(() => {
+    if (!pos || still()) return;
+    gsap.from(ref.current, { opacity: 0, y: pos.below ? -8 : 8, scale: 0.94, duration: 0.35, ease: "back.out(2)" });
+  }, { dependencies: [!!pos, sel.quote.start, sel.quote.block] });
+
+  // Rendered hidden at first, so its width is known before it is placed.
+  return (
+    <div
+      ref={ref}
+      className={cx("rd-marker", pos?.below && "below")}
+      style={pos ? { left: pos.x, top: pos.y } : { left: 0, top: 0, visibility: "hidden" }}
+      role="toolbar"
+      aria-label="Markeren"
+      onPointerDown={(e) => e.preventDefault()}
+    >
+      <button type="button" onClick={onMark}><Highlighter /> Markeer</button>
+      <button type="button" onClick={onNote}><MessageSquarePlus /> Notitie</button>
+      {canGrow && <button type="button" onClick={onGrow} title="Ook de volgende zin"><Plus /> Langer</button>}
+      <button type="button" className="icon" onClick={onClose} aria-label="Niet markeren"><X /></button>
+    </div>
+  );
+}
+
+function unionRect(els: NodeListOf<Element> | undefined): DOMRect | null {
+  if (!els?.length) return null;
+  let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
+  els.forEach((el) => {
+    for (const x of el.getClientRects()) { l = Math.min(l, x.left); t = Math.min(t, x.top); r = Math.max(r, x.right); b = Math.max(b, x.bottom); }
+  });
+  return Number.isFinite(l) ? new DOMRect(l, t, r - l, b - t) : null;
+}
+
+const blockEl = (n: Node, root: Element) => {
+  const el = (n.nodeType === Node.ELEMENT_NODE ? (n as Element) : n.parentElement)?.closest<HTMLElement>("[data-b]");
+  return el && root.contains(el) ? el : null;
+};
+const blockText = (root: Element, block: number) => root.querySelector(`[data-b="${block}"]`)?.textContent || "";
+
+/** Characters from the start of `el` up to a point inside it. */
+function offsetIn(el: Element, node: Node, offset: number) {
+  const r = document.createRange();
+  r.selectNodeContents(el);
+  r.setEnd(node, offset);
+  return r.toString().length;
+}
+
+function trimSpan(text: string, a: number, b: number): [number, number] {
+  while (a < b && /\s/.test(text[a])) a++;
+  while (b > a && /\s/.test(text[b - 1])) b--;
+  return [a, b];
+}
+
+function quoteFromRange(range: Range, root: Element): DocQuote | null {
+  const first = blockEl(range.startContainer, root);
+  if (!first) return null;
+  const text = first.textContent || "";
+  const a0 = offsetIn(first, range.startContainer, range.startOffset);
+  const b0 = blockEl(range.endContainer, root) === first ? offsetIn(first, range.endContainer, range.endOffset) : text.length;
+  const [a, b] = trimSpan(text, a0, b0);
+  return b - a >= 2 ? { block: Number(first.dataset.b), start: a, end: b, text: text.slice(a, b) } : null;
+}
+
+type CaretDoc = Document & { caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null };
+
+function posAt(root: Element, x: number, y: number): { block: number; offset: number } | null {
+  const d = document as CaretDoc;
+  let node: Node | null = null, offset = 0;
+  if (d.caretPositionFromPoint) {
+    const p = d.caretPositionFromPoint(x, y);
+    if (p) { node = p.offsetNode; offset = p.offset; }
+  } else {
+    const r = document.caretRangeFromPoint?.(x, y);
+    if (r) { node = r.startContainer; offset = r.startOffset; }
+  }
+  const el = node && blockEl(node, root);
+  return el && node ? { block: Number(el.dataset.b), offset: offsetIn(el, node, offset) } : null;
+}
+
+function sentences(text: string): [number, number][] {
+  const spans: [number, number][] = [];
+  if (typeof Intl.Segmenter === "function") {
+    for (const s of new Intl.Segmenter("nl", { granularity: "sentence" }).segment(text)) spans.push(trimSpan(text, s.index, s.index + s.segment.length));
+  } else {
+    for (const m of text.matchAll(/[^.!?]+[.!?]*\s*/g)) spans.push(trimSpan(text, m.index ?? 0, (m.index ?? 0) + m[0].length));
+  }
+  return spans.filter(([a, b]) => b > a);
+}
+
+function sentenceAt(text: string, offset: number): [number, number] {
+  const spans = sentences(text);
+  return spans.find(([a, b]) => offset >= a && offset <= b) || spans.find(([a]) => a >= offset) || [0, 0];
+}
+
+/** The same marking, one sentence longer. */
+function grow(root: Element | null, q: DocQuote): DocQuote | null {
+  if (!root) return null;
+  const text = blockText(root, q.block);
+  const nextSpan = sentences(text).find(([a]) => a >= q.end);
+  return nextSpan ? { ...q, end: nextSpan[1], text: text.slice(q.start, nextSpan[1]) } : null;
+}
+
+function inTextOrder(notes: DocNote[]) {
+  return [...notes].sort((a, b) => {
+    if (a.quote && b.quote) return a.quote.block - b.quote.block || a.quote.start - b.quote.start;
+    if (a.quote || b.quote) return a.quote ? -1 : 1;
+    return a.createdAt.localeCompare(b.createdAt);
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Notes
 // ---------------------------------------------------------------------------
 
-function NotesPanel({ doc, section, notes, draft, setDraft }: {
+function NotesPanel({ doc, section, notes, draft, setDraft, pending, setPending, composer, tablet, onClose, onSaved, onQuote, onHover }: {
   doc: ReaderDocument; section: ReaderSection; notes: DocNote[]; draft: string; setDraft: (t: string) => void;
+  pending: DocQuote | null; setPending: (q: DocQuote | null) => void; composer: RefObject<HTMLTextAreaElement | null>; tablet: boolean;
+  onClose: () => void; onSaved: (id: string) => void; onQuote: (id: string) => void; onHover: (id: string | null) => void;
 }) {
   const { user } = useAuth();
-  const { add } = useNoteActions(doc.id);
-  const here = notes.filter((n) => n.sectionId === section.id);
+  const actions = useNoteActions(doc.id);
+  const ordered = useMemo(() => inTextOrder(notes), [notes]);
   const listRef = useRef<HTMLDivElement>(null);
   const seen = useRef(new Set<string>());
 
@@ -473,49 +1005,75 @@ function NotesPanel({ doc, section, notes, draft, setDraft }: {
     const fresh = els.filter((el) => !seen.current.has(el.dataset.id!));
     els.forEach((el) => seen.current.add(el.dataset.id!));
     if (still() || !fresh.length) return;
-    gsap.fromTo(fresh, { opacity: 0, y: 16, scale: 0.96 }, { opacity: 1, y: 0, scale: 1, duration: 0.6, stagger: 0.08, ease: "back.out(1.7)" });
-  }, { dependencies: [section.id, here.map((n) => n.id).join()], scope: listRef });
+    gsap.fromTo(fresh, { opacity: 0, y: 16, scale: 0.96 }, { opacity: 1, y: 0, scale: 1, duration: 0.6, stagger: 0.08, ease: "back.out(1.7)", clearProps: "transform" });
+  }, { dependencies: [section.id, ordered.map((n) => n.id).join()], scope: listRef });
 
   const save = () => {
     const text = draft.trim();
-    if (!text) return;
-    add.mutate({ sectionId: section.id, text }, { onSuccess: () => setDraft("") });
+    if (!text && !pending) return;
+    actions.add.mutate({ sectionId: section.id, text, quote: pending }, {
+      onSuccess: ({ note }) => { setDraft(""); setPending(null); onSaved(note.id); },
+    });
   };
 
   return (
     <aside className="rd-notes" aria-label="Notities bij dit stuk">
       <div className="rd-notes-head">
-        <MessageSquare /> <b>Notities</b> {here.length ? <span className="rd-notes-count">{here.length}</span> : null}
+        <MessageSquare /> <b>Notities</b> {notes.length ? <span className="rd-notes-count">{notes.length}</span> : null}
+        <button type="button" className="rd-notes-close" onClick={onClose} aria-label="Notities sluiten"><X /></button>
       </div>
       <div className="rd-compose">
+        {pending && (
+          <div className="rd-compose-quote">
+            <Highlighter />
+            <q className="rd-quote">{pending.text}</q>
+            <button type="button" onClick={() => setPending(null)} aria-label="Markering weghalen"><X /></button>
+          </div>
+        )}
         <Textarea
+          ref={composer}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); save(); } }}
-          placeholder="Wat valt je op? Schrijf het kort op."
+          placeholder={pending ? "Wat wil je hierover zeggen?" : "Wat valt je op? Schrijf het kort op."}
           rows={3}
           aria-label="Nieuwe notitie"
         />
         <div className="rd-compose-foot">
-          <span className="rd-quiet"><kbd>Ctrl</kbd> <kbd>Enter</kbd></span>
-          <Button variant="primary" size="sm" onClick={save} disabled={!draft.trim()} loading={add.isPending}>Opslaan</Button>
+          {tablet ? <span /> : <span className="rd-quiet"><kbd>Ctrl</kbd> <kbd>Enter</kbd></span>}
+          <Button variant="primary" size="sm" onClick={save} disabled={!draft.trim() && !pending} loading={actions.add.isPending}>
+            {pending && !draft.trim() ? "Alleen markeren" : "Opslaan"}
+          </Button>
         </div>
       </div>
       <div className="rd-note-list" ref={listRef}>
-        {here.map((n) => <NoteItem key={n.id} doc={doc} note={n} mine={n.authorId === user?.id} />)}
-        {!here.length && <p className="rd-quiet">Nog geen notities bij dit stuk.</p>}
+        {ordered.map((n) => (
+          <NoteItem key={n.id} note={n} mine={n.authorId === user?.id} actions={actions} onQuote={onQuote} onHover={onHover} />
+        ))}
+        {!ordered.length && (
+          <p className="rd-quiet rd-hint">
+            <Highlighter /> {tablet ? "Houd een zin even vast, of streep met je Pencil over de tekst, om te markeren." : "Selecteer tekst of houd een zin even vast om te markeren."}
+          </p>
+        )}
       </div>
     </aside>
   );
 }
 
-function NoteItem({ doc, note, mine }: { doc: ReaderDocument; note: DocNote; mine: boolean }) {
-  const { edit, remove } = useNoteActions(doc.id);
+function NoteItem({ note, mine, actions, onQuote, onHover }: {
+  note: DocNote; mine: boolean; actions: ReturnType<typeof useNoteActions>;
+  onQuote: (id: string) => void; onHover: (id: string | null) => void;
+}) {
   const confirm = useConfirm();
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(note.text);
   return (
-    <div className="rd-note" data-id={note.id}>
+    <div
+      className="rd-note"
+      data-id={note.id}
+      onMouseEnter={note.quote ? () => onHover(note.id) : undefined}
+      onMouseLeave={note.quote ? () => onHover(null) : undefined}
+    >
       <span className="rd-note-avatar" aria-hidden="true">{initials(note.authorName)}</span>
       <div className="rd-note-main">
         <div className="rd-note-head">
@@ -523,7 +1081,14 @@ function NoteItem({ doc, note, mine }: { doc: ReaderDocument; note: DocNote; min
           <span className="rd-quiet">{ago(note.updatedAt)}</span>
           {mine && !editing && (
             <span className="rd-note-actions">
-              <Button variant="ghost" size="sm" iconOnly aria-label="Notitie aanpassen" icon={<Pencil />} onClick={() => { setText(note.text); setEditing(true); }} />
+              <Button
+                variant="ghost"
+                size="sm"
+                iconOnly
+                aria-label={note.text ? "Notitie aanpassen" : "Notitie toevoegen"}
+                icon={<Pencil />}
+                onClick={() => { setText(note.text); setEditing(true); }}
+              />
               <Button
                 variant="ghost"
                 size="sm"
@@ -531,12 +1096,20 @@ function NoteItem({ doc, note, mine }: { doc: ReaderDocument; note: DocNote; min
                 aria-label="Notitie verwijderen"
                 icon={<Trash2 />}
                 onClick={async () => {
-                  if (await confirm({ title: "Notitie verwijderen?", body: "Deze notitie is daarna weg, ook voor de anderen.", confirm: "Verwijderen", danger: true })) remove.mutate(note.id);
+                  const what = note.text ? "Deze notitie" : "Deze markering";
+                  if (await confirm({ title: note.text ? "Notitie verwijderen?" : "Markering weghalen?", body: `${what} is daarna weg, ook voor de anderen.`, confirm: "Verwijderen", danger: true })) {
+                    actions.remove.mutate(note.id);
+                  }
                 }}
               />
             </span>
           )}
         </div>
+        {note.quote && (
+          <button type="button" className="rd-note-quote" onClick={() => onQuote(note.id)} title="Laat zien in de tekst">
+            <q className="rd-quote">{note.quote.text}</q>
+          </button>
+        )}
         {editing ? (
           <div className="rd-compose">
             <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} aria-label="Notitie aanpassen" autoFocus />
@@ -545,16 +1118,18 @@ function NoteItem({ doc, note, mine }: { doc: ReaderDocument; note: DocNote; min
               <Button
                 variant="primary"
                 size="sm"
-                disabled={!text.trim()}
-                loading={edit.isPending}
-                onClick={() => edit.mutate({ id: note.id, text: text.trim() }, { onSuccess: () => setEditing(false) })}
+                disabled={!text.trim() && !note.quote}
+                loading={actions.edit.isPending}
+                onClick={() => actions.edit.mutate({ id: note.id, text: text.trim() }, { onSuccess: () => setEditing(false) })}
               >
                 Opslaan
               </Button>
             </div>
           </div>
-        ) : (
+        ) : note.text ? (
           <p className="rd-note-text">{note.text}</p>
+        ) : (
+          <p className="rd-quiet">Gemarkeerd</p>
         )}
       </div>
     </div>
@@ -592,7 +1167,7 @@ function FinishView({ doc, state, onOpen, onOverview }: {
 
   return (
     <div className="rd rd-start" ref={root}>
-      <Ambient />
+      <Ambient moving />
       <section className="rd-hero rd-finish">
         <span className="rd-sparks" aria-hidden="true">{Array.from({ length: 36 }, (_, i) => <span key={i} className={cx("rd-spark", `c${i % 4}`)} />)}</span>
         <h1 className="rd-h1"><Words text={firstOpen ? "Je bent bij het einde." : "Je bent er doorheen."} /></h1>
@@ -618,20 +1193,14 @@ function FinishView({ doc, state, onOpen, onOverview }: {
 // Small pieces
 // ---------------------------------------------------------------------------
 
-/** Soft, slowly drifting colour behind everything, with a little grain. */
-function Ambient() {
-  const ref = useRef<HTMLDivElement>(null);
-  useGSAP(() => {
-    if (still()) return;
-    gsap.utils.toArray<HTMLElement>(".rd-blob", ref.current).forEach((el, i) => {
-      gsap.to(el, {
-        x: gsap.utils.random(-90, 90), y: gsap.utils.random(-70, 70), scale: gsap.utils.random(0.9, 1.2),
-        duration: gsap.utils.random(16, 26), ease: "sine.inOut", repeat: -1, yoyo: true, delay: -i * 4,
-      });
-    });
-  }, { scope: ref });
+/**
+ * Soft colour behind everything, with a little grain. It only drifts on the
+ * overview and the end screen, as a CSS animation the compositor runs without
+ * JavaScript; while reading it stands still, so nothing redraws behind the text.
+ */
+function Ambient({ moving = false }: { moving?: boolean }) {
   return (
-    <div className="rd-ambient" ref={ref} aria-hidden="true">
+    <div className={cx("rd-ambient", moving && "is-moving")} aria-hidden="true">
       <span className="rd-blob a" />
       <span className="rd-blob b" />
       <span className="rd-blob c" />

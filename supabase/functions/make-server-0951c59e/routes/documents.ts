@@ -23,7 +23,12 @@ const readKey = (doc: string, userId: string) => `documents:${doc}:read:${userId
 // Values are stored as JSON text, but older rows elsewhere are objects; accept both.
 const parse = <T,>(v: unknown, fallback: T): T => (v == null ? fallback : typeof v === "string" ? JSON.parse(v) : (v as T));
 
-type Note = { id: string; sectionId: string; text: string; authorId: string; authorName: string; createdAt: string; updatedAt: string };
+/** The marked words a note belongs to: which block of the piece, and where in its text. */
+type Quote = { block: number; start: number; end: number; text: string };
+type Note = {
+  id: string; sectionId: string; text: string; quote?: Quote | null;
+  authorId: string; authorName: string; createdAt: string; updatedAt: string;
+};
 
 async function loadNotes(doc: string): Promise<Note[]> {
   return parse<Note[]>(await kv.get(notesKey(doc)), []);
@@ -37,14 +42,22 @@ r.get(`${A}/:doc`, async (c) => {
 });
 
 const sectionId = z.string().regex(/^[a-z0-9-]{1,120}$/, "Onbekend stuk.");
-const noteText = text(4000).min(1, "Schrijf eerst iets.");
+const noteText = text(4000).default("");
+const quote = z
+  .object({ block: z.number().int().min(0).max(500), start: z.number().int().min(0), end: z.number().int().min(1), text: text(2000).min(1) })
+  .refine((q) => q.end > q.start, "Markeer eerst een stukje tekst.");
 
 r.post(`${A}/:doc/notes`, async (c) => {
   const doc = docId(c);
-  const body = await readBody(c, z.object({ sectionId, text: noteText }));
+  const body = await readBody(c, z.object({ sectionId, text: noteText, quote: quote.nullable().default(null) }));
+  // A marking on its own is fine; a note without marking needs words.
+  if (!body.quote && !body.text) fail(400, "Schrijf eerst iets.");
   const user = c.get("user");
   const now = new Date().toISOString();
-  const note: Note = { id: crypto.randomUUID(), sectionId: body.sectionId, text: body.text, authorId: user.id, authorName: nameOf(user), createdAt: now, updatedAt: now };
+  const note: Note = {
+    id: crypto.randomUUID(), sectionId: body.sectionId, text: body.text, quote: body.quote,
+    authorId: user.id, authorName: nameOf(user), createdAt: now, updatedAt: now,
+  };
   const notes = await loadNotes(doc);
   await kv.set(notesKey(doc), JSON.stringify([...notes, note]));
   return c.json({ note });
@@ -62,6 +75,7 @@ r.put(`${A}/:doc/notes/:id`, async (c) => {
   const doc = docId(c);
   const body = await readBody(c, z.object({ text: noteText }));
   const { notes, note } = await ownNote(c, doc);
+  if (!note.quote && !body.text) fail(400, "Schrijf eerst iets.");
   const updated = { ...note, text: body.text, updatedAt: new Date().toISOString() };
   await kv.set(notesKey(doc), JSON.stringify(notes.map((n) => (n.id === note.id ? updated : n))));
   return c.json({ note: updated });
