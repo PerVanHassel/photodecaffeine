@@ -435,3 +435,10 @@
   .studio .rd.is-tablet .rd-tool-label, .studio .rd.is-tablet .rd-keys, .studio .rd.is-tablet .rd-exit span { display: none; }
   .studio .rd.is-tablet .rd-exit, .studio .rd.is-tablet .rd-tool { padding: 0 12px; }
 }
+
+/* Marker on: the text no longer scrolls under a finger, it gets marked. Scroll beside it, or switch it off. */
+.studio .rd.is-marker .rd-body { touch-action: none; cursor: text; }
+.studio .rd.is-marker .rd-card.is-current { box-shadow: 0 0 0 3px rgba(236, 184, 120, 0.6), 0 30px 70px rgba(36, 29, 23, 0.08); }
+.studio .rd.is-marker .rd-keys { color: var(--accent-strong); font-weight: 600; }
+.studio .rd-tool.is-marker-tool[aria-pressed="true"] { background: #e9b47a; border-color: #e9b47a; color: var(--ink); }
+.studio .rd.is-tablet .is-marker-tool .rd-tool-label { display: inline; }

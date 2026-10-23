@@ -275,7 +275,7 @@ function AllNotes({ doc, notes, onOpen }: { doc: ReaderDocument; notes: DocNote[
 // ---------------------------------------------------------------------------
 
 /** What is being marked right now, before it is saved or attached to a note. */
-type Selecting = { quote: DocQuote; source: "drag" | "hold" | "pen"; range?: Range; saving?: boolean };
+type Selecting = { quote: DocQuote; source: "drag" | "hold" | "pen"; range?: Range; saving?: boolean; drawing?: boolean };
 
 function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, pending, setPending, onMove, onFinish, onExit }: {
   doc: ReaderDocument; list: ReaderSection[]; index: number; state: DocState; onlyChanged: boolean;
@@ -293,6 +293,9 @@ function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, pe
   const [tabletPref, setTablet] = useStored("pdc-reader-tablet", looksLikeTablet() ? "1" : "0");
   const tablet = tabletPref === "1";
   const [notesOpen, setNotesOpen] = useState(false);
+  // The marker turns a finger into a highlighter; it is off at every visit, so scrolling always works first.
+  const [marker, setMarker] = useState(false);
+  const coarse = useMemo(() => typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches, []);
   const speech = useSpeech();
   const { add } = useNoteActions(doc.id);
   const notesHere = useMemo(() => state.notes.filter((n) => n.sectionId === section.id), [state.notes, section.id]);
@@ -310,7 +313,7 @@ function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, pe
     setLeaving(before ? { section: before, dir: index > shown.index ? 1 : -1 } : null);
   }
 
-  const marking = useMarking(body, section.id);
+  const marking = useMarking(body, section.id, marker);
   const sel = marking.sel;
 
   useGSAP(() => {
@@ -367,7 +370,7 @@ function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, pe
   // little, so it is clear something is happening.
   useEffect(() => {
     const el = deck.current;
-    if (!tablet || !el) return;
+    if (!tablet || marker || !el) return;
     let start: { x: number; y: number; id: number } | null = null;
     let dragging = false;
     const card = () => el.querySelector<HTMLElement>(".rd-card.is-current");
@@ -405,7 +408,7 @@ function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, pe
       window.removeEventListener("pointerup", up);
       window.removeEventListener("pointercancel", up);
     };
-  }, [tablet]);
+  }, [tablet, marker]);
 
   // A mouse selection is drawn by the browser itself; re-rendering the text
   // for it would only throw that selection away.
@@ -479,12 +482,23 @@ function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, pe
   }, [flashNote]);
 
   return (
-    <div ref={root} className={cx("rd rd-reading", size === "l" && "is-large", tablet && "is-tablet", notesOpen && "notes-open")}>
+    <div ref={root} className={cx("rd rd-reading", size === "l" && "is-large", tablet && "is-tablet", notesOpen && "notes-open", marker && "is-marker")}>
       <Ambient />
       <header className="rd-bar">
         <button type="button" className="rd-exit" onClick={onExit}><X /> <span>Overzicht</span></button>
         <span className="rd-where s-truncate">{onlyChanged ? "Alleen de wijzigingen" : partLabel(part)}</span>
         <div className="rd-tools">
+          {(tablet || coarse) && (
+            <button
+              type="button"
+              className="rd-tool is-marker-tool"
+              aria-pressed={marker}
+              onClick={() => { setMarker(!marker); marking.clear(); }}
+              title="Markeerstift: streep met je vinger of Pencil over de tekst"
+            >
+              <Highlighter /> <span className="rd-tool-label">Markeerstift</span>
+            </button>
+          )}
           <button type="button" className="rd-tool" aria-pressed={tablet} onClick={() => setTablet(tablet ? "0" : "1")} title="iPad-modus: hele scherm, vegen om te bladeren">
             <Tablet /> <span className="rd-tool-label">iPad</span>
           </button>
@@ -535,7 +549,7 @@ function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, pe
 
       <nav className="rd-nav" aria-label="Bladeren">
         <Button variant="ghost" icon={<ArrowLeft />} disabled={index === 0} onClick={back}>Vorige</Button>
-        <span className="rd-keys" aria-hidden="true">{tablet ? "Veeg om te bladeren" : <><kbd>←</kbd> <kbd>→</kbd> bladeren</>}</span>
+        <span className="rd-keys" aria-hidden="true">{marker ? "Streep over de tekst om te markeren" : tablet ? "Veeg om te bladeren" : <><kbd>←</kbd> <kbd>→</kbd> bladeren</>}</span>
         <button type="button" className="rd-notes-toggle" onClick={() => setNotesOpen((o) => !o)} aria-expanded={notesOpen}>
           <MessageSquare /> Notities{notesHere.length ? <span className="rd-notes-count">{notesHere.length}</span> : null}
         </button>
@@ -551,7 +565,7 @@ function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, pe
         </Magnetic>
       </nav>
 
-      {sel && !sel.saving && (
+      {sel && !sel.saving && !sel.drawing && (
         <MarkToolbar
           sel={sel}
           body={body}
@@ -700,7 +714,7 @@ function Words({ text }: { text: string }) {
 
 type RingApi = { el: RefObject<HTMLSpanElement | null>; show: (x: number, y: number) => void; hide: () => void; done: () => void };
 
-function useMarking(body: RefObject<HTMLDivElement | null>, key: string) {
+function useMarking(body: RefObject<HTMLDivElement | null>, key: string, marker: boolean) {
   const [sel, setSel] = useState<Selecting | null>(null);
   const holding = useRef(false);
   const ringEl = useRef<HTMLSpanElement>(null);
@@ -759,82 +773,131 @@ function useMarking(body: RefObject<HTMLDivElement | null>, key: string) {
     return () => { clearTimeout(t); document.removeEventListener("selectionchange", onChange); };
   }, [key]);
 
-  // Hold a sentence still for a moment, or draw over words with a pencil.
+  // Holding a sentence still marks it. A pencil draws over words, and so does
+  // a finger once the marker is on. Positions are measured from the text
+  // itself: Safari gives none for text that cannot be selected.
   useEffect(() => {
     const root = body.current;
     if (!root) return;
     let timer = 0;
-    let start: { x: number; y: number; id: number } | null = null;
-    let pen: { block: number; offset: number; id: number } | null = null;
+    let holdAt: { x: number; y: number } | null = null;
+    let draw: { block: number; offset: number; id: number; x: number; y: number; moved: boolean } | null = null;
     let lastType = "mouse";
     let frame = 0;
-    const cancel = () => { clearTimeout(timer); timer = 0; start = null; ring.hide(); };
-    const down = (e: PointerEvent) => {
-      lastType = e.pointerType;
-      if (e.button !== 0 || (e.target as Element).closest("a")) return;
-      const at = posAt(root, e.clientX, e.clientY);
+
+    const release = () => setTimeout(() => { holding.current = false; }, 50);
+    const cancelHold = () => { clearTimeout(timer); timer = 0; holdAt = null; ring.hide(); };
+    const startHold = (x: number, y: number) => {
+      const at = posAt(root, x, y);
       if (!at) return;
-      if (e.pointerType === "pen") {
-        e.preventDefault();
-        holding.current = true;
-        pen = { ...at, id: e.pointerId };
-        setSel(null);
-        return;
-      }
-      start = { x: e.clientX, y: e.clientY, id: e.pointerId };
-      ring.show(e.clientX, e.clientY);
+      cancelHold();
+      holdAt = { x, y };
+      ring.show(x, y);
       timer = window.setTimeout(() => {
         timer = 0;
+        holdAt = null;
         const text = blockText(root, at.block);
         const [a, b] = sentenceAt(text, at.offset);
-        if (b - a < 2) return cancel();
+        if (b - a < 2) { ring.hide(); return; }
         holding.current = true;
+        draw = null;
         window.getSelection()?.removeAllRanges();
         navigator.vibrate?.(12);
         ring.done();
         setSel({ quote: { block: at.block, start: a, end: b, text: text.slice(a, b) }, source: "hold" });
       }, HOLD_MS);
     };
-    const move = (e: PointerEvent) => {
-      if (pen && e.pointerId === pen.id) {
-        const { clientX: x, clientY: y } = e;
-        cancelAnimationFrame(frame);
-        frame = requestAnimationFrame(() => {
-          const at = pen && posAt(root, x, y);
-          if (!pen || !at || at.block !== pen.block) return;
-          const text = blockText(root, pen.block);
-          const [a, b] = trimSpan(text, Math.min(pen.offset, at.offset), Math.max(pen.offset, at.offset));
-          if (b - a >= 2) setSel({ quote: { block: pen.block, start: a, end: b, text: text.slice(a, b) }, source: "pen" });
-        });
+    const drawTo = (x: number, y: number) => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        if (!draw) return;
+        const at = posAt(root, x, y, draw.block);
+        if (!at) return;
+        const text = blockText(root, draw.block);
+        const [a, b] = snapWords(text, Math.min(draw.offset, at.offset), Math.max(draw.offset, at.offset));
+        if (b - a >= 2) setSel({ quote: { block: draw.block, start: a, end: b, text: text.slice(a, b) }, source: "pen", drawing: true });
+      });
+    };
+
+    const down = (e: PointerEvent) => {
+      lastType = e.pointerType;
+      if (e.button !== 0 || (e.target as Element).closest("a")) return;
+      const draws = e.pointerType === "pen" || (marker && e.pointerType === "touch");
+      // Fingers without the marker hold through the touch events below.
+      if (e.pointerType === "touch" && !draws) return;
+      if (draws) {
+        const at = posAt(root, e.clientX, e.clientY);
+        if (!at) return;
+        e.preventDefault();
+        holding.current = true;
+        draw = { ...at, id: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
+        setSel(null);
+        // Holding the pencil still picks the whole sentence, like a finger.
+        if (e.pointerType === "pen" && !marker) startHold(e.clientX, e.clientY);
         return;
       }
-      if (start && e.pointerId === start.id && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 8) cancel();
+      startHold(e.clientX, e.clientY);
     };
-    const up = () => {
-      pen = null;
-      if (timer) cancel();
-      start = null;
-      setTimeout(() => { holding.current = false; }, 50);
+    const move = (e: PointerEvent) => {
+      if (draw && e.pointerId === draw.id) {
+        if (!draw.moved && Math.hypot(e.clientX - draw.x, e.clientY - draw.y) > 6) { draw.moved = true; cancelHold(); }
+        if (draw.moved) drawTo(e.clientX, e.clientY);
+        return;
+      }
+      if (holdAt && e.pointerType !== "touch" && Math.hypot(e.clientX - holdAt.x, e.clientY - holdAt.y) > 8) cancelHold();
     };
+    const up = (e: PointerEvent) => {
+      if (draw && e.pointerId === draw.id) {
+        draw = null;
+        setSel((s) => (s?.drawing ? { ...s, drawing: false } : s));
+      }
+      if (e.pointerType !== "touch" && timer) cancelHold();
+      release();
+    };
+
+    const touchStart = (e: TouchEvent) => {
+      lastType = "touch";
+      if (marker || e.touches.length !== 1) { cancelHold(); return; }
+      const t = e.touches[0] as Touch & { touchType?: string };
+      if (t.touchType === "stylus") return;
+      startHold(t.clientX, t.clientY);
+    };
+    const touchMove = (e: TouchEvent) => {
+      const t = e.touches[0];
+      if (holdAt && t && Math.hypot(t.clientX - holdAt.x, t.clientY - holdAt.y) > 10) cancelHold();
+    };
+    const touchEnd = () => { if (timer) cancelHold(); release(); };
+    const onScroll = () => { if (timer) cancelHold(); };
     const noMenu = (e: Event) => { if (lastType !== "mouse" || holding.current) e.preventDefault(); };
     const noSelect = (e: Event) => { if (holding.current) e.preventDefault(); };
+
     root.addEventListener("pointerdown", down);
+    root.addEventListener("touchstart", touchStart, { passive: true });
+    root.addEventListener("touchmove", touchMove, { passive: true });
+    root.addEventListener("touchend", touchEnd);
+    root.addEventListener("touchcancel", touchEnd);
     root.addEventListener("contextmenu", noMenu);
     document.addEventListener("selectstart", noSelect);
     window.addEventListener("pointermove", move, { passive: true });
     window.addEventListener("pointerup", up);
     window.addEventListener("pointercancel", up);
+    window.addEventListener("scroll", onScroll, { capture: true, passive: true });
     return () => {
-      cancel();
+      cancelHold();
       cancelAnimationFrame(frame);
       root.removeEventListener("pointerdown", down);
+      root.removeEventListener("touchstart", touchStart);
+      root.removeEventListener("touchmove", touchMove);
+      root.removeEventListener("touchend", touchEnd);
+      root.removeEventListener("touchcancel", touchEnd);
       root.removeEventListener("contextmenu", noMenu);
       document.removeEventListener("selectstart", noSelect);
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
       window.removeEventListener("pointercancel", up);
+      window.removeEventListener("scroll", onScroll, { capture: true });
     };
-  }, [key, ring, body]);
+  }, [key, ring, body, marker]);
 
   return { sel, set: setSel, clear, ring };
 }
@@ -938,20 +1001,66 @@ function quoteFromRange(range: Range, root: Element): DocQuote | null {
   return b - a >= 2 ? { block: Number(first.dataset.b), start: a, end: b, text: text.slice(a, b) } : null;
 }
 
-type CaretDoc = Document & { caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null };
-
-function posAt(root: Element, x: number, y: number): { block: number; offset: number } | null {
-  const d = document as CaretDoc;
-  let node: Node | null = null, offset = 0;
-  if (d.caretPositionFromPoint) {
-    const p = d.caretPositionFromPoint(x, y);
-    if (p) { node = p.offsetNode; offset = p.offset; }
+/**
+ * Which block and which character sit under a point. With `block` given, the
+ * point is held to that block (above it is its start, below it its end), so a
+ * stroke that wanders off the paragraph keeps marking it.
+ */
+function posAt(root: Element, x: number, y: number, block?: number): { block: number; offset: number } | null {
+  let el: HTMLElement | null;
+  if (block === undefined) {
+    const hit = document.elementFromPoint(x, y)?.closest<HTMLElement>("[data-b]") ?? null;
+    el = hit && root.contains(hit) ? hit : null;
   } else {
-    const r = document.caretRangeFromPoint?.(x, y);
-    if (r) { node = r.startContainer; offset = r.startOffset; }
+    el = root.querySelector<HTMLElement>(`[data-b="${block}"]`);
   }
-  const el = node && blockEl(node, root);
-  return el && node ? { block: Number(el.dataset.b), offset: offsetIn(el, node, offset) } : null;
+  if (!el) return null;
+  if (block !== undefined) {
+    const r = el.getBoundingClientRect();
+    if (y < r.top) return { block, offset: 0 };
+    if (y > r.bottom) return { block, offset: (el.textContent || "").length };
+  }
+  return { block: Number(el.dataset.b), offset: charAt(el, x, y) };
+}
+
+/**
+ * The caret position under a point, found by measuring characters: a binary
+ * search in reading order, about ten measurements for a long paragraph.
+ */
+function charAt(el: Element, x: number, y: number): number {
+  const nodes: { node: Text; start: number }[] = [];
+  const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  let total = 0;
+  for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+    nodes.push({ node: n as Text, start: total });
+    total += (n as Text).length;
+  }
+  if (!total) return 0;
+  const range = document.createRange();
+  const rectOf = (i: number) => {
+    let lo = 0, hi = nodes.length - 1;
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (nodes[mid].start <= i) lo = mid; else hi = mid - 1; }
+    const { node, start } = nodes[lo];
+    range.setStart(node, i - start);
+    range.setEnd(node, i - start + 1);
+    const rects = range.getClientRects();
+    return rects[rects.length - 1] || range.getBoundingClientRect();
+  };
+  let lo = 0, hi = total;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    const r = rectOf(mid);
+    const before = r.bottom <= y || (r.top <= y && r.left + r.width / 2 <= x);
+    if (before) lo = mid + 1; else hi = mid;
+  }
+  return lo;
+}
+
+/** Widen a span to whole words, so a rough stroke still marks clean words. */
+function snapWords(text: string, a: number, b: number): [number, number] {
+  while (a > 0 && /\S/.test(text[a - 1])) a--;
+  while (b < text.length && /\S/.test(text[b])) b++;
+  return trimSpan(text, a, b);
 }
 
 function sentences(text: string): [number, number][] {
@@ -1052,7 +1161,7 @@ function NotesPanel({ doc, section, notes, draft, setDraft, pending, setPending,
         ))}
         {!ordered.length && (
           <p className="rd-quiet rd-hint">
-            <Highlighter /> {tablet ? "Houd een zin even vast, of streep met je Pencil over de tekst, om te markeren." : "Selecteer tekst of houd een zin even vast om te markeren."}
+            <Highlighter /> {tablet ? "Houd een zin even vast. Of zet de markeerstift aan en streep met je vinger of Pencil over de tekst." : "Selecteer tekst of houd een zin even vast om te markeren."}
           </p>
         )}
       </div>
