@@ -35,6 +35,9 @@ export interface TextLook {
   tracking?: "tight" | "normal" | "wide";
   /** A large first letter (paragraphs only). */
   dropcap?: boolean;
+  /** A face of its own (a key from lib/typefaces.ts). */
+  font?: string;
+  weight?: number;
 }
 
 export type Block =
@@ -58,50 +61,25 @@ export interface Fact {
 export type HeroStyle = "cinema" | "offset" | "split" | "plain";
 export type ArticleTheme = "dark" | "light";
 export type TemplateId = "verhaal" | "fotoserie" | "case" | "film" | "leeg";
-export type TypeId = "huisstijl" | "redactie" | "magazine" | "grotesk" | "strak" | "expressief";
+export type TypeId = "huisstijl" | "premiere" | "galerie" | "magazine" | "atelier" | "affiche" | "elegant" | "panorama" | "vrolijk";
 
 export interface ArticlePage {
   template: TemplateId;
   hero: HeroStyle;
   theme: ArticleTheme;
-  /** The typeface pair for headings and text. Missing: the site's own. */
+  /** The typeface pair for headings and text (lib/typefaces.ts). Missing: the site's own. */
   type?: TypeId;
+  /** Faces chosen instead of the pair's. */
+  displayFont?: string;
+  textFont?: string;
+  /** The Adobe Fonts project the page's Adobe faces come from. */
+  kit?: string;
   /** The title's look in the header. */
   titleLook?: TextLook;
   /** A line under the title. */
   subtitle: string;
   blocks: Block[];
 }
-
-// ---------------------------------------------------------------------------
-// Typefaces
-// ---------------------------------------------------------------------------
-
-const GF = "https://fonts.googleapis.com/css2?";
-
-/**
- * Typeface pairs: one for headings, one for reading. The styles per pair are
- * in article.css ([data-type]); `fonts` is the Google Fonts sheet a page
- * loads for it (the site's own Inter is always there).
- */
-export const TYPES: { id: TypeId; name: string; about: string; display: string; text: string; fonts: string | null }[] = [
-  { id: "huisstijl", name: "Huisstijl", about: "Zwaar en in hoofdletters, zoals de rest van de site.", display: "'Inter', sans-serif", text: "'Inter', sans-serif", fonts: null },
-  { id: "redactie", name: "Redactie", about: "Sierlijke schreefletter voor koppen, rustige tekst eronder.", display: "'Instrument Serif', serif", text: "'Geist', sans-serif",
-    fonts: `${GF}family=Instrument+Serif:ital@0;1&family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&display=swap` },
-  { id: "magazine", name: "Magazine", about: "Klassiek tijdschrift: schreefletters voor kop en tekst.", display: "'Fraunces', serif", text: "'Newsreader', serif",
-    fonts: `${GF}family=Fraunces:ital,opsz,wght@0,9..144,300..800;1,9..144,300..800&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&display=swap` },
-  { id: "grotesk", name: "Grotesk", about: "Vette, eigenwijze koppen met een vriendelijke tekstletter.", display: "'Bricolage Grotesque', sans-serif", text: "'Plus Jakarta Sans', sans-serif",
-    fonts: `${GF}family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Plus+Jakarta+Sans:ital,wght@0,300..700;1,300..700&display=swap` },
-  { id: "strak", name: "Strak", about: "Modern en technisch, met kleine labels in mono.", display: "'Geist', sans-serif", text: "'Geist', sans-serif",
-    fonts: `${GF}family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&display=swap` },
-  { id: "expressief", name: "Expressief", about: "Brede, opvallende koppen voor een stuk dat mag knallen.", display: "'Syne', sans-serif", text: "'Geist', sans-serif",
-    fonts: `${GF}family=Syne:wght@500..800&family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&display=swap` },
-];
-
-/** Every typeface at once, for the page maker's choices. */
-export const ALL_FONTS = `${GF}family=Instrument+Serif:ital@0;1&family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300..800;1,9..144,300..800&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Plus+Jakarta+Sans:ital,wght@0,300..700;1,300..700&family=Syne:wght@500..800&display=swap`;
-
-export const typeOf = (page: ArticlePage) => TYPES.find((t) => t.id === page.type) ?? TYPES[0];
 
 /** A look as data attributes for article.css. Unset fields add nothing. */
 export function lookAttrs(look?: TextLook): Record<string, string> {
@@ -312,7 +290,7 @@ const RECIPES: Record<Exclude<TemplateId, "leeg">, Recipe> = {
   fotoserie: {
     hero: "offset",
     theme: "dark",
-    type: "redactie",
+    type: "galerie",
     beats: [{ layout: "wide", count: 1 }, { layout: "offset", count: 2 }, { layout: "slices", count: 4 }, { layout: "full", count: 1 }, { layout: "trio", count: 3 }, { layout: "mosaic", count: 4 }, { layout: "marquee", count: 6 }],
     textPerBeat: 2,
     trailing: 7,
@@ -320,7 +298,7 @@ const RECIPES: Record<Exclude<TemplateId, "leeg">, Recipe> = {
   case: {
     hero: "split",
     theme: "light",
-    type: "strak",
+    type: "atelier",
     beats: ["split", { layout: "mosaic", count: 3 }, { layout: "full", count: 1 }, "split", { layout: "duo", count: 2 }, { layout: "mosaic", count: 5 }],
     textPerBeat: 1,
     trailing: 2,
@@ -338,7 +316,7 @@ const RECIPES: Record<Exclude<TemplateId, "leeg">, Recipe> = {
   film: {
     hero: "plain",
     theme: "dark",
-    type: "grotesk",
+    type: "premiere",
     beats: [{ layout: "duo", count: 2 }, { layout: "wide", count: 1 }, { layout: "marquee", count: 5 }, { layout: "trio", count: 3 }],
     textPerBeat: 2,
     trailing: 2,

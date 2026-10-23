@@ -73,12 +73,32 @@
 
 /* Typeface tiles: a small piece of article in that pair's letters. */
 .studio .pm-type-sample {
-  display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px;
-  height: 58px; padding: 8px 10px; border-radius: 6px; background: var(--sunken); container-type: normal; overflow: hidden;
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 3px;
+  height: 60px; padding: 8px 10px; border-radius: 6px; background: var(--sunken); overflow: hidden;
 }
-.studio .pm-type-sample .pa-title { font-size: calc(30px * var(--pa-ds)); line-height: 1; color: var(--text); }
-.studio .pm-type-sample .pm-type-text { font-family: var(--pa-text-font); font-size: 11px; font-weight: 400; color: var(--muted); }
-.studio .pm-type[aria-pressed="true"] .pm-type-sample .pa-title { color: var(--accent-strong); }
+.studio .pm-type-head { line-height: 1; color: var(--text); letter-spacing: -0.02em; }
+.studio .pm-type-text { font-size: 11px; font-weight: 400; color: var(--muted); }
+.studio .pm-type[aria-pressed="true"] .pm-type-head { color: var(--accent-strong); }
+
+/* The face picker: every name in its own letters. */
+.studio .pm-font { border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); }
+.studio .pm-font[open] { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.studio .pm-font summary { display: flex; align-items: center; gap: 10px; padding: 8px 11px; cursor: pointer; list-style: none; }
+.studio .pm-font summary::-webkit-details-marker { display: none; }
+.studio .pm-font-now { font-size: 18px; line-height: 1.2; color: var(--text); }
+.studio .pm-font-list { max-height: 340px; overflow-y: auto; overscroll-behavior: contain; border-top: 1px solid var(--line); padding: 4px; }
+.studio .pm-font-group { padding: 10px 8px 4px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); }
+.studio .pm-font-item {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 8px; width: 100%;
+  padding: 7px 8px; border: 0; border-radius: 7px; background: none; text-align: left;
+}
+.studio .pm-font-item:hover { background: var(--hover); }
+.studio .pm-font-item[aria-selected="true"] { background: var(--accent-soft); }
+.studio .pm-font-item > span { font-size: 20px; line-height: 1.15; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.studio .pm-font-item small { grid-column: 1; font-size: 11.5px; color: var(--muted); }
+.studio .pm-font-item svg { grid-column: 2; grid-row: 1 / span 2; color: var(--accent); }
+.studio .pm-adobe { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 10px; background: var(--sunken); }
+.studio .pm-adobe b { font-size: 13px; }
 .studio .pm-look summary { color: var(--text); }
 .studio .pm-look .s-chip { font-size: 12px; }
 

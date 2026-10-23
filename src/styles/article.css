@@ -13,12 +13,13 @@
   font-family: var(--pa-text-font);
   -webkit-font-smoothing: antialiased;
 
-  /* The typeface pair (data-type below): headings, statements, reading, labels. */
+  /* The faces: the site's own here, the page's from lib/typefaces.ts (pageVars)
+     as an inline style. A text with a face of its own sets --pa-bf and --pa-bw. */
   --pa-display: 'Inter', sans-serif; --pa-display-w: 900; --pa-display-case: uppercase;
   --pa-display-track: -0.035em; --pa-display-lh: 0.9; --pa-ds: 1;
   --pa-statement-font: var(--pa-display); --pa-statement-w: 700; --pa-statement-track: -0.028em; --pa-ss: 1;
-  --pa-text-font: 'Inter', sans-serif; --pa-text-size: 18px; --pa-lead-w: 300;
-  --pa-label-font: 'Inter', sans-serif; --pa-label-track: 0.32em;
+  --pa-text-font: 'Inter', sans-serif; --pa-text-size: 18px; --pa-text-w: 400; --pa-lead-w: 300;
+  --pa-label-font: 'Inter', sans-serif; --pa-label-track: 0.28em;
   --pa-quote-font: var(--pa-text-font); --pa-quote-w: 300;
 }
 .pa[data-theme="dark"] {
@@ -30,33 +31,6 @@
   --pa-bg: #faf8f4; --pa-raise: #f2ede4; --pa-ink: #1a0c04; --pa-text: rgba(26,12,4,0.82);
   --pa-soft: rgba(26,12,4,0.64); --pa-faint: rgba(26,12,4,0.56); --pa-line: rgba(26,12,4,0.12);
   --pa-tile: rgba(26,12,4,0.05); --pa-accent: #9a5b26; --pa-btn: #1a0c04; --pa-btn-ink: #fffbe0;
-}
-.pa[data-type="redactie"] {
-  --pa-display: 'Instrument Serif', serif; --pa-display-w: 400; --pa-display-case: none; --pa-display-track: -0.015em; --pa-display-lh: 0.95; --pa-ds: 1.22;
-  --pa-statement-w: 400; --pa-statement-track: -0.01em; --pa-ss: 1.18;
-  --pa-text-font: 'Geist', sans-serif; --pa-text-size: 17.5px; --pa-label-font: 'Geist Mono', monospace; --pa-label-track: 0.14em;
-  --pa-quote-font: 'Instrument Serif', serif; --pa-quote-w: 400;
-}
-.pa[data-type="magazine"] {
-  --pa-display: 'Fraunces', serif; --pa-display-w: 600; --pa-display-case: none; --pa-display-track: -0.025em; --pa-display-lh: 0.98; --pa-ds: 1.04;
-  --pa-statement-w: 500; --pa-statement-track: -0.02em;
-  --pa-text-font: 'Newsreader', serif; --pa-text-size: 19.5px; --pa-lead-w: 400; --pa-label-font: 'Newsreader', serif; --pa-label-track: 0.22em;
-  --pa-quote-font: 'Fraunces', serif; --pa-quote-w: 300;
-}
-.pa[data-type="grotesk"] {
-  --pa-display: 'Bricolage Grotesque', sans-serif; --pa-display-w: 800; --pa-display-case: none; --pa-display-track: -0.045em; --pa-display-lh: 0.92; --pa-ds: 1.06;
-  --pa-statement-track: -0.035em;
-  --pa-text-font: 'Plus Jakarta Sans', sans-serif; --pa-text-size: 17.5px; --pa-label-font: 'Plus Jakarta Sans', sans-serif; --pa-label-track: 0.24em;
-}
-.pa[data-type="strak"] {
-  --pa-display: 'Geist', sans-serif; --pa-display-w: 600; --pa-display-case: none; --pa-display-track: -0.055em; --pa-display-lh: 0.95;
-  --pa-statement-w: 500; --pa-statement-track: -0.04em;
-  --pa-text-font: 'Geist', sans-serif; --pa-text-size: 17.5px; --pa-label-font: 'Geist Mono', monospace; --pa-label-track: 0.12em;
-}
-.pa[data-type="expressief"] {
-  --pa-display: 'Syne', sans-serif; --pa-display-w: 800; --pa-display-track: -0.02em; --pa-display-lh: 0.92; --pa-ds: 0.94;
-  --pa-statement-track: -0.02em;
-  --pa-text-font: 'Geist', sans-serif; --pa-text-size: 17.5px; --pa-label-font: 'Geist Mono', monospace; --pa-label-track: 0.14em;
 }
 .pa *, .pa *::before, .pa *::after { box-sizing: border-box; }
 .pa ::selection { background-color: var(--pa-accent); color: var(--pa-bg); }
@@ -75,7 +49,7 @@
 }
 /* Headings in the pair's display face; sizes scale with the face (--pa-ds) and the block's own size (--pa-bs). */
 .pa-title, .pa-heading, .pa-split-heading, .pa-end-title {
-  font-family: var(--pa-display); font-weight: var(--pa-display-w); text-transform: var(--pa-display-case);
+  font-family: var(--pa-bf, var(--pa-display)); font-weight: var(--pa-bw, var(--pa-display-w)); text-transform: var(--pa-display-case);
   letter-spacing: var(--pa-display-track); line-height: var(--pa-display-lh);
 }
 .pa-title {
@@ -131,17 +105,17 @@
 .pa-hero--plain .pa-sub { grid-column: 4 / span 7; margin-top: clamp(28px, 3cqw, 44px); }
 
 /* ── Text ── */
-.pa-body, .pa-lead { margin-left: 25%; }
+.pa-body, .pa-lead { margin-left: 25%; font-family: var(--pa-bf, var(--pa-text-font)); }
 .pa-body { max-width: 680px; }
-.pa-body p { margin: 0 0 1.15em; color: var(--pa-text); font-size: calc(var(--pa-text-size) * var(--pa-bs, 1)); font-weight: 400; line-height: 1.75; text-wrap: pretty; }
+.pa-body p { margin: 0 0 1.15em; color: var(--pa-text); font-size: calc(var(--pa-text-size) * var(--pa-bs, 1)); font-weight: var(--pa-bw, var(--pa-text-w)); line-height: 1.75; text-wrap: pretty; }
 .pa-body p:last-child, .pa-lead p:last-child { margin-bottom: 0; }
 .pa-body strong { color: var(--pa-ink); font-weight: 600; }
 .pa-body a, .pa-lead a { color: var(--pa-ink); text-decoration: underline; text-decoration-color: var(--pa-accent); text-underline-offset: 0.2em; text-decoration-thickness: 1px; }
 .pa-body a:hover, .pa-lead a:hover { color: var(--pa-accent); }
 .pa-lead { max-width: 920px; }
-.pa-lead p { margin: 0 0 0.9em; font-size: calc(clamp(22px, 2.2cqw, 30px) * var(--pa-bs, 1)); font-weight: var(--pa-lead-w); line-height: 1.5; letter-spacing: -0.01em; color: var(--pa-ink); text-wrap: pretty; }
+.pa-lead p { margin: 0 0 0.9em; font-size: calc(clamp(22px, 2.2cqw, 30px) * var(--pa-bs, 1)); font-weight: var(--pa-bw, var(--pa-lead-w)); line-height: 1.5; letter-spacing: -0.01em; color: var(--pa-ink); text-wrap: pretty; }
 .pa-statement {
-  margin: 0; max-width: 1180px; color: var(--pa-ink); font-family: var(--pa-statement-font); font-weight: var(--pa-statement-w);
+  margin: 0; max-width: 1180px; color: var(--pa-ink); font-family: var(--pa-bf, var(--pa-statement-font)); font-weight: var(--pa-bw, var(--pa-statement-w));
   font-size: calc(clamp(30px, 4.4cqw, 66px) * var(--pa-ss) * var(--pa-bs, 1)); line-height: 1.1; letter-spacing: var(--pa-statement-track); text-wrap: balance;
 }
 .pa-heading {
@@ -228,7 +202,7 @@ button.pa-zoom { cursor: zoom-in; }
 /* ── Quote, facts, film ── */
 .pa-quote { margin: 0 0 0 25%; max-width: 920px; }
 .pa-quote blockquote { margin: 0; }
-.pa-quote blockquote p { margin: 0; color: var(--pa-ink); font-family: var(--pa-quote-font); font-size: calc(clamp(24px, 2.8cqw, 40px) * var(--pa-bs, 1)); font-style: italic; font-weight: var(--pa-quote-w); line-height: 1.38; text-wrap: pretty; }
+.pa-quote blockquote p { margin: 0; color: var(--pa-ink); font-family: var(--pa-bf, var(--pa-quote-font)); font-size: calc(clamp(24px, 2.8cqw, 40px) * var(--pa-bs, 1)); font-style: italic; font-weight: var(--pa-bw, var(--pa-quote-w)); line-height: 1.38; text-wrap: pretty; }
 .pa-quote blockquote p::before {
   content: "\201C"; display: block; height: 0.62em; margin-bottom: 0.1em; color: var(--pa-accent);
   font-size: 2.4em; font-style: normal; font-weight: 900; line-height: 1;

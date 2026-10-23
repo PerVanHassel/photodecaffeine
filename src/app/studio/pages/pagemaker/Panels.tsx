@@ -7,13 +7,15 @@ import {
 } from "lucide-react";
 import { useId, useRef, type ReactNode } from "react";
 import {
-  BLOCK_TYPES, embedSrc, heroCover, isVideoUrl, LAYOUTS, mediaItem, seriesRest, typeOf, TYPES,
+  BLOCK_TYPES, embedSrc, heroCover, isVideoUrl, LAYOUTS, mediaItem, seriesRest,
   type ArticlePage, type ArticleTheme, type Block, type BlockOf, type BlockType, type HeroStyle, type LetterCase, type MediaItem, type MediaLayout,
   type TextLook, type TextStyle,
 } from "../../../lib/articlePage";
+import { fontDef, PAIRS, pageFaces, pairOf, type FontDef } from "../../../lib/typefaces";
 import { MediaGrid } from "../../components/MediaGrid";
 import { Button, Field, Input, Photo, Segmented, Textarea, TextField } from "../../ui";
 import type { PickRequest } from "./MediaPicker";
+import { AdobeKitField, FontPicker, useFontDef, WeightPicker } from "./fonts";
 import { HeroSketch, LayoutSketch } from "./schematics";
 import { addPhotos, moveBlockTo, updateBlock, withPage, type Commit, type Draft } from "./state";
 
@@ -174,24 +176,40 @@ const HEROES: { value: HeroStyle; label: string }[] = [
   { value: "plain", label: "Alleen titel" },
 ];
 
-/** The typeface pairs, each shown in its own letters. */
+/** The ready-made pairs, each shown in its own letters, and a face of your own for headings or text. */
 function TypeFields({ page, commit }: { page: ArticlePage; commit: Commit }) {
-  const current = typeOf(page).id;
+  const pair = pairOf(page);
+  const custom = !!(page.displayFont || page.textFont);
   return (
-    <Field label="Lettertype" hint={typeOf(page).about}>
-      <div className="pm-tiles" role="group" aria-label="Lettertype">
-        {TYPES.map((t) => (
-          <button key={t.id} type="button" className="pm-tile pm-type" aria-pressed={current === t.id}
-            onClick={() => commit(withPage((p) => ({ ...p, type: t.id })))}>
-            <div className="pa pm-type-sample" data-type={t.id} data-theme="light" aria-hidden="true">
-              <span className="pa-title">Ag</span>
-              <span className="pm-type-text">Tekst</span>
-            </div>
-            {t.name}
-          </button>
-        ))}
-      </div>
-    </Field>
+    <>
+      <Field label="Lettertype" hint={custom ? "Eigen combinatie: de kop- of tekstletter is hieronder gekozen." : pair.about}>
+        <div className="pm-tiles" role="group" aria-label="Lettertype">
+          {PAIRS.map((t) => {
+            const head = fontDef(t.display);
+            const text = fontDef(t.text);
+            return (
+              <button key={t.id} type="button" className="pm-tile pm-type" aria-pressed={!custom && pair.id === t.id}
+                onClick={() => commit(withPage((p) => ({ ...p, type: t.id, displayFont: undefined, textFont: undefined })))}>
+                <span className="pm-type-sample" aria-hidden="true">
+                  <span className="pm-type-head" style={{ fontFamily: head.family, fontWeight: head.head.w, textTransform: head.head.upper ? "uppercase" : undefined, fontSize: `${26 * Math.min(head.head.ds, 1.2)}px` }}>Ag</span>
+                  <span className="pm-type-text" style={{ fontFamily: text.family }}>Leesletter</span>
+                </span>
+                {t.name}
+              </button>
+            );
+          })}
+        </div>
+      </Field>
+      <Field label="Kopletter">
+        <FontPicker label="Kopletter" value={page.displayFont} inherit={fontDef(pair.display)}
+          onChange={(displayFont) => commit(withPage((p) => ({ ...p, displayFont })))} />
+      </Field>
+      <Field label="Tekstletter">
+        <FontPicker label="Tekstletter" value={page.textFont} inherit={fontDef(pair.text)}
+          onChange={(textFont) => commit(withPage((p) => ({ ...p, textFont })))} />
+      </Field>
+      <AdobeKitField />
+    </>
   );
 }
 
@@ -201,7 +219,7 @@ export function HeroFields({ draft, page, commit, pick, compact }: PanelProps & 
     <>
       <TypeFields page={page} commit={commit} />
       {!compact && (
-        <LookFields label="Letters van de titel" look={page.titleLook} show={["size", "case", "italic", "tracking"]}
+        <LookFields label="Letters van de titel" look={page.titleLook} inherit={pageFaces(page).display} show={["font", "weight", "size", "case", "italic", "tracking"]}
           onChange={(titleLook) => commit(withPage((p) => ({ ...p, titleLook })))} />
       )}
       <div className="pm-tiles four" role="group" aria-label="Kop">
@@ -264,6 +282,7 @@ export function BlockPanel({ block, onAction, ...props }: PanelProps & {
 }) {
   const set = <T extends Block>(fn: (b: T) => T, key?: string) => props.commit(updateBlock(block.id, (b) => fn(b as T)), key && `${block.id}:${key}`);
   const index = props.page.blocks.findIndex((b) => b.id === block.id);
+  const faces = pageFaces(props.page);
   return (
     <>
       <div className="s-row">
@@ -272,11 +291,11 @@ export function BlockPanel({ block, onAction, ...props }: PanelProps & {
         <Button size="sm" icon={<Copy />} onClick={() => onAction("copy")}>Kopie</Button>
         <Button size="sm" variant="danger" icon={<Trash2 />} onClick={() => onAction("remove")}>Weg</Button>
       </div>
-      {block.type === "text" && <TextForm block={block} set={set} />}
-      {block.type === "heading" && <HeadingForm block={block} set={set} pick={props.pick} draft={props.draft} />}
+      {block.type === "text" && <TextForm block={block} set={set} faces={faces} />}
+      {block.type === "heading" && <HeadingForm block={block} set={set} pick={props.pick} draft={props.draft} faces={faces} />}
       {block.type === "media" && <MediaForm block={block} set={set} pick={props.pick} />}
-      {block.type === "split" && <SplitForm block={block} set={set} pick={props.pick} />}
-      {block.type === "quote" && <QuoteForm block={block} set={set} />}
+      {block.type === "split" && <SplitForm block={block} set={set} pick={props.pick} faces={faces} />}
+      {block.type === "quote" && <QuoteForm block={block} set={set} faces={faces} />}
       {block.type === "facts" && <FactsForm block={block} set={set} />}
       {block.type === "embed" && <EmbedForm block={block} set={set} />}
       {block.type === "series" && <SeriesInfo draft={props.draft} page={props.page} />}
@@ -286,7 +305,9 @@ export function BlockPanel({ block, onAction, ...props }: PanelProps & {
 
 type Setter = <T extends Block>(fn: (b: T) => T, key?: string) => void;
 
-function TextForm({ block, set }: { block: BlockOf<"text">; set: Setter }) {
+type Faces = { display: FontDef; text: FontDef };
+
+function TextForm({ block, set, faces }: { block: BlockOf<"text">; set: Setter; faces: Faces }) {
   return (
     <>
       <Field label="Soort">
@@ -302,12 +323,13 @@ function TextForm({ block, set }: { block: BlockOf<"text">; set: Setter }) {
         onChange={(text) => set<BlockOf<"text">>((b) => ({ ...b, text }), "text")}
       />
       <LookFields look={block.look} onChange={(look) => set<BlockOf<"text">>((b) => ({ ...b, look }))}
-        show={block.style === "body" ? ["size", "align", "dropcap"] : ["size", "align", "case", "tracking", "italic"]} />
+        inherit={block.style === "statement" ? faces.display : faces.text}
+        show={block.style === "body" ? ["font", "weight", "size", "align", "dropcap", "italic"] : ["font", "weight", "size", "align", "case", "tracking", "italic"]} />
     </>
   );
 }
 
-function HeadingForm({ block, set, pick, draft }: { block: BlockOf<"heading">; set: Setter; pick: PanelProps["pick"]; draft: Draft }) {
+function HeadingForm({ block, set, pick, draft, faces }: { block: BlockOf<"heading">; set: Setter; pick: PanelProps["pick"]; draft: Draft; faces: Faces }) {
   const words = block.text.trim() ? block.text.trim().split(/\s+/).length : 0;
   return (
     <>
@@ -334,7 +356,7 @@ function HeadingForm({ block, set, pick, draft }: { block: BlockOf<"heading">; s
       )}
       {draft.galleryUrls.length === 0 && <p className="s-small s-faint">Upload eerst foto's bij Pagina.</p>}
       <LookFields look={block.look} onChange={(look) => set<BlockOf<"heading">>((b) => ({ ...b, look }))}
-        show={["size", "align", "case", "tracking", "italic"]} />
+        inherit={faces.display} show={["font", "weight", "size", "align", "case", "tracking", "italic"]} />
     </>
   );
 }
@@ -410,7 +432,7 @@ function ItemSettings({ item, n, onChange }: { item: MediaItem; n: number; onCha
   );
 }
 
-function SplitForm({ block, set, pick }: { block: BlockOf<"split">; set: Setter; pick: PanelProps["pick"] }) {
+function SplitForm({ block, set, pick, faces }: { block: BlockOf<"split">; set: Setter; pick: PanelProps["pick"]; faces: Faces }) {
   return (
     <>
       <Field label="Foto">
@@ -432,12 +454,12 @@ function SplitForm({ block, set, pick }: { block: BlockOf<"split">; set: Setter;
       <TextField label="Kopje" hint="Mag leeg." lang="nl" spellCheck value={block.heading} onChange={(e) => set<BlockOf<"split">>((b) => ({ ...b, heading: e.target.value }), "heading")} />
       <TextAreaRich label="Tekst" rows={9} value={block.text} onChange={(text) => set<BlockOf<"split">>((b) => ({ ...b, text }), "text")} />
       <LookFields label="Letters van het kopje" look={block.look} onChange={(look) => set<BlockOf<"split">>((b) => ({ ...b, look }))}
-        show={["size", "case", "tracking", "italic"]} />
+        inherit={faces.display} show={["font", "weight", "size", "case", "tracking", "italic"]} />
     </>
   );
 }
 
-function QuoteForm({ block, set }: { block: BlockOf<"quote">; set: Setter }) {
+function QuoteForm({ block, set, faces }: { block: BlockOf<"quote">; set: Setter; faces: Faces }) {
   return (
     <>
       <TextAreaRich label="Citaat" rows={4} plain value={block.text} onChange={(text) => set<BlockOf<"quote">>((b) => ({ ...b, text }), "text")} />
@@ -445,7 +467,7 @@ function QuoteForm({ block, set }: { block: BlockOf<"quote">; set: Setter }) {
       <TextField label="Wie" hint="Bijvoorbeeld: eigenaar van de BMW. Mag leeg." lang="nl" spellCheck value={block.role}
         onChange={(e) => set<BlockOf<"quote">>((b) => ({ ...b, role: e.target.value }), "role")} />
       <LookFields look={block.look} onChange={(look) => set<BlockOf<"quote">>((b) => ({ ...b, look }))}
-        show={["size", "align", "case", "italic"]} italicDefault />
+        inherit={faces.display.group === "serif" ? faces.display : faces.text} show={["font", "weight", "size", "align", "case", "italic"]} italicDefault />
     </>
   );
 }
@@ -519,7 +541,7 @@ export function InsertPanel({ onInsert }: { onInsert: (type: BlockType) => void 
 // A text's look: size, alignment, capitals, slant, spacing
 // ---------------------------------------------------------------------------
 
-type LookPart = "size" | "align" | "case" | "italic" | "tracking" | "dropcap";
+type LookPart = "font" | "weight" | "size" | "align" | "case" | "italic" | "tracking" | "dropcap";
 
 const CASES: { value: LetterCase; label: string; style: React.CSSProperties }[] = [
   { value: "auto", label: "Standaard", style: {} },
@@ -530,20 +552,35 @@ const CASES: { value: LetterCase; label: string; style: React.CSSProperties }[] 
 ];
 
 /** The look on top of the typeface; every choice can go back to Standaard. */
-function LookFields({ look, onChange, show, label = "Letters", italicDefault = false }: {
+function LookFields({ look, onChange, show, inherit, label = "Letters", italicDefault = false }: {
   look?: TextLook;
   onChange: (look: TextLook) => void;
   show: LookPart[];
+  /** The face this text has when none is chosen. */
+  inherit: FontDef;
   label?: string;
   /** Whether the text is slanted when nothing is chosen (quotes are). */
   italicDefault?: boolean;
 }) {
   const l = look ?? {};
   const set = (patch: Partial<TextLook>) => onChange({ ...l, ...patch });
+  const chosen = useFontDef(l.font);
+  const face = l.font ? chosen : inherit;
   return (
     <details className="pm-item pm-look" open>
       <summary>{label}</summary>
       <div className="s-stack" style={{ paddingTop: 10 }}>
+        {show.includes("font") && (
+          <Field label="Lettertype">
+            {/* A new face starts at its own weight. */}
+            <FontPicker label="Lettertype" value={l.font} inherit={inherit} onChange={(font) => set({ font, weight: undefined })} />
+          </Field>
+        )}
+        {show.includes("weight") && face.weights.length > 1 && (
+          <Field label="Dikte">
+            <WeightPicker font={face} value={l.weight} onChange={(weight) => set({ weight })} />
+          </Field>
+        )}
         {show.includes("size") && (
           <Field label="Grootte">
             <Segmented<"s" | "m" | "l" | "xl"> label="Grootte" value={l.size || "m"} onChange={(size) => set({ size })}

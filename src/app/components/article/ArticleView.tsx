@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, type CSSProperties, type ReactNode } from "react";
 import { Helmet } from "react-helmet-async";
 import {
-  blockHasContent, effectiveLayout, embedSrc, heroCover, lookAttrs, pagePhotos, plainText, seriesRest, shownItems, typeOf,
-  type ArticlePage, type ArticleSource, type Block, type BlockOf, type MediaItem, type MediaLayout,
+  blockHasContent, effectiveLayout, embedSrc, heroCover, lookAttrs, pagePhotos, plainText, seriesRest, shownItems,
+  type ArticlePage, type ArticleSource, type Block, type BlockOf, type MediaItem, type MediaLayout, type TextLook,
 } from "../../lib/articlePage";
+import { lookVars, pageFontLinks, pageVars, type LookRole } from "../../lib/typefaces";
 import { HIGH_PRIORITY, webSrcSet } from "../../lib/images";
 import { useLanguage } from "../../context/LanguageContext";
 import { useArticleMotion } from "./motion";
@@ -53,11 +54,11 @@ export function ArticleView({ source, page, onOpen, editor, back, children }: {
   useArticleMotion(root, !editor, page);
 
   const shown = page.blocks.filter((b) => editor || blockHasContent(b, source, page));
-  const type = typeOf(page);
+  const fontLinks = pageFontLinks(page);
 
   return (
-    <article ref={root} className={`pa${editor ? " pa--editing" : ""}`} data-theme={page.theme} data-type={type.id}>
-      {type.fonts && <Helmet><link rel="stylesheet" href={type.fonts} /></Helmet>}
+    <article ref={root} className={`pa${editor ? " pa--editing" : ""}`} data-theme={page.theme} style={pageVars(page) as CSSProperties}>
+      {fontLinks.length > 0 && <Helmet>{fontLinks.map((href) => <link key={href} rel="stylesheet" href={href} />)}</Helmet>}
       <Selectable id="hero" editor={editor} className="pa-hero-slot">
         <Hero source={source} page={page} back={back} />
       </Selectable>
@@ -72,6 +73,12 @@ export function ArticleView({ source, page, onOpen, editor, back, children }: {
       {children}
     </article>
   );
+}
+
+/** A text's own look: data attributes for the styles, custom properties for its face. */
+function lookProps(look: TextLook | undefined, role: LookRole) {
+  const vars = lookVars(look, role);
+  return { ...lookAttrs(look), style: Object.keys(vars).length ? (vars as CSSProperties) : undefined };
 }
 
 const isProse = (b?: Block) => b?.type === "text" && b.style !== "statement";
@@ -130,7 +137,7 @@ function Hero({ source, page, back }: { source: ArticleSource; page: ArticlePage
   const head = (
     <div className="pa-hero-head">
       {source.category && <p className="pa-kicker">{source.category}</p>}
-      <h1 className="pa-title" {...lookAttrs(page.titleLook)}>{source.title}</h1>
+      <h1 className="pa-title" {...lookProps(page.titleLook, "display")}>{source.title}</h1>
     </div>
   );
   const sub = page.subtitle.trim() ? <p className="pa-sub">{page.subtitle}</p> : null;
@@ -203,7 +210,7 @@ function TextBlock({ block }: { block: BlockOf<"text"> }) {
     const words = plainText(block.text).split(/\s+/).filter(Boolean);
     return (
       <div className="pa-wrap">
-        <p className="pa-statement" data-m="words" {...lookAttrs(block.look)}>
+        <p className="pa-statement" data-m="words" {...lookProps(block.look, "display")}>
           {words.map((w, i) => <span key={i} className="pa-word">{w}{i < words.length - 1 ? " " : ""}</span>)}
         </p>
       </div>
@@ -211,7 +218,7 @@ function TextBlock({ block }: { block: BlockOf<"text"> }) {
   }
   return (
     <div className="pa-wrap">
-      <div className={block.style === "lead" ? "pa-lead" : "pa-body"} {...lookAttrs(block.look)}><Rich text={block.text} /></div>
+      <div className={block.style === "lead" ? "pa-lead" : "pa-body"} {...lookProps(block.look, "text")}><Rich text={block.text} /></div>
     </div>
   );
 }
@@ -226,7 +233,7 @@ function HeadingBlock({ block }: { block: BlockOf<"heading"> }) {
   );
   return (
     <div className="pa-wrap">
-      <h2 className="pa-heading" {...lookAttrs(block.look)}>
+      <h2 className="pa-heading" {...lookProps(block.look, "display")}>
         {pill ? <>{words.slice(0, at).join(" ")}{at > 0 && " "}{pill}{at < words.length && " "}{words.slice(at).join(" ")}</> : block.text}
       </h2>
     </div>
@@ -285,7 +292,7 @@ function SplitBlock({ block, ctx }: { block: BlockOf<"split">; ctx: Ctx }) {
         {block.media && <Shot item={block.media} ctx={ctx} sizes="(max-width: 767px) 100vw, 58vw" />}
       </div>
       <div className="pa-split-text">
-        {block.heading.trim() && <h2 className="pa-split-heading" {...lookAttrs(block.look)}>{block.heading}</h2>}
+        {block.heading.trim() && <h2 className="pa-split-heading" {...lookProps(block.look, "display")}>{block.heading}</h2>}
         {block.text.trim() && <div className="pa-body"><Rich text={block.text} /></div>}
       </div>
     </div>
@@ -295,7 +302,7 @@ function SplitBlock({ block, ctx }: { block: BlockOf<"split">; ctx: Ctx }) {
 function QuoteBlock({ block }: { block: BlockOf<"quote"> }) {
   return (
     <div className="pa-wrap">
-      <figure className="pa-quote" {...lookAttrs(block.look)}>
+      <figure className="pa-quote" {...lookProps(block.look, "text")}>
         <blockquote><p>{block.text}</p></blockquote>
         {(block.name.trim() || block.role.trim()) && (
           <figcaption>

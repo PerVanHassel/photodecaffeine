@@ -5,13 +5,14 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { ArticleView, type EditorHooks } from "../../../components/article/ArticleView";
-import { Helmet } from "react-helmet-async";
-import { ALL_FONTS, blockUrls, buildPage, heroCover, newBlock, newId, TEMPLATES, type BlockType, type TemplateId } from "../../../lib/articlePage";
+import { blockUrls, buildPage, heroCover, newBlock, newId, TEMPLATES, type BlockType, type TemplateId } from "../../../lib/articlePage";
 import { del, put } from "../../api";
 import { useAction } from "../../queries";
 import { Button, Empty, Modal, Pill, Segmented, Skeleton, undoToast, useConfirm } from "../../ui";
 import { useUnsavedChanges } from "../../unsaved";
+import { usesAdobe } from "../../../lib/typefaces";
 import { isWork, portfolioKey, useArticles } from "./data";
+import { FontsProvider } from "./fonts";
 import { LanguagePanel } from "./LanguagePanel";
 import { MediaPicker, type PickRequest } from "./MediaPicker";
 import { BlockPanel, blockName, HeroPanel, InsertPanel, PagePanel } from "./Panels";
@@ -54,13 +55,15 @@ export function PageMakerPage() {
   const [device, setDevice] = useState<"desktop" | "phone">("desktop");
   const [picking, setPicking] = useState<PickRequest | null>(null);
   const [choosingTemplate, setChoosingTemplate] = useState(false);
+  const kit = useRef<string | null>(null);
 
   const page = useMemo(() => (draft ? shownPage(draft) : null), [draft]);
   const used = useMemo(() => new Set(page?.blocks.flatMap(blockUrls) ?? []), [page]);
   const block = page?.blocks.find((b) => b.id === selected) ?? null;
 
   const save = useAction({
-    fn: (d: Draft) => put(`/admin/portfolio/${id}`, d),
+    // Adobe faces need their project on the site; the page takes it along.
+    fn: (d: Draft) => put(`/admin/portfolio/${id}`, d.page && usesAdobe(d.page) && kit.current && d.page.kit !== kit.current ? { ...d, page: { ...d.page, kit: kit.current } } : d),
     invalidate: () => [portfolioKey],
     success: "Opgeslagen",
     onSuccess: (_r, d) => setSaved(JSON.stringify(d)),
@@ -195,9 +198,8 @@ export function PageMakerPage() {
             : null;
 
   return (
+    <FontsProvider pageKit={draft.page?.kit} onKit={(k) => { kit.current = k; }}>
     <div className="pm">
-      {/* Every typeface, so the choices show in their own letters. */}
-      <Helmet><link rel="stylesheet" href={ALL_FONTS} /></Helmet>
       <header className="pm-top">
         <Link to="/admin/portfolio" className="s-btn ghost sm" aria-label="Terug naar het portfolio"><ArrowLeft size={15} /></Link>
         <div className="pm-name">
@@ -280,6 +282,7 @@ export function PageMakerPage() {
       )}
       {choosingTemplate && <TemplatePicker onPick={applyTemplate} onClose={() => setChoosingTemplate(false)} current={draft.page?.template} />}
     </div>
+    </FontsProvider>
   );
 }
 

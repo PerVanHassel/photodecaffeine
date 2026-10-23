@@ -307,6 +307,8 @@ function overview() {
   };
 }
 
+const siteSettings: Json = {};
+
 const portfolio: Json[] = [
   {
     id: id(401), title: "BMW 320i Touring", category: "Automotive", coverUrl: PHOTOS[0], coverType: "image",
@@ -364,7 +366,7 @@ export async function mockApi(path: string, method: string, body: Json): Promise
       };
     }
     if (p === "/admin/calendar-feed") return { url: "https://www.photodecaffeine.com/api/calendar/0123456789abcdef0123456789abcdef0123456789abcdef.ics" };
-    if (p === "/admin/settings") return { settings: { heroImageUrl: PHOTOS[0], heroImageMobileUrl: "", frameImageUrl: PHOTOS[6], studioName: "PhotoDeCaffeine", contactEmail: "contact@photodecaffeine.com", sections: { workProcess: true, portfolio: true, about: true, services: true, socialProof: false, customCTA: true }, business: { name: "PhotoDeCaffeine Productions" } } };
+    if (p === "/admin/settings") return { settings: { ...siteSettings, heroImageUrl: PHOTOS[0], heroImageMobileUrl: "", frameImageUrl: PHOTOS[6], studioName: "PhotoDeCaffeine", contactEmail: "contact@photodecaffeine.com", sections: { workProcess: true, portfolio: true, about: true, services: true, socialProof: false, customCTA: true }, business: { name: "PhotoDeCaffeine Productions" } } };
     if (p === "/admin/notifications") return { notifications: [], unread: 0, readAt: "" };
     if (p === "/admin/me") return { id: id(999), email: "per@example.nl", name: "Per van Hassel", isOwner: true, roleName: "Eigenaar", permissions: Object.fromEntries(["manageClients", "manageQuotes", "manageInquiries", "managePortfolio", "manageAds", "manageSettings", "manageDeclarations", "viewAllDeclarations", "manageAdmins"].map((k) => [k, true])) };
     if (p === "/admin/portfolio") return { articles: structuredClone(portfolio) };
@@ -598,6 +600,10 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     const x = projects.find((y) => y.id === r![1]);
     x.favoriteIds = body.favorite ? [...new Set([...(x.favoriteIds || []), body.imageId])] : (x.favoriteIds || []).filter((f: string) => f !== body.imageId);
     return { success: true };
+  }
+  if (p === "/admin/settings" && method === "PUT") {
+    Object.assign(siteSettings, body);
+    return { settings: siteSettings };
   }
   if (p === "/admin/portfolio" && method === "POST") {
     const a = { id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), ...body };
