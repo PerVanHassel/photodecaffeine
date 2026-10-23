@@ -5,7 +5,8 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { ArticleView, type EditorHooks } from "../../../components/article/ArticleView";
-import { blockUrls, buildPage, heroCover, newBlock, newId, TEMPLATES, type BlockType, type TemplateId } from "../../../lib/articlePage";
+import { Helmet } from "react-helmet-async";
+import { ALL_FONTS, blockUrls, buildPage, heroCover, newBlock, newId, TEMPLATES, type BlockType, type TemplateId } from "../../../lib/articlePage";
 import { del, put } from "../../api";
 import { useAction } from "../../queries";
 import { Button, Empty, Modal, Pill, Segmented, Skeleton, undoToast, useConfirm } from "../../ui";
@@ -151,7 +152,11 @@ export function PageMakerPage() {
     const name = TEMPLATES.find((x) => x.id === t)!.name;
     commit((d) => {
       const built = buildPage({ ...d, page: null, createdAt: article?.createdAt }, t);
-      return { ...d, page: { ...built, subtitle: built.subtitle || d.page?.subtitle || "" } };
+      // A chosen typeface and title look stay; the template only changes the layout then.
+      return {
+        ...d,
+        page: { ...built, subtitle: built.subtitle || d.page?.subtitle || "", type: d.page?.type ?? built.type, titleLook: d.page?.titleLook },
+      };
     });
     setChoosingTemplate(false);
     setSelected(null);
@@ -191,6 +196,8 @@ export function PageMakerPage() {
 
   return (
     <div className="pm">
+      {/* Every typeface, so the choices show in their own letters. */}
+      <Helmet><link rel="stylesheet" href={ALL_FONTS} /></Helmet>
       <header className="pm-top">
         <Link to="/admin/portfolio" className="s-btn ghost sm" aria-label="Terug naar het portfolio"><ArrowLeft size={15} /></Link>
         <div className="pm-name">

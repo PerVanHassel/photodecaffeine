@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
+import { Helmet } from "react-helmet-async";
 import {
-  blockHasContent, effectiveLayout, embedSrc, heroCover, pagePhotos, plainText, seriesRest, shownItems,
+  blockHasContent, effectiveLayout, embedSrc, heroCover, lookAttrs, pagePhotos, plainText, seriesRest, shownItems, typeOf,
   type ArticlePage, type ArticleSource, type Block, type BlockOf, type MediaItem, type MediaLayout,
 } from "../../lib/articlePage";
 import { HIGH_PRIORITY, webSrcSet } from "../../lib/images";
@@ -52,9 +53,11 @@ export function ArticleView({ source, page, onOpen, editor, back, children }: {
   useArticleMotion(root, !editor, page);
 
   const shown = page.blocks.filter((b) => editor || blockHasContent(b, source, page));
+  const type = typeOf(page);
 
   return (
-    <article ref={root} className={`pa${editor ? " pa--editing" : ""}`} data-theme={page.theme}>
+    <article ref={root} className={`pa${editor ? " pa--editing" : ""}`} data-theme={page.theme} data-type={type.id}>
+      {type.fonts && <Helmet><link rel="stylesheet" href={type.fonts} /></Helmet>}
       <Selectable id="hero" editor={editor} className="pa-hero-slot">
         <Hero source={source} page={page} back={back} />
       </Selectable>
@@ -127,7 +130,7 @@ function Hero({ source, page, back }: { source: ArticleSource; page: ArticlePage
   const head = (
     <div className="pa-hero-head">
       {source.category && <p className="pa-kicker">{source.category}</p>}
-      <h1 className="pa-title">{source.title}</h1>
+      <h1 className="pa-title" {...lookAttrs(page.titleLook)}>{source.title}</h1>
     </div>
   );
   const sub = page.subtitle.trim() ? <p className="pa-sub">{page.subtitle}</p> : null;
@@ -200,7 +203,7 @@ function TextBlock({ block }: { block: BlockOf<"text"> }) {
     const words = plainText(block.text).split(/\s+/).filter(Boolean);
     return (
       <div className="pa-wrap">
-        <p className="pa-statement" data-m="words">
+        <p className="pa-statement" data-m="words" {...lookAttrs(block.look)}>
           {words.map((w, i) => <span key={i} className="pa-word">{w}{i < words.length - 1 ? " " : ""}</span>)}
         </p>
       </div>
@@ -208,7 +211,7 @@ function TextBlock({ block }: { block: BlockOf<"text"> }) {
   }
   return (
     <div className="pa-wrap">
-      <div className={block.style === "lead" ? "pa-lead" : "pa-body"}><Rich text={block.text} /></div>
+      <div className={block.style === "lead" ? "pa-lead" : "pa-body"} {...lookAttrs(block.look)}><Rich text={block.text} /></div>
     </div>
   );
 }
@@ -223,7 +226,7 @@ function HeadingBlock({ block }: { block: BlockOf<"heading"> }) {
   );
   return (
     <div className="pa-wrap">
-      <h2 className="pa-heading">
+      <h2 className="pa-heading" {...lookAttrs(block.look)}>
         {pill ? <>{words.slice(0, at).join(" ")}{at > 0 && " "}{pill}{at < words.length && " "}{words.slice(at).join(" ")}</> : block.text}
       </h2>
     </div>
@@ -282,7 +285,7 @@ function SplitBlock({ block, ctx }: { block: BlockOf<"split">; ctx: Ctx }) {
         {block.media && <Shot item={block.media} ctx={ctx} sizes="(max-width: 767px) 100vw, 58vw" />}
       </div>
       <div className="pa-split-text">
-        {block.heading.trim() && <h2 className="pa-split-heading">{block.heading}</h2>}
+        {block.heading.trim() && <h2 className="pa-split-heading" {...lookAttrs(block.look)}>{block.heading}</h2>}
         {block.text.trim() && <div className="pa-body"><Rich text={block.text} /></div>}
       </div>
     </div>
@@ -292,7 +295,7 @@ function SplitBlock({ block, ctx }: { block: BlockOf<"split">; ctx: Ctx }) {
 function QuoteBlock({ block }: { block: BlockOf<"quote"> }) {
   return (
     <div className="pa-wrap">
-      <figure className="pa-quote">
+      <figure className="pa-quote" {...lookAttrs(block.look)}>
         <blockquote><p>{block.text}</p></blockquote>
         {(block.name.trim() || block.role.trim()) && (
           <figcaption>

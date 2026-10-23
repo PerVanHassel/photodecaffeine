@@ -7,8 +7,9 @@ import {
 } from "lucide-react";
 import { useId, useRef, type ReactNode } from "react";
 import {
-  BLOCK_TYPES, embedSrc, heroCover, isVideoUrl, LAYOUTS, mediaItem, seriesRest,
-  type ArticlePage, type ArticleTheme, type Block, type BlockOf, type BlockType, type HeroStyle, type MediaItem, type MediaLayout, type TextStyle,
+  BLOCK_TYPES, embedSrc, heroCover, isVideoUrl, LAYOUTS, mediaItem, seriesRest, typeOf, TYPES,
+  type ArticlePage, type ArticleTheme, type Block, type BlockOf, type BlockType, type HeroStyle, type LetterCase, type MediaItem, type MediaLayout,
+  type TextLook, type TextStyle,
 } from "../../../lib/articlePage";
 import { MediaGrid } from "../../components/MediaGrid";
 import { Button, Field, Input, Photo, Segmented, Textarea, TextField } from "../../ui";
@@ -106,7 +107,7 @@ export function PagePanel({ draft, page, commit, pick, categories, selected, onS
       <Section title="Blokken" action={<Button size="sm" icon={<Plus />} onClick={() => onInsert(page.blocks.length)}>Blok</Button>}>
         <Outline draft={draft} page={page} commit={commit} selected={selected} onSelect={onSelect} />
       </Section>
-      <Section title="Kop en kleur">
+      <Section title="Letters, kop en kleur">
         <HeroFields draft={draft} page={page} commit={commit} pick={pick} compact />
       </Section>
       <Section title="Op de site">
@@ -173,10 +174,36 @@ const HEROES: { value: HeroStyle; label: string }[] = [
   { value: "plain", label: "Alleen titel" },
 ];
 
+/** The typeface pairs, each shown in its own letters. */
+function TypeFields({ page, commit }: { page: ArticlePage; commit: Commit }) {
+  const current = typeOf(page).id;
+  return (
+    <Field label="Lettertype" hint={typeOf(page).about}>
+      <div className="pm-tiles" role="group" aria-label="Lettertype">
+        {TYPES.map((t) => (
+          <button key={t.id} type="button" className="pm-tile pm-type" aria-pressed={current === t.id}
+            onClick={() => commit(withPage((p) => ({ ...p, type: t.id })))}>
+            <div className="pa pm-type-sample" data-type={t.id} data-theme="light" aria-hidden="true">
+              <span className="pa-title">Ag</span>
+              <span className="pm-type-text">Tekst</span>
+            </div>
+            {t.name}
+          </button>
+        ))}
+      </div>
+    </Field>
+  );
+}
+
 export function HeroFields({ draft, page, commit, pick, compact }: PanelProps & { compact?: boolean }) {
   const cover = heroCover(draft);
   return (
     <>
+      <TypeFields page={page} commit={commit} />
+      {!compact && (
+        <LookFields label="Letters van de titel" look={page.titleLook} show={["size", "case", "italic", "tracking"]}
+          onChange={(titleLook) => commit(withPage((p) => ({ ...p, titleLook })))} />
+      )}
       <div className="pm-tiles four" role="group" aria-label="Kop">
         {HEROES.map((h) => (
           <button key={h.value} type="button" className="pm-tile" aria-pressed={page.hero === h.value}
@@ -220,7 +247,7 @@ export function HeroPanel(props: PanelProps & { categories: string[] }) {
       <Section title="Titel">
         <ArticleFields draft={props.draft} commit={props.commit} categories={props.categories} />
       </Section>
-      <Section title="Kop en kleur">
+      <Section title="Letters, kop en kleur">
         <HeroFields {...props} />
       </Section>
     </>
@@ -274,6 +301,8 @@ function TextForm({ block, set }: { block: BlockOf<"text">; set: Setter }) {
         hint={block.style === "statement" ? "Groot en kort: één of twee zinnen. Licht op tijdens het scrollen." : "Een lege regel begint een nieuwe alinea."}
         onChange={(text) => set<BlockOf<"text">>((b) => ({ ...b, text }), "text")}
       />
+      <LookFields look={block.look} onChange={(look) => set<BlockOf<"text">>((b) => ({ ...b, look }))}
+        show={block.style === "body" ? ["size", "align", "dropcap"] : ["size", "align", "case", "tracking", "italic"]} />
     </>
   );
 }
@@ -304,6 +333,8 @@ function HeadingForm({ block, set, pick, draft }: { block: BlockOf<"heading">; s
         </Field>
       )}
       {draft.galleryUrls.length === 0 && <p className="s-small s-faint">Upload eerst foto's bij Pagina.</p>}
+      <LookFields look={block.look} onChange={(look) => set<BlockOf<"heading">>((b) => ({ ...b, look }))}
+        show={["size", "align", "case", "tracking", "italic"]} />
     </>
   );
 }
@@ -400,6 +431,8 @@ function SplitForm({ block, set, pick }: { block: BlockOf<"split">; set: Setter;
       </Field>
       <TextField label="Kopje" hint="Mag leeg." lang="nl" spellCheck value={block.heading} onChange={(e) => set<BlockOf<"split">>((b) => ({ ...b, heading: e.target.value }), "heading")} />
       <TextAreaRich label="Tekst" rows={9} value={block.text} onChange={(text) => set<BlockOf<"split">>((b) => ({ ...b, text }), "text")} />
+      <LookFields label="Letters van het kopje" look={block.look} onChange={(look) => set<BlockOf<"split">>((b) => ({ ...b, look }))}
+        show={["size", "case", "tracking", "italic"]} />
     </>
   );
 }
@@ -411,6 +444,8 @@ function QuoteForm({ block, set }: { block: BlockOf<"quote">; set: Setter }) {
       <TextField label="Naam" value={block.name} onChange={(e) => set<BlockOf<"quote">>((b) => ({ ...b, name: e.target.value }), "name")} />
       <TextField label="Wie" hint="Bijvoorbeeld: eigenaar van de BMW. Mag leeg." lang="nl" spellCheck value={block.role}
         onChange={(e) => set<BlockOf<"quote">>((b) => ({ ...b, role: e.target.value }), "role")} />
+      <LookFields look={block.look} onChange={(look) => set<BlockOf<"quote">>((b) => ({ ...b, look }))}
+        show={["size", "align", "case", "italic"]} italicDefault />
     </>
   );
 }
@@ -477,6 +512,79 @@ export function InsertPanel({ onInsert }: { onInsert: (type: BlockType) => void 
         </button>
       ))}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// A text's look: size, alignment, capitals, slant, spacing
+// ---------------------------------------------------------------------------
+
+type LookPart = "size" | "align" | "case" | "italic" | "tracking" | "dropcap";
+
+const CASES: { value: LetterCase; label: string; style: React.CSSProperties }[] = [
+  { value: "auto", label: "Standaard", style: {} },
+  { value: "upper", label: "Hoofdletters", style: { textTransform: "uppercase", letterSpacing: "0.04em" } },
+  { value: "smallcaps", label: "Kleinkapitalen", style: { fontVariantCaps: "small-caps", letterSpacing: "0.04em" } },
+  { value: "normal", label: "Gewoon", style: {} },
+  { value: "lower", label: "kleine letters", style: { textTransform: "lowercase" } },
+];
+
+/** The look on top of the typeface; every choice can go back to Standaard. */
+function LookFields({ look, onChange, show, label = "Letters", italicDefault = false }: {
+  look?: TextLook;
+  onChange: (look: TextLook) => void;
+  show: LookPart[];
+  label?: string;
+  /** Whether the text is slanted when nothing is chosen (quotes are). */
+  italicDefault?: boolean;
+}) {
+  const l = look ?? {};
+  const set = (patch: Partial<TextLook>) => onChange({ ...l, ...patch });
+  return (
+    <details className="pm-item pm-look" open>
+      <summary>{label}</summary>
+      <div className="s-stack" style={{ paddingTop: 10 }}>
+        {show.includes("size") && (
+          <Field label="Grootte">
+            <Segmented<"s" | "m" | "l" | "xl"> label="Grootte" value={l.size || "m"} onChange={(size) => set({ size })}
+              options={[{ value: "s", label: "Klein" }, { value: "m", label: "Normaal" }, { value: "l", label: "Groot" }, { value: "xl", label: "XL" }]} />
+          </Field>
+        )}
+        {show.includes("align") && (
+          <Field label="Uitlijnen">
+            <Segmented<"left" | "center" | "right"> label="Uitlijnen" value={l.align || "left"}
+              onChange={(align) => set({ align: align === "left" ? undefined : align })}
+              options={[{ value: "left", label: "Links" }, { value: "center", label: "Midden" }, { value: "right", label: "Rechts" }]} />
+          </Field>
+        )}
+        {show.includes("case") && (
+          <Field label="Hoofdletters">
+            <div className="s-chips" role="group" aria-label="Hoofdletters">
+              {CASES.map((c) => (
+                <button key={c.value} type="button" className="s-chip" aria-pressed={(l.case || "auto") === c.value} style={c.style}
+                  onClick={() => set({ case: c.value === "auto" ? undefined : c.value })}>{c.label}</button>
+              ))}
+            </div>
+          </Field>
+        )}
+        {show.includes("tracking") && (
+          <Field label="Ruimte tussen de letters">
+            <Segmented<"tight" | "normal" | "wide"> label="Ruimte tussen de letters" value={l.tracking || "normal"}
+              onChange={(tracking) => set({ tracking: tracking === "normal" ? undefined : tracking })}
+              options={[{ value: "tight", label: "Krap" }, { value: "normal", label: "Standaard" }, { value: "wide", label: "Ruim" }]} />
+          </Field>
+        )}
+        {show.includes("italic") && (
+          <label className="s-check"><input type="checkbox" checked={l.italic ?? italicDefault} onChange={(e) => set({ italic: e.target.checked })} /> Schuin</label>
+        )}
+        {show.includes("dropcap") && (
+          <label className="s-check"><input type="checkbox" checked={!!l.dropcap} onChange={(e) => set({ dropcap: e.target.checked || undefined })} /> Grote beginletter</label>
+        )}
+        {Object.values(l).some((v) => v !== undefined) && (
+          <Button size="sm" variant="ghost" style={{ alignSelf: "flex-start" }} onClick={() => onChange({})}>Terug naar standaard</Button>
+        )}
+      </div>
+    </details>
   );
 }
 

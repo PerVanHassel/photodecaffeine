@@ -23,12 +23,26 @@ export type MediaLayout = "full" | "wide" | "inset" | "duo" | "offset" | "trio" 
 
 export type TextStyle = "body" | "lead" | "statement";
 
+/** How letters are set: "auto" follows the page's typeface. */
+export type LetterCase = "auto" | "upper" | "smallcaps" | "normal" | "lower";
+
+/** A text's look on top of the typeface. Every field is optional; empty is the typeface's own. */
+export interface TextLook {
+  size?: "s" | "m" | "l" | "xl";
+  align?: "left" | "center" | "right";
+  case?: LetterCase;
+  italic?: boolean;
+  tracking?: "tight" | "normal" | "wide";
+  /** A large first letter (paragraphs only). */
+  dropcap?: boolean;
+}
+
 export type Block =
-  | { id: string; type: "text"; style: TextStyle; text: string }
-  | { id: string; type: "heading"; text: string; inline: MediaItem | null; after: number }
+  | { id: string; type: "text"; style: TextStyle; text: string; look?: TextLook }
+  | { id: string; type: "heading"; text: string; inline: MediaItem | null; after: number; look?: TextLook }
   | { id: string; type: "media"; layout: MediaLayout; items: MediaItem[]; caption: string }
-  | { id: string; type: "split"; media: MediaItem | null; heading: string; text: string; side: "left" | "right" }
-  | { id: string; type: "quote"; text: string; name: string; role: string }
+  | { id: string; type: "split"; media: MediaItem | null; heading: string; text: string; side: "left" | "right"; look?: TextLook }
+  | { id: string; type: "quote"; text: string; name: string; role: string; look?: TextLook }
   | { id: string; type: "facts"; items: Fact[] }
   | { id: string; type: "embed"; url: string; caption: string }
   | { id: string; type: "series" };
@@ -44,14 +58,62 @@ export interface Fact {
 export type HeroStyle = "cinema" | "offset" | "split" | "plain";
 export type ArticleTheme = "dark" | "light";
 export type TemplateId = "verhaal" | "fotoserie" | "case" | "film" | "leeg";
+export type TypeId = "huisstijl" | "redactie" | "magazine" | "grotesk" | "strak" | "expressief";
 
 export interface ArticlePage {
   template: TemplateId;
   hero: HeroStyle;
   theme: ArticleTheme;
+  /** The typeface pair for headings and text. Missing: the site's own. */
+  type?: TypeId;
+  /** The title's look in the header. */
+  titleLook?: TextLook;
   /** A line under the title. */
   subtitle: string;
   blocks: Block[];
+}
+
+// ---------------------------------------------------------------------------
+// Typefaces
+// ---------------------------------------------------------------------------
+
+const GF = "https://fonts.googleapis.com/css2?";
+
+/**
+ * Typeface pairs: one for headings, one for reading. The styles per pair are
+ * in article.css ([data-type]); `fonts` is the Google Fonts sheet a page
+ * loads for it (the site's own Inter is always there).
+ */
+export const TYPES: { id: TypeId; name: string; about: string; display: string; text: string; fonts: string | null }[] = [
+  { id: "huisstijl", name: "Huisstijl", about: "Zwaar en in hoofdletters, zoals de rest van de site.", display: "'Inter', sans-serif", text: "'Inter', sans-serif", fonts: null },
+  { id: "redactie", name: "Redactie", about: "Sierlijke schreefletter voor koppen, rustige tekst eronder.", display: "'Instrument Serif', serif", text: "'Geist', sans-serif",
+    fonts: `${GF}family=Instrument+Serif:ital@0;1&family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&display=swap` },
+  { id: "magazine", name: "Magazine", about: "Klassiek tijdschrift: schreefletters voor kop en tekst.", display: "'Fraunces', serif", text: "'Newsreader', serif",
+    fonts: `${GF}family=Fraunces:ital,opsz,wght@0,9..144,300..800;1,9..144,300..800&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&display=swap` },
+  { id: "grotesk", name: "Grotesk", about: "Vette, eigenwijze koppen met een vriendelijke tekstletter.", display: "'Bricolage Grotesque', sans-serif", text: "'Plus Jakarta Sans', sans-serif",
+    fonts: `${GF}family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Plus+Jakarta+Sans:ital,wght@0,300..700;1,300..700&display=swap` },
+  { id: "strak", name: "Strak", about: "Modern en technisch, met kleine labels in mono.", display: "'Geist', sans-serif", text: "'Geist', sans-serif",
+    fonts: `${GF}family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&display=swap` },
+  { id: "expressief", name: "Expressief", about: "Brede, opvallende koppen voor een stuk dat mag knallen.", display: "'Syne', sans-serif", text: "'Geist', sans-serif",
+    fonts: `${GF}family=Syne:wght@500..800&family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&display=swap` },
+];
+
+/** Every typeface at once, for the page maker's choices. */
+export const ALL_FONTS = `${GF}family=Instrument+Serif:ital@0;1&family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300..800;1,9..144,300..800&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Plus+Jakarta+Sans:ital,wght@0,300..700;1,300..700&family=Syne:wght@500..800&display=swap`;
+
+export const typeOf = (page: ArticlePage) => TYPES.find((t) => t.id === page.type) ?? TYPES[0];
+
+/** A look as data attributes for article.css. Unset fields add nothing. */
+export function lookAttrs(look?: TextLook): Record<string, string> {
+  if (!look) return {};
+  const out: Record<string, string> = {};
+  if (look.size && look.size !== "m") out["data-size"] = look.size;
+  if (look.align) out["data-align"] = look.align;
+  if (look.case && look.case !== "auto") out["data-case"] = look.case;
+  if (look.italic !== undefined) out["data-italic"] = look.italic ? "on" : "off";
+  if (look.tracking && look.tracking !== "normal") out["data-track"] = look.tracking;
+  if (look.dropcap) out["data-dropcap"] = "on";
+  return out;
 }
 
 /** What a page is built from: the parts of a portfolio article it uses. */
@@ -227,6 +289,7 @@ type Beat = { layout: MediaLayout; count: number } | "split";
 interface Recipe {
   hero: HeroStyle;
   theme: ArticleTheme;
+  type: TypeId;
   /** Media moments, used in turn and from the start again. */
   beats: Beat[];
   /** Paragraphs between two media moments. */
@@ -241,6 +304,7 @@ const RECIPES: Record<Exclude<TemplateId, "leeg">, Recipe> = {
   verhaal: {
     hero: "cinema",
     theme: "dark",
+    type: "huisstijl",
     beats: [{ layout: "full", count: 1 }, { layout: "duo", count: 2 }, "split", { layout: "mosaic", count: 5 }, { layout: "wide", count: 1 }, { layout: "offset", count: 2 }, { layout: "trio", count: 3 }],
     textPerBeat: 1,
     trailing: 2,
@@ -248,6 +312,7 @@ const RECIPES: Record<Exclude<TemplateId, "leeg">, Recipe> = {
   fotoserie: {
     hero: "offset",
     theme: "dark",
+    type: "redactie",
     beats: [{ layout: "wide", count: 1 }, { layout: "offset", count: 2 }, { layout: "slices", count: 4 }, { layout: "full", count: 1 }, { layout: "trio", count: 3 }, { layout: "mosaic", count: 4 }, { layout: "marquee", count: 6 }],
     textPerBeat: 2,
     trailing: 7,
@@ -255,6 +320,7 @@ const RECIPES: Record<Exclude<TemplateId, "leeg">, Recipe> = {
   case: {
     hero: "split",
     theme: "light",
+    type: "strak",
     beats: ["split", { layout: "mosaic", count: 3 }, { layout: "full", count: 1 }, "split", { layout: "duo", count: 2 }, { layout: "mosaic", count: 5 }],
     textPerBeat: 1,
     trailing: 2,
@@ -272,6 +338,7 @@ const RECIPES: Record<Exclude<TemplateId, "leeg">, Recipe> = {
   film: {
     hero: "plain",
     theme: "dark",
+    type: "grotesk",
     beats: [{ layout: "duo", count: 2 }, { layout: "wide", count: 1 }, { layout: "marquee", count: 5 }, { layout: "trio", count: 3 }],
     textPerBeat: 2,
     trailing: 2,
@@ -310,6 +377,7 @@ export function buildPage(source: ArticleSource, template: TemplateId): ArticleP
       template,
       hero: "plain",
       theme: "dark",
+      type: "huisstijl",
       subtitle,
       blocks: [
         ...pieces.map((p, i): Block => (p.kind === "headline"
@@ -382,7 +450,7 @@ export function buildPage(source: ArticleSource, template: TemplateId): ArticleP
   }
   blocks.push({ id: next(), type: "series" });
 
-  return { template, hero: recipe.hero, theme: recipe.theme, subtitle, blocks };
+  return { template, hero: recipe.hero, theme: recipe.theme, type: recipe.type, subtitle, blocks };
 }
 
 /** The page an article shows: its saved page, or the automatic one. */
@@ -391,7 +459,8 @@ export function pageOf(source: ArticleSource): ArticlePage {
   if (saved && Array.isArray(saved.blocks)) return saved;
   // Without text the photos lead.
   const hasText = textPieces(source.description).some((p) => p.kind !== "headline");
-  return buildPage(source, hasText ? "verhaal" : "fotoserie");
+  // The automatic page keeps the site's own typeface.
+  return { ...buildPage(source, hasText ? "verhaal" : "fotoserie"), type: "huisstijl" };
 }
 
 // ---------------------------------------------------------------------------

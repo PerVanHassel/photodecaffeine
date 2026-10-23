@@ -10,8 +10,16 @@
   --pa-ease: cubic-bezier(0.16, 1, 0.3, 1);
   background-color: var(--pa-bg);
   color: var(--pa-ink);
-  font-family: 'Inter', sans-serif;
+  font-family: var(--pa-text-font);
   -webkit-font-smoothing: antialiased;
+
+  /* The typeface pair (data-type below): headings, statements, reading, labels. */
+  --pa-display: 'Inter', sans-serif; --pa-display-w: 900; --pa-display-case: uppercase;
+  --pa-display-track: -0.035em; --pa-display-lh: 0.9; --pa-ds: 1;
+  --pa-statement-font: var(--pa-display); --pa-statement-w: 700; --pa-statement-track: -0.028em; --pa-ss: 1;
+  --pa-text-font: 'Inter', sans-serif; --pa-text-size: 18px; --pa-lead-w: 300;
+  --pa-label-font: 'Inter', sans-serif; --pa-label-track: 0.32em;
+  --pa-quote-font: var(--pa-text-font); --pa-quote-w: 300;
 }
 .pa[data-theme="dark"] {
   --pa-bg: #080401; --pa-raise: #0d0703; --pa-ink: #fffbe0; --pa-text: rgba(255,251,224,0.8);
@@ -22,6 +30,33 @@
   --pa-bg: #faf8f4; --pa-raise: #f2ede4; --pa-ink: #1a0c04; --pa-text: rgba(26,12,4,0.82);
   --pa-soft: rgba(26,12,4,0.64); --pa-faint: rgba(26,12,4,0.56); --pa-line: rgba(26,12,4,0.12);
   --pa-tile: rgba(26,12,4,0.05); --pa-accent: #9a5b26; --pa-btn: #1a0c04; --pa-btn-ink: #fffbe0;
+}
+.pa[data-type="redactie"] {
+  --pa-display: 'Instrument Serif', serif; --pa-display-w: 400; --pa-display-case: none; --pa-display-track: -0.015em; --pa-display-lh: 0.95; --pa-ds: 1.22;
+  --pa-statement-w: 400; --pa-statement-track: -0.01em; --pa-ss: 1.18;
+  --pa-text-font: 'Geist', sans-serif; --pa-text-size: 17.5px; --pa-label-font: 'Geist Mono', monospace; --pa-label-track: 0.14em;
+  --pa-quote-font: 'Instrument Serif', serif; --pa-quote-w: 400;
+}
+.pa[data-type="magazine"] {
+  --pa-display: 'Fraunces', serif; --pa-display-w: 600; --pa-display-case: none; --pa-display-track: -0.025em; --pa-display-lh: 0.98; --pa-ds: 1.04;
+  --pa-statement-w: 500; --pa-statement-track: -0.02em;
+  --pa-text-font: 'Newsreader', serif; --pa-text-size: 19.5px; --pa-lead-w: 400; --pa-label-font: 'Newsreader', serif; --pa-label-track: 0.22em;
+  --pa-quote-font: 'Fraunces', serif; --pa-quote-w: 300;
+}
+.pa[data-type="grotesk"] {
+  --pa-display: 'Bricolage Grotesque', sans-serif; --pa-display-w: 800; --pa-display-case: none; --pa-display-track: -0.045em; --pa-display-lh: 0.92; --pa-ds: 1.06;
+  --pa-statement-track: -0.035em;
+  --pa-text-font: 'Plus Jakarta Sans', sans-serif; --pa-text-size: 17.5px; --pa-label-font: 'Plus Jakarta Sans', sans-serif; --pa-label-track: 0.24em;
+}
+.pa[data-type="strak"] {
+  --pa-display: 'Geist', sans-serif; --pa-display-w: 600; --pa-display-case: none; --pa-display-track: -0.055em; --pa-display-lh: 0.95;
+  --pa-statement-w: 500; --pa-statement-track: -0.04em;
+  --pa-text-font: 'Geist', sans-serif; --pa-text-size: 17.5px; --pa-label-font: 'Geist Mono', monospace; --pa-label-track: 0.12em;
+}
+.pa[data-type="expressief"] {
+  --pa-display: 'Syne', sans-serif; --pa-display-w: 800; --pa-display-track: -0.02em; --pa-display-lh: 0.92; --pa-ds: 0.94;
+  --pa-statement-track: -0.02em;
+  --pa-text-font: 'Geist', sans-serif; --pa-text-size: 17.5px; --pa-label-font: 'Geist Mono', monospace; --pa-label-track: 0.14em;
 }
 .pa *, .pa *::before, .pa *::after { box-sizing: border-box; }
 .pa ::selection { background-color: var(--pa-accent); color: var(--pa-bg); }
@@ -36,11 +71,15 @@
 .pa-hero { position: relative; }
 .pa-kicker {
   margin: 0 0 clamp(18px, 2cqw, 28px); color: var(--pa-accent);
-  font-size: 11px; font-weight: 600; letter-spacing: 0.32em; text-transform: uppercase;
+  font-family: var(--pa-label-font); font-size: 11px; font-weight: 600; letter-spacing: var(--pa-label-track); text-transform: uppercase;
+}
+/* Headings in the pair's display face; sizes scale with the face (--pa-ds) and the block's own size (--pa-bs). */
+.pa-title, .pa-heading, .pa-split-heading, .pa-end-title {
+  font-family: var(--pa-display); font-weight: var(--pa-display-w); text-transform: var(--pa-display-case);
+  letter-spacing: var(--pa-display-track); line-height: var(--pa-display-lh);
 }
 .pa-title {
-  margin: 0; font-weight: 900; text-transform: uppercase; letter-spacing: -0.035em; line-height: 0.9;
-  font-size: clamp(44px, 7.4cqw, 124px); text-wrap: balance; overflow-wrap: break-word;
+  margin: 0; font-size: calc(clamp(44px, 7.4cqw, 124px) * var(--pa-ds) * var(--pa-bs, 1)); text-wrap: balance; overflow-wrap: break-word;
 }
 .pa-sub {
   margin: 0; color: var(--pa-soft); font-size: clamp(18px, 1.7cqw, 24px); font-weight: 300; line-height: 1.5;
@@ -77,37 +116,36 @@
 .pa-hero--offset .pa-hero-grid, .pa-hero--split .pa-hero-grid, .pa-hero--plain .pa-hero-grid { padding-top: clamp(56px, 8cqw, 136px); }
 
 .pa-hero--offset .pa-hero-head { grid-column: 1 / -1; grid-row: 1; position: relative; z-index: 2; }
-.pa-hero--offset .pa-title { font-size: clamp(48px, 9.4cqw, 156px); max-width: 11.5em; }
+.pa-hero--offset .pa-title { font-size: calc(clamp(48px, 9.4cqw, 156px) * var(--pa-ds) * var(--pa-bs, 1)); max-width: 11.5em; }
 .pa-hero--offset .pa-hero-media { grid-column: 6 / span 7; grid-row: 2; margin-top: calc(-1 * clamp(20px, 3.4cqw, 56px)); aspect-ratio: 4 / 3; position: relative; z-index: 1; }
 .pa-hero--offset .pa-sub { grid-column: 1 / span 4; grid-row: 2; align-self: end; padding-bottom: 6px; }
 
 .pa-hero--split .pa-hero-grid { align-items: center; row-gap: 32px; }
 .pa-hero--split .pa-hero-head { grid-column: 1 / span 5; grid-row: 1; align-self: end; }
-.pa-hero--split .pa-title { font-size: clamp(40px, 5.6cqw, 96px); }
+.pa-hero--split .pa-title { font-size: calc(clamp(40px, 5.6cqw, 96px) * var(--pa-ds) * var(--pa-bs, 1)); }
 .pa-hero--split .pa-sub { grid-column: 1 / span 5; grid-row: 2; align-self: start; }
 .pa-hero--split .pa-hero-media { grid-column: 7 / span 6; grid-row: 1 / span 2; aspect-ratio: 4 / 5; }
 
 .pa-hero--plain .pa-hero-head { grid-column: 1 / span 11; }
-.pa-hero--plain .pa-title { font-size: clamp(48px, 8.4cqw, 140px); max-width: 12em; }
+.pa-hero--plain .pa-title { font-size: calc(clamp(48px, 8.4cqw, 140px) * var(--pa-ds) * var(--pa-bs, 1)); max-width: 12em; }
 .pa-hero--plain .pa-sub { grid-column: 4 / span 7; margin-top: clamp(28px, 3cqw, 44px); }
 
 /* ── Text ── */
 .pa-body, .pa-lead { margin-left: 25%; }
 .pa-body { max-width: 680px; }
-.pa-body p { margin: 0 0 1.15em; color: var(--pa-text); font-size: 18px; font-weight: 400; line-height: 1.75; text-wrap: pretty; }
+.pa-body p { margin: 0 0 1.15em; color: var(--pa-text); font-size: calc(var(--pa-text-size) * var(--pa-bs, 1)); font-weight: 400; line-height: 1.75; text-wrap: pretty; }
 .pa-body p:last-child, .pa-lead p:last-child { margin-bottom: 0; }
 .pa-body strong { color: var(--pa-ink); font-weight: 600; }
 .pa-body a, .pa-lead a { color: var(--pa-ink); text-decoration: underline; text-decoration-color: var(--pa-accent); text-underline-offset: 0.2em; text-decoration-thickness: 1px; }
 .pa-body a:hover, .pa-lead a:hover { color: var(--pa-accent); }
 .pa-lead { max-width: 920px; }
-.pa-lead p { margin: 0 0 0.9em; font-size: clamp(22px, 2.2cqw, 30px); font-weight: 300; line-height: 1.5; letter-spacing: -0.01em; color: var(--pa-ink); text-wrap: pretty; }
+.pa-lead p { margin: 0 0 0.9em; font-size: calc(clamp(22px, 2.2cqw, 30px) * var(--pa-bs, 1)); font-weight: var(--pa-lead-w); line-height: 1.5; letter-spacing: -0.01em; color: var(--pa-ink); text-wrap: pretty; }
 .pa-statement {
-  margin: 0; max-width: 1180px; color: var(--pa-ink); font-size: clamp(30px, 4.4cqw, 66px); font-weight: 700;
-  line-height: 1.1; letter-spacing: -0.028em; text-wrap: balance;
+  margin: 0; max-width: 1180px; color: var(--pa-ink); font-family: var(--pa-statement-font); font-weight: var(--pa-statement-w);
+  font-size: calc(clamp(30px, 4.4cqw, 66px) * var(--pa-ss) * var(--pa-bs, 1)); line-height: 1.1; letter-spacing: var(--pa-statement-track); text-wrap: balance;
 }
 .pa-heading {
-  margin: 0 0 0 25%; max-width: 1050px; font-size: clamp(32px, 4.8cqw, 72px); font-weight: 900; text-transform: uppercase;
-  letter-spacing: -0.03em; line-height: 0.95; text-wrap: balance;
+  margin: 0 0 0 25%; max-width: 1050px; font-size: calc(clamp(32px, 4.8cqw, 72px) * var(--pa-ds) * var(--pa-bs, 1)); text-wrap: balance;
 }
 .pa-pill {
   display: inline-block; width: 2.2em; height: 0.86em; margin: 0 0.04em; border-radius: 999px; overflow: hidden;
@@ -185,15 +223,12 @@ button.pa-zoom { cursor: zoom-in; }
 .pa-split--right .pa-split-text { grid-column: 1 / span 4; grid-row: 1; }
 .pa-split-text { position: sticky; top: 120px; padding-top: clamp(0px, 3cqw, 48px); }
 .pa-split-text .pa-body { margin-left: 0; }
-.pa-split-heading {
-  margin: 0 0 24px; font-size: clamp(26px, 2.6cqw, 40px); font-weight: 900; text-transform: uppercase;
-  letter-spacing: -0.025em; line-height: 0.98; text-wrap: balance;
-}
+.pa-split-heading { margin: 0 0 24px; font-size: calc(clamp(26px, 2.6cqw, 40px) * var(--pa-ds) * var(--pa-bs, 1)); text-wrap: balance; }
 
 /* ── Quote, facts, film ── */
 .pa-quote { margin: 0 0 0 25%; max-width: 920px; }
 .pa-quote blockquote { margin: 0; }
-.pa-quote blockquote p { margin: 0; color: var(--pa-ink); font-size: clamp(24px, 2.8cqw, 40px); font-style: italic; font-weight: 300; line-height: 1.38; text-wrap: pretty; }
+.pa-quote blockquote p { margin: 0; color: var(--pa-ink); font-family: var(--pa-quote-font); font-size: calc(clamp(24px, 2.8cqw, 40px) * var(--pa-bs, 1)); font-style: italic; font-weight: var(--pa-quote-w); line-height: 1.38; text-wrap: pretty; }
 .pa-quote blockquote p::before {
   content: "\201C"; display: block; height: 0.62em; margin-bottom: 0.1em; color: var(--pa-accent);
   font-size: 2.4em; font-style: normal; font-weight: 900; line-height: 1;
@@ -207,7 +242,7 @@ button.pa-zoom { cursor: zoom-in; }
   border-top: 1px solid var(--pa-line); border-bottom: 1px solid var(--pa-line);
 }
 .pa-facts > div { padding: 26px 24px 28px 0; }
-.pa-facts dt { margin-bottom: 10px; color: var(--pa-faint); font-size: 10px; font-weight: 600; letter-spacing: 0.3em; text-transform: uppercase; }
+.pa-facts dt { margin-bottom: 10px; color: var(--pa-faint); font-family: var(--pa-label-font); font-size: 10px; font-weight: 600; letter-spacing: var(--pa-label-track); text-transform: uppercase; }
 .pa-facts dd { margin: 0; color: var(--pa-ink); font-size: 17px; font-weight: 500; line-height: 1.4; }
 
 .pa-embed { max-width: 1200px; margin-inline: auto; aspect-ratio: 16 / 9; background-color: #000; }
@@ -217,7 +252,7 @@ button.pa-zoom { cursor: zoom-in; }
 /* ── The rest of the series, as a spread ── */
 .pa-series-title {
   margin: 0 0 clamp(40px, 5cqw, 80px); padding-top: 24px; border-top: 1px solid var(--pa-line);
-  color: var(--pa-soft); font-size: 11px; font-weight: 600; letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--pa-soft); font-family: var(--pa-label-font); font-size: 11px; font-weight: 600; letter-spacing: var(--pa-label-track); text-transform: uppercase;
 }
 .pa-spread {
   display: grid; grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -233,7 +268,7 @@ button.pa-zoom { cursor: zoom-in; }
 
 /* ── The end: reviews and the call to action ── */
 .pa-reviews { max-width: 820px; margin: 0 auto; padding: 0 var(--pa-gutter) var(--pa-gap); text-align: center; }
-.pa-reviews h2 { margin: 0 0 36px; color: var(--pa-soft); font-size: 11px; font-weight: 600; letter-spacing: 0.3em; text-transform: uppercase; }
+.pa-reviews h2 { margin: 0 0 36px; color: var(--pa-soft); font-family: var(--pa-label-font); font-size: 11px; font-weight: 600; letter-spacing: var(--pa-label-track); text-transform: uppercase; }
 .pa-reviews blockquote { margin: 0; color: var(--pa-ink); font-size: clamp(17px, 2cqw, 21px); font-weight: 300; line-height: 1.7; white-space: pre-wrap; }
 .pa-reviews .pa-stars { display: flex; justify-content: center; gap: 4px; margin-bottom: 24px; color: var(--pa-accent); }
 .pa-reviews figcaption { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin-top: 28px; }
@@ -242,10 +277,9 @@ button.pa-zoom { cursor: zoom-in; }
 .pa-reviews img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
 
 .pa-end { padding: clamp(80px, 9cqw, 140px) var(--pa-gutter); border-top: 1px solid var(--pa-line); background-color: var(--pa-raise); text-align: center; }
-.pa-end-label { display: block; margin-bottom: 20px; color: var(--pa-soft); font-size: 10px; font-weight: 600; letter-spacing: 0.3em; text-transform: uppercase; }
+.pa-end-label { display: block; margin-bottom: 20px; color: var(--pa-soft); font-family: var(--pa-label-font); font-size: 10px; font-weight: 600; letter-spacing: var(--pa-label-track); text-transform: uppercase; }
 .pa-end-title {
-  margin: 0 auto 40px; max-width: 1100px; color: var(--pa-ink); font-size: clamp(30px, 4.4cqw, 64px); font-weight: 900;
-  letter-spacing: -0.03em; line-height: 0.95; text-transform: uppercase; text-wrap: balance;
+  margin: 0 auto 40px; max-width: 1100px; color: var(--pa-ink); font-size: calc(clamp(30px, 4.4cqw, 64px) * var(--pa-ds)); text-wrap: balance;
 }
 .pa-end-title span { color: var(--pa-faint); }
 .pa-end-actions { display: flex; flex-direction: column; align-items: center; gap: 28px; }
@@ -259,6 +293,27 @@ button.pa-zoom { cursor: zoom-in; }
 .pa-end-btn:focus-visible { outline: 2px solid var(--pa-accent); outline-offset: 3px; }
 .pa-end-link { color: var(--pa-soft); font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; text-decoration: none; }
 .pa-end-link:hover { color: var(--pa-ink); }
+
+/* ── A text's own look (TextLook in lib/articlePage.ts) ── */
+.pa [data-size="s"] { --pa-bs: 0.82; }
+.pa [data-size="l"] { --pa-bs: 1.2; }
+.pa [data-size="xl"] { --pa-bs: 1.45; }
+.pa [data-case="upper"] { text-transform: uppercase; font-variant-caps: normal; }
+.pa [data-case="normal"] { text-transform: none; font-variant-caps: normal; }
+.pa [data-case="lower"] { text-transform: lowercase; font-variant-caps: normal; }
+.pa [data-case="smallcaps"] { text-transform: none; font-variant-caps: all-small-caps; letter-spacing: 0.04em; }
+.pa [data-italic="on"], .pa [data-italic="on"] p { font-style: italic; }
+.pa [data-italic="off"], .pa [data-italic="off"] p { font-style: normal; }
+.pa [data-track="tight"], .pa [data-track="tight"] p { letter-spacing: -0.05em; }
+.pa [data-track="wide"], .pa [data-track="wide"] p { letter-spacing: 0.08em; }
+.pa [data-align="center"] { margin-left: auto; margin-right: auto; text-align: center; }
+.pa [data-align="right"] { margin-left: auto; margin-right: 0; text-align: right; }
+.pa-quote[data-align="center"] figcaption { justify-content: center; }
+.pa-quote[data-align="right"] figcaption { justify-content: flex-end; }
+.pa [data-dropcap="on"] p:first-child::first-letter {
+  float: left; margin: 0.08em 0.12em 0 0; color: var(--pa-accent); font-family: var(--pa-display); font-weight: var(--pa-display-w);
+  font-size: 4.2em; line-height: 0.78; text-transform: uppercase;
+}
 
 /* On the site the fixed navigation sits over the top: a dark band, or the
    cinema photo running up underneath it. */
