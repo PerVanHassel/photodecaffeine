@@ -442,3 +442,6 @@
 .studio .rd.is-marker .rd-keys { color: var(--accent-strong); font-weight: 600; }
 .studio .rd-tool.is-marker-tool[aria-pressed="true"] { background: #e9b47a; border-color: #e9b47a; color: var(--ink); }
 .studio .rd.is-tablet .is-marker-tool .rd-tool-label { display: inline; }
+/* The ink of a pencil or marker stroke, drawn on top while you mark */
+.studio .rd-ink { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 44; pointer-events: none; overflow: visible; }
+.studio .rd-ink path { fill: none; stroke: rgba(236, 178, 112, 0.5); stroke-width: 22; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }

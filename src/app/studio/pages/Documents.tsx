@@ -26,6 +26,8 @@ gsap.registerPlugin(useGSAP);
 
 const EMPTY: DocState = { notes: [], read: { done: [], at: null } };
 const HOLD_MS = 450;
+// Only WebKit on iPad and iPhone tells a finger from the Pencil in touch events.
+const IOS_TOUCH = typeof Touch !== "undefined" && "touchType" in Touch.prototype;
 const still = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const looksLikeTablet = () =>
   typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches && navigator.maxTouchPoints > 1 && Math.min(screen.width, screen.height) >= 700;
@@ -289,6 +291,7 @@ function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, pe
   const body = useRef<HTMLDivElement>(null);
   const bar = useRef<HTMLSpanElement>(null);
   const composer = useRef<HTMLTextAreaElement>(null);
+  const ink = useRef<SVGPathElement>(null);
   const [size, setSize] = useStored("pdc-reader-size", "m");
   const [tabletPref, setTablet] = useStored("pdc-reader-tablet", looksLikeTablet() ? "1" : "0");
   const tablet = tabletPref === "1";
@@ -313,7 +316,7 @@ function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, pe
     setLeaving(before ? { section: before, dir: index > shown.index ? 1 : -1 } : null);
   }
 
-  const marking = useMarking(body, section.id, marker);
+  const marking = useMarking(body, section.id, marker, ink);
   const sel = marking.sel;
 
   useGSAP(() => {
@@ -350,8 +353,8 @@ function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, pe
   }, [section.id]);
 
   // Keys and swipes always call the latest handlers without re-binding.
-  const latest = useRef({ forward, back, onExit, sel, clear: marking.clear });
-  latest.current = { forward, back, onExit, sel, clear: marking.clear };
+  const latest = useRef({ forward, back, onExit, sel, clear: marking.clear, busy: marking.busy });
+  latest.current = { forward, back, onExit, sel, clear: marking.clear, busy: marking.busy };
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -381,6 +384,7 @@ function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, pe
     };
     const move = (e: PointerEvent) => {
       if (!start || e.pointerId !== start.id) return;
+      if (latest.current.busy()) { if (dragging) gsap.to(card(), { x: 0, rotate: 0, duration: 0.3 }); start = null; dragging = false; return; }
       const dx = e.clientX - start.x, dy = e.clientY - start.y;
       if (!dragging && Math.abs(dx) > 14 && Math.abs(dx) > Math.abs(dy) * 1.5) dragging = true;
       if (dragging && !still()) gsap.set(card(), { x: dx * 0.4, rotate: dx * 0.008 });
@@ -494,7 +498,7 @@ function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, pe
               className="rd-tool is-marker-tool"
               aria-pressed={marker}
               onClick={() => { setMarker(!marker); marking.clear(); }}
-              title="Markeerstift: streep met je vinger of Pencil over de tekst"
+              title="Markeerstift: streep ook met je vinger over de tekst. De Pencil markeert altijd."
             >
               <Highlighter /> <span className="rd-tool-label">Markeerstift</span>
             </button>
@@ -577,6 +581,7 @@ function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, pe
         />
       )}
       <HoldRing ring={marking.ring} />
+      <svg className="rd-ink" aria-hidden="true"><path ref={ink} /></svg>
     </div>
   );
 }
@@ -714,7 +719,7 @@ function Words({ text }: { text: string }) {
 
 type RingApi = { el: RefObject<HTMLSpanElement | null>; show: (x: number, y: number) => void; hide: () => void; done: () => void };
 
-function useMarking(body: RefObject<HTMLDivElement | null>, key: string, marker: boolean) {
+function useMarking(body: RefObject<HTMLDivElement | null>, key: string, marker: boolean, ink: RefObject<SVGPathElement | null>) {
   const [sel, setSel] = useState<Selecting | null>(null);
   const holding = useRef(false);
   const ringEl = useRef<HTMLSpanElement>(null);
@@ -773,17 +778,21 @@ function useMarking(body: RefObject<HTMLDivElement | null>, key: string, marker:
     return () => { clearTimeout(t); document.removeEventListener("selectionchange", onChange); };
   }, [key]);
 
-  // Holding a sentence still marks it. A pencil draws over words, and so does
-  // a finger once the marker is on. Positions are measured from the text
-  // itself: Safari gives none for text that cannot be selected.
+  // Holding a sentence still marks it (mouse and finger). A pencil always
+  // draws over words, and so does a finger once the marker is on. On iPad the
+  // touch events say whether it is a finger or the Pencil, and cancelling them
+  // is the one way to stop Safari from scrolling under the Pencil. Positions
+  // are measured from the text itself: Safari gives none for text that cannot
+  // be selected.
   useEffect(() => {
     const root = body.current;
     if (!root) return;
     let timer = 0;
     let holdAt: { x: number; y: number } | null = null;
-    let draw: { block: number; offset: number; id: number; x: number; y: number; moved: boolean } | null = null;
+    let draw: { block: number; offset: number; id: number | "touch"; x: number; y: number; moved: boolean; target: Element } | null = null;
     let lastType = "mouse";
     let frame = 0;
+    let trail = "";
 
     const release = () => setTimeout(() => { holding.current = false; }, 50);
     const cancelHold = () => { clearTimeout(timer); timer = 0; holdAt = null; ring.hide(); };
@@ -800,80 +809,100 @@ function useMarking(body: RefObject<HTMLDivElement | null>, key: string, marker:
         const [a, b] = sentenceAt(text, at.offset);
         if (b - a < 2) { ring.hide(); return; }
         holding.current = true;
-        draw = null;
         window.getSelection()?.removeAllRanges();
         navigator.vibrate?.(12);
         ring.done();
         setSel({ quote: { block: at.block, start: a, end: b, text: text.slice(a, b) }, source: "hold" });
       }, HOLD_MS);
     };
-    const drawTo = (x: number, y: number) => {
+
+    const beginDraw = (x: number, y: number, id: number | "touch", target: Element) => {
+      const at = posAt(root, x, y);
+      if (!at) return false;
+      cancelHold();
+      holding.current = true;
+      draw = { ...at, id, x, y, moved: false, target };
+      setSel(null);
+      // The stroke shows as ink while you draw, then fades into the marking.
+      trail = `M${x} ${y}`;
+      if (ink.current) { gsap.killTweensOf(ink.current); ink.current.setAttribute("d", trail); gsap.set(ink.current, { opacity: 1 }); }
+      return true;
+    };
+    const moveDraw = (x: number, y: number) => {
+      if (!draw) return;
+      trail += ` L${Math.round(x)} ${Math.round(y)}`;
+      ink.current?.setAttribute("d", trail);
+      if (!draw.moved && Math.hypot(x - draw.x, y - draw.y) > 4) draw.moved = true;
+      if (!draw.moved) return;
+      // Kept apart, so the last bit of a stroke still lands after the pencil lifts.
+      const d = draw;
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        if (!draw) return;
-        const at = posAt(root, x, y, draw.block);
+        const at = posAt(root, x, y, d.block);
         if (!at) return;
-        const text = blockText(root, draw.block);
-        const [a, b] = snapWords(text, Math.min(draw.offset, at.offset), Math.max(draw.offset, at.offset));
-        if (b - a >= 2) setSel({ quote: { block: draw.block, start: a, end: b, text: text.slice(a, b) }, source: "pen", drawing: true });
+        const text = blockText(root, d.block);
+        const [a, b] = snapWords(text, Math.min(d.offset, at.offset), Math.max(d.offset, at.offset));
+        if (b - a >= 2) setSel({ quote: { block: d.block, start: a, end: b, text: text.slice(a, b) }, source: "pen", drawing: true });
       });
+    };
+    const endDraw = () => {
+      if (!draw) return;
+      const { moved, target } = draw;
+      draw = null;
+      if (ink.current) gsap.to(ink.current, { opacity: 0, duration: still() ? 0 : 0.6, ease: "power2.out" });
+      // A tap without a stroke still opens the note of a marking.
+      if (!moved && target instanceof HTMLElement) target.click();
+      requestAnimationFrame(() => setSel((s) => (s?.drawing ? { ...s, drawing: false } : s)));
+      release();
     };
 
     const down = (e: PointerEvent) => {
       lastType = e.pointerType;
       if (e.button !== 0 || (e.target as Element).closest("a")) return;
-      const draws = e.pointerType === "pen" || (marker && e.pointerType === "touch");
-      // Fingers without the marker hold through the touch events below.
-      if (e.pointerType === "touch" && !draws) return;
-      if (draws) {
-        const at = posAt(root, e.clientX, e.clientY);
-        if (!at) return;
-        e.preventDefault();
-        holding.current = true;
-        draw = { ...at, id: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
-        setSel(null);
-        // Holding the pencil still picks the whole sentence, like a finger.
-        if (e.pointerType === "pen" && !marker) startHold(e.clientX, e.clientY);
-        return;
-      }
-      startHold(e.clientX, e.clientY);
+      if (e.pointerType === "mouse") { startHold(e.clientX, e.clientY); return; }
+      if (IOS_TOUCH) return;
+      if ((e.pointerType === "pen" || marker) && beginDraw(e.clientX, e.clientY, e.pointerId, e.target as Element)) e.preventDefault();
     };
     const move = (e: PointerEvent) => {
-      if (draw && e.pointerId === draw.id) {
-        if (!draw.moved && Math.hypot(e.clientX - draw.x, e.clientY - draw.y) > 6) { draw.moved = true; cancelHold(); }
-        if (draw.moved) drawTo(e.clientX, e.clientY);
-        return;
-      }
-      if (holdAt && e.pointerType !== "touch" && Math.hypot(e.clientX - holdAt.x, e.clientY - holdAt.y) > 8) cancelHold();
+      if (draw && draw.id === e.pointerId) { moveDraw(e.clientX, e.clientY); return; }
+      if (holdAt && e.pointerType === "mouse" && Math.hypot(e.clientX - holdAt.x, e.clientY - holdAt.y) > 8) cancelHold();
     };
     const up = (e: PointerEvent) => {
-      if (draw && e.pointerId === draw.id) {
-        draw = null;
-        setSel((s) => (s?.drawing ? { ...s, drawing: false } : s));
-      }
-      if (e.pointerType !== "touch" && timer) cancelHold();
-      release();
+      if (draw && draw.id === e.pointerId) endDraw();
+      if (e.pointerType === "mouse") { if (timer) cancelHold(); release(); }
     };
 
     const touchStart = (e: TouchEvent) => {
       lastType = "touch";
-      if (marker || e.touches.length !== 1) { cancelHold(); return; }
+      if (e.touches.length !== 1) { cancelHold(); return; }
       const t = e.touches[0] as Touch & { touchType?: string };
-      if (t.touchType === "stylus") return;
-      startHold(t.clientX, t.clientY);
+      if (t.touchType === "stylus" || (marker && IOS_TOUCH)) {
+        if (!(e.target as Element).closest("a") && beginDraw(t.clientX, t.clientY, "touch", e.target as Element)) e.preventDefault();
+        return;
+      }
+      if (!marker) startHold(t.clientX, t.clientY);
     };
     const touchMove = (e: TouchEvent) => {
       const t = e.touches[0];
+      if (draw?.id === "touch") {
+        e.preventDefault();
+        if (t) moveDraw(t.clientX, t.clientY);
+        return;
+      }
       if (holdAt && t && Math.hypot(t.clientX - holdAt.x, t.clientY - holdAt.y) > 10) cancelHold();
     };
-    const touchEnd = () => { if (timer) cancelHold(); release(); };
+    const touchEnd = () => {
+      if (draw?.id === "touch") endDraw();
+      if (timer) cancelHold();
+      release();
+    };
     const onScroll = () => { if (timer) cancelHold(); };
     const noMenu = (e: Event) => { if (lastType !== "mouse" || holding.current) e.preventDefault(); };
     const noSelect = (e: Event) => { if (holding.current) e.preventDefault(); };
 
     root.addEventListener("pointerdown", down);
-    root.addEventListener("touchstart", touchStart, { passive: true });
-    root.addEventListener("touchmove", touchMove, { passive: true });
+    root.addEventListener("touchstart", touchStart, { passive: false });
+    root.addEventListener("touchmove", touchMove, { passive: false });
     root.addEventListener("touchend", touchEnd);
     root.addEventListener("touchcancel", touchEnd);
     root.addEventListener("contextmenu", noMenu);
@@ -897,9 +926,11 @@ function useMarking(body: RefObject<HTMLDivElement | null>, key: string, marker:
       window.removeEventListener("pointercancel", up);
       window.removeEventListener("scroll", onScroll, { capture: true });
     };
-  }, [key, ring, body, marker]);
+  }, [key, ring, body, marker, ink]);
 
-  return { sel, set: setSel, clear, ring };
+  // True while a sentence is held or a stroke is drawn, so swiping stays out of the way.
+  const busy = useCallback(() => holding.current, []);
+  return { sel, set: setSel, clear, ring, busy };
 }
 
 function HoldRing({ ring }: { ring: RingApi }) {
@@ -1161,7 +1192,7 @@ function NotesPanel({ doc, section, notes, draft, setDraft, pending, setPending,
         ))}
         {!ordered.length && (
           <p className="rd-quiet rd-hint">
-            <Highlighter /> {tablet ? "Houd een zin even vast. Of zet de markeerstift aan en streep met je vinger of Pencil over de tekst." : "Selecteer tekst of houd een zin even vast om te markeren."}
+            <Highlighter /> {tablet ? "Streep met je Pencil over de tekst om te markeren. Met je vinger: houd een zin even vast, of zet de markeerstift aan." : "Selecteer tekst of houd een zin even vast om te markeren."}
           </p>
         )}
       </div>
