@@ -307,6 +307,17 @@ function overview() {
   };
 }
 
+const portfolio: Json[] = [
+  {
+    id: id(401), title: "BMW 320i Touring", category: "Automotive", coverUrl: PHOTOS[0], coverType: "image",
+    description: "Een avond in de haven, met een auto die er al twintig jaar staat\n\nDe eigenaar kocht de BMW in 2006 en heeft er sindsdien zelf aan gesleuteld. Hij wilde foto's die laten zien hoeveel werk erin zit, niet alleen hoe hij eruitziet.\n\nWe kozen de haven omdat het licht daar laat op de avond laag over het water valt. De lak pakt dat op, en de kranen op de achtergrond geven de foto's schaal.\n\nHet mooiste moment kwam na zonsondergang. De straatlantaarns gingen aan en de auto kreeg een warme rand van licht. Daar hebben we een half uur extra voor genomen.\n\nWat maakt jouw auto bijzonder?\n\nStuur ons een foto en vertel welk detail we niet mogen missen. Dan denken we mee over de plek en het licht.",
+    galleryUrls: PHOTOS.slice(0, 9), published: true, featured: true, createdAt: iso(-40), updatedAt: iso(-3),
+  },
+  { id: id(402), title: "Studio Veldhuis team", category: "Portret", coverUrl: PHOTOS[6], coverType: "image", description: "", galleryUrls: PHOTOS.slice(6, 12), published: true, featured: false, createdAt: iso(-30), updatedAt: iso(-10) },
+  { id: id(403), title: "Café Maas zomer", category: "Horeca", coverUrl: PHOTOS[9], coverType: "image", description: "", galleryUrls: [], published: false, featured: false, createdAt: iso(-5), updatedAt: iso(-1) },
+  { id: id(404), title: "__automotive_gallery__", category: "_automotive-gallery", coverUrl: PHOTOS[1], coverType: "image", description: "", galleryUrls: PHOTOS.slice(0, 6), published: true, featured: false, createdAt: iso(-90), updatedAt: iso(-2) },
+];
+
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Mirrors the edge function's routes closely enough to drive every screen. */
@@ -356,12 +367,8 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     if (p === "/admin/settings") return { settings: { heroImageUrl: PHOTOS[0], heroImageMobileUrl: "", frameImageUrl: PHOTOS[6], studioName: "PhotoDeCaffeine", contactEmail: "contact@photodecaffeine.com", sections: { workProcess: true, portfolio: true, about: true, services: true, socialProof: false, customCTA: true }, business: { name: "PhotoDeCaffeine Productions" } } };
     if (p === "/admin/notifications") return { notifications: [], unread: 0, readAt: "" };
     if (p === "/admin/me") return { id: id(999), email: "per@example.nl", name: "Per van Hassel", isOwner: true, roleName: "Eigenaar", permissions: Object.fromEntries(["manageClients", "manageQuotes", "manageInquiries", "managePortfolio", "manageAds", "manageSettings", "manageDeclarations", "viewAllDeclarations", "manageAdmins"].map((k) => [k, true])) };
-    if (p === "/admin/portfolio") return { articles: [
-      { id: id(401), title: "BMW 320i Touring", category: "Automotive", coverUrl: PHOTOS[0], coverType: "image", description: "Avondshoot in de haven.", galleryUrls: PHOTOS.slice(0, 5), published: true, featured: true, createdAt: iso(-40), updatedAt: iso(-3) },
-      { id: id(402), title: "Studio Veldhuis team", category: "Portret", coverUrl: PHOTOS[6], coverType: "image", description: "", galleryUrls: PHOTOS.slice(6, 9), published: true, featured: false, createdAt: iso(-30), updatedAt: iso(-10) },
-      { id: id(403), title: "Café Maas zomer", category: "Horeca", coverUrl: PHOTOS[9], coverType: "image", description: "", galleryUrls: [], published: false, featured: false, createdAt: iso(-5), updatedAt: iso(-1) },
-      { id: id(404), title: "__automotive_gallery__", category: "_automotive-gallery", coverUrl: PHOTOS[1], coverType: "image", description: "", galleryUrls: PHOTOS.slice(0, 6), published: true, featured: false, createdAt: iso(-90), updatedAt: iso(-2) },
-    ] };
+    if (p === "/admin/portfolio") return { articles: structuredClone(portfolio) };
+    if ((r = m(/^\/admin\/portfolio\/([^/]+)$/))) return { article: structuredClone(portfolio.find((a) => a.id === r![1])) };
     // Copies: react-query keeps its old data when the objects it holds were changed in place.
     if (p === "/admin/reviews") return { reviews: structuredClone(reviews).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) };
     if (p === "/admin/google") return { ...google };
@@ -591,6 +598,22 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     const x = projects.find((y) => y.id === r![1]);
     x.favoriteIds = body.favorite ? [...new Set([...(x.favoriteIds || []), body.imageId])] : (x.favoriteIds || []).filter((f: string) => f !== body.imageId);
     return { success: true };
+  }
+  if (p === "/admin/portfolio" && method === "POST") {
+    const a = { id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), ...body };
+    portfolio.unshift(a);
+    return { article: a };
+  }
+  if ((r = m(/^\/admin\/portfolio\/([^/]+)$/))) {
+    const a = portfolio.find((x) => x.id === r![1]);
+    if (!a) throw new ApiError(404, "Article not found");
+    if (method === "DELETE") { portfolio.splice(portfolio.indexOf(a), 1); return { success: true }; }
+    Object.assign(a, structuredClone(body), { updatedAt: new Date().toISOString() });
+    return { article: a };
+  }
+  if (p === "/admin/storage/upload") {
+    await delay(500);
+    return { url: URL.createObjectURL((body as FormData).get("file") as File) };
   }
   return { success: true };
 }

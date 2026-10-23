@@ -77,7 +77,16 @@ const BASE_TAGS = [
 /** Only what a visitor may see of an article — never who created or edited it. */
 function publicArticle(a) {
   const { id, title, category, coverUrl, coverType, description, galleryUrls, published, featured, createdAt, updatedAt } = a;
-  return { id, title, category, coverUrl, coverType, description, galleryUrls: galleryUrls || [], published, featured, createdAt, updatedAt };
+  const page = a.page && Array.isArray(a.page.blocks) ? a.page : null;
+  return { id, title, category, coverUrl, coverType, description, galleryUrls: galleryUrls || [], published, featured, createdAt, updatedAt, page };
+}
+
+/**
+ * The articles as one page needs them: an article's page-maker layout only on
+ * that article's own page, so the other pages stay small.
+ */
+function articlesFor(articles, articleId) {
+  return articles.map((a) => (a.id === articleId ? a : { ...a, page: undefined }));
 }
 
 /** The site's content. Best effort: a slow or failing API leaves the pages to load it in the browser. */
@@ -131,10 +140,11 @@ async function main() {
   const site = await loadSiteData();
   const articlePages = (site.articles || [])
     .filter((a) => a.title !== AUTOMOTIVE_GALLERY_TITLE)
-    .map((a) => ({ route: `/portfolio/${a.id}`, data: ["articles"] }));
+    .map((a) => ({ route: `/portfolio/${a.id}`, data: ["articles"], article: a.id }));
 
   for (const page of [...PAGES, ...articlePages, { route: NOT_FOUND, data: [] }]) {
-    const data = Object.fromEntries(page.data.filter((k) => site[k] !== undefined).map((k) => [k, site[k]]));
+    const data = Object.fromEntries(page.data.filter((k) => site[k] !== undefined)
+      .map((k) => [k, k === "articles" ? articlesFor(site[k], page.article) : site[k]]));
     const rendered = await render(page.route, data);
     const appHtml = rendered.appHtml;
     // Helmet always emits a <title>, empty when the page sets none.

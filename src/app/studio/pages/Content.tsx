@@ -1,52 +1,29 @@
-import { useQuery } from "@tanstack/react-query";
-import { ExternalLink, Eye, EyeOff, ImagePlus, Plus, Save, Search, Star, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { del, get, post, put } from "../api";
-import { MediaGrid, uploadPublic } from "../components/MediaGrid";
+import { ExternalLink, Eye, EyeOff, ImagePlus, LayoutTemplate, Plus, Save, Search, Star } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router";
+import { post, put } from "../api";
+import { MediaGrid } from "../components/MediaGrid";
 import { fmtDate } from "../format";
 import { useAction } from "../queries";
-import { Button, Card, Empty, ErrorState, Field, Input, isVideo, PageHead, Photo, Pill, Segmented, Sheet, SkeletonList, TextAreaField, TextField, useConfirm } from "../ui";
+import { Button, Card, Empty, ErrorState, isVideo, Modal, PageHead, Photo, Pill, Segmented, SkeletonList, TextField } from "../ui";
 import { useUnsavedChanges } from "../unsaved";
 import { useUrlState } from "../urlState";
+import { AUTOMOTIVE_CATEGORY, AUTOMOTIVE_TITLE, isWork, portfolioKey, useArticles, type Article } from "./pagemaker/data";
 
-// Portfolio articles and the automotive gallery live in the kv store; the
-// automotive gallery is one special article that the public page looks up by
-// its title.
-export type Article = {
-  id: string;
-  title: string;
-  category: string;
-  coverUrl: string;
-  coverType: "image" | "video";
-  description: string;
-  galleryUrls: string[];
-  published: boolean;
-  featured: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
-
-const AUTOMOTIVE_TITLE = "__automotive_gallery__";
-const AUTOMOTIVE_CATEGORY = "_automotive-gallery";
-const portfolioKey = ["portfolio"] as const;
-
-function useArticles() {
-  return useQuery({
-    queryKey: portfolioKey,
-    queryFn: ({ signal }) => get<{ articles: Article[] }>("/admin/portfolio", signal).then((r) => r.articles || []),
-  });
-}
+export type { Article };
 
 type Filter = "all" | "published" | "draft" | "featured";
 
 export function PortfolioPage() {
   const articles = useArticles();
-  const [editing, setEditing] = useState<Article | "new" | null>(null);
+  const navigate = useNavigate();
+  const [creating, setCreating] = useState(false);
   const [filter, setFilter] = useUrlState<Filter>("filter", "all");
   const [category, setCategory] = useState("");
   const [q, setQ] = useState("");
+  const open = (a: Article) => navigate(`/admin/portfolio/${a.id}`);
 
-  const list = (articles.data || []).filter((a) => a.title !== AUTOMOTIVE_TITLE && !a.category.startsWith("_"));
+  const list = (articles.data || []).filter(isWork);
   const categories = useMemo(() => [...new Set(list.map((a) => a.category).filter(Boolean))].sort(), [list]);
   const rows = list.filter((a) =>
     (filter === "all" || (filter === "published" ? a.published : filter === "draft" ? !a.published : a.featured)) &&
@@ -65,7 +42,7 @@ export function PortfolioPage() {
       <PageHead
         title="Portfolio"
         sub={articles.data ? `${list.filter((a) => a.published).length} van ${list.length} stukken staan op de site.` : " "}
-        actions={<Button variant="primary" icon={<Plus />} onClick={() => setEditing("new")}>Nieuw stuk</Button>}
+        actions={<Button variant="primary" icon={<Plus />} onClick={() => setCreating(true)}>Nieuw stuk</Button>}
       />
       <div className="s-row between">
         <div className="s-row">
@@ -83,12 +60,12 @@ export function PortfolioPage() {
       </div>
       {articles.isError && <ErrorState error={articles.error} retry={() => articles.refetch()} />}
       {articles.isLoading ? <Card bodyClass="none"><SkeletonList rows={4} /></Card> : rows.length === 0 ? (
-        <Card><Empty icon={<ImagePlus />} title="Niets gevonden" action={<Button onClick={() => setEditing("new")}>Nieuw stuk</Button>} /></Card>
+        <Card><Empty icon={<ImagePlus />} title="Niets gevonden" action={<Button onClick={() => setCreating(true)}>Nieuw stuk</Button>} /></Card>
       ) : (
         <div className="s-grid-cards">
           {rows.map((a) => (
             <article key={a.id} className="s-card" style={{ overflow: "hidden", display: "flex", flexDirection: "column" }}>
-              <button type="button" onClick={() => setEditing(a)} style={{ border: 0, padding: 0, background: "none", textAlign: "left" }} aria-label={`${a.title} bewerken`}>
+              <button type="button" onClick={() => open(a)} style={{ border: 0, padding: 0, background: "none", textAlign: "left" }} aria-label={`${a.title} opmaken`}>
                 <Photo src={a.coverUrl} video={a.coverType === "video" || isVideo(a.coverUrl)} style={{ borderRadius: 0, aspectRatio: "4/3" }} />
               </button>
               <div className="s-card-body s-stack sm" style={{ flex: 1 }}>
@@ -96,7 +73,7 @@ export function PortfolioPage() {
                   <b className="s-truncate">{a.title}</b>
                   {a.featured && <Star size={15} fill="currentColor" style={{ color: "var(--accent)" }} aria-label="Uitgelicht" />}
                 </div>
-                <span className="s-small s-muted">{a.category || "Geen categorie"} · {a.galleryUrls.length} foto's · {fmtDate(a.updatedAt)}</span>
+                <span className="s-small s-muted">{a.category || "Geen categorie"} · {a.galleryUrls.length} foto's · {a.page ? "eigen opmaak" : "automatisch"} · {fmtDate(a.updatedAt)}</span>
                 <div className="s-row" style={{ marginTop: "auto", paddingTop: 6 }}>
                   <Pill tone={a.published ? "ok" : undefined}>{a.published ? "Op de site" : "Concept"}</Pill>
                   <span className="s-spacer" />
@@ -104,96 +81,52 @@ export function PortfolioPage() {
                     icon={a.published ? <EyeOff /> : <Eye />} onClick={() => toggle.mutate({ a, patch: { published: !a.published } })} />
                   <Button size="sm" variant="ghost" iconOnly title={a.featured ? "Niet uitlichten" : "Uitlichten"} aria-label={a.featured ? "Niet uitlichten" : "Uitlichten"}
                     icon={<Star fill={a.featured ? "currentColor" : "none"} />} onClick={() => toggle.mutate({ a, patch: { featured: !a.featured } })} />
-                  <Button size="sm" onClick={() => setEditing(a)}>Bewerken</Button>
+                  <Button size="sm" icon={<LayoutTemplate />} onClick={() => open(a)}>Opmaken</Button>
                 </div>
               </div>
             </article>
           ))}
         </div>
       )}
-      {editing && <ArticleEditor article={editing === "new" ? null : editing} categories={categories} onClose={() => setEditing(null)} />}
+      {creating && <NewArticle categories={categories} onClose={() => setCreating(false)} onCreated={open} />}
     </div>
   );
 }
 
-function ArticleEditor({ article, categories, onClose }: { article: Article | null; categories: string[]; onClose: () => void }) {
-  const confirm = useConfirm();
-  const coverInput = useRef<HTMLInputElement>(null);
-  const [f, setF] = useState(() => ({
-    title: article?.title || "",
-    category: article?.category || "",
-    description: article?.description || "",
-    coverUrl: article?.coverUrl || "",
-    coverType: article?.coverType || ("image" as "image" | "video"),
-    galleryUrls: article?.galleryUrls || [],
-    published: article?.published ?? false,
-    featured: article?.featured ?? false,
-  }));
-  const [uploadingCover, setUploadingCover] = useState(false);
+/** A new piece starts with a title; the page maker does the rest. */
+function NewArticle({ categories, onClose, onCreated }: { categories: string[]; onClose: () => void; onCreated: (a: Article) => void }) {
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("");
   const [error, setError] = useState<string | null>(null);
-
-  const save = useAction({
-    fn: () => (article ? put(`/admin/portfolio/${article.id}`, f) : post("/admin/portfolio", f)),
+  const create = useAction({
+    fn: () => post<{ article: Article }>("/admin/portfolio", { title, category, description: "", coverUrl: "", coverType: "image", galleryUrls: [], published: false, featured: false }),
     invalidate: () => [portfolioKey],
-    success: article ? "Opgeslagen" : "Stuk aangemaakt",
-    onSuccess: onClose,
+    success: "Stuk aangemaakt",
+    onSuccess: (r) => onCreated(r.article),
   });
-  const remove = useAction({ fn: () => del(`/admin/portfolio/${article!.id}`), invalidate: () => [portfolioKey], success: "Verwijderd", onSuccess: onClose });
-
-  async function setCover(file: File) {
-    setUploadingCover(true);
-    try {
-      const url = await uploadPublic(file);
-      setF((x) => ({ ...x, coverUrl: url, coverType: file.type.startsWith("video/") ? "video" : "image" }));
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setUploadingCover(false);
-    }
-  }
-
+  const submit = () => {
+    if (!title.trim()) return setError("Geef het stuk een titel.");
+    setError(null);
+    create.mutate();
+  };
   return (
-    <Sheet
+    <Modal
       open
       onOpenChange={(o) => !o && onClose()}
-      title={article ? article.title : "Nieuw portfoliostuk"}
+      title="Nieuw portfoliostuk"
+      description="Daarna zet je er foto's en tekst in en kies je een template."
       footer={
         <>
-          {article && (
-            <Button variant="danger" icon={<Trash2 />} style={{ marginRight: "auto" }} loading={remove.isPending}
-              onClick={async () => { if (await confirm({ title: `${article.title} verwijderen?`, body: "Het verdwijnt meteen van de site.", danger: true, confirm: "Verwijderen" })) remove.mutate(); }}>
-              Verwijderen
-            </Button>
-          )}
-          {article?.published && <a className="s-btn ghost" href={`/portfolio/${article.id}`} target="_blank" rel="noreferrer"><ExternalLink size={15} />Bekijk</a>}
-          <Button variant="primary" icon={<Save />} loading={save.isPending} onClick={() => { if (!f.title.trim()) return setError("Geef het stuk een titel."); setError(null); save.mutate(); }}>Opslaan</Button>
+          <Button onClick={onClose}>Annuleren</Button>
+          <Button variant="primary" loading={create.isPending} onClick={submit}>Aanmaken</Button>
         </>
       }
     >
-      <TextField label="Titel" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} />
-      <Field label="Categorie" htmlFor="art-cat" hint="Kies een bestaande of typ een nieuwe">
-        <Input id="art-cat" list="art-categories" value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })} />
-        <datalist id="art-categories">{categories.map((c) => <option key={c} value={c} />)}</datalist>
-      </Field>
-      <TextAreaField label="Tekst" rows={5} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />
-      <Field label="Omslag">
-        <div className="s-row nowrap" style={{ alignItems: "flex-start" }}>
-          <Photo src={f.coverUrl} video={f.coverType === "video"} style={{ width: 180, flex: "none" }} />
-          <div className="s-stack sm">
-            <Button size="sm" icon={<ImagePlus />} loading={uploadingCover} onClick={() => coverInput.current?.click()}>{f.coverUrl ? "Vervangen" : "Uploaden"}</Button>
-            <span className="s-small s-faint">Foto of video. Of kies hieronder een foto met de ster.</span>
-          </div>
-        </div>
-        <input ref={coverInput} type="file" accept="image/*,video/mp4,video/quicktime" hidden onChange={(e) => { const file = e.target.files?.[0]; if (file) setCover(file); e.target.value = ""; }} />
-      </Field>
-      <Field label={`Galerij (${f.galleryUrls.length})`}>
-        <MediaGrid urls={f.galleryUrls} onChange={(galleryUrls) => setF({ ...f, galleryUrls })} cover={f.coverUrl}
-          onCover={(u) => setF({ ...f, coverUrl: u, coverType: isVideo(u) ? "video" : "image" })} />
-      </Field>
-      <label className="s-check"><input type="checkbox" checked={f.published} onChange={(e) => setF({ ...f, published: e.target.checked })} /> Op de site zetten</label>
-      <label className="s-check"><input type="checkbox" checked={f.featured} onChange={(e) => setF({ ...f, featured: e.target.checked })} /> Uitlichten (bovenaan en in mails)</label>
-      {error && <p className="s-small" role="alert" style={{ color: "var(--bad)" }}>{error}</p>}
-    </Sheet>
+      <TextField label="Titel" value={title} onChange={(e) => setTitle(e.target.value)} error={error} autoFocus lang="nl" spellCheck
+        onKeyDown={(e) => { if (e.key === "Enter") submit(); }} />
+      <TextField label="Categorie" hint="Kies een bestaande of typ een nieuwe" list="new-art-categories" value={category} onChange={(e) => setCategory(e.target.value)} />
+      <datalist id="new-art-categories">{categories.map((c) => <option key={c} value={c} />)}</datalist>
+    </Modal>
   );
 }
 

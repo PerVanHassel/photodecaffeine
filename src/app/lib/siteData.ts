@@ -1,5 +1,6 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { projectId, publicAnonKey } from "/utils/supabase/info";
+import type { ArticlePage } from "./articlePage";
 
 // The public site's content — settings, portfolio and reviews — as one small
 // store shared by every page.
@@ -33,6 +34,8 @@ export interface PortfolioArticle {
   featured: boolean;
   createdAt: string;
   updatedAt: string;
+  /** The layout from the page maker; without one the page is built from the text and photos. */
+  page?: ArticlePage | null;
 }
 
 export interface PublicReview {

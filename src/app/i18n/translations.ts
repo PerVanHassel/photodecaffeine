@@ -490,6 +490,8 @@ export const translations = {
       ctaTitle1: "Ook zo'n serie",
       ctaTitle2: "laten maken?",
       photographyLink: "Meer over fotografie →",
+      moreFromSeries: "Meer uit deze serie",
+      video: (title: string) => `Video bij ${title}`,
     },
     notFound: {
       title: "Frame niet gevonden",

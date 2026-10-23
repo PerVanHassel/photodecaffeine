@@ -42,6 +42,7 @@ const Invoices = page(() => import("./pages/Invoices"), "InvoicesPage");
 const Invoice = page(() => import("./pages/Invoices"), "InvoicePage");
 
 const Portfolio = page(() => import("./pages/Content"), "PortfolioPage");
+const PageMaker = page(() => import("./pages/pagemaker/PageMaker"), "PageMakerPage");
 const Automotive = page(() => import("./pages/Content"), "AutomotivePage");
 const Reviews = page(() => import("./pages/Reviews"), "ReviewsPage");
 const GoogleCallback = page(() => import("./pages/Reviews"), "GoogleCallbackPage");
@@ -77,6 +78,7 @@ export const studioRoutes: RouteObject = {
         { path: "invoices", Component: wrap(Invoices) },
         { path: "invoice/:id", Component: wrap(Invoice) },
         { path: "portfolio", Component: wrap(Portfolio) },
+        { path: "portfolio/:id", Component: wrap(PageMaker) },
         { path: "services/automotive", Component: wrap(Automotive) },
         { path: "reviews", Component: wrap(Reviews) },
         { path: "reviews/google", Component: wrap(GoogleCallback) },
