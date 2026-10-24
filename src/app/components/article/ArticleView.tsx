@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Helmet } from "react-helmet-async";
 import {
   blockHasContent, effectiveLayout, embedSrc, heroCover, lookAttrs, pagePhotos, plainText, seriesRest, shownItems,
@@ -275,13 +275,81 @@ function MediaBlock({ block, ctx }: { block: BlockOf<"media">; ctx: Ctx }) {
     );
   }
 
+  if (layout === "slices") {
+    return (
+      <figure className="pa-figure pa-wrap">
+        <Slices count={items.length} nudge={!ctx.editing}>{items.map((item, i) => shot(item, i))}</Slices>
+        {caption}
+      </figure>
+    );
+  }
+
   return (
     <figure className={`pa-figure${layout === "full" ? "" : " pa-wrap"}`}>
-      <div className={`pa-media pa-media--${layout}${layout === "mosaic" ? ` pa-mosaic--${items.length}` : ""}`} data-m={layout === "full" ? "cinema" : layout === "slices" ? undefined : "grow"}>
+      <div className={`pa-media pa-media--${layout}${layout === "mosaic" ? ` pa-mosaic--${items.length}` : ""}`} data-m={layout === "full" ? "cinema" : "grow"}>
         {items.map((item, i) => shot(item, i))}
       </div>
       {caption && (layout === "full" ? <div className="pa-wrap">{caption}</div> : caption)}
     </figure>
+  );
+}
+
+/**
+ * The accordion. On a computer the slices open under the pointer; on a phone
+ * they become a strip to swipe through, and the strip says so: the next photo
+ * peeks in from the edge, a counter and bar show where you are, and the first
+ * time it comes into view it moves a little, as if pushed. The bar and the hint
+ * only show on phones (article.css).
+ */
+function Slices({ count, nudge, children }: { count: number; nudge: boolean; children: ReactNode }) {
+  const strip = useRef<HTMLDivElement>(null);
+  const [at, setAt] = useState(0);
+  const [moved, setMoved] = useState(false);
+  const [end, setEnd] = useState(false);
+  const [nudging, setNudging] = useState(false);
+
+  function onScroll() {
+    const el = strip.current;
+    const first = el?.firstElementChild as HTMLElement | null;
+    if (!el || !first) return;
+    const step = first.offsetWidth + parseFloat(getComputedStyle(el).columnGap || "0");
+    setAt(Math.min(count - 1, Math.round(el.scrollLeft / step)));
+    setEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 4);
+    if (el.scrollLeft > 8) setMoved(true);
+  }
+
+  useEffect(() => {
+    const el = strip.current;
+    if (!nudge || !el || typeof IntersectionObserver === "undefined") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      observer.disconnect();
+      // Only where it is a strip: a phone, with more photos than fit.
+      if (el.scrollWidth <= el.clientWidth + 4 || el.scrollLeft > 8) return;
+      setNudging(true);
+      window.setTimeout(() => setNudging(false), 1400);
+    }, { threshold: 0.6 });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [nudge]);
+
+  return (
+    <>
+      <div ref={strip} className={`pa-media pa-media--slices${nudging ? " is-nudging" : ""}`} data-end={end || undefined} onScroll={onScroll}>
+        {children}
+      </div>
+      <div className="pa-swipe" aria-hidden="true">
+        <span className="pa-swipe-count">{String(at + 1).padStart(2, "0")} / {String(count).padStart(2, "0")}</span>
+        <span className="pa-swipe-bar">{Array.from({ length: count }, (_, i) => <i key={i} data-on={i === at || undefined} />)}</span>
+        <span className={`pa-swipe-hint${moved ? " is-gone" : ""}`}>
+          Swipe
+          <svg viewBox="0 0 28 10" width="28" height="10" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M1 5h25M22 1l4 4-4 4" />
+          </svg>
+        </span>
+      </div>
+    </>
   );
 }
 

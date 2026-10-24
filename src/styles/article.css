@@ -189,6 +189,11 @@ button.pa-zoom { cursor: zoom-in; }
 .pa-marquee .pa-frame :is(img, video) { width: auto; height: 100%; }
 @keyframes pa-marquee { to { transform: translateX(-50%); } }
 
+/* The swipe hint under the accordion is for phones only. */
+.pa-swipe { display: none; }
+@keyframes pa-nudge { 0%, 100% { transform: none; } 35% { transform: translateX(-56px); } 60% { transform: translateX(-56px); } }
+@keyframes pa-swipe-arrow { 0%, 100% { transform: none; } 50% { transform: translateX(5px); } }
+
 /* Photo with text: the text stays in view while the photo scrolls by. */
 .pa-split { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: clamp(16px, 3cqw, 48px); align-items: start; }
 .pa-split--left .pa-split-media { grid-column: 1 / span 7; }
@@ -330,10 +335,30 @@ button.pa-zoom { cursor: zoom-in; }
   .pa-media--mosaic > :first-child { grid-column: span 2; grid-row: span 2; }
   .pa-media--mosaic > :last-child:nth-child(even) { grid-column: span 2; }
 
-  .pa-media--slices { height: clamp(360px, 120cqw, 540px); overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
-  .pa-media--slices > * { flex: 0 0 76%; scroll-snap-align: start; }
+  /* A strip to swipe: edge to edge, the next photo peeking in and fading at the edge. */
+  .pa-media--slices {
+    height: clamp(380px, 125cqw, 560px); gap: 8px; margin-inline: -20px; padding-inline: 20px; scroll-padding-inline: 20px;
+    overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to right, #000 82%, transparent); mask-image: linear-gradient(to right, #000 82%, transparent);
+  }
+  .pa-media--slices::-webkit-scrollbar { display: none; }
+  .pa-media--slices[data-end] { -webkit-mask-image: none; mask-image: none; }
+  .pa-media--slices > * { flex: 0 0 78%; scroll-snap-align: start; }
   .pa-media--slices > :nth-child(n) { flex-grow: 0; }
   .pa-media--slices .pa-frame img { filter: none; }
+  .pa-media--slices.is-nudging > * { animation: pa-nudge 1.3s var(--pa-ease) both; }
+
+  .pa-swipe { display: flex; align-items: center; gap: 14px; margin-top: 16px; color: var(--pa-soft); }
+  .pa-swipe-count { font-family: var(--pa-label-font); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; color: var(--pa-ink); }
+  .pa-swipe-bar { display: flex; flex: 1; gap: 4px; }
+  .pa-swipe-bar i { flex: 1; height: 2px; border-radius: 1px; background-color: var(--pa-line); transition: background-color 0.4s ease, flex-grow 0.5s var(--pa-ease); }
+  .pa-swipe-bar i[data-on] { flex-grow: 2.5; background-color: var(--pa-accent); }
+  .pa-swipe-hint {
+    display: inline-flex; align-items: center; gap: 8px; font-family: var(--pa-label-font); font-size: 11px; font-weight: 600;
+    letter-spacing: 0.18em; text-transform: uppercase; transition: opacity 0.5s ease;
+  }
+  .pa-swipe-hint svg { animation: pa-swipe-arrow 1.8s var(--pa-ease) infinite; }
+  .pa-swipe-hint.is-gone { opacity: 0; }
 
   .pa-split { display: flex; flex-direction: column; gap: 28px; }
   .pa-split-text { position: static; padding-top: 0; }
@@ -350,6 +375,7 @@ button.pa-zoom { cursor: zoom-in; }
   .pa-marquee-track { animation: none; }
   .pa-marquee-copy { display: none; }
   .pa-frame img, .pa-frame video, .pa-media--slices > * { transition: none; }
+  .pa-swipe-hint svg, .pa-media--slices.is-nudging > * { animation: none; }
 }
 
 /* ── In the page maker ── */
