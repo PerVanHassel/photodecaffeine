@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type KeyboardEvent } from "react";
+import { Fragment, useState, useEffect, useRef, type KeyboardEvent } from "react";
 import { Link, NavLink, useLocation } from "react-router";
 import { PdcLogo } from "./PdcLogo";
 import { useLanguage } from "../context/LanguageContext";
@@ -51,7 +51,13 @@ export function Navigation() {
 
   const isServicesPage = location.pathname.startsWith("/services/");
 
-  const SERVICES = t.servicePages.pages.map((p) => ({ label: p.name, path: p.path }));
+  // Photography lists its categories with their own page right under it, so a
+  // visitor can go straight to the kind of shoot they want.
+  const SERVICES = t.servicePages.pages.map((p) => ({
+    label: p.name,
+    path: p.path,
+    children: p.id === "fotografie" ? t.servicePages.packages.categories.map((c) => ({ label: c.name, path: c.path })) : [],
+  }));
 
   function closeServices(e: KeyboardEvent) {
     if (e.key !== "Escape") return;
@@ -150,9 +156,16 @@ export function Navigation() {
                 }}
               >
                 {SERVICES.map((s) => (
-                  <NavLink key={s.path} to={s.path} className="pdc-nav-sublink">
-                    {s.label}
-                  </NavLink>
+                  <Fragment key={s.path}>
+                    <NavLink to={s.path} end className="pdc-nav-sublink">
+                      {s.label}
+                    </NavLink>
+                    {s.children.map((c) => (
+                      <NavLink key={c.path} to={c.path} className="pdc-nav-sublink pdc-nav-sublink-child">
+                        {c.label}
+                      </NavLink>
+                    ))}
+                  </Fragment>
                 ))}
               </div>
             )}
@@ -253,9 +266,16 @@ export function Navigation() {
             {mobileServicesOpen && (
               <div id="pdc-mobile-services" style={{ paddingLeft: "16px", marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                 {SERVICES.map((s) => (
-                  <NavLink key={s.path} to={s.path} className="pdc-nav-mobile pdc-nav-mobile-sub">
-                    {s.label}
-                  </NavLink>
+                  <Fragment key={s.path}>
+                    <NavLink to={s.path} end className="pdc-nav-mobile pdc-nav-mobile-sub">
+                      {s.label}
+                    </NavLink>
+                    {s.children.map((c) => (
+                      <NavLink key={c.path} to={c.path} className="pdc-nav-mobile pdc-nav-mobile-sub pdc-nav-mobile-child">
+                        {c.label}
+                      </NavLink>
+                    ))}
+                  </Fragment>
                 ))}
               </div>
             )}

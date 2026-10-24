@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { FormPrivacyNote } from "../components/form/FormPrivacyNote";
 import { ChoiceChips } from "../components/form/ChoiceChips";
 import { PhotoReel } from "../components/PhotoReel";
-import { PhotoPackages, euro, type PickedPackage } from "../components/PhotoPackages";
+import { PhotoPackages, euro, packageName, type PickedPackage } from "../components/PhotoPackages";
 import { EMAIL_INPUT, PHONE_INPUT, PublicInput, PublicTextarea } from "../components/form/PublicField";
 import { track } from "../lib/analytics";
 import { HIGH_PRIORITY, webSrcSet } from "../lib/images";
@@ -44,20 +44,34 @@ const label = {
 
 const NO_WORK: ReturnType<typeof focusPhotos> = { photos: [], focused: false };
 
-function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: string; work?: ReturnType<typeof focusPhotos> }) {
+function ServicePage({
+  id,
+  category,
+  focus,
+  work = NO_WORK,
+}: {
+  id: ServiceId;
+  category?: string;
+  focus?: string;
+  work?: ReturnType<typeof focusPhotos>;
+}) {
   const { t } = useLanguage();
   const ts = t.servicePages;
   const page = ts.pages.find((p) => p.id === id)!;
   const others = ts.pages.filter((p) => p.id !== id);
   const hero = HERO[id];
-  useAdTracking(page.path);
+  // Only photography has fixed packages so far. A photography category with
+  // packages (Automotive, Sport) gets its own page with its own texts.
+  const tp = id === "fotografie" ? ts.packages : null;
+  const sub = tp?.categories.find((c) => c.id === category);
+  const text = sub ?? page;
+  const path = sub?.path ?? page.path;
+  useAdTracking(path);
 
   // A niche's photos fill the hero and the work grid, and its option comes first.
   const heroPhoto = work.focused ? work.photos[0] : undefined;
   const gridPhotos = (heroPhoto ? work.photos.slice(1) : work.photos).slice(0, 8);
   const options = focusFirst(page.options, focus);
-  // Only photography has fixed packages so far.
-  const tp = id === "fotografie" ? ts.packages : null;
 
   const [picked, setPicked] = useState<PickedPackage | null>(null);
   const pickedBox = useRef<HTMLDivElement>(null);
@@ -79,7 +93,7 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
   // A picked package goes straight to the form, with focus on its summary.
   const pick = (pkg: PickedPackage) => {
     setPicked(pkg);
-    track("Pakket gekozen", { pakket: `${pkg.category} ${pkg.name}` });
+    track("Pakket gekozen", { pakket: packageName(pkg) });
     requestAnimationFrame(() => {
       pickedBox.current?.focus({ preventScroll: true });
       document.getElementById("boeken")?.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
@@ -101,7 +115,7 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
     setError(null);
     const extra = choices.filter((c) => c !== picked?.category);
     const chosen = picked
-      ? `${page.name}: ${picked.category} ${picked.name} (${euro(picked.price)})${extra.length ? `, ${extra.join(", ")}` : ""}`
+      ? `${page.name}: ${packageName(picked)} (${euro(picked.price)})${extra.length ? `, ${extra.join(", ")}` : ""}`
       : choices.length
         ? `${page.name}: ${choices.join(", ")}`
         : page.name;
@@ -119,7 +133,7 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
         }),
       });
       const sent: InquiryForm = "contact";
-      track("Aanvraag", picked ? { formulier: page.id, pakket: `${picked.category} ${picked.name}` } : { formulier: page.id });
+      track("Aanvraag", picked ? { formulier: page.id, pakket: packageName(picked) } : { formulier: page.id });
       navigate("/bedankt", { state: { from: sent } });
     } catch {
       setError(ts.errorGeneric);
@@ -128,7 +142,7 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
     }
   };
 
-  const url = `https://www.photodecaffeine.com${page.path}`;
+  const url = `https://www.photodecaffeine.com${path}`;
 
   return (
     <div
@@ -141,22 +155,23 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
       }}
     >
       <Helmet>
-        <title>{page.metaTitle}</title>
-        <meta name="description" content={page.metaDescription} />
+        <title>{text.metaTitle}</title>
+        <meta name="description" content={text.metaDescription} />
         <link rel="canonical" href={url} />
-        <meta property="og:title" content={page.metaTitle} />
-        <meta property="og:description" content={page.metaDescription} />
+        <meta property="og:title" content={text.metaTitle} />
+        <meta property="og:description" content={text.metaDescription} />
         <meta property="og:url" content={url} />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={page.metaTitle} />
-        <meta name="twitter:description" content={page.metaDescription} />
+        <meta name="twitter:title" content={text.metaTitle} />
+        <meta name="twitter:description" content={text.metaDescription} />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "BreadcrumbList",
           "itemListElement": [
             { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.photodecaffeine.com/" },
-            { "@type": "ListItem", "position": 2, "name": page.name, "item": url },
+            { "@type": "ListItem", "position": 2, "name": page.name, "item": `https://www.photodecaffeine.com${page.path}` },
+            ...(sub ? [{ "@type": "ListItem", "position": 3, "name": sub.name, "item": url }] : []),
           ],
         })}</script>
       </Helmet>
@@ -170,9 +185,9 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
         }}
       >
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-          <Link to="/" className="pdc-back-link">
+          <Link to={sub ? page.path : "/"} className="pdc-back-link">
             <ArrowLeft size={14} aria-hidden="true" />
-            {ts.backLabel}
+            {sub ? tp?.backLabel : ts.backLabel}
           </Link>
 
           <div
@@ -197,7 +212,7 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
                   textTransform: "uppercase",
                 }}
               >
-                {page.name}
+                {sub ? sub.name : page.name}
                 <br />
                 <em
                   style={{
@@ -209,7 +224,7 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
                     fontFamily: "'Inter', sans-serif",
                   }}
                 >
-                  {page.titleDim}
+                  {text.titleDim}
                 </em>
               </h1>
             </div>
@@ -225,7 +240,7 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
                 textAlign: "right",
               }}
             >
-              {page.subtitle}
+              {text.subtitle}
             </p>
           </div>
         </div>
@@ -280,7 +295,7 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
             margin: 0,
           }}
         >
-          {page.introStart} <strong style={{ color: "rgba(255,251,224,0.8)" }}>{page.introStrong}</strong> {page.introEnd}
+          {text.introStart} <strong style={{ color: "rgba(255,251,224,0.8)" }}>{text.introStrong}</strong> {text.introEnd}
         </p>
       </div>
 
@@ -298,7 +313,7 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
         />
       )}
 
-      {tp && <PhotoPackages focus={focus} picked={picked} onPick={pick} />}
+      {tp && <PhotoPackages category={sub?.id} focus={focus} picked={picked} onPick={pick} />}
 
       {/* ── What to expect + the request form ── */}
       <div
@@ -357,11 +372,11 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
             </p>
           </div>
 
-          {page.note && (
+          {text.note && (
             <p style={{ color: "rgba(255,251,224,0.5)", fontSize: "13px", fontWeight: 300, lineHeight: 1.7, margin: "32px 0 0" }}>
-              {page.note.text}{" "}
-              <Link to={page.note.to} className="pdc-text-link" style={{ whiteSpace: "nowrap" }}>
-                {page.note.link}
+              {text.note.text}{" "}
+              <Link to={text.note.to} className="pdc-text-link" style={{ whiteSpace: "nowrap" }}>
+                {text.note.link}
               </Link>
             </p>
           )}
@@ -391,7 +406,7 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
               <div ref={pickedBox} tabIndex={-1} className="pdc-pkg-picked">
                 <span className="pdc-field-label">{tp.pickedLabel}</span>
                 <p className="pdc-pkg-picked-name">
-                  {picked.category} {picked.name} <span>{euro(picked.price)}</span>
+                  {packageName(picked)} <span>{euro(picked.price)}</span>
                 </p>
                 <div className="pdc-pkg-picked-actions">
                   <button
@@ -537,11 +552,17 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
 /**
  * Photography leads with the niche picked in the admin (Instellingen →
  * Fotografie). Without one, the grid shows recent work from the whole portfolio.
+ * A category page (Automotive, Sport) leads with that category instead.
  */
-export function PhotographyPage() {
-  const focus = useSiteSettings().data?.photoFocus;
+function Photography({ category }: { category?: string }) {
+  const sub = useLanguage().t.servicePages.packages.categories.find((c) => c.id === category);
+  const niche = useSiteSettings().data?.photoFocus;
+  const focus = sub?.name ?? niche;
   const work = focusPhotos(usePortfolio().data, focus, 9);
-  return <ServicePage id="fotografie" focus={focus} work={work} />;
+  return <ServicePage id="fotografie" category={category} focus={focus} work={work} />;
 }
+export const PhotographyPage = () => <Photography />;
+export const AutomotivePhotographyPage = () => <Photography category="automotive" />;
+export const SportPhotographyPage = () => <Photography category="sport" />;
 export const VideographyPage = () => <ServicePage id="videografie" />;
 export const WebsitePage = () => <ServicePage id="website" />;

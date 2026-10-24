@@ -322,6 +322,9 @@
 }
 .pdc-nav-sublink:hover { color: #fffbe0; background-color: rgba(255,251,224,0.05); }
 .pdc-nav-sublink[aria-current="page"] { color: #fffbe0; font-weight: 600; }
+/* Photography's own categories, tucked under it. */
+.pdc-nav-sublink-child { display: flex; align-items: center; gap: 10px; padding: 9px 24px 9px 36px; letter-spacing: 0.16em; color: rgba(255,251,224,0.55); }
+.pdc-nav-sublink-child::before { content: ""; width: 8px; height: 1px; background-color: #c8905a; }
 
 .pdc-nav-cta {
   display: inline-block; padding: 10px 22px; text-align: center; text-decoration: none;
@@ -341,6 +344,8 @@
 }
 .pdc-nav-mobile.pdc-nav-quiet { color: rgba(255,251,224,0.55); }
 .pdc-nav-mobile-sub { font-size: 12px; color: rgba(255,251,224,0.55); }
+.pdc-nav-mobile-child { display: flex; align-items: center; gap: 10px; margin-top: -4px; padding-left: 16px; font-size: 11px; }
+.pdc-nav-mobile-child::before { content: ""; width: 8px; height: 1px; background-color: #c8905a; }
 .pdc-nav-mobile[aria-current="page"] { color: #fffbe0; }
 
 /* ── Public buttons and links that look like buttons ──────────────────── */
@@ -522,8 +527,24 @@
 }
 .pdc-pkgs-title span { color: rgba(255,251,224,0.4); }
 .pdc-pkgs-body { max-width: 320px; margin: 0; color: rgba(255,251,224,0.55); font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 300; line-height: 1.7; }
-.pdc-pkgs-tabs { display: flex; overflow-x: auto; margin-bottom: 48px; border-bottom: 1px solid rgba(255,251,224,0.08); scrollbar-width: none; }
+.pdc-pkgs-tabs { display: flex; overflow-x: auto; margin-bottom: 32px; border-bottom: 1px solid rgba(255,251,224,0.08); scrollbar-width: none; }
 .pdc-pkgs-tabs .pdc-filter { font-size: 11px; }
+/* Who it is for: Particulier/Bedrijf, Sporter/Team. */
+.pdc-pkgs-groups { display: flex; align-items: center; flex-wrap: wrap; gap: 16px 32px; margin-bottom: 56px; font-family: 'Inter', sans-serif; }
+.pdc-pkgs-switch { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.pdc-pkgs-switch-label {
+  margin-right: 8px; color: rgba(255,251,224,0.55);
+  font-size: 9px; font-weight: 600; line-height: 1.5; letter-spacing: 0.25em; text-transform: uppercase;
+}
+.pdc-pkgs-switch-btn {
+  min-height: 44px; padding: 10px 22px; background: none; border: 1px solid rgba(255,251,224,0.18); cursor: pointer;
+  color: rgba(255,251,224,0.7); font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; letter-spacing: 0.04em;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+.pdc-pkgs-switch-btn:hover { border-color: rgba(255,251,224,0.4); color: #fffbe0; }
+.pdc-pkgs-switch-btn[aria-pressed="true"] { border-color: #c8905a; background-color: rgba(200,144,90,0.14); color: #fffbe0; }
+.pdc-pkgs-switch-btn:focus-visible { outline: 2px solid #c8905a; outline-offset: 2px; }
+.pdc-pkgs-intro { margin: 0; color: rgba(255,251,224,0.6); font-size: 14px; font-weight: 300; line-height: 1.6; }
 .pdc-pkg-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; align-items: stretch; }
 .pdc-pkg {
   position: relative; display: flex; flex-direction: column; padding: 48px 40px 40px;
@@ -537,6 +558,7 @@
 .pdc-pkg-name { margin: 0 0 12px; color: #fffbe0; font-size: 40px; font-weight: 900; line-height: 1; letter-spacing: -0.02em; text-transform: uppercase; }
 .pdc-pkg-pitch { margin: 0 0 32px; color: rgba(255,251,224,0.55); font-size: 13px; font-weight: 300; line-height: 1.7; }
 .pdc-pkg-price { margin: 0; color: #fffbe0; font-size: 64px; font-weight: 900; line-height: 1; letter-spacing: -0.04em; }
+.pdc-pkg-price span { margin-left: 10px; color: rgba(255,251,224,0.5); font-size: 12px; font-weight: 400; letter-spacing: 0.04em; }
 .pdc-pkg-upsell { margin: 12px 0 0; color: #c8905a; font-size: 13px; font-weight: 600; line-height: 1.5; letter-spacing: 0.02em; }
 .pdc-pkg-photos {
   display: flex; flex-direction: column; gap: 4px; margin: 24px 0 28px; padding: 18px 0;
@@ -571,7 +593,8 @@
   .pdc-pkg--best { margin-top: 16px; }
 }
 @media (max-width: 767px) {
-  .pdc-pkgs-tabs { margin-bottom: 40px; }
+  .pdc-pkgs-tabs { margin-bottom: 32px; }
+  .pdc-pkgs-groups { margin-bottom: 48px; }
   .pdc-pkg { padding: 40px 24px 28px; }
   .pdc-pkg-name { font-size: 34px; }
   .pdc-pkg-price { font-size: 56px; }

@@ -37,6 +37,8 @@ export const routes: RouteObject[] = [
           { path: "portfolio/:id", lazy: chunk(() => import("./pages/PortfolioDetailPage"), (m) => m.PortfolioDetailPage) },
           { path: "about", lazy: chunk(() => import("./pages/AboutPage"), (m) => m.AboutPage) },
           { path: "services/fotografie", lazy: chunk(() => import("./pages/ServicePage"), (m) => m.PhotographyPage) },
+          { path: "services/fotografie/automotive", lazy: chunk(() => import("./pages/ServicePage"), (m) => m.AutomotivePhotographyPage) },
+          { path: "services/fotografie/sport", lazy: chunk(() => import("./pages/ServicePage"), (m) => m.SportPhotographyPage) },
           { path: "services/videografie", lazy: chunk(() => import("./pages/ServicePage"), (m) => m.VideographyPage) },
           { path: "services/website", lazy: chunk(() => import("./pages/ServicePage"), (m) => m.WebsitePage) },
           { path: "services/automotive", lazy: chunk(() => import("./pages/AutomotivePage"), (m) => m.AutomotivePage) },
