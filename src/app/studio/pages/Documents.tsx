@@ -2,14 +2,15 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import {
   ArrowLeft, ArrowRight, BookOpen, Check, Highlighter, Info, Lock, MessageSquare, MessageSquarePlus, Pencil, Plus, RotateCcw,
-  Sparkles, Square, Tablet, Trash2, Volume2, X,
+  Sparkles, Tablet, Trash2, Volume2, X,
 } from "lucide-react";
 import {
   Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject,
 } from "react";
 import { Link, useParams } from "react-router";
 import { useAuth } from "../../context/AuthContext";
-import { DOCUMENTS, minutes, sectionText } from "../documents";
+import { DOCUMENTS, minutes } from "../documents";
+import { ReadAloudPlayer, useReadAloud, type SpeechSeg } from "../documents/ReadAloud";
 import { useDocState, useNoteActions, useReadProgress } from "../documents/api";
 import "../documents/reader.css";
 import type { DocNote, DocQuote, DocState, ReaderBlock, ReaderDocument, ReaderPart, ReaderSection } from "../documents/types";
@@ -299,12 +300,60 @@ function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, pe
   // The marker turns a finger into a highlighter; it is off at every visit, so scrolling always works first.
   const [marker, setMarker] = useState(false);
   const coarse = useMemo(() => typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches, []);
-  const speech = useSpeech();
   const { add } = useNoteActions(doc.id);
   const notesHere = useMemo(() => state.notes.filter((n) => n.sectionId === section.id), [state.notes, section.id]);
   const part = doc.parts.find((p) => p.id === section.part)!;
   const forward = () => (next ? onMove(1) : onFinish());
   const back = () => index > 0 && onMove(-1);
+
+  // Reading aloud: what to say comes from the piece on screen, and the
+  // sentence being read lights up in it.
+  const dock = useRef<HTMLDivElement>(null);
+  const segsRef = useRef<SpeechSeg[]>([]);
+  const keepReading = useRef(false);
+  const tabletRef = useRef(tablet);
+  tabletRef.current = tablet;
+  const paint = useCallback((seg: SpeechSeg | null, word: [number, number] | null) => {
+    root.current?.querySelectorAll(".rd-speaking").forEach((el) => el.classList.remove("rd-speaking"));
+    setHighlight("rd-say", null);
+    setHighlight("rd-say-word", null);
+    if (!seg) return;
+    const card = body.current?.closest(".rd-card");
+    const el = seg.note ? root.current?.querySelector(`.rd-note[data-id="${seg.note}"]`)
+      : seg.row !== undefined ? body.current?.querySelector(`[data-t="${seg.block}"] tbody tr:nth-child(${seg.row + 1})`)
+      : seg.block === -1 ? card?.querySelector(".rd-title")
+      : body.current?.querySelector(`[data-b="${seg.block}"]`);
+    if (!el) return;
+    el.classList.add("rd-speaking");
+    let range: Range | null = null;
+    if (!seg.note && seg.row === undefined && seg.start !== undefined && seg.end !== undefined) {
+      range = rangeIn(el, seg.start, seg.end);
+      setHighlight("rd-say", range);
+      if (word) setHighlight("rd-say-word", rangeIn(el, seg.start + word[0], seg.start + word[1]));
+    }
+    if (word || seg.note) return;
+    // Keep the sentence between the top bar and the player.
+    const rect = range?.getBoundingClientRect() || el.getBoundingClientRect();
+    const top = 96, bottom = window.innerHeight - (dock.current?.offsetHeight ?? 160) - 36;
+    if (rect.top >= top && rect.bottom <= bottom) return;
+    const delta = rect.top - (top + (bottom - top) / 3);
+    const behavior = still() ? "auto" : "smooth";
+    if (tabletRef.current && root.current) root.current.scrollBy({ top: delta, behavior });
+    else window.scrollBy({ top: delta, behavior });
+  }, []);
+  const latestRead = useRef({ follow: false, forward });
+  const reader = useReadAloud({
+    segments: () => segsRef.current,
+    paint,
+    onEnd: () => {
+      if (!latestRead.current.follow) return;
+      keepReading.current = true;
+      latestRead.current.forward();
+    },
+  });
+  const segs = useMemo(() => planSpeech(section, notesHere, reader.settings.notes), [section, notesHere, reader.settings.notes]);
+  segsRef.current = segs;
+  latestRead.current = { follow: reader.settings.follow && !!next, forward };
 
   // The card that was just on screen stays for a moment, so it can step back
   // while the new one comes up over it.
@@ -342,8 +391,17 @@ function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, pe
       .fromTo(deck.current!.querySelectorAll(".rd-ghost"), { y: 14 }, { y: 0, duration: 0.8, stagger: 0.06, ease: "back.out(2)" }, 0.1);
   }, { dependencies: [section.id], scope: deck });
 
+  // A new piece: start over at its first sentence, and keep reading if it was.
   useEffect(() => {
-    speech.stop();
+    const go = reader.isLive() || keepReading.current;
+    keepReading.current = false;
+    reader.reset();
+    if (!go) return;
+    const t = setTimeout(() => reader.play(0), still() ? 100 : 950);
+    return () => clearTimeout(t);
+  }, [section.id]);
+
+  useEffect(() => {
     setNotesOpen(false);
     const top = deck.current?.getBoundingClientRect().top ?? 0;
     if (top >= 0) return;
@@ -353,8 +411,8 @@ function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, pe
   }, [section.id]);
 
   // Keys and swipes always call the latest handlers without re-binding.
-  const latest = useRef({ forward, back, onExit, sel, clear: marking.clear, busy: marking.busy });
-  latest.current = { forward, back, onExit, sel, clear: marking.clear, busy: marking.busy };
+  const latest = useRef({ forward, back, onExit, sel, clear: marking.clear, busy: marking.busy, reader });
+  latest.current = { forward, back, onExit, sel, clear: marking.clear, busy: marking.busy, reader };
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -363,7 +421,9 @@ function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, pe
       const l = latest.current;
       if (e.key === "ArrowRight") { e.preventDefault(); l.forward(); }
       if (e.key === "ArrowLeft") { e.preventDefault(); l.back(); }
-      if (e.key === "Escape") { if (l.sel) l.clear(); else l.onExit(); }
+      if (e.key === "Escape") { if (l.sel) l.clear(); else if (l.reader.open) l.reader.close(); else l.onExit(); }
+      // Space always plays or pauses while the player is open, also when a button has focus.
+      if (e.key === " " && l.reader.open) { e.preventDefault(); if (!e.repeat) l.reader.toggle(); }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -481,12 +541,24 @@ function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, pe
   }, []);
 
   const onBodyClick = useCallback((e: React.MouseEvent) => {
-    const id = (e.target as Element).closest<HTMLElement>("mark[data-note]")?.dataset.note;
-    if (id && id !== "pending" && id !== "selecting" && window.getSelection()?.isCollapsed !== false) flashNote(id);
+    if (window.getSelection()?.isCollapsed === false) return;
+    const target = e.target as Element;
+    const id = target.closest<HTMLElement>("mark[data-note]")?.dataset.note;
+    if (id && id !== "pending" && id !== "selecting") { flashNote(id); return; }
+    // While reading aloud, a tap on a sentence reads from there.
+    const r = latest.current.reader;
+    if (!r.open || !body.current) return;
+    const at = e.detail ? posAt(body.current, e.clientX, e.clientY) : null;
+    const block = at?.block ?? Number(target.closest<HTMLElement>("[data-b]")?.dataset.b ?? NaN);
+    const list = segsRef.current;
+    const i = at
+      ? list.findIndex((s) => s.block === at.block && s.start !== undefined && at.offset >= s.start && at.offset <= (s.end ?? 0))
+      : list.findIndex((s) => s.block === block);
+    if (i >= 0) r.jump(i);
   }, [flashNote]);
 
   return (
-    <div ref={root} className={cx("rd rd-reading", size === "l" && "is-large", tablet && "is-tablet", notesOpen && "notes-open", marker && "is-marker")}>
+    <div ref={root} className={cx("rd rd-reading", size === "l" && "is-large", tablet && "is-tablet", notesOpen && "notes-open", marker && "is-marker", reader.open && "is-reading-aloud", reader.open && reader.settings.dim && "is-dim")}>
       <Ambient />
       <header className="rd-bar">
         <button type="button" className="rd-exit" onClick={onExit}><X /> <span>Overzicht</span></button>
@@ -509,14 +581,9 @@ function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, pe
           <button type="button" className="rd-tool" aria-pressed={size === "l"} onClick={() => setSize(size === "l" ? "m" : "l")} title="Grotere letters">
             <span className="rd-aa">Aa</span>
           </button>
-          {speech.supported && (
-            <button
-              type="button"
-              className="rd-tool"
-              aria-pressed={speech.speaking}
-              onClick={() => (speech.speaking ? speech.stop() : speech.speak(sectionText(section)))}
-            >
-              {speech.speaking ? <Square /> : <Volume2 />} <span className="rd-tool-label">{speech.speaking ? "Stop" : "Voorlezen"}</span>
+          {reader.supported && (
+            <button type="button" className="rd-tool" aria-pressed={reader.open} onClick={() => (reader.open ? reader.close() : reader.start())} title="Voorlezen">
+              <Volume2 /> <span className="rd-tool-label">Voorlezen</span>
             </button>
           )}
           <span className="rd-count s-num" aria-label={`Stuk ${index + 1} van ${list.length}`}>{index + 1}<span> / {list.length}</span></span>
@@ -551,6 +618,8 @@ function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, pe
       </div>
       <button type="button" className="rd-scrim" aria-label="Notities sluiten" tabIndex={-1} onClick={() => setNotesOpen(false)} />
 
+      <div className="rd-dock" ref={dock}>
+        {reader.open && <ReadAloudPlayer reader={reader} total={segs.length} />}
       <nav className="rd-nav" aria-label="Bladeren">
         <Button variant="ghost" icon={<ArrowLeft />} disabled={index === 0} onClick={back}>Vorige</Button>
         <span className="rd-keys" aria-hidden="true">{marker ? "Streep over de tekst om te markeren" : tablet ? "Veeg om te bladeren" : <><kbd>←</kbd> <kbd>→</kbd> bladeren</>}</span>
@@ -568,6 +637,7 @@ function ReadingView({ doc, list, index, state, onlyChanged, draft, setDraft, pe
           </button>
         </Magnetic>
       </nav>
+      </div>
 
       {sel && !sel.saving && !sel.drawing && (
         <MarkToolbar
@@ -641,7 +711,7 @@ function Blocks({ blocks, marks }: { blocks: ReaderBlock[]; marks: Mark[] }) {
     flush(i);
     if (b.t === "table") {
       out.push(
-        <div className="rd-table rd-block" key={i}>
+        <div className="rd-table rd-block" key={i} data-t={i}>
           <table>
             <thead><tr>{b.rows[0].map((c, j) => <th key={j}>{c}</th>)}</tr></thead>
             <tbody>{b.rows.slice(1).map((r, j) => <tr key={j}>{r.map((c, k) => <td key={k}><Rich text={c} /></td>)}</tr>)}</tbody>
@@ -1381,27 +1451,62 @@ function useStored(key: string, fallback: string): [string, (v: string) => void]
   return [value, set];
 }
 
-/** Reads a piece aloud with a Dutch voice, where the browser has one. */
-function useSpeech() {
-  const supported = typeof window !== "undefined" && "speechSynthesis" in window;
-  const [speaking, setSpeaking] = useState(false);
-  const stop = useCallback(() => {
-    if (supported) window.speechSynthesis.cancel();
-    setSpeaking(false);
-  }, [supported]);
-  const speak = (text: string) => {
-    if (!supported) return;
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = "nl-NL";
-    const voice = window.speechSynthesis.getVoices().find((v) => v.lang.toLowerCase().startsWith("nl"));
-    if (voice) u.voice = voice;
-    u.rate = 0.95;
-    u.onend = () => setSpeaking(false);
-    u.onerror = () => setSpeaking(false);
-    setSpeaking(true);
-    window.speechSynthesis.speak(u);
-  };
-  useEffect(() => stop, [stop]);
-  return { supported, speaking, speak, stop };
+// ---------------------------------------------------------------------------
+// Reading aloud: what to say, and how to light it up
+// ---------------------------------------------------------------------------
+
+const URLISH = /\bhttps?:\/\/\S+|\b[\w-]+(?:\.[\w-]+)+\/[^\s)]*/g;
+
+/** The piece as sentences to speak: title, text, table rows, and the notes if asked. */
+function planSpeech(section: ReaderSection, notes: DocNote[], withNotes: boolean): SpeechSeg[] {
+  const out: SpeechSeg[] = [{ key: "title", block: -1, start: 0, end: section.title.length, say: section.title, words: true }];
+  section.blocks.forEach((b, i) => {
+    if (b.t === "meta") return;
+    if (b.t === "table") {
+      const [head, ...rows] = b.rows;
+      rows.forEach((r, k) => out.push({ key: `t${i}-${k}`, block: i, row: k, words: false, say: r.map((c, j) => `${head[j]}: ${displayText(c)}`).join(". ") }));
+      return;
+    }
+    const text = displayText(b.text);
+    for (const [from, to] of sentences(text)) {
+      const t = text.slice(from, to);
+      // Web addresses are noise read aloud; such a sentence lights up as a whole.
+      const say = t.replace(URLISH, "link");
+      out.push({ key: `${i}-${from}`, block: i, start: from, end: to, say, words: say === t });
+    }
+  });
+  if (withNotes) {
+    for (const n of inTextOrder(notes)) {
+      const who = n.authorName.split(" ")[0];
+      out.push({ key: `n-${n.id}`, note: n.id, words: false, say: `Notitie van ${who}. ${n.quote ? `Bij: ${n.quote.text}. ` : ""}${n.text || "Alleen gemarkeerd."}` });
+    }
+  }
+  return out;
+}
+
+/** A range over characters `start` to `end` of an element's text. */
+function rangeIn(el: Element, start: number, end: number): Range | null {
+  const r = document.createRange();
+  const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  let pos = 0;
+  let started = false;
+  for (let n = walk.nextNode() as Text | null; n; n = walk.nextNode() as Text | null) {
+    const len = n.length;
+    if (!started && start <= pos + len) { r.setStart(n, Math.max(0, start - pos)); started = true; }
+    if (started && end <= pos + len) { r.setEnd(n, Math.max(0, end - pos)); return r; }
+    pos += len;
+  }
+  return null;
+}
+
+// The CSS Custom Highlight API paints over text without touching the page, so
+// lighting up word after word costs next to nothing.
+type HighlightApi = { highlights?: Map<string, unknown> };
+const HIGHLIGHTS = typeof CSS !== "undefined" ? (CSS as unknown as HighlightApi).highlights : undefined;
+const HighlightCtor = typeof window !== "undefined" ? (window as unknown as { Highlight?: new (...ranges: Range[]) => unknown }).Highlight : undefined;
+
+function setHighlight(name: string, range: Range | null) {
+  if (!HIGHLIGHTS || !HighlightCtor) return;
+  if (range) HIGHLIGHTS.set(name, new HighlightCtor(range));
+  else HIGHLIGHTS.delete(name);
 }

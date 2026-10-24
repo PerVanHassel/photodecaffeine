@@ -445,3 +445,81 @@
 /* The ink of a pencil or marker stroke, drawn on top while you mark */
 .studio .rd-ink { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 44; pointer-events: none; overflow: visible; }
 .studio .rd-ink path { fill: none; stroke: rgba(236, 178, 112, 0.5); stroke-width: 22; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+
+/* ---------- reading aloud ---------- */
+/* The paging bar and the player share one sticky dock at the bottom. */
+.studio .rd-dock { position: sticky; bottom: 16px; z-index: 20; max-width: 1180px; margin: 28px auto 0; display: flex; flex-direction: column; gap: 10px; }
+.studio .rd-dock > .rd-nav { position: static; margin: 0; max-width: none; }
+@media (max-width: 860px) { .studio .rd-dock { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); } }
+.studio .rd.is-tablet .rd-dock { bottom: calc(18px + env(safe-area-inset-bottom)); }
+
+.studio .rd-player {
+  padding: 10px 12px; border-radius: 28px; background: rgba(255, 255, 255, 0.96); border: 1px solid var(--line);
+  box-shadow: 0 18px 40px rgba(36, 29, 23, 0.12); overflow: hidden;
+}
+.studio .rd-player-row { display: flex; align-items: center; gap: 8px; }
+.studio .rd-pbtn {
+  display: inline-grid; place-items: center; height: 42px; min-width: 42px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line);
+  background: #fff; color: var(--ink); font-size: 14px; font-weight: 650; transition: border-color 0.2s, background 0.2s;
+}
+.studio .rd-pbtn:hover:not(:disabled) { border-color: var(--line-strong); background: var(--paper); }
+.studio .rd-pbtn:disabled { opacity: 0.35; }
+.studio .rd-pbtn svg { width: 17px; height: 17px; }
+.studio .rd-rate { font-variant-numeric: tabular-nums; min-width: 60px; }
+.studio .rd-play {
+  position: relative; display: grid; place-items: center; width: 54px; height: 54px; flex: none; border-radius: 50%; border: 0;
+  background: var(--ink); color: #fff; box-shadow: 0 8px 20px rgba(36, 29, 23, 0.22); transition: background 0.25s, transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.studio .rd-play:hover { background: var(--accent-strong); }
+.studio .rd-play:active { transform: scale(0.94); }
+.studio .rd-play svg { width: 22px; height: 22px; fill: currentColor; }
+.studio .rd-player.is-playing .rd-play::after {
+  content: ""; position: absolute; inset: -6px; border-radius: 50%; border: 2px solid rgba(176, 106, 44, 0.45);
+  animation: rd-breathe 2.6s ease-in-out infinite;
+}
+@keyframes rd-breathe { 0%, 100% { transform: scale(0.95); opacity: 0.9; } 50% { transform: scale(1.07); opacity: 0.25; } }
+.studio .rd-player-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; padding: 0 8px; }
+.studio .rd-player-info b { font-size: 14px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.studio .rd-player-track { height: 4px; border-radius: 2px; background: rgba(176, 106, 44, 0.12); overflow: hidden; }
+.studio .rd-player-track span { display: block; height: 100%; background: var(--accent); transform-origin: left; transition: transform 0.45s ease; }
+
+.studio .rd-player-panel {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 18px 28px; margin-top: 10px; padding: 18px 8px 8px; border-top: 1px solid var(--line);
+}
+.studio .rd-pfield { display: flex; flex-direction: column; gap: 8px; font-size: 14px; font-weight: 600; color: var(--ink); }
+.studio .rd-pfield b { color: var(--accent-strong); margin-left: 4px; }
+.studio .rd-pfield input[type="range"] { width: 100%; accent-color: var(--accent); }
+.studio .rd-pscale { display: flex; justify-content: space-between; font-size: 12px; font-weight: 500; color: var(--faint); }
+.studio .rd-pscale i { font-style: normal; }
+.studio .rd-pfield em { font-style: normal; font-weight: 500; }
+.studio .rd-pswitches { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 28px; }
+.studio .rd-switch { display: flex; align-items: center; gap: 12px; min-height: 40px; border: 0; background: none; padding: 2px 0; font-size: 14.5px; color: var(--ink); text-align: left; }
+.studio .rd-switch-track { position: relative; width: 42px; height: 26px; flex: none; border-radius: 13px; background: var(--line-strong); transition: background 0.2s; }
+.studio .rd-switch-track span {
+  position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.studio .rd-switch[aria-checked="true"] .rd-switch-track { background: var(--accent); }
+.studio .rd-switch[aria-checked="true"] .rd-switch-track span { transform: translateX(16px); }
+.studio .rd-ptip { grid-column: 1 / -1; display: flex; gap: 8px; align-items: flex-start; line-height: 1.55; }
+.studio .rd-ptip svg { width: 15px; height: 15px; margin-top: 3px; flex: none; color: var(--accent); }
+
+/* What is being read: a soft band on the sentence, a stronger one on the word. */
+::highlight(rd-say) { background-color: rgba(176, 106, 44, 0.14); }
+::highlight(rd-say-word) { background-color: rgba(236, 178, 112, 0.75); color: #17130f; }
+.studio .rd-card.is-current .rd-body [data-b], .studio .rd-card.is-current .rd-title, .studio .rd-card.is-current .rd-table tr { transition: opacity 0.45s ease; }
+.studio .rd.is-dim .rd-card.is-current .rd-body [data-b]:not(.rd-speaking),
+.studio .rd.is-dim .rd-card.is-current .rd-title:not(.rd-speaking),
+.studio .rd.is-dim .rd-card.is-current .rd-table tbody tr:not(.rd-speaking) { opacity: 0.36; }
+.studio .rd.is-reading-aloud .rd-body { cursor: pointer; }
+.studio .rd-table tr.rd-speaking td { background: rgba(176, 106, 44, 0.09); }
+.studio .rd-note.rd-speaking { box-shadow: 0 0 0 3px rgba(176, 106, 44, 0.35); }
+
+.studio .rd.is-tablet .rd-pbtn { height: 48px; min-width: 48px; font-size: 15px; }
+.studio .rd.is-tablet .rd-play { width: 60px; height: 60px; }
+.studio .rd.is-tablet .rd-switch { font-size: 16px; min-height: 46px; }
+@media (max-width: 700px) {
+  .studio .rd-player-panel, .studio .rd-pswitches { grid-template-columns: 1fr; }
+  .studio .rd-player-row { flex-wrap: wrap; }
+  .studio .rd-player-info { order: 9; flex-basis: 100%; padding: 4px 6px 0; }
+}
