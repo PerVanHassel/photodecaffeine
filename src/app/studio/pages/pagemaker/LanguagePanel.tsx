@@ -1,8 +1,8 @@
 import { Check, Eye, RefreshCw, SpellCheck } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { ArticlePage } from "../../../lib/articlePage";
-import { Button, Pill } from "../../ui";
+import { shownItems, type ArticlePage } from "../../../lib/articlePage";
+import { Button, Photo, Pill } from "../../ui";
 import { addKnownWord, afterFix, applyFix, checkTexts, type CheckField, type Issue, type IssueKind } from "./langcheck";
 import { blockName } from "./Panels";
 import { updateBlock, withPage, type Commit, type Draft } from "./state";
@@ -11,7 +11,11 @@ type Field = CheckField & { block?: string; set: (d: Draft, value: string) => Dr
 
 /** Every text on the page that visitors read, with a way to write a fix back. */
 export function checkFields(d: Draft, page: ArticlePage): Field[] {
-  const fields: Field[] = [{ key: "title", label: "Titel", text: d.title, set: (x, v) => ({ ...x, title: v }) }];
+  const fields: Field[] = [
+    { key: "title", label: "Titel", text: d.title, set: (x, v) => ({ ...x, title: v }) },
+    { key: "seoTitle", label: "Titel in Google", text: d.seoTitle || "", set: (x, v) => ({ ...x, seoTitle: v }) },
+    { key: "seoDescription", label: "Beschrijving in Google", text: d.seoDescription || "", set: (x, v) => ({ ...x, seoDescription: v }) },
+  ];
   if (!d.page) {
     fields.push({ key: "description", label: "Tekst van het stuk", text: d.description, set: (x, v) => ({ ...x, description: v }) });
     return fields;
@@ -34,6 +38,17 @@ export function checkFields(d: Draft, page: ArticlePage): Field[] {
     if (b.type === "facts") b.items.forEach((f, j) => field(`fact${j}`, f.value, (v) => (blk) => ({ ...blk, items: (blk as typeof b).items.map((x, k) => (k === j ? { ...x, value: v } : x)) }) as typeof b, f.label || "feit"));
   });
   return fields;
+}
+
+/** Photos in the blocks that have no description yet (videos need none). */
+function photosWithoutAlt(page: ArticlePage) {
+  const out: { block: string; label: string; url: string }[] = [];
+  page.blocks.forEach((b, i) => {
+    const label = `${i + 1}. ${blockName(b)}`;
+    const items = b.type === "media" ? shownItems(b) : b.type === "split" && b.media ? [b.media] : [];
+    for (const item of items) if (item.kind === "image" && !item.alt?.trim()) out.push({ block: b.id, label, url: item.url });
+  });
+  return out;
 }
 
 const KIND: Record<IssueKind, { label: string; tone: "bad" | "warn" | "info" | "acc" }> = {
@@ -85,6 +100,7 @@ export function LanguagePanel({ draft, page, commit, onReveal }: { draft: Draft;
   }
 
   const dismiss = (issue: Issue) => setIssues((list) => list.filter((i) => i.id !== issue.id));
+  const noAlt = useMemo(() => photosWithoutAlt(page), [page]);
   const byField = fields.map((f) => ({ field: f, items: issues.filter((i) => i.field === f.key) })).filter((g) => g.items.length);
 
   return (
@@ -128,6 +144,23 @@ export function LanguagePanel({ draft, page, commit, onReveal }: { draft: Draft;
           ))}
         </section>
       ))}
+      <section className="pm-check" aria-labelledby="pm-noalt">
+        <h3 id="pm-noalt">Foto's zonder beschrijving{noAlt.length ? ` (${noAlt.length})` : ""}</h3>
+        {noAlt.length ? (
+          <>
+            <p className="s-small s-muted">Google en mensen die slecht zien lezen wat er op een foto staat. Klik een foto en vul bij de foto "Wat staat erop" in.</p>
+            <div className="pm-thumbs">
+              {noAlt.map((p, i) => (
+                <button key={`${p.block}-${p.url}-${i}`} type="button" className="pm-thumb pm-thumb-btn" title={`${p.label}: beschrijving invullen`} onClick={() => onReveal(p.block)}>
+                  <Photo src={p.url} />
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="pm-banner ok"><Check size={16} /> <span>Alle foto's in de blokken hebben een beschrijving.</span></div>
+        )}
+      </section>
       <p className="s-small s-faint" style={{ display: "flex", gap: 8 }}>
         <SpellCheck size={14} style={{ flex: "none", marginTop: 2 }} />
         <span>Spelling en grammatica komen van LanguageTool; de tekst gaat daarvoor naar hun server. De huisstijl let op je in plaats van u, geen gedachtestreepjes en geen reclametaal. Namen die goed zijn, markeer je met Altijd goed.</span>

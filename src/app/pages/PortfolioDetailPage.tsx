@@ -6,7 +6,7 @@ import { ArticleView } from "../components/article/ArticleView";
 import { GoogleG } from "../components/GoogleG";
 import { Lightbox } from "../components/Lightbox";
 import { useLanguage } from "../context/LanguageContext";
-import { heroCover, pageOf, pagePhotos, pageSummary } from "../lib/articlePage";
+import { heroCover, pageOf, pagePhotos, pageSummary, seoMeta } from "../lib/articlePage";
 import { usePortfolio, useReviews, type PublicReview } from "../lib/siteData";
 
 export function PortfolioDetailPage() {
@@ -79,30 +79,31 @@ export function PortfolioDetailPage() {
 
   const url = `https://www.photodecaffeine.com/portfolio/${article.id}`;
   const summary = pageSummary(article, page);
-  const blurb = summary ? (summary.length > 150 ? `${summary.slice(0, 147).trimEnd()}…` : summary) : "";
+  const seo = seoMeta(article, page);
+  const shareTitle = article.seoTitle?.trim() || `${article.title} | PhotoDeCaffeine`;
   const image = heroCover(article)?.kind === "image" ? heroCover(article)!.url : photos[0];
   const automotive = /automotive/i.test(article.category);
 
   return (
     <div className="pa-site">
       <Helmet>
-        <title>{article.title} | Portfolio | PhotoDeCaffeine</title>
-        <meta name="description" content={blurb || `Bekijk de shoot ‘${article.title}’ van PhotoDeCaffeine: professionele ${automotive ? "automotive fotografie" : "fotografie"} door heel Nederland.`} />
+        <title>{seo.title}</title>
+        <meta name="description" content={seo.description} />
         <link rel="canonical" href={url} />
-        <meta property="og:title" content={`${article.title} | PhotoDeCaffeine`} />
-        <meta property="og:description" content={blurb || "Professionele fotoserie door PhotoDeCaffeine."} />
+        <meta property="og:title" content={shareTitle} />
+        <meta property="og:description" content={seo.description} />
         <meta property="og:url" content={url} />
         <meta property="og:type" content="article" />
         {image && <meta property="og:image" content={image} />}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={`${article.title} | PhotoDeCaffeine`} />
-        <meta name="twitter:description" content={blurb || "Professionele fotoserie door PhotoDeCaffeine."} />
+        <meta name="twitter:title" content={shareTitle} />
+        <meta name="twitter:description" content={seo.description} />
         {image && <meta name="twitter:image" content={image} />}
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "Article",
           "headline": article.title,
-          "description": summary || `Fotoserie door PhotoDeCaffeine: ${article.title}`,
+          "description": article.seoDescription?.trim() || summary || `Fotoserie door PhotoDeCaffeine: ${article.title}`,
           "url": url,
           "image": photos.length ? photos.slice(0, 6) : image || undefined,
           "datePublished": article.createdAt,

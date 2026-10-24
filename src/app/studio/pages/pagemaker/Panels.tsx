@@ -11,6 +11,7 @@ import {
   type ArticlePage, type ArticleTheme, type Block, type BlockOf, type BlockType, type HeroStyle, type LetterCase, type MediaItem, type MediaLayout,
   type TextLook, type TextStyle,
 } from "../../../lib/articlePage";
+import { SEO_LIMITS, seoMeta } from "../../../lib/articlePage";
 import { fontDef, PAIRS, pageFaces, pairOf, type FontDef } from "../../../lib/typefaces";
 import { MediaGrid } from "../../components/MediaGrid";
 import { Button, Field, Input, Photo, Segmented, Textarea, TextField } from "../../ui";
@@ -112,11 +113,42 @@ export function PagePanel({ draft, page, commit, pick, categories, selected, onS
       <Section title="Letters, kop en kleur">
         <HeroFields draft={draft} page={page} commit={commit} pick={pick} compact />
       </Section>
+      <Section title="In Google">
+        <GoogleFields draft={draft} page={page} commit={commit} />
+      </Section>
       <Section title="Op de site">
         <label className="s-check"><input type="checkbox" checked={draft.published} onChange={(e) => commit((d) => ({ ...d, published: e.target.checked }))} /> Op de site zetten</label>
         <label className="s-check"><input type="checkbox" checked={draft.featured} onChange={(e) => commit((d) => ({ ...d, featured: e.target.checked }))} /> Uitlichten (bovenaan en in mails)</label>
       </Section>
       {footer}
+    </>
+  );
+}
+
+/** How the piece shows in Google, with its own title and description or the ones made from the article. */
+function GoogleFields({ draft, page, commit }: { draft: Draft; page: ArticlePage; commit: Commit }) {
+  const seo = seoMeta(draft, page);
+  const count = (text: string, max: number) => (
+    <span className={text.length > max ? "pm-count over" : "pm-count"}>{text.length} / {max}</span>
+  );
+  return (
+    <>
+      <div className="pm-serp" aria-label="Zo ziet het eruit in Google">
+        <span className="pm-serp-url">photodecaffeine.com › portfolio</span>
+        <span className="pm-serp-title">{seo.title}</span>
+        <span className="pm-serp-text">{seo.description}</span>
+      </div>
+      <TextField
+        label={<span className="s-row between nowrap">Titel in Google {count(seo.title, SEO_LIMITS.title)}</span>}
+        hint="Leeg laten: de titel van het stuk met Portfolio en PhotoDeCaffeine erachter."
+        placeholder={seo.autoTitle} lang="nl" spellCheck value={draft.seoTitle || ""}
+        onChange={(e) => commit((d) => ({ ...d, seoTitle: e.target.value }), "seoTitle")}
+      />
+      <Field label={<span className="s-row between nowrap">Beschrijving in Google {count(seo.description, SEO_LIMITS.description)}</span>}
+        hint="Leeg laten: de eerste alinea van het stuk. Schrijf wat iemand die zoekt wil weten: wat, waar en voor wie.">
+        <Textarea rows={4} lang="nl" spellCheck placeholder={seo.autoDescription} value={draft.seoDescription || ""} aria-label="Beschrijving in Google"
+          onChange={(e) => commit((d) => ({ ...d, seoDescription: e.target.value }), "seoDescription")} />
+      </Field>
     </>
   );
 }
@@ -415,8 +447,9 @@ function MediaForm({ block, set, pick }: { block: BlockOf<"media">; set: Setter;
 /** Per photo: what it shows, and which part stays in view when it is cropped. */
 function ItemSettings({ item, n, onChange }: { item: MediaItem; n: number; onChange: (patch: Partial<MediaItem>) => void }) {
   return (
-    <details className="pm-item">
-      <summary>Foto {n}: uitsnede en beschrijving</summary>
+    // A photo without a description opens by itself, so the empty field is in view.
+    <details className="pm-item" open={item.kind === "image" && !item.alt?.trim() ? true : undefined}>
+      <summary>Foto {n}: beschrijving en uitsnede{item.kind === "image" && !item.alt?.trim() ? " (nog geen beschrijving)" : ""}</summary>
       <div className="s-stack" style={{ paddingTop: 10 }}>
         <Field label="Wat blijft in beeld bij bijsnijden">
           <Segmented<"top" | "center" | "bottom"> label="Uitsnede" value={item.focus || "center"} onChange={(focus) => onChange({ focus })}

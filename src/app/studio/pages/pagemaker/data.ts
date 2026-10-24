@@ -19,6 +19,9 @@ export type Article = {
   updatedAt: string;
   /** The page maker's layout. Missing: the site lays the page out from the text and photos. */
   page?: ArticlePage | null;
+  /** Title and description for Google; empty: made from the article. */
+  seoTitle?: string;
+  seoDescription?: string;
 };
 
 export const AUTOMOTIVE_TITLE = "__automotive_gallery__";

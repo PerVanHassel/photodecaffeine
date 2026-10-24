@@ -6,7 +6,7 @@ import {
 import type { Article } from "./data";
 
 /** What the page maker edits: the article's own fields and its page. */
-export type Draft = Pick<Article, "title" | "category" | "description" | "coverUrl" | "coverType" | "galleryUrls" | "published" | "featured"> & {
+export type Draft = Pick<Article, "title" | "category" | "description" | "coverUrl" | "coverType" | "galleryUrls" | "published" | "featured" | "seoTitle" | "seoDescription"> & {
   /** Null: the site lays the page out by itself. */
   page: ArticlePage | null;
 };
@@ -19,6 +19,8 @@ export const draftOf = (a: Article): Draft => ({
   coverType: a.coverType,
   galleryUrls: a.galleryUrls || [],
   published: a.published,
+  seoTitle: a.seoTitle || "",
+  seoDescription: a.seoDescription || "",
   featured: a.featured,
   page: a.page && Array.isArray(a.page.blocks) ? a.page : null,
 });

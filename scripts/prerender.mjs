@@ -76,9 +76,9 @@ const BASE_TAGS = [
 
 /** Only what a visitor may see of an article — never who created or edited it. */
 function publicArticle(a) {
-  const { id, title, category, coverUrl, coverType, description, galleryUrls, published, featured, createdAt, updatedAt } = a;
+  const { id, title, category, coverUrl, coverType, description, galleryUrls, published, featured, createdAt, updatedAt, seoTitle, seoDescription } = a;
   const page = a.page && Array.isArray(a.page.blocks) ? a.page : null;
-  return { id, title, category, coverUrl, coverType, description, galleryUrls: galleryUrls || [], published, featured, createdAt, updatedAt, page };
+  return { id, title, category, coverUrl, coverType, description, galleryUrls: galleryUrls || [], published, featured, createdAt, updatedAt, page, seoTitle: seoTitle || "", seoDescription: seoDescription || "" };
 }
 
 /**

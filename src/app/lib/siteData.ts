@@ -36,6 +36,9 @@ export interface PortfolioArticle {
   updatedAt: string;
   /** The layout from the page maker; without one the page is built from the text and photos. */
   page?: ArticlePage | null;
+  /** Title and description for Google; empty: made from the article. */
+  seoTitle?: string;
+  seoDescription?: string;
 }
 
 export interface PublicReview {
