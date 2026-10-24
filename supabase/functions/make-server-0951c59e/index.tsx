@@ -1,8 +1,10 @@
 import { Hono } from "npm:hono";
 import { cors } from "npm:hono/cors";
 import { logger } from "npm:hono/logger";
+import { activityLog } from "./lib/activity.ts";
 import { onError } from "./lib/http.ts";
 
+import activity from "./routes/activity.ts";
 import clients from "./routes/clients.ts";
 import declarations from "./routes/declarations.ts";
 import documents from "./routes/documents.ts";
@@ -43,10 +45,12 @@ app.use(
   }),
 );
 app.onError(onError);
+// Logboek: every change that succeeded, by anyone, written after the route ran.
+app.use("*", activityLog);
 
 const modules: Hono<any>[] = [
   clients, portal, projects, quotes, invoices, inquiries, tasks, locations, events, overview,
-  engagement, google, portfolio, team, declarations, documents, settings, notifications, storage, share,
+  engagement, google, portfolio, team, declarations, documents, settings, notifications, storage, share, activity,
 ];
 for (const module of modules) app.route("/", module);
 

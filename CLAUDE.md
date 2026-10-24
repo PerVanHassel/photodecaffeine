@@ -37,6 +37,9 @@ API-aanroepen te onderscheppen.
 - Vercel bouwt alleen de frontend. `supabase/functions/` gaat daar niet in mee.
 - Backend is één Supabase edge function: `supabase/functions/make-server-0951c59e/`.
 - Data staat in een key-value tabel, niet in losse tabellen. Zie `kv_store.tsx`.
+- Elke geslaagde POST/PUT/DELETE komt in het logboek (`lib/activity.ts`,
+  tabel `activity_log`, admin `/admin/activity`, alleen voor de eigenaar).
+  Geef een nieuwe route daar een regel, anders staat hij als "Overig" in de lijst.
 - Er zijn geen geautomatiseerde tests.
 
 ## Edge function deployen

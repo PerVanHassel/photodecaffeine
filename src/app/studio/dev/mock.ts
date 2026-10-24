@@ -320,6 +320,32 @@ const portfolio: Json[] = [
   { id: id(404), title: "__automotive_gallery__", category: "_automotive-gallery", coverUrl: PHOTOS[1], coverType: "image", description: "", galleryUrls: PHOTOS.slice(0, 6), published: true, featured: false, createdAt: iso(-90), updatedAt: iso(-2) },
 ];
 
+// The logboek, with someone of every kind in it.
+const PER = { id: id(999), name: "Per van Hassel", email: "per@example.nl", kind: "owner" };
+const MAJD = { id: id(998), name: "Majd", email: "majd@example.nl", kind: "team" };
+const SANNE = { id: id(102), name: "Sanne Veldhuis", email: "sanne@studioveldhuis.nl", kind: "client" };
+const ANNA = { id: null, name: "Anna de Groot", email: "anna@example.nl", kind: "guest" };
+const MARCO = { id: null, name: "Marco", email: "06 11223344", kind: "visitor" };
+const logEntry = (n: number, at: string, actor: Json, area: string, action: string, more: Json = {}) => ({
+  id: id(1000 + n), at, actor, area, action, targetId: "", targetLabel: "", projectId: null, projectTitle: "", detail: "", changes: [], link: "", ...more,
+});
+const activity: Json[] = [
+  logEntry(1, iso(0, 11, 42), PER, "Projecten", "Project bijgewerkt", {
+    targetId: id(51), targetLabel: "Porsche 911 Targa", projectId: id(51), projectTitle: "Porsche 911 Targa", link: `/admin/project/${id(51)}`,
+    changes: [{ field: "stage", from: "quote", to: "booked" }, { field: "due_date", from: null, to: dateOnly(9) }, { field: "value_cents", from: 85000, to: 95000 }, { field: "briefing" }, { field: "gallery_settings.style", from: "editorial", to: "arena" }],
+  }),
+  logEntry(2, iso(0, 10, 15), SANNE, "Berichten", "Bericht gestuurd aan de studio", { projectId: id(52), projectTitle: "Teamfoto's 2026", link: `/admin/project/${id(52)}`, detail: "Hoi! Kunnen we de foto van Thomas nog iets lichter maken? De rest is perfect." }),
+  logEntry(3, iso(0, 9, 58), ANNA, "Galerij", "Hartje gegeven aan een foto", { projectId: id(55), projectTitle: "Bruiloft Lisa & Daan", link: `/admin/project/${id(55)}`, detail: "DSC_2041.jpg" }),
+  logEntry(4, iso(0, 9, 12), MAJD, "Taken", "Taak afgevinkt", { targetId: id(92), targetLabel: "Batterijen laden en ND-filters mee", projectId: id(51), projectTitle: "Porsche 911 Targa", link: "/admin/tasks", changes: [{ field: "done_at", from: null, to: iso(0, 9, 12) }] }),
+  logEntry(5, iso(-1, 21, 4), MARCO, "Aanvragen", "Aanvraag gestuurd via de site", { link: "/admin/inquiries", detail: "Ik heb een BMW M3 E46 en zoek iemand voor een avondshoot in de haven." }),
+  logEntry(6, iso(-1, 16, 30), PER, "Instellingen", "Site-instellingen bijgewerkt", { link: "/admin/settings", changes: [{ field: "heroTitle", from: "Foto's die blijven hangen", to: "Beelden die blijven hangen" }, { field: "sections.socialProof", from: false, to: true }] }),
+  logEntry(7, iso(-1, 14, 2), PER, "Team", "Rol bijgewerkt", { targetLabel: "CFO", link: "/admin/team", changes: [{ field: "permissions.manageQuotes", from: false, to: true }, { field: "permissions.viewAllDeclarations", from: true, to: false }] }),
+  logEntry(8, iso(-1, 13, 45), MAJD, "Galerij", "Foto's geüpload", { projectId: id(55), projectTitle: "Bruiloft Lisa & Daan", link: `/admin/project/${id(55)}`, detail: "48 bestanden" }),
+  logEntry(9, iso(-3, 17, 20), SANNE, "Offertes", "Offerte geaccepteerd", { targetLabel: "OF-2026-014 · Teamfoto's 2026", projectId: id(52), projectTitle: "Teamfoto's 2026", link: "/admin/quotes", detail: "Top, we gaan ervoor!" }),
+  logEntry(10, iso(-3, 11, 0), PER, "Facturen", "Status van factuur gewijzigd", { targetLabel: "FA-2026-009 · Café Maas", link: `/admin/invoice/${id(81)}`, changes: [{ field: "status", from: "sent", to: "paid" }, { field: "paid_at", from: null, to: iso(-3, 11, 0) }] }),
+  logEntry(11, iso(-4, 15, 10), PER, "Projecten", "Project verwijderd", { targetLabel: "Testproject", projectTitle: "Testproject" }),
+];
+
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Mirrors the edge function's routes closely enough to drive every screen. */
@@ -375,6 +401,17 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     if (p === "/admin/reviews") return { reviews: structuredClone(reviews).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) };
     if (p === "/admin/google") return { ...google };
     if (p === "/admin/feedback") return { feedback: [{ id: id(421), projectId: id(52), projectTitle: "Teamfoto's 2026", clientName: "Sanne Veldhuis", createdAt: iso(-1), items: [{ id: id(422), scope: "photos", photoUrls: PHOTOS.slice(4, 6), category: "", text: "Kan de achtergrond hier iets warmer?" }] }] };
+    if (p === "/admin/activity") {
+      const s = url.searchParams;
+      const kinds = (s.get("kind") || "").split(",").filter(Boolean);
+      const q = (s.get("q") || "").toLowerCase();
+      const who = s.get("who") || "";
+      return { more: false, entries: activity.filter((e) =>
+        (!kinds.length || kinds.includes(e.actor.kind)) && (!s.get("area") || e.area === s.get("area"))
+        && (!who || [e.actor.id, e.actor.email, e.actor.name].includes(who))
+        && (!q || `${e.action} ${e.targetLabel} ${e.projectTitle} ${e.actor.name} ${e.detail}`.toLowerCase().includes(q))) };
+    }
+    if (p === "/admin/activity/people") return { people: [PER, SANNE, ANNA, MAJD, MARCO].map((a) => ({ ...a, entries: 3, lastAt: iso(0) })) };
     if (p === "/admin/workers") return { workers: [
       { id: id(999), email: "per@example.nl", name: "Per van Hassel", lastSignIn: iso(0, 9), isOwner: true, roleId: null, roleName: "Eigenaar" },
       { id: id(998), email: "majd@example.nl", name: "Majd", lastSignIn: iso(-2), isOwner: false, roleId: id(431), roleName: "CEO" },

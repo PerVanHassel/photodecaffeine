@@ -2,7 +2,7 @@ import { PdcLogo } from "../components/PdcLogo";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Helmet } from "react-helmet-async";
 import {
-  BookOpen, CalendarDays, CheckSquare, Euro, FileText, Globe, Images, Inbox, Kanban, Layers, LogOut, MapPin, Megaphone, Menu, Receipt,
+  BookOpen, CalendarDays, CheckSquare, Euro, FileText, Globe, History, Images, Inbox, Kanban, Layers, LogOut, MapPin, Megaphone, Menu, Receipt,
   Search, Settings, Shield, Star, Sun, Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -68,7 +68,7 @@ function Shell() {
   const name = user?.user_metadata?.name || user?.email || "Admin";
   const waiting = (o?.unreadMessages.length || 0) + (o?.overdueInvoices.length || 0);
   const inBar = location.pathname === "/admin" || BAR.some((to) => location.pathname.startsWith(to));
-  const sections = <NavSections can={can} waiting={waiting} tasks={o?.tasks.length} inquiries={o?.newInquiries.length} />;
+  const sections = <NavSections can={can} owner={!!me.data?.isOwner} waiting={waiting} tasks={o?.tasks.length} inquiries={o?.newInquiries.length} />;
   const foot = (
     <div className="s-rail-foot">
       <div className="s-avatar" aria-hidden="true">{initials(name)}</div>
@@ -135,7 +135,7 @@ function Shell() {
   );
 }
 
-function NavSections({ can, waiting, tasks, inquiries }: { can: (perm?: string) => boolean; waiting: number; tasks?: number; inquiries?: number }) {
+function NavSections({ can, owner, waiting, tasks, inquiries }: { can: (perm?: string) => boolean; owner: boolean; waiting: number; tasks?: number; inquiries?: number }) {
   return (
     <>
       <nav className="s-nav" aria-label="Werk">
@@ -167,6 +167,7 @@ function NavSections({ can, waiting, tasks, inquiries }: { can: (perm?: string) 
         <NavItem show={can("manageAdmins")} to="/admin/team" icon={<Shield />} label="Team & rollen" />
         <NavItem to="/admin/declarations" icon={<Receipt />} label="Declaraties" />
         <NavItem to="/admin/documents" icon={<BookOpen />} label="Documenten" />
+        <NavItem show={owner} to="/admin/activity" icon={<History />} label="Logboek" />
       </nav>
     </>
   );
