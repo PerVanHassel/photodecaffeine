@@ -220,8 +220,9 @@ r.get(`${P}/events`, async (c) => {
 r.get(`${P}/quotes`, async (c) => {
   const client = await access(c);
   const email = String(c.get("user").email || "").toLowerCase();
+  // A replaced quote is history; the client sees the one that took its place.
   // Older quotes only carry an email address, so match on both.
-  const rows = must(await db.from("quotes").select("*").neq("status", "draft")
+  const rows = must(await db.from("quotes").select("*").not("status", "in", "(draft,replaced)")
     .or(`client_id.eq.${client.id},client_email.eq."${email.replace(/"/g, "")}"`).order("sent_at", { ascending: false })) || [];
   return c.json({
     quotes: rows.map((q: any) => ({

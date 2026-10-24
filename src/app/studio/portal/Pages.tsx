@@ -10,7 +10,7 @@ import { Button, Card, Empty, ErrorState, Pill, SkeletonList, TextField } from "
 import { pkeys, useMe, usePortalInvoices, usePortalProjects, usePortalQuotes } from "./data";
 import { useT } from "./i18n";
 
-const QUOTE_TONE = { sent: "warn" as const, accepted: "ok" as const, declined: undefined };
+const QUOTE_TONE = { sent: "warn" as const, accepted: "ok" as const, declined: undefined, replaced: undefined };
 
 export function PortalDocuments() {
   const t = useT();

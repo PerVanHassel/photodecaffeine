@@ -13,7 +13,7 @@ export const pkeys = {
 };
 
 export type PortalQuote = {
-  id: string; number: string; title: string; subtitle: string; status: "sent" | "accepted" | "declined";
+  id: string; number: string; title: string; subtitle: string; status: "sent" | "accepted" | "declined" | "replaced";
   sentAt: string; respondedAt: string; response: string; validUntil: string; totals: { monthly: number; oneTime: number }; token: string;
 };
 export type PortalInvoice = {

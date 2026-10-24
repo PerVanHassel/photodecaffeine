@@ -1,4 +1,5 @@
-import { ArrowLeft, Bell, Check, Copy, Eye, Plus, Receipt, Search, Send, Trash2, Undo2, X } from "lucide-react";
+import { ArrowLeft, Bell, Check, CircleAlert, CircleCheck, Copy, Eye, Plus, Receipt, Search, Send, Trash2, TriangleAlert, Undo2, X } from "lucide-react";
+import { invoiceChecklist } from "../quotes/checklist";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { del, post, put } from "../api";
@@ -173,7 +174,7 @@ function InvoiceView({ invoice: inv, business }: { invoice: Invoice; business: B
           </>
         }
       />
-      {draft ? <InvoiceEditor invoice={inv} /> : <InvoiceDocument invoice={inv} business={business} />}
+      {draft ? <InvoiceEditor invoice={inv} business={business} /> : <InvoiceDocument invoice={inv} business={business} />}
       {!draft && inv.status !== "void" && inv.status !== "paid" && (
         <p className="s-small s-faint">
           Iets fout? <button type="button" className="s-btn ghost sm" onClick={async () => { if (await confirm({ title: "Factuur laten vervallen?", body: "Het nummer blijft bestaan zodat de nummering klopt; de factuur telt niet meer mee.", danger: true, confirm: "Laten vervallen" })) status.mutate("void"); }}>Laat vervallen</button>
@@ -184,7 +185,7 @@ function InvoiceView({ invoice: inv, business }: { invoice: Invoice; business: B
   );
 }
 
-function InvoiceEditor({ invoice: inv }: { invoice: Invoice }) {
+function InvoiceEditor({ invoice: inv, business }: { invoice: Invoice; business: Business }) {
   const toDraft = (l: InvoiceLine): DraftLine => ({ label: l.label, quantity: String(l.quantity), amount: String(l.amount).replace(".", ","), note: l.note });
   const [lines, setLines] = useState<DraftLine[]>(inv.lines.map(toDraft));
   const [f, setF] = useState({ clientName: inv.clientName, clientEmail: inv.clientEmail, clientAddress: inv.clientAddress, issuedOn: inv.issuedOn, dueOn: inv.dueOn, notes: inv.notes, vatBasis: inv.vatBasis, vatRate: String(inv.vatRate) });
@@ -252,8 +253,35 @@ function InvoiceEditor({ invoice: inv }: { invoice: Invoice }) {
         <TextAreaField label="Opmerking op de factuur" rows={2} value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} />
         {error && <p className="s-small" style={{ color: "var(--bad)" }} role="alert">{error}</p>}
         <p className="s-small s-faint">Bedrijfsgegevens, KvK en IBAN op de factuur stel je in bij <Link to="/admin/settings">Instellingen</Link>.</p>
+        <InvoiceCheck items={invoiceChecklist({ number: inv.number, ...f, vatRate: rate, lines: parsed }, business)} />
       </div>
     </Card>
+  );
+}
+
+/** What the Belastingdienst requires on an invoice, ticked off as you fill it in. */
+function InvoiceCheck({ items }: { items: ReturnType<typeof invoiceChecklist> }) {
+  const ok = items.filter((i) => i.state === "ok").length;
+  return (
+    <div className="s-stack sm" style={{ padding: 14, borderRadius: 12, background: "var(--sunken)" }}>
+      <div className="s-row between">
+        <span className="s-eyebrow">Wat er op een factuur moet</span>
+        <span className="s-small s-mono">{ok}/{items.length}</span>
+      </div>
+      <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 6 }}>
+        {items.map((i) => (
+          <li key={i.id} className="s-row nowrap" style={{ alignItems: "flex-start", gap: 8 }}>
+            {i.state === "ok" ? <CircleCheck size={15} style={{ color: "var(--ok)", marginTop: 2 }} aria-label="In orde" />
+              : i.state === "error" ? <CircleAlert size={15} style={{ color: "var(--bad)", marginTop: 2 }} aria-label="Ontbreekt" />
+              : <TriangleAlert size={15} style={{ color: "var(--warn)", marginTop: 2 }} aria-label="Nakijken" />}
+            <span className="s-small">
+              <span style={{ color: i.state === "ok" ? "var(--muted)" : "var(--text)" }}>{i.label}</span>
+              {i.hint && <span className="s-faint"> · {i.hint}</span>}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

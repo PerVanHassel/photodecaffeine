@@ -38,6 +38,7 @@ const Clients = page(() => import("./pages/Clients"), "ClientsPage");
 const Client = page(() => import("./pages/Clients"), "ClientPage");
 const Inquiries = page(() => import("./pages/Inquiries"), "InquiriesPage");
 const Quotes = page(() => import("./pages/Money"), "QuotesPage");
+const QuoteBuilder = page(() => import("./pages/QuoteBuilder"), "QuoteBuilderPage");
 const Invoices = page(() => import("./pages/Invoices"), "InvoicesPage");
 const Invoice = page(() => import("./pages/Invoices"), "InvoicePage");
 
@@ -76,6 +77,7 @@ export const studioRoutes: RouteObject = {
         { path: "client/:id", Component: wrap(Client) },
         { path: "inquiries", Component: wrap(Inquiries) },
         { path: "quotes", Component: wrap(Quotes) },
+        { path: "quote/:id", Component: wrap(QuoteBuilder) },
         { path: "invoices", Component: wrap(Invoices) },
         { path: "invoice/:id", Component: wrap(Invoice) },
         { path: "portfolio", Component: wrap(Portfolio) },

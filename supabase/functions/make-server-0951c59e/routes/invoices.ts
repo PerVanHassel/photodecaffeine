@@ -1,11 +1,11 @@
 import { Hono, type MiddlewareHandler } from "npm:hono";
-import * as kv from "../kv_store.tsx";
 import { hasPermission } from "../lib/auth.ts";
+import { business } from "../lib/business.ts";
 import { EMAIL_ADMIN_NOTIFY, EMAIL_INVOICE_BCC, EMAIL_RE, SITE_URL } from "../lib/config.ts";
 import { db, found, must, nextDocumentNumber } from "../lib/db.ts";
 import { emailWrap, escapeHtml, sendEmail } from "../lib/email.ts";
 import { type Env, fail, isoDate, readBody, requireAdmin, text, uuid, z } from "../lib/http.ts";
-import { euro, quoteLines, rowToQuote } from "./quotes.ts";
+import { chosenOptions, euro, linesThatCount, paymentSteps, quoteLines, rowToQuote } from "./quotes.ts";
 
 const r = new Hono<Env>();
 export default r;
@@ -85,20 +85,6 @@ function toApi(inv: any) {
   };
 }
 
-/** The studio's own details, printed on every invoice; kept with the site settings. */
-async function business() {
-  const raw = await kv.get("site:settings");
-  const s = raw ? JSON.parse(raw) : {};
-  return {
-    name: s.business?.name || "PhotoDeCaffeine Productions",
-    address: s.business?.address || "",
-    kvk: s.business?.kvk || "",
-    vatNumber: s.business?.vatNumber || "",
-    iban: s.business?.iban || "",
-    email: s.business?.email || EMAIL_ADMIN_NOTIFY,
-  };
-}
-
 // ---------------------------------------------------------------------------
 // Admin
 // ---------------------------------------------------------------------------
@@ -164,26 +150,66 @@ r.post(A, async (c) => {
   return c.json({ invoice: toApi(row) });
 });
 
-// One-off lines become invoice lines as they are; monthly lines are billed
-// for the first month.
+// One-off lines become invoice lines as they are, with the options the client
+// picked; monthly lines are billed for the first month. A quote with a payment
+// schedule (40% on agreement, 60% at launch) gets one invoice per step: each
+// click makes the next one, and the last step carries the first month.
 r.post(`${A}/from-quote/:quoteId`, async (c) => {
   const quote = rowToQuote(found(await db.from("quotes").select("*").eq("id", c.req.param("quoteId")).maybeSingle(), "Prijsopgave niet gevonden"));
-  const lines = [
-    ...quoteLines(quote.oneTime).map((l) => ({ label: l.label, quantity: 1, amount: l.amount, note: l.note })),
-    ...quoteLines(quote.monthly).map((l) => ({ label: `${l.label} (eerste maand)`, quantity: 1, amount: l.amount, note: l.note })),
-  ];
+  const chosen = chosenOptions(quote);
+  const oneTime = linesThatCount(quoteLines(quote.oneTime), "o", chosen);
+  const firstMonth = linesThatCount(quoteLines(quote.monthly), "m", chosen)
+    .map((l) => ({ label: `${l.label} (eerste maand)`, quantity: 1, amount: l.amount, note: l.note }));
+  const steps = paymentSteps(quote.details);
+  const d = quote.details || {};
+
+  let lines: Line[];
+  let notes = `Volgens prijsopgave ${quote.number}.`;
+  if (steps.length > 1) {
+    const made = must(await db.from("invoices").select("id").eq("quote_id", quote.id).neq("status", "void")) || [];
+    if (made.length >= steps.length) fail(409, `Alle ${steps.length} termijnen van deze prijsopgave zijn al gefactureerd.`);
+    const at = made.length;
+    const total = round2(oneTime.reduce((s, l) => s + l.amount, 0));
+    // Every step is rounded on its own; the last takes what is left, so the
+    // steps add up to the quote to the cent.
+    const amounts = steps.map((s) => round2((total * s.percent) / 100));
+    amounts[amounts.length - 1] = round2(total - amounts.slice(0, -1).reduce((s, a) => s + a, 0));
+    const step = steps[at];
+    lines = [{
+      label: `${step.label || `Termijn ${at + 1}`}: ${step.percent}% van ${quote.title}`,
+      quantity: 1,
+      amount: amounts[at],
+      note: oneTime.map((l) => l.label).join(", "),
+    }];
+    if (at === steps.length - 1) lines.push(...firstMonth);
+    notes = `Termijn ${at + 1} van ${steps.length}${step.moment ? ` (${step.moment})` : ""}, volgens prijsopgave ${quote.number}.`;
+  } else {
+    lines = [...oneTime.map((l) => ({ label: l.label, quantity: l.qty || 1, amount: l.qty ? l.price ?? l.amount : l.amount, note: l.note })), ...firstMonth];
+  }
   if (lines.length === 0) fail(400, "Deze prijsopgave heeft geen bedragen.");
+
+  // A business is invoiced by its company name, with the contact underneath.
+  const company = String(d.client?.company || "").trim();
+  const address = [company && quote.clientName ? `t.a.v. ${quote.clientName}` : "", String(d.client?.address || "").trim(), d.client?.vatId ? `Btw ${d.client.vatId}` : ""]
+    .filter(Boolean).join("\n");
+  const term = Number(d.payment?.termDays);
+  const dueOn = term >= 1 && term <= 90
+    ? new Date(Date.now() + term * 86400000).toLocaleDateString("sv-SE", { timeZone: "Europe/Amsterdam" })
+    : undefined;
+
   const row = must(await db.from("invoices").insert({
     number: await nextDocumentNumber("FA"),
     quote_id: quote.id,
     project_id: quote.projectId || null,
     client_id: quote.clientId || null,
-    client_name: quote.clientName,
+    client_name: company || quote.clientName,
     client_email: quote.clientEmail,
+    client_address: address,
     lines,
     vat_basis: quote.vatBasis,
     vat_rate: quote.vatRate,
-    notes: `Volgens prijsopgave ${quote.number}.`,
+    notes,
+    ...(dueOn ? { due_on: dueOn } : {}),
   }).select("*").single());
   return c.json({ invoice: toApi(row) });
 });

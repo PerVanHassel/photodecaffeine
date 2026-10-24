@@ -1,6 +1,8 @@
 // Shapes returned by the make-server edge function. Kept in one place so the
 // admin and the portal read the same fields the same way.
 
+import type { QuoteDetails } from "../components/quote/model";
+
 export type Stage = "lead" | "quote" | "booked" | "shoot" | "editing" | "delivered" | "review" | "archived";
 export type ProjectType = "photo" | "video" | "web";
 export type EventKind = "shoot" | "meeting" | "deadline" | "edit" | "other";
@@ -223,6 +225,10 @@ export interface QuoteLine {
   label: string;
   amount: number;
   note: string;
+  qty?: number;
+  unit?: string;
+  price?: number;
+  optional?: boolean;
 }
 
 export interface Quote {
@@ -244,14 +250,17 @@ export interface Quote {
   validUntil: string;
   vatBasis: "incl" | "excl";
   vatRate: number;
-  status: "draft" | "sent" | "accepted" | "declined";
+  status: "draft" | "sent" | "accepted" | "declined" | "replaced";
   sentAt: string;
   respondedAt: string;
   response: string;
   viewedAt: string;
   viewCount: number;
   sendCount: number;
-  totals: { monthly: number; oneTime: number };
+  /** Everything the builder adds: payment schedule, planning, ownership, licence, open points. */
+  details: QuoteDetails;
+  /** Without options; the chosen ones include what the client picked. */
+  totals: { monthly: number; oneTime: number; chosenMonthly?: number; chosenOneTime?: number };
   link: string;
   createdAt: string;
   updatedAt: string;

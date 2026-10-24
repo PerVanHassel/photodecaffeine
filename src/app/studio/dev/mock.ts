@@ -224,10 +224,18 @@ const quotes: Json[] = [
   mkQuote(33, "OF-2026-005", "Fotoreportage bruiloft", "Lotte en Sem", "lotte@example.nl", "", "", "draft", 1250, {}),
 ];
 
+// A website quote built in the quote builder, replacing an older one.
+quotes.unshift(
+  { ...mkQuote(35, "OF-2026-002", "Website, fotografie en video", "Martine van Dommele", "martine@suroh.nl", id(2), "", "sent", 1989, { sentAt: iso(-28), viewedAt: iso(-27), viewCount: 3 }), type: "web", details: { services: ["web", "photo", "video"] } },
+  { ...mkQuote(34, "OF-2026-006", "", "", "", id(2), "", "draft", 0, {}), ...{"type":"web","title":"Website voor Suroh","subtitle":"Ontwerp, bouw en beheer, met je eigen artikelen en nieuwsbrief","clientName":"Martine van Dommele","clientEmail":"martine@suroh.nl","intro":"Zoals besproken op 21 oktober: eerst de website. Foto en video krijgen later een eigen prijsopgave, als het ontwerp laat zien wat er nodig is. De bouwprijs blijft gelijk. Nieuw zijn de afspraken over eigendom, onderhoud en nazorg, zodat je precies weet waar je aan toe bent.","oneTime":[{"label":"Website: ontwerp en bouw","amount":800,"note":"Ontwerp op maat, bouw, beheeromgeving, eigen artikelen en eigen nieuwsbrief"}],"monthly":[{"label":"Onderhoud","amount":35,"note":"Updates, beveiliging, back-ups en een kleine wijziging per maand"},{"label":"Nieuwsbrief versturen","amount":10,"note":"Doorbelast, afhankelijk van het aantal abonnees"}],"included":["Een homepage met een ingang per doelgroep: gemeente, binnenstadsorganisatie, ondernemer","Pagina's over jou, wat je doet, je werk, artikelen en contact","Beheeromgeving waarin je zelf teksten en pagina's aanpast","Artikelen die je zelf schrijft, met een nette voorvertoning als je ze deelt op LinkedIn","Eigen nieuwsbrief: abonnees beheren en versturen vanuit je beheeromgeving","Contactformulier dat binnenkomt op je eigen mail","Basis voor Google: titels, sitemap en snelle laadtijd","Werkt op telefoon, tablet en computer","Licht ontwerp met ronde vormen, zo gebouwd dat je logo en kleuren er later makkelijk in gaan"],"terms":[],"notes":"Dit is een vrienden- en familieprijs. Fijn dat je PhotoDeCaffeine noemt bij de lancering van je site. Vragen, of wil je iets anders? Laat het weten.","validUntil":"2026-11-06","vatBasis":"excl","vatRate":21,"details":{"audience":"business","services":["web"],"replaces":{"id":"00000000-0000-4000-8000-000000000035","number":"OF-2026-002"},"client":{"company":"Suroh","address":"","country":"Nederland","vatId":"","phone":"06 27 09 63 41"},"problem":"Gemeentes, binnenstadsorganisaties en ondernemers die je werk zien, weten meteen: zij is de persoon die we bellen. De site laat dat zien, en jij houdt hem zelf bij.","excluded":["Foto en video. Die krijgen een eigen prijsopgave, als het ontwerp staat.","Teksten schrijven. Die schrijf je zelf.","Logo en huisstijl. Die komen van je vriendin en gaan erin zodra ze klaar zijn."],"extraCosts":["Hosting en domein komen er per maand bij. Kan je site bij Be Hosted blijven, dan betaal je die gewoon daar. Anders belasten we ze door zonder opslag."],"clientDelivers":["Je teksten","Logo en kleuren, zodra ze klaar zijn","Voorbeeldsites die je mooi vindt","Toegang tot je domein en hosting bij Be Hosted"],"planning":"We beginnen met een schetssessie: samen tekenen we de opzet in zwart-wit. Daarna bouwen we de site, zonder op het logo te wachten. Logo en kleuren gaan erin zodra ze klaar zijn. Reken op ongeveer zes weken vanaf je akkoord op het ontwerp, als je teksten op tijd binnen zijn. Live gaan we als jij tevreden bent.","payment":{"steps":[{"label":"Aanbetaling","percent":40,"moment":"bij akkoord"},{"label":"Restant","percent":60,"moment":"bij livegang"}],"termDays":14},"revisions":{"rounds":3,"untilRight":true,"feedbackDays":10},"extraWork":{"hourly":35,"note":""},"aftercare":{"days":30,"note":"Werkt er na livegang iets niet zoals afgesproken, dan herstellen we dat gratis. Vragen over je beheeromgeving beantwoorden we de eerste 30 dagen altijd gratis. Daarna valt het onder het onderhoud."},"maintenance":{"covers":["Updates van de site en het contactformulier","Beveiliging: de gegevens van mensen die contact opnemen blijven veilig","Back-ups, zodat je artikelen nooit kwijtraken","Eén kleine wijziging per maand"],"smallChange":"Iets in de vormgeving of de volgorde aanpassen, bijvoorbeeld een blok verplaatsen, een kleur bijstellen of een knop toevoegen. We zijn daar ruim in. Teksten en artikelen pas je zelf aan in je beheeromgeving, daarvoor heb je ons niet nodig.","excluded":"Een nieuwe pagina, een nieuwe functie of een nieuw ontwerp. Dat prijzen we vooraf apart.","cancel":"Het onderhoud is per maand opzegbaar. Stop je ermee, dan kun je de site kopen en meenemen. Je teksten, artikelen en abonnees zijn altijd van jou."},"ownership":{"model":"rent","buyout":null,"note":"","rows":[{"what":"Domeinnaam suroh.nl","owner":"Jij. Hij staat al bij Be Hosted."},{"what":"Teksten, artikelen, foto's en abonnees","owner":"Jij. Je krijgt ze altijd mee, ook als je stopt."},{"what":"Ontwerp en broncode","owner":"PDC, zolang je huurt. Koop je de site, dan worden ze van jou."},{"what":"Accounts (hosting, e-mail, nieuwsbrief)","owner":"Op jouw naam waar dat kan. Wat op onze naam staat, zetten we over als je de site koopt."}]},"termsVersion":"","openPoints":["Maandkosten nakijken zodra de Be Hosted-inlog binnen is: wat doet Be Hosted al aan back-ups, updates en beveiliging?","Afkoopprijs invullen: wat kost het als ze de site koopt?","Adres van Suroh opvragen, voor op de factuur."]}} },
+);
+for (const q of quotes) q.totals = quoteTotals(q);
+
 function mkQuote(n: number, number: string, title: string, clientName: string, clientEmail: string, clientId: string, projectId: string, status: string, amount: number, extra: Json) {
   return {
     id: id(n), number, type: "photo", title, subtitle: "Shoot + nabewerking", clientName, clientEmail, clientId, projectId, intro: "", status,
     monthly: [], oneTime: [{ label: "Shoot", amount: amount - 150, note: "" }, { label: "Nabewerking", amount: 150, note: "" }], included: ["Online galerij"], terms: [],
+    details: { services: ["photo"] },
     notes: "", validUntil: dateOnly(20), vatBasis: "excl", vatRate: 21, sentAt: extra.sentAt || "", respondedAt: extra.respondedAt || "", response: "",
     viewedAt: extra.viewedAt || "", viewCount: extra.viewCount || 0, sendCount: extra.sentAt ? 1 : 0, totals: { monthly: 0, oneTime: amount },
     link: `https://www.photodecaffeine.com/offerte/${id(n)}?t=abc`, createdAt: iso(-15 + n % 5), updatedAt: iso(-2),
@@ -378,7 +386,7 @@ export async function mockApi(path: string, method: string, body: Json): Promise
       return { events: eventsWithContext().filter((e) => (!from || e.startsAt >= from) && (!to || e.startsAt < to) && (!pid || e.projectId === pid)) };
     }
     if (p === "/admin/tasks") return { tasks };
-    if (p === "/admin/quotes") return { quotes };
+    if (p === "/admin/quotes") return { quotes, business: QUOTE_BUSINESS };
     if (p === "/admin/invoices") return { invoices };
     if ((r = m(/^\/admin\/invoices\/([^/]+)$/))) return { invoice: invoices.find((x) => x.id === r![1]), business: { name: "PhotoDeCaffeine Productions", address: "Roosendaal", kvk: "12345678", vatNumber: "NL001234567B01", iban: "NL00 BANK 0123 4567 89", email: "contact@photodecaffeine.com" } };
     if (p === "/admin/search") {
@@ -658,5 +666,62 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     await delay(500);
     return { url: URL.createObjectURL((body as FormData).get("file") as File) };
   }
+  const quoteReply = handleQuotes(p, method, body);
+  if (quoteReply) return quoteReply;
   return { success: true };
+}
+
+// --- Quotes: the builder, the client's page and the answer ---
+const QUOTE_BUSINESS = { name: "PhotoDeCaffeine Productions", address: "Middenstraat 47, 4702GB Roosendaal", kvk: "94948933", vatNumber: "NL823807071B01", iban: "NL91 RABO 0385 6448 09", email: "contact@photodecaffeine.com" };
+
+function quoteTotals(q: Json) {
+  const chosen = new Set<string>(q.details?.accepted?.options || []);
+  const sum = (ls: Json[], pre: string, withChosen: boolean) =>
+    Math.round((ls || []).reduce((s: number, l: Json, i: number) => (!l.optional || (withChosen && chosen.has(`${pre}${i}`)) ? s + (l.qty && l.price != null ? l.qty * l.price : l.amount) : s), 0) * 100) / 100;
+  return { oneTime: sum(q.oneTime, "o", false), monthly: sum(q.monthly, "m", false), chosenOneTime: sum(q.oneTime, "o", true), chosenMonthly: sum(q.monthly, "m", true) };
+}
+
+function handleQuotes(p: string, method: string, body: Json): Json | null {
+  let r: RegExpMatchArray | null;
+  if (p === "/admin/quotes" && method === "POST") {
+    const n = quotes.length + 31;
+    const q = { ...structuredClone(body), id: id(n + 900), number: `OF-2026-${String(n - 20).padStart(3, "0")}`, status: "draft", sentAt: "", respondedAt: "", response: "", viewedAt: "", viewCount: 0, sendCount: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    q.link = `https://www.photodecaffeine.com/offerte/${q.id}?t=abc`;
+    q.totals = quoteTotals(q);
+    quotes.unshift(q);
+    return { quote: q };
+  }
+  if ((r = p.match(/^\/admin\/quotes\/([^/]+)$/)) && method === "PUT") {
+    const q = quotes.find((x) => x.id === r![1]);
+    const accepted = q.details?.accepted;
+    Object.assign(q, structuredClone(body), { updatedAt: new Date().toISOString() });
+    if (accepted) q.details.accepted = accepted;
+    q.totals = quoteTotals(q);
+    return { quote: q };
+  }
+  if ((r = p.match(/^\/admin\/quotes\/([^/]+)\/send$/)) && method === "POST") {
+    const q = quotes.find((x) => x.id === r![1]);
+    Object.assign(q, { status: ["accepted", "declined", "replaced"].includes(q.status) ? q.status : "sent", sentAt: new Date().toISOString(), sendCount: q.sendCount + 1 });
+    const old = quotes.find((x) => x.id === q.details?.replaces?.id);
+    if (old && ["draft", "sent", "declined"].includes(old.status)) old.status = "replaced";
+    return { success: true, quote: q };
+  }
+  if ((r = p.match(/^\/quote\/([^/]+)$/)) && method === "GET") {
+    const q = quotes.find((x) => x.id === r![1]);
+    if (!q) throw new ApiError(404, "Deze prijsopgave bestaat niet (meer).");
+    const next = quotes.find((x) => x.details?.replaces?.id === q.id && x.status !== "draft");
+    const { openPoints: _o, ...details } = q.details || {};
+    return { quote: { ...q, details, replacedBy: q.status === "replaced" && next ? { number: next.number, link: next.link } : null }, business: QUOTE_BUSINESS };
+  }
+  if ((r = p.match(/^\/quote\/([^/]+)\/respond$/)) && method === "POST") {
+    const q = quotes.find((x) => x.id === r![1]);
+    if (q.status === "replaced") throw new ApiError(409, "Deze prijsopgave is vervangen door een nieuwere.");
+    q.status = body.answer;
+    q.response = body.message || "";
+    q.respondedAt = new Date().toISOString();
+    if (body.answer === "accepted") q.details = { ...q.details, accepted: { options: body.options || [], at: q.respondedAt } };
+    q.totals = quoteTotals(q);
+    return { quote: q };
+  }
+  return null;
 }

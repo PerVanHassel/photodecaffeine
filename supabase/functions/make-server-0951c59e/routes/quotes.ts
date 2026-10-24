@@ -1,5 +1,6 @@
 import { Hono, type MiddlewareHandler } from "npm:hono";
 import { hasPermission } from "../lib/auth.ts";
+import { business } from "../lib/business.ts";
 import { EMAIL_ADMIN_NOTIFY, EMAIL_RE, SITE_URL } from "../lib/config.ts";
 import { db, found, must, nextDocumentNumber } from "../lib/db.ts";
 import { emailWrap, escapeHtml, sendEmail } from "../lib/email.ts";
@@ -18,24 +19,103 @@ export default r;
 // It goes out by email and carries a link to a public page. That link is the
 // only way in — quotes go to people who often do not have a portal account —
 // so every quote gets a random token and the public routes check it.
+//
+// Everything beyond the lines (payment schedule, planning, revisions, who owns
+// the website, the licence on photos) sits in `details`, built in the admin's
+// quote builder. src/app/components/quote/model.ts describes its shape.
 // ============================================================================
 
 export interface QuoteLine {
   label: string;
+  /** The line total, on the quote's VAT basis. With qty and price it is qty × price. */
   amount: number;
   note: string;
+  qty?: number;
+  unit?: string;
+  price?: number;
+  /** Not in the total: the client may pick it when accepting. */
+  optional?: boolean;
 }
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
 
 export function quoteLines(raw: any): QuoteLine[] {
   if (!Array.isArray(raw)) return [];
   return raw
-    .map((l: any) => ({
-      label: String(l?.label ?? "").trim(),
-      amount: Math.round((Number(l?.amount) || 0) * 100) / 100,
-      note: String(l?.note ?? "").trim(),
-    }))
+    .map((l: any) => {
+      const qty = Number(l?.qty);
+      const price = l?.price === "" || l?.price == null ? NaN : Number(l.price);
+      const perUnit = qty > 0 && Number.isFinite(price);
+      const line: QuoteLine = {
+        label: String(l?.label ?? "").trim(),
+        amount: round2(perUnit ? qty * price : Number(l?.amount) || 0),
+        note: String(l?.note ?? "").trim(),
+      };
+      if (perUnit) {
+        line.qty = round2(qty);
+        line.price = round2(price);
+        const unit = String(l?.unit ?? "").trim().slice(0, 30);
+        if (unit) line.unit = unit;
+      }
+      if (l?.optional === true) line.optional = true;
+      return line;
+    })
     .filter((l) => l.label !== "")
-    .slice(0, 20);
+    .slice(0, 30);
+}
+
+/**
+ * The options a client picked, as "o2" (third one-off line) or "m0" (first
+ * monthly line). Only lines that are actually optional count.
+ */
+export function chosenOptions(quote: { oneTime: any; monthly: any; details?: any }): Set<string> {
+  const picked = new Set<string>(Array.isArray(quote.details?.accepted?.options) ? quote.details.accepted.options : []);
+  const out = new Set<string>();
+  quoteLines(quote.oneTime).forEach((l, i) => { if (l.optional && picked.has(`o${i}`)) out.add(`o${i}`); });
+  quoteLines(quote.monthly).forEach((l, i) => { if (l.optional && picked.has(`m${i}`)) out.add(`m${i}`); });
+  return out;
+}
+
+/** The lines that count: everything that is not optional, plus the options the client picked. */
+export function linesThatCount(lines: QuoteLine[], prefix: "o" | "m", chosen?: Set<string>): QuoteLine[] {
+  return lines
+    .filter((l, i) => !l.optional || chosen?.has(`${prefix}${i}`))
+    .map(({ optional: _o, ...l }) => l);
+}
+
+// The details are free-form JSON from the builder. They are cleaned rather
+// than checked field by field: plain values only, bounded in size, and the
+// client's own answer (`accepted`) is never taken from the admin.
+function cleanJson(v: unknown, depth: number): unknown {
+  if (depth > 5) return undefined;
+  if (typeof v === "string") return v.trim().slice(0, 4000);
+  if (typeof v === "number") return Number.isFinite(v) ? v : undefined;
+  if (typeof v === "boolean" || v === null) return v;
+  if (Array.isArray(v)) return v.slice(0, 40).map((x) => cleanJson(x, depth + 1)).filter((x) => x !== undefined);
+  if (typeof v === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, x] of Object.entries(v as Record<string, unknown>).slice(0, 60)) {
+      if (!/^[a-zA-Z][a-zA-Z0-9]{0,30}$/.test(k)) continue;
+      const cleaned = cleanJson(x, depth + 1);
+      if (cleaned !== undefined) out[k] = cleaned;
+    }
+    return out;
+  }
+  return undefined;
+}
+
+export function quoteDetails(raw: any): Record<string, any> {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  const d = cleanJson(raw, 0) as Record<string, any>;
+  delete d.accepted;
+  if (JSON.stringify(d).length > 60000) fail(400, "Deze prijsopgave is te lang geworden.");
+  return d;
+}
+
+/** What the client may see of the details: the internal open points stay behind. */
+export function publicDetails(d: any): Record<string, any> {
+  const { openPoints: _open, ...rest } = d && typeof d === "object" ? d : {};
+  return rest;
 }
 
 export function quoteTexts(raw: any): string[] {
@@ -54,11 +134,12 @@ export function quoteTerms(raw: any): { label: string; text: string }[] {
       text: String(t?.text ?? "").trim(),
     }))
     .filter((t) => t.label !== "" || t.text !== "")
-    .slice(0, 10);
+    .slice(0, 20);
 }
 
+/** The total of a list, without the optional lines. */
 export function quoteSum(lines: QuoteLine[]): number {
-  return Math.round(lines.reduce((sum, l) => sum + (Number(l.amount) || 0), 0) * 100) / 100;
+  return round2(lines.filter((l) => !l.optional).reduce((sum, l) => sum + (Number(l.amount) || 0), 0));
 }
 
 /** €45 / €1.234,50 — no cents when the amount is round, the way a price reads. */
@@ -71,13 +152,14 @@ export function euro(amount: number): string {
   })}`;
 }
 
-export const QUOTE_STATUSES = ["draft", "sent", "accepted", "declined"];
+export const QUOTE_STATUSES = ["draft", "sent", "accepted", "declined", "replaced"];
 
 export const QUOTE_STATUS_LABELS: Record<string, string> = {
   draft: "Concept",
   sent: "Verstuurd",
   accepted: "Geaccepteerd",
   declined: "Afgewezen",
+  replaced: "Vervangen",
 };
 
 /** OF-2026-004 — sequential within the year the quote is made. */
@@ -104,6 +186,7 @@ export function quoteFields(body: any) {
     terms: quoteTerms(body.terms),
     notes: String(body.notes ?? "").trim(),
     validUntil: String(body.validUntil ?? "").trim(),
+    details: quoteDetails(body.details),
   };
 }
 
@@ -111,6 +194,7 @@ export function quoteFields(body: any) {
 export function publicQuote(quote: any) {
   const monthly = quoteLines(quote.monthly);
   const oneTime = quoteLines(quote.oneTime);
+  const chosen = chosenOptions(quote);
   return {
     id: quote.id,
     number: quote.number || "",
@@ -130,12 +214,30 @@ export function publicQuote(quote: any) {
     status: quote.status || "draft",
     sentAt: quote.sentAt || "",
     respondedAt: quote.respondedAt || "",
-    totals: { monthly: quoteSum(monthly), oneTime: quoteSum(oneTime) },
+    details: publicDetails(quote.details),
+    totals: {
+      monthly: quoteSum(monthly),
+      oneTime: quoteSum(oneTime),
+      // With the options the client picked; the same as above until then.
+      chosenMonthly: quoteSum(linesThatCount(monthly, "m", chosen)),
+      chosenOneTime: quoteSum(linesThatCount(oneTime, "o", chosen)),
+    },
   };
 }
 
 export function quoteLink(quote: any): string {
   return `${SITE_URL}/offerte/${quote.id}?t=${quote.token}`;
+}
+
+export type PaymentStep = { label: string; percent: number; moment: string };
+
+/** The payment schedule from the builder, or nothing when it does not add up to 100%. */
+export function paymentSteps(details: any): PaymentStep[] {
+  const raw = Array.isArray(details?.payment?.steps) ? details.payment.steps : [];
+  const steps = raw
+    .map((s: any) => ({ label: String(s?.label ?? "").trim(), percent: round2(Number(s?.percent) || 0), moment: String(s?.moment ?? "").trim() }))
+    .filter((s: PaymentStep) => s.percent > 0);
+  return Math.abs(steps.reduce((sum: number, s: PaymentStep) => sum + s.percent, 0) - 100) < 0.01 ? steps : [];
 }
 
 export function quoteDate(iso: string): string {
@@ -153,6 +255,7 @@ export function quoteEmailRows(quote: any, message: string): string {
   const oneTime = quoteLines(quote.oneTime);
   const included = quoteTexts(quote.included);
   const terms = quoteTerms(quote.terms);
+  const steps = paymentSteps(quote.details);
   const link = quoteLink(quote);
 
   const muted = "rgba(255,251,224,0.55)";
@@ -160,20 +263,24 @@ export function quoteEmailRows(quote: any, message: string): string {
   const cardStyle =
     "background-color:rgba(255,251,224,0.03);border:1px solid rgba(255,251,224,0.08);";
 
-  const lineRow = (l: QuoteLine) => `
+  const lineRow = (l: QuoteLine) => {
+    const sub = [l.qty ? `${l.qty}${l.unit ? ` ${l.unit}` : ""} × ${euro(l.price ?? 0)}` : "", l.note].filter(Boolean).join(" · ");
+    return `
     <tr>
       <td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.05);">
-        <span style="color:#fffbe0;font-size:14px;">${escapeHtml(l.label)}</span>
-        ${l.note ? `<br /><span style="color:${faint};font-size:11.5px;">${escapeHtml(l.note)}</span>` : ""}
+        <span style="color:#fffbe0;font-size:14px;">${escapeHtml(l.label)}</span>${l.optional ? `<span style="color:#c8905a;font-size:9px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;">&nbsp;&nbsp;Optie</span>` : ""}
+        ${sub ? `<br /><span style="color:${faint};font-size:11.5px;">${escapeHtml(sub)}</span>` : ""}
       </td>
       <td align="right" valign="top" style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.05);white-space:nowrap;">
-        <span style="color:#fffbe0;font-size:14px;font-weight:600;">${euro(l.amount)}</span>
+        <span style="color:${l.optional ? muted : "#fffbe0"};font-size:14px;font-weight:600;">${l.optional ? "+ " : ""}${euro(l.amount)}</span>
       </td>
     </tr>`;
+  };
 
-  const block = (label: string, lines: QuoteLine[], totalLabel: string, perMonth: boolean) => {
+  const block = (label: string, lines: QuoteLine[], baseLabel: string, perMonth: boolean) => {
     if (lines.length === 0) return "";
     const total = quoteSum(lines);
+    const totalLabel = lines.some((l) => l.optional) ? `${baseLabel}, zonder opties` : baseLabel;
     return `
     <tr>
       <td style="padding:0 36px 14px;">
@@ -291,6 +398,11 @@ export function quoteEmailRows(quote: any, message: string): string {
         ? `<tr><td style="padding:10px 36px 0;"><span style="color:${faint};font-size:12px;">Alle bedragen zijn ${quote.vatBasis === "incl" ? "inclusief" : "exclusief"} ${Number(quote.vatRate ?? 21)}% btw. Op de offertepagina kun je wisselen tussen beide weergaves.</span></td></tr>`
         : ""
     }
+    ${
+      steps.length > 0
+        ? `<tr><td style="padding:10px 36px 0;"><span style="color:${muted};font-size:13px;line-height:1.7;"><strong style="color:#fffbe0;">Betaling:</strong> ${escapeHtml(steps.map((s) => `${s.percent}% ${s.moment || s.label}`.trim()).join(", "))}.</span></td></tr>`
+        : ""
+    }
     ${includedBlock}
     ${termsBlock}
     ${
@@ -348,6 +460,7 @@ export function rowToQuote(q: any) {
     viewCount: q.view_count,
     respondedAt: q.responded_at || "",
     response: q.response || "",
+    details: q.details && typeof q.details === "object" ? q.details : {},
     createdBy: q.created_by,
     createdAt: q.created_at,
     updatedAt: q.updated_at,
@@ -371,6 +484,7 @@ function fieldsToRow(f: ReturnType<typeof quoteFields>) {
     terms: f.terms,
     notes: f.notes,
     valid_until: f.validUntil || null,
+    details: f.details,
   };
 }
 
@@ -378,6 +492,8 @@ function fieldsToRow(f: ReturnType<typeof quoteFields>) {
 function adminQuote(q: ReturnType<typeof rowToQuote>) {
   return {
     ...publicQuote(q),
+    // The admin sees the open points the client does not.
+    details: q.details,
     clientId: q.clientId,
     clientEmail: q.clientEmail,
     projectId: q.projectId,
@@ -414,8 +530,9 @@ async function checkedLinks(body: any): Promise<{ clientId: string; projectId: s
 }
 
 r.get(A, async (c) => {
-  const rows = must(await db.from("quotes").select("*").order("created_at", { ascending: false })) || [];
-  return c.json({ quotes: rows.map((q: any) => adminQuote(rowToQuote(q))) });
+  const [rows, biz] = await Promise.all([db.from("quotes").select("*").order("created_at", { ascending: false }), business()]);
+  // The builder prints the studio's details on the quote and checks them.
+  return c.json({ quotes: (must(rows) || []).map((q: any) => adminQuote(rowToQuote(q))), business: biz });
 });
 
 r.post(A, async (c) => {
@@ -443,6 +560,8 @@ r.put(`${A}/:id`, async (c) => {
   const links = await checkedLinks({ clientId: existing.clientId, projectId: existing.projectId, ...body });
   const fields = quoteFields({ ...existing, ...body, clientId: links.clientId });
   if (!fields.title) fail(400, "Vul een titel in.");
+  // The options the client picked are theirs; saving the quote keeps them.
+  if (existing.details?.accepted) fields.details.accepted = existing.details.accepted;
   // The status is set by sending and by the client's answer; an admin may
   // only put it back to a concept or mark it by hand from the list.
   const status = typeof body.status === "string" && QUOTE_STATUSES.includes(body.status) ? body.status : existing.status;
@@ -476,11 +595,16 @@ r.post(`${A}/:id/send`, async (c) => {
   const row = must(await db.from("quotes").update({
     client_email: to,
     // An answer already given stays standing; re-sending does not undo it.
-    status: quote.status === "accepted" || quote.status === "declined" ? quote.status : "sent",
+    status: ["accepted", "declined", "replaced"].includes(quote.status) ? quote.status : "sent",
     sent_at: new Date().toISOString(),
     send_count: (Number(quote.sendCount) || 0) + 1,
   }).eq("id", id).select("*").single());
   if (quote.projectId) await db.from("projects").update({ stage: "quote" }).eq("id", quote.projectId).eq("stage", "lead");
+  // The quote this one replaces can no longer be accepted, unless it already was.
+  const replaces = String(quote.details?.replaces?.id || "");
+  if (/^[0-9a-f-]{36}$/.test(replaces) && replaces !== id) {
+    await db.from("quotes").update({ status: "replaced" }).eq("id", replaces).in("status", ["draft", "sent", "declined"]);
+  }
   return c.json({ success: true, quote: adminQuote(rowToQuote(row)) });
 });
 
@@ -496,7 +620,7 @@ async function onAccepted(quote: ReturnType<typeof rowToQuote>) {
       type: quote.type === "web" ? "web" : "photo",
       stage: "booked",
       status: "in_progress",
-      value_cents: Math.round((quoteSum(quoteLines(quote.oneTime)) || 0) * 100),
+      value_cents: Math.round((quoteSum(linesThatCount(quoteLines(quote.oneTime), "o", chosenOptions(quote))) || 0) * 100),
     }).select("id").single()) as any;
     projectId = created.id;
     must(await db.from("project_clients").insert({ project_id: projectId, client_id: quote.clientId, position: 0 }));
@@ -526,7 +650,14 @@ r.get("/make-server-0951c59e/quote/:id", async (c) => {
   if (c.req.query("preview") !== "1") {
     await db.from("quotes").update({ viewed_at: row.viewed_at || new Date().toISOString(), view_count: row.view_count + 1 }).eq("id", row.id);
   }
-  return c.json({ quote: publicQuote(rowToQuote(row)) });
+  // A replaced quote points the client to the one that took its place.
+  let replacedBy: { number: string; link: string } | null = null;
+  if (row.status === "replaced") {
+    const next = must(await db.from("quotes").select("id, number, token, status").eq("details->replaces->>id", row.id).neq("status", "draft")
+      .order("created_at", { ascending: false }).limit(1).maybeSingle()) as any;
+    if (next) replacedBy = { number: next.number, link: quoteLink(next) };
+  }
+  return c.json({ quote: { ...publicQuote(rowToQuote(row)), replacedBy }, business: await business() });
 });
 
 r.post("/make-server-0951c59e/quote/:id/respond", async (c) => {
@@ -537,15 +668,28 @@ r.post("/make-server-0951c59e/quote/:id/respond", async (c) => {
   const token = c.req.query("t") || "";
   if (!token || token !== quote.token) fail(403, "Deze link klopt niet.");
   if (quote.status === "draft") fail(404, "Deze prijsopgave is nog niet verstuurd.");
+  if (quote.status === "replaced") fail(409, "Deze prijsopgave is vervangen door een nieuwere. Kijk in je mail of je portaal voor de nieuwe.");
 
   const body = await c.req.json().catch(() => ({}));
   const answer = body.answer === "accepted" ? "accepted" : body.answer === "declined" ? "declined" : "";
   if (!answer) fail(400, "Kies akkoord of niet akkoord.");
   const response = String(body.message || "").trim().slice(0, 2000);
 
-  const row = must(await db.from("quotes").update({ status: answer, response, responded_at: new Date().toISOString() }).eq("id", id).select("*").single());
+  // Options the client ticked, kept only when they point at an optional line.
+  const picked = Array.isArray(body.options) ? body.options.filter((o: unknown) => typeof o === "string" && /^[om]\d{1,2}$/.test(o)) : [];
+  const details = { ...quote.details };
+  if (answer === "accepted") {
+    details.accepted = { options: [...chosenOptions({ ...quote, details: { accepted: { options: picked } } })], at: new Date().toISOString() };
+  }
+
+  const row = must(await db.from("quotes").update({ status: answer, response, responded_at: new Date().toISOString(), details }).eq("id", id).select("*").single());
   const updated = rowToQuote(row);
   if (answer === "accepted" && quote.status !== "accepted") await onAccepted(updated);
+  const chosen = chosenOptions(updated);
+  const optionNames = [
+    ...quoteLines(updated.oneTime).filter((_, i) => chosen.has(`o${i}`)),
+    ...quoteLines(updated.monthly).filter((_, i) => chosen.has(`m${i}`)),
+  ].map((l) => l.label);
 
     const who = escapeHtml(quote.clientName || quote.clientEmail || "De klant");
     const verdict = answer === "accepted" ? "gaat akkoord" : "gaat niet akkoord";
@@ -569,6 +713,11 @@ r.post("/make-server-0951c59e/quote/:id/respond", async (c) => {
         ${
           response
             ? `<tr><td style="padding:16px 36px 0;"><span style="color:rgba(255,251,224,0.55);font-size:14px;font-weight:300;line-height:1.75;">&ldquo;${escapeHtml(response)}&rdquo;</span></td></tr>`
+            : ""
+        }
+        ${
+          answer === "accepted" && optionNames.length > 0
+            ? `<tr><td style="padding:16px 36px 0;"><span style="color:rgba(255,251,224,0.55);font-size:14px;font-weight:300;line-height:1.75;">Gekozen opties: ${escapeHtml(optionNames.join(", "))}</span></td></tr>`
             : ""
         }
         <tr>

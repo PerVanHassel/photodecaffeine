@@ -94,8 +94,12 @@ export const useEvents = (from?: string, to?: string, projectId?: string) =>
 export const useTasks = () =>
   useQuery({ queryKey: keys.tasks, queryFn: ({ signal }) => get<{ tasks: Task[] }>("/admin/tasks", signal).then((r) => r.tasks) });
 
-export const useQuotes = () =>
-  useQuery({ queryKey: keys.quotes, queryFn: ({ signal }) => get<{ quotes: Quote[] }>("/admin/quotes", signal).then((r) => r.quotes) });
+const fetchQuotes = ({ signal }: { signal: AbortSignal }) => get<{ quotes: Quote[]; business?: Business }>("/admin/quotes", signal);
+
+export const useQuotes = () => useQuery({ queryKey: keys.quotes, queryFn: fetchQuotes, select: (r) => r.quotes });
+
+/** The studio's own details as printed on a quote; they come with the list. */
+export const useQuoteBusiness = () => useQuery({ queryKey: keys.quotes, queryFn: fetchQuotes, select: (r) => r.business ?? null });
 
 export const useInvoices = () =>
   useQuery({ queryKey: keys.invoices, queryFn: ({ signal }) => get<{ invoices: Invoice[] }>("/admin/invoices", signal).then((r) => r.invoices) });
