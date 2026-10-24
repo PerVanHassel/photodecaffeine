@@ -17,7 +17,7 @@ export type { QuoteDoc, QuoteLine, QuoteTerm, VatBasis } from "./model";
  * are numbered in order.
  */
 
-/** The house fonts. Loaded where the sheet is shown; the admin and site use others. */
+/** The house typeface. Loaded where the sheet is shown; the admin and site use others. */
 export function QuoteFonts() {
   return (
     <>
@@ -25,7 +25,7 @@ export function QuoteFonts() {
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       <link
         rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@1,6..72,400;1,6..72,500&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap"
       />
     </>
   );
@@ -190,7 +190,9 @@ export function QuoteDocument({ quote, business, animate, chosen, onToggleOption
         <>
           {d.planning?.trim() && <p className="pq-p">{d.planning}</p>}
           <dl className="pq-dl">
-            {delivers.length > 0 && <><dt>Jij levert aan</dt><dd>{delivers.join("\n")}</dd></>}
+            {delivers.length > 0 && (
+              <><dt>Jij levert aan</dt><dd><ul className="pq-dd-list">{delivers.map((x, i) => <li key={i}>{x}</li>)}</ul></dd></>
+            )}
             {rev && (
               <>
                 <dt>Revisies</dt>
@@ -312,6 +314,11 @@ export function QuoteDocument({ quote, business, animate, chosen, onToggleOption
           <small>Prijsopgave</small>
           <b>{quote.number || "Concept"}</b>
           {d.replaces?.number && <em>vervangt {d.replaces.number}</em>}
+          <dl className="pq-dates">
+            {issued && <><dt>Datum</dt><dd>{formatDate(issued)}</dd></>}
+            {quote.validUntil && <><dt>Geldig tot</dt><dd>{formatDate(quote.validUntil)}</dd></>}
+            {d.reference && <><dt>Referentie</dt><dd>{d.reference}</dd></>}
+          </dl>
         </div>
       </header>
 
@@ -338,12 +345,6 @@ export function QuoteDocument({ quote, business, animate, chosen, onToggleOption
           <b>{business?.name || "PhotoDeCaffeine Productions"}</b>
           {business?.address && <span style={{ whiteSpace: "pre-line" }}>{business.address}</span>}
           {business?.email && <span>{business.email}</span>}
-        </div>
-        <div>
-          <span className="pq-label">Gegevens</span>
-          {issued && <span className="pq-kv"><span>Datum</span><span>{formatDate(issued)}</span></span>}
-          {quote.validUntil && <span className="pq-kv"><span>Geldig tot</span><span>{formatDate(quote.validUntil)}</span></span>}
-          {d.reference && <span className="pq-kv"><span>Referentie</span><span>{d.reference}</span></span>}
         </div>
       </div>
 
