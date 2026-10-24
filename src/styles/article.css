@@ -191,7 +191,6 @@ button.pa-zoom { cursor: zoom-in; }
 
 /* The swipe hint under the accordion is for phones only. */
 .pa-swipe { display: none; }
-@keyframes pa-nudge { 0%, 100% { transform: none; } 35% { transform: translateX(-56px); } 60% { transform: translateX(-56px); } }
 @keyframes pa-swipe-arrow { 0%, 100% { transform: none; } 50% { transform: translateX(5px); } }
 
 /* Photo with text: the text stays in view while the photo scrolls by. */
@@ -335,18 +334,13 @@ button.pa-zoom { cursor: zoom-in; }
   .pa-media--mosaic > :first-child { grid-column: span 2; grid-row: span 2; }
   .pa-media--mosaic > :last-child:nth-child(even) { grid-column: span 2; }
 
-  /* A strip to swipe: edge to edge, the next photo peeking in and fading at the edge. */
-  .pa-media--slices {
-    height: clamp(380px, 125cqw, 560px); gap: 8px; margin-inline: -20px; padding-inline: 20px; scroll-padding-inline: 20px;
-    overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none;
-    -webkit-mask-image: linear-gradient(to right, #000 82%, transparent); mask-image: linear-gradient(to right, #000 82%, transparent);
-  }
-  .pa-media--slices::-webkit-scrollbar { display: none; }
-  .pa-media--slices[data-end] { -webkit-mask-image: none; mask-image: none; }
-  .pa-media--slices > * { flex: 0 0 78%; scroll-snap-align: start; }
-  .pa-media--slices > :nth-child(n) { flex-grow: 0; }
-  .pa-media--slices .pa-frame img { filter: none; }
-  .pa-media--slices.is-nudging > * { animation: pa-nudge 1.3s var(--pa-ease) both; }
+  /* One photo open at nearly full width, the others thin slices beside it. */
+  .pa-media--slices { height: clamp(260px, 82cqw, 380px); gap: 4px; touch-action: pan-y; }
+  /* Stronger than the computer's hover rules, which do not apply to touch. */
+  .pa .pa-media--slices:nth-child(n) > .pa-slice:nth-child(n) { flex: 1 1 0; min-width: 20px; transition: flex-grow 0.7s var(--pa-ease); }
+  .pa .pa-media--slices:nth-child(n) > .pa-slice[data-on]:nth-child(n) { flex-grow: 9; }
+  .pa .pa-media--slices:nth-child(n) > .pa-slice:nth-child(n) img { filter: saturate(0.7) brightness(0.75); transition: filter 0.6s ease; }
+  .pa .pa-media--slices:nth-child(n) > .pa-slice[data-on]:nth-child(n) img { filter: none; }
 
   .pa-swipe { display: flex; align-items: center; gap: 14px; margin-top: 16px; color: var(--pa-soft); }
   .pa-swipe-count { font-family: var(--pa-label-font); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; color: var(--pa-ink); }
@@ -375,7 +369,7 @@ button.pa-zoom { cursor: zoom-in; }
   .pa-marquee-track { animation: none; }
   .pa-marquee-copy { display: none; }
   .pa-frame img, .pa-frame video, .pa-media--slices > * { transition: none; }
-  .pa-swipe-hint svg, .pa-media--slices.is-nudging > * { animation: none; }
+  .pa-swipe-hint svg { animation: none; }
 }
 
 /* ── In the page maker ── */

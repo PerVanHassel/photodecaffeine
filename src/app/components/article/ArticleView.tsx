@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Children, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Helmet } from "react-helmet-async";
 import {
   blockHasContent, effectiveLayout, embedSrc, heroCover, lookAttrs, pagePhotos, plainText, seriesRest, shownItems,
@@ -295,49 +295,75 @@ function MediaBlock({ block, ctx }: { block: BlockOf<"media">; ctx: Ctx }) {
 }
 
 /**
- * The accordion. On a computer the slices open under the pointer; on a phone
- * they become a strip to swipe through, and the strip says so: the next photo
- * peeks in from the edge, a counter and bar show where you are, and the first
- * time it comes into view it moves a little, as if pushed. The bar and the hint
- * only show on phones (article.css).
+ * The accordion. On a computer the slices open under the pointer. On a phone
+ * one photo is open at full width and the others stand beside it as thin
+ * slices: swipe, or tap a slice, to open the next. A counter and a bar show
+ * where you are, and the first time it comes into view it opens the second
+ * photo for a moment, so it is clear it moves. The bar and the hint only show
+ * on phones (article.css).
  */
 function Slices({ count, nudge, children }: { count: number; nudge: boolean; children: ReactNode }) {
   const strip = useRef<HTMLDivElement>(null);
+  const touch = useRef<{ x: number; y: number } | null>(null);
   const [at, setAt] = useState(0);
   const [moved, setMoved] = useState(false);
-  const [end, setEnd] = useState(false);
-  const [nudging, setNudging] = useState(false);
+  const movedRef = useRef(false);
 
-  function onScroll() {
-    const el = strip.current;
-    const first = el?.firstElementChild as HTMLElement | null;
-    if (!el || !first) return;
-    const step = first.offsetWidth + parseFloat(getComputedStyle(el).columnGap || "0");
-    setAt(Math.min(count - 1, Math.round(el.scrollLeft / step)));
-    setEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 4);
-    if (el.scrollLeft > 8) setMoved(true);
+  const onPhone = () => ((strip.current?.closest(".pa") as HTMLElement | null)?.clientWidth ?? 1000) < 768;
+  function show(i: number) {
+    setAt(Math.max(0, Math.min(count - 1, i)));
+    setMoved(true);
+    movedRef.current = true;
   }
 
   useEffect(() => {
     const el = strip.current;
-    if (!nudge || !el || typeof IntersectionObserver === "undefined") return;
+    if (!nudge || !el || count < 2 || typeof IntersectionObserver === "undefined") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timers: number[] = [];
     const observer = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return;
+      if (!entry.isIntersecting || !onPhone()) return;
       observer.disconnect();
-      // Only where it is a strip: a phone, with more photos than fit.
-      if (el.scrollWidth <= el.clientWidth + 4 || el.scrollLeft > 8) return;
-      setNudging(true);
-      window.setTimeout(() => setNudging(false), 1400);
+      timers.push(window.setTimeout(() => !movedRef.current && setAt(1), 500));
+      timers.push(window.setTimeout(() => !movedRef.current && setAt(0), 1700));
     }, { threshold: 0.6 });
     observer.observe(el);
-    return () => observer.disconnect();
-  }, [nudge]);
+    return () => {
+      observer.disconnect();
+      timers.forEach((t) => window.clearTimeout(t));
+    };
+  }, [nudge, count]);
 
   return (
     <>
-      <div ref={strip} className={`pa-media pa-media--slices${nudging ? " is-nudging" : ""}`} data-end={end || undefined} onScroll={onScroll}>
-        {children}
+      <div
+        ref={strip}
+        className="pa-media pa-media--slices"
+        onTouchStart={(e) => { touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
+        onTouchEnd={(e) => {
+          const start = touch.current;
+          touch.current = null;
+          if (!start) return;
+          const dx = e.changedTouches[0].clientX - start.x;
+          const dy = e.changedTouches[0].clientY - start.y;
+          if (Math.abs(dx) > 36 && Math.abs(dx) > Math.abs(dy)) show(at + (dx < 0 ? 1 : -1));
+        }}
+      >
+        {Children.map(children, (child, i) => (
+          <div
+            className="pa-slice"
+            data-on={i === at || undefined}
+            // On a phone a closed slice opens first; tapping the open one enlarges it.
+            onClickCapture={(e) => {
+              if (i === at || !onPhone()) return;
+              e.preventDefault();
+              e.stopPropagation();
+              show(i);
+            }}
+          >
+            {child}
+          </div>
+        ))}
       </div>
       <div className="pa-swipe" aria-hidden="true">
         <span className="pa-swipe-count">{String(at + 1).padStart(2, "0")} / {String(count).padStart(2, "0")}</span>
