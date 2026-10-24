@@ -218,6 +218,7 @@ export function QuotePage() {
                           </div>
                         </div>
                       )}
+                      <p className="pq-p pq-quiet pq-small">Met je akkoord ga je ook akkoord met onze <a className="pq-link" href="/algemene-voorwaarden" target="_blank" rel="noreferrer">algemene voorwaarden</a> en het beleid op de website.</p>
                       {sendError && <p role="alert" className="pq-error">{sendError}</p>}
                     </>
                   ) : (

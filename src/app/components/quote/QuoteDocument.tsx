@@ -289,7 +289,8 @@ export function QuoteDocument({ quote, business, animate, chosen, onToggleOption
   }
 
   const consumer = d.audience === "consumer";
-  if (terms.length || d.termsVersion || consumer) {
+  // Every quote says that saying yes also means agreeing to the terms on the site.
+  {
     sections.push({
       id: "terms",
       title: "Afspraken",
@@ -297,7 +298,7 @@ export function QuoteDocument({ quote, business, animate, chosen, onToggleOption
         <div className="pq-terms">
           {terms.map((t, i) => <p key={i}>{t.label && <b>{t.label}. </b>}{t.text}</p>)}
           {consumer && <p><b>Bedenktijd.</b> Ga je als particulier online akkoord, dan heb je 14 dagen bedenktijd. Hoe dat werkt staat in onze regeling Annuleren en terugbetaling.</p>}
-          {d.termsVersion && <p><b>Voorwaarden.</b> Op deze prijsopgave gelden de algemene voorwaarden van PDC, {d.termsVersion}. Afspraken in deze prijsopgave gaan voor.</p>}
+          <p><b>Voorwaarden.</b> Met je akkoord op deze prijsopgave ga je ook akkoord met onze algemene voorwaarden{d.termsVersion ? ` (${d.termsVersion})` : ""} en ons beleid op photodecaffeine.com/algemene-voorwaarden. Afspraken in deze prijsopgave gaan voor.</p>
         </div>
       ),
     });
