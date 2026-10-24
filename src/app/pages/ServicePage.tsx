@@ -5,10 +5,12 @@ import { ArrowLeft } from "lucide-react";
 import { FormPrivacyNote } from "../components/form/FormPrivacyNote";
 import { ChoiceChips } from "../components/form/ChoiceChips";
 import { PhotoReel } from "../components/PhotoReel";
+import { PhotoPackages, euro, type PickedPackage } from "../components/PhotoPackages";
 import { EMAIL_INPUT, PHONE_INPUT, PublicInput, PublicTextarea } from "../components/form/PublicField";
 import { track } from "../lib/analytics";
 import { HIGH_PRIORITY, webSrcSet } from "../lib/images";
 import { focusFirst, focusPhotos } from "../lib/photoFocus";
+import { scrollBehavior } from "../lib/scroll";
 import { usePortfolio, useSiteSettings } from "../lib/siteData";
 import type { InquiryForm } from "./ThankYouPage";
 import { portalFetch } from "../../lib/supabase";
@@ -54,7 +56,11 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
   const heroPhoto = work.focused ? work.photos[0] : undefined;
   const gridPhotos = (heroPhoto ? work.photos.slice(1) : work.photos).slice(0, 8);
   const options = focusFirst(page.options, focus);
+  // Only photography has fixed packages so far.
+  const tp = id === "fotografie" ? ts.packages : null;
 
+  const [picked, setPicked] = useState<PickedPackage | null>(null);
+  const pickedBox = useRef<HTMLDivElement>(null);
   const [choices, setChoices] = useState<string[]>([]);
   const [form, setForm] = useState({ name: "", email: "", phone: "", company: "", message: "" });
   const [errors, setErrors] = useState<{ name?: string; email?: string }>({});
@@ -70,6 +76,16 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
     if (field === "name" || field === "email") setErrors((x) => ({ ...x, [field]: undefined }));
   };
 
+  // A picked package goes straight to the form, with focus on its summary.
+  const pick = (pkg: PickedPackage) => {
+    setPicked(pkg);
+    track("Pakket gekozen", { pakket: `${pkg.category} ${pkg.name}` });
+    requestAnimationFrame(() => {
+      pickedBox.current?.focus({ preventScroll: true });
+      document.getElementById("boeken")?.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
+    });
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const found = {
@@ -83,7 +99,12 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
     }
     setLoading(true);
     setError(null);
-    const chosen = choices.length ? `${page.name}: ${choices.join(", ")}` : page.name;
+    const extra = choices.filter((c) => c !== picked?.category);
+    const chosen = picked
+      ? `${page.name}: ${picked.category} ${picked.name} (${euro(picked.price)})${extra.length ? `, ${extra.join(", ")}` : ""}`
+      : choices.length
+        ? `${page.name}: ${choices.join(", ")}`
+        : page.name;
     const ref = getStoredAdRef();
     try {
       await portalFetch("/contact", {
@@ -94,11 +115,11 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
           phone: form.phone,
           package: chosen,
           brand: form.company,
-          message: `Aanvraag ${chosen}.${form.message.trim() ? `\n\n${form.message.trim()}` : ""}${ref ? `\n\n[ref:${ref}]` : ""}`,
+          message: `${picked ? "Boeking" : "Aanvraag"} ${chosen}.${form.message.trim() ? `\n\n${form.message.trim()}` : ""}${ref ? `\n\n[ref:${ref}]` : ""}`,
         }),
       });
       const sent: InquiryForm = "contact";
-      track("Aanvraag", { formulier: page.id });
+      track("Aanvraag", picked ? { formulier: page.id, pakket: `${picked.category} ${picked.name}` } : { formulier: page.id });
       navigate("/bedankt", { state: { from: sent } });
     } catch {
       setError(ts.errorGeneric);
@@ -277,6 +298,8 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
         />
       )}
 
+      {tp && <PhotoPackages focus={focus} picked={picked} onPick={pick} />}
+
       {/* ── What to expect + the request form ── */}
       <div
         className="pdc-svc-body"
@@ -330,7 +353,7 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
           >
             <span style={{ ...label, fontSize: "9px", fontWeight: 600, marginBottom: "12px" }}>{ts.priceLabel}</span>
             <p style={{ color: "rgba(255,251,224,0.5)", fontSize: "13px", fontWeight: 300, lineHeight: 1.7, margin: 0 }}>
-              {ts.priceBody}
+              {tp ? tp.priceBody : ts.priceBody}
             </p>
           </div>
 
@@ -364,6 +387,26 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
           </p>
 
           <form noValidate onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+            {tp && picked && (
+              <div ref={pickedBox} tabIndex={-1} className="pdc-pkg-picked">
+                <span className="pdc-field-label">{tp.pickedLabel}</span>
+                <p className="pdc-pkg-picked-name">
+                  {picked.category} {picked.name} <span>{euro(picked.price)}</span>
+                </p>
+                <div className="pdc-pkg-picked-actions">
+                  <button
+                    type="button"
+                    className="pdc-text-link pdc-link-btn"
+                    onClick={() => document.getElementById("pakketten")?.scrollIntoView({ behavior: scrollBehavior(), block: "start" })}
+                  >
+                    {tp.change}
+                  </button>
+                  <button type="button" className="pdc-text-link pdc-link-btn" onClick={() => setPicked(null)}>
+                    {tp.remove}
+                  </button>
+                </div>
+              </div>
+            )}
             <ChoiceChips legend={ts.chooseLabel} hint={ts.chooseHint} options={options} value={choices} onChange={setChoices} />
             <PublicInput
               ref={nameInput}
@@ -432,7 +475,7 @@ function ServicePage({ id, focus, work = NO_WORK }: { id: ServiceId; focus?: str
                 alignSelf: "flex-start",
               }}
             >
-              {loading ? ts.submitting : ts.submitButton}
+              {loading ? ts.submitting : tp && picked ? tp.submit(picked.name, euro(picked.price)) : ts.submitButton}
             </button>
             <FormPrivacyNote />
           </form>
