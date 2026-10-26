@@ -89,7 +89,7 @@ for (let i = 0; i < 900; i++) {
     source: src.source, medium: src.medium, campaign: src.campaign, content: src.content, term: "", paid: src.paid,
     device, browser: device === "mobile" ? pick(["Instagram-app", "Safari", "Chrome"]) : pick(["Chrome", "Safari", "Edge"]),
     os: device === "desktop" ? pick(["Windows", "macOS"]) : pick(["iOS", "Android"]), screen: device === "mobile" ? "390x844" : "1920x1080",
-    language: "nl-NL", timezone: "Europe/Amsterdam", returning: rand() < 0.18, pageviews: pages, active_seconds: Math.round(total / 1000),
+    language: "nl-NL", timezone: "Europe/Amsterdam", returning_visitor: rand() < 0.18, pageviews: pages, active_seconds: Math.round(total / 1000),
     converted_at: converted, inquiry: converted ? pick(["Daan de Vries", "Sven Jansen", "Lotte Bakker", "Mo Ait"]) : null, events,
   });
 }
@@ -130,7 +130,7 @@ function totals(xs: Session[]) {
   return {
     sessions: xs.length, visitors: new Set(xs.map((x) => x.visitor_id)).size, pageviews: xs.reduce((s, x) => s + x.pageviews, 0),
     bounces: xs.filter(isBounce).length, seconds: avg(xs.map((x) => x.active_seconds)), conversions: xs.filter((x) => x.converted_at).length,
-    returning: xs.filter((x) => x.returning).length, paid: xs.filter((x) => x.paid).length,
+    returning: xs.filter((x) => x.returning_visitor).length, paid: xs.filter((x) => x.paid).length,
   };
 }
 

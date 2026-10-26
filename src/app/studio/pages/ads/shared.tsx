@@ -80,7 +80,7 @@ export type Visit = {
   device: string;
   browser: string;
   os: string;
-  returning: boolean;
+  returning_visitor: boolean;
   pageviews: number;
   active_seconds: number;
   converted_at: string | null;

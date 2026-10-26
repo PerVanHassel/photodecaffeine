@@ -30,7 +30,7 @@ create table public.site_sessions (
   screen text not null default '',
   language text not null default '',
   timezone text not null default '',
-  returning boolean not null default false,
+  returning_visitor boolean not null default false,
   pageviews int not null default 0,
   active_seconds int not null default 0,
   -- Sent an inquiry during this visit.
@@ -86,7 +86,7 @@ declare
 begin
   insert into public.site_sessions (
     id, visitor_id, started_at, last_seen_at, landing_page, referrer, source, medium, campaign, content, term,
-    paid, device, browser, os, screen, language, timezone, returning
+    paid, device, browser, os, screen, language, timezone, returning_visitor
   ) values (
     sid, (p_session ->> 'visitor')::uuid,
     now() - make_interval(secs => coalesce((p_session ->> 'age')::numeric, 0) / 1000), now(),
@@ -213,7 +213,7 @@ language sql stable set search_path = '' as $$
       'bounces', count(*) filter (where bounce),
       'seconds', coalesce(round(avg(active_seconds)), 0),
       'conversions', count(*) filter (where converted_at is not null),
-      'returning', count(*) filter (where returning),
+      'returning', count(*) filter (where returning_visitor),
       'paid', count(*) filter (where paid)
     ) from x),
     'previous', (select jsonb_build_object(
@@ -228,8 +228,7 @@ language sql stable set search_path = '' as $$
       select coalesce(jsonb_agg(jsonb_build_object(
         'day', g.ts::date, 'sessions', coalesce(c.sessions, 0), 'paid', coalesce(c.paid, 0), 'conversions', coalesce(c.conversions, 0)
       ) order by g.ts), '[]')
-      from bounds,
-        generate_series((bounds.since at time zone 'Europe/Amsterdam')::date::timestamp, (now() at time zone 'Europe/Amsterdam')::date::timestamp, interval '1 day') g(ts)
+      from generate_series(((select since from bounds) at time zone 'Europe/Amsterdam')::date::timestamp, (now() at time zone 'Europe/Amsterdam')::date::timestamp, interval '1 day') g(ts)
         left join (
           select (started_at at time zone 'Europe/Amsterdam')::date as day, count(*) as sessions,
             count(*) filter (where paid) as paid, count(*) filter (where converted_at is not null) as conversions
@@ -357,7 +356,7 @@ returns jsonb
 language sql stable set search_path = '' as $$
   select coalesce(jsonb_agg(t order by t.started_at desc), '[]') from (
     select s.id, s.started_at, s.last_seen_at, s.landing_page, s.referrer, s.source, s.medium, s.campaign, s.content,
-      s.paid, s.device, s.browser, s.os, s.returning, s.pageviews, s.active_seconds, s.converted_at,
+      s.paid, s.device, s.browser, s.os, s.returning_visitor, s.pageviews, s.active_seconds, s.converted_at,
       (select count(*) from public.site_events e where e.session_id = s.id and e.type = 'click') as clicks,
       (select max(e.scroll) from public.site_events e where e.session_id = s.id and e.type = 'pageview') as scroll,
       (select i.name from public.inquiries i where i.site_session_id = s.id order by i.created_at limit 1) as inquiry

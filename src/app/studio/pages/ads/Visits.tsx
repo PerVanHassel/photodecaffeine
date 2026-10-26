@@ -46,7 +46,7 @@ export function VisitsTab({ query }: { query: string }) {
                     <tr key={v.id} className="a-click-row" onClick={() => setOpen(v.id)}>
                       <td>
                         <button type="button" className="a-link" onClick={(e) => { e.stopPropagation(); setOpen(v.id); }}>{fmt(v.started_at, "EEE d MMM, HH:mm")}</button>
-                        <div className="s-faint s-small">{ago(v.started_at)}{v.returning && " · kwam eerder"}</div>
+                        <div className="s-faint s-small">{ago(v.started_at)}{v.returning_visitor && " · kwam eerder"}</div>
                       </td>
                       <td><Source v={v} /></td>
                       <td><span className="s-row nowrap"><DeviceIcon device={v.device} /><span className="s-small">{v.browser}</span></span></td>
@@ -134,7 +134,7 @@ function VisitBody({ d, onOpen }: { d: VisitDetail; onOpen: (id: string) => void
         {v.screen && <div className="s-kv"><span>Scherm</span><span className="s-mono">{v.screen}</span></div>}
         {(v.language || v.timezone) && <div className="s-kv"><span>Taal en tijdzone</span><span>{[v.language, v.timezone].filter(Boolean).join(" · ")}</span></div>}
         <div className="s-kv"><span>Op de site</span><span>{v.pageviews} pagina{v.pageviews === 1 ? "" : "'s"} · {duration(v.active_seconds)}</span></div>
-        <div className="s-kv"><span>Eerder geweest</span><span>{d.others.length ? `${d.others.length} keer` : v.returning ? "Ja" : "Nee, eerste keer"}</span></div>
+        <div className="s-kv"><span>Eerder geweest</span><span>{d.others.length ? `${d.others.length} keer` : v.returning_visitor ? "Ja" : "Nee, eerste keer"}</span></div>
       </div>
 
       {d.inquiries.length > 0 && (
