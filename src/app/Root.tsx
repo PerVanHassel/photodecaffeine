@@ -1,21 +1,21 @@
 import { useEffect } from "react";
 import { Helmet } from "react-helmet-async";
-import { Outlet } from "react-router";
+import { Outlet, useLocation } from "react-router";
 import { Navigation } from "./components/Navigation";
 import { Footer } from "./components/Footer";
 import { StickyCta } from "./components/StickyCta";
 import { useLanguage } from "./context/LanguageContext";
 import { usePageScroll } from "./lib/scroll";
-import { trackContactClicks } from "./lib/analytics";
+import { startAnalytics, trackPageview } from "./lib/analytics";
 
 export function Root() {
   const { t } = useLanguage();
+  const { pathname } = useLocation();
   usePageScroll();
 
-  useEffect(() => {
-    document.addEventListener("click", trackContactClicks);
-    return () => document.removeEventListener("click", trackContactClicks);
-  }, []);
+  // Own visitor statistics (Advertenties in the admin): every page, scroll and click.
+  useEffect(() => startAnalytics(), []);
+  useEffect(() => trackPageview(pathname), [pathname]);
 
   return (
     <>

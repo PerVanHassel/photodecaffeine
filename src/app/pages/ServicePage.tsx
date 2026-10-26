@@ -8,14 +8,13 @@ import { Faq, type FaqItem } from "../components/Faq";
 import { PhotoReel } from "../components/PhotoReel";
 import { PhotoPackages, euro, packageName, type PickedPackage } from "../components/PhotoPackages";
 import { EMAIL_INPUT, PHONE_INPUT, PublicInput, PublicTextarea } from "../components/form/PublicField";
-import { track } from "../lib/analytics";
+import { track, visitCampaign, visitId } from "../lib/analytics";
 import { HIGH_PRIORITY, webSrcSet } from "../lib/images";
 import { focusFirst, focusPhotos } from "../lib/photoFocus";
 import { scrollBehavior } from "../lib/scroll";
 import { AUTOMOTIVE_GALLERY_TITLE, usePortfolio, useSiteSettings } from "../lib/siteData";
 import type { InquiryForm } from "./ThankYouPage";
 import { portalFetch } from "../../lib/supabase";
-import { useAdTracking, getStoredAdRef } from "../hooks/useAdTracking";
 import { useLanguage } from "../context/LanguageContext";
 import darkroom from "@/assets/web/darkroom-1200.webp";
 import majdSmall from "@/assets/web/majd-800.webp";
@@ -72,7 +71,6 @@ function ServicePage({
   const sub = tp?.categories.find((c) => c.id === category);
   const text = sub ?? page;
   const path = sub?.path ?? page.path;
-  useAdTracking(path);
 
   // A niche's photos fill the hero and the work grid, and its option comes first.
   const heroPhoto = work.focused ? work.photos[0] : undefined;
@@ -125,7 +123,7 @@ function ServicePage({
       : choices.length
         ? `${page.name}: ${choices.join(", ")}`
         : page.name;
-    const ref = getStoredAdRef();
+    const ref = visitCampaign();
     try {
       await portalFetch("/contact", {
         method: "POST",
@@ -136,6 +134,7 @@ function ServicePage({
           package: chosen,
           brand: form.company,
           message: `${picked ? "Boeking" : "Aanvraag"} ${chosen}.${form.message.trim() ? `\n\n${form.message.trim()}` : ""}${ref ? `\n\n[ref:${ref}]` : ""}`,
+          visit: visitId(),
         }),
       });
       const sent: InquiryForm = picked ? "booking" : "contact";
@@ -407,7 +406,7 @@ function ServicePage({
             {ts.formSubtitle}
           </p>
 
-          <form noValidate onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+          <form data-track="Aanvraagformulier" noValidate onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
             {tp && picked && (
               <div ref={pickedBox} tabIndex={-1} className="pdc-pkg-picked">
                 <span className="pdc-field-label">{tp.pickedLabel}</span>

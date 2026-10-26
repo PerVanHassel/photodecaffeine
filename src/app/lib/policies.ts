@@ -32,15 +32,15 @@ export const policies = {
       },
       {
         heading: "4. Bezoekersstatistieken",
-        body: "Wij tellen bezoeken met Plausible Analytics. Plausible gebruikt geen cookies en slaat geen persoonsgegevens op: wij zien alleen totalen, zoals hoeveel mensen een pagina bekeken of een aanvraag verstuurden.",
+        body: "Wij houden zelf bij hoe bezoekers de website gebruiken: via welke link of site u binnenkwam, welke pagina's u bekeek, hoe ver u scrolde, waar u op klikte, of u een formulier begon, en het soort apparaat en browser. Daarvoor bewaart uw browser een willekeurig nummer, zodat wij een tweede bezoek herkennen. Wij slaan geen IP-adres op en niets van wat u in een formulier typt zolang u het niet verstuurt. Stuurt u een aanvraag, dan koppelen wij die aan uw bezoek, zodat wij zien hoe u bij ons terechtkwam. Deze gegevens staan in onze eigen database en gaan niet naar andere bedrijven. Wij gebruiken ze alleen om de website en onze advertenties te verbeteren.",
       },
       {
         heading: "5. Dienstverleners",
-        body: "Voor de website en het verwerken van aanvragen werken wij met Vercel (hosting van de website), Supabase (database en opslag) en Plausible (bezoekersstatistieken). Zij verwerken gegevens alleen voor ons en niet voor eigen doeleinden.",
+        body: "Voor de website en het verwerken van aanvragen werken wij met Vercel (hosting van de website) en Supabase (database en opslag). Zij verwerken gegevens alleen voor ons en niet voor eigen doeleinden.",
       },
       {
         heading: "6. Bewaartermijn",
-        body: "Contactaanvragen bewaren wij maximaal 2 jaar na ontvangst. Gegevens van klantprojecten bewaren wij 7 jaar, vanwege de wettelijke bewaarplicht voor de administratie.",
+        body: "Contactaanvragen en bezoekersstatistieken bewaren wij maximaal 2 jaar. Gegevens van klantprojecten bewaren wij 7 jaar, vanwege de wettelijke bewaarplicht voor de administratie.",
       },
       {
         heading: "7. Uw rechten (AVG)",
@@ -108,7 +108,7 @@ export const policies = {
       },
       {
         heading: "2. Cookies die wij gebruiken",
-        body: "Wij gebruiken uitsluitend strikt noodzakelijke cookies. Dit zijn sessiecookies die nodig zijn om u ingelogd te houden in het klantportaal en de beheeromgeving. Wij gebruiken geen advertentie-, analyse- of trackingcookies. Onze bezoekersstatistieken (Plausible) werken zonder cookies.",
+        body: "Wij gebruiken uitsluitend strikt noodzakelijke cookies. Dit zijn sessiecookies die nodig zijn om u ingelogd te houden in het klantportaal en de beheeromgeving. Wij gebruiken geen advertentie- of trackingcookies van andere bedrijven. Voor onze eigen bezoekersstatistieken bewaart uw browser een willekeurig nummer in de lokale opslag, zodat wij een tweede bezoek herkennen. Die gegevens blijven bij ons; meer daarover staat in het privacybeleid.",
       },
       {
         heading: "3. Cookies van derden",

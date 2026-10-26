@@ -13,6 +13,7 @@ const r = new Hono<Env>();
 export default r;
 
 const CONTACT_LIMIT_PER_HOUR = 5;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Counts a contact submission for this IP; false once the hourly limit is reached. */
 async function withinContactLimit(forwardedFor: string | undefined): Promise<boolean> {
@@ -32,7 +33,7 @@ async function withinContactLimit(forwardedFor: string | undefined): Promise<boo
 // --- POST /contact — public contact form submission ---
 r.post("/make-server-0951c59e/contact", async (c) => {
   try {
-    const { name, email, phone, brand, message, package: pkg } = await c.req.json();
+    const { name, email, phone, brand, message, package: pkg, visit } = await c.req.json();
     // The automotive and social media forms ask for an email or a phone
     // number; either one is enough to get back to someone.
     if (!name?.trim() || !(email?.trim() || phone?.trim()) || !message?.trim()) {
@@ -69,6 +70,16 @@ r.post("/make-server-0951c59e/contact", async (c) => {
       message: message.trim(),
       package: pkg || "",
     }).select("*").single()) as any;
+
+    // The visit it was sent from (lib/analytics.ts on the site), so the admin
+    // can read back how this person got here. Never worth failing the form over.
+    if (typeof visit === "string" && UUID_RE.test(visit)) {
+      const linked = await Promise.all([
+        db.from("inquiries").update({ site_session_id: visit }).eq("id", inquiry.id),
+        db.from("site_sessions").update({ converted_at: inquiry.created_at }).eq("id", visit).is("converted_at", null),
+      ]);
+      for (const { error } of linked) if (error) console.log("linking inquiry to visit failed:", error.message);
+    }
 
     await notify({
       type: "inquiry",
@@ -216,6 +227,7 @@ function inquiryToApi(i: any) {
     handledAt: i.handled_at,
     handled: Boolean(i.handled_at),
     clientId: i.client_id,
+    visitId: i.site_session_id ?? null,
     projectId: i.project_id,
     createdAt: i.created_at,
   };

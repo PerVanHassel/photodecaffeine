@@ -1,14 +1,13 @@
 import { useId, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { FormPrivacyNote } from "./form/FormPrivacyNote";
-import { track } from "../lib/analytics";
+import { track, visitCampaign, visitId } from "../lib/analytics";
 import type { InquiryForm } from "../pages/ThankYouPage";
 import { Select } from "./portal/Select";
 import { ChoiceChips } from "./form/ChoiceChips";
 import { EMAIL_INPUT, PHONE_INPUT, PublicInput, PublicTextarea } from "./form/PublicField";
 import { useLanguage } from "../context/LanguageContext";
 import { portalFetch } from "../../lib/supabase";
-import { getStoredAdRef } from "../hooks/useAdTracking";
 import { useSiteSettings } from "../lib/siteData";
 import { focusFirst } from "../lib/photoFocus";
 
@@ -40,13 +39,14 @@ export function Contact() {
     setLoading(true);
     setError(null);
     try {
-      const ref = getStoredAdRef();
+      const ref = visitCampaign();
       await portalFetch("/contact", {
         method: "POST",
         body: JSON.stringify({
           ...formData,
           package: category && choices.length ? `${category.name}: ${choices.join(", ")}` : formData.package,
           message: ref ? `${formData.message}\n\n[ref:${ref}]` : formData.message,
+          visit: visitId(),
         }),
       });
       const sent: InquiryForm = "contact";
@@ -258,6 +258,7 @@ export function Contact() {
         {/* Right — Form */}
         <div className="pdc-contact-form">
           <form
+            data-track="Contactformulier"
             onSubmit={handleSubmit}
             style={{
               display: "flex",

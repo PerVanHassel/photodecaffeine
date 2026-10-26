@@ -138,6 +138,8 @@ const QUIET = [
   "POST /admin/storage/ensure-bucket",
   "POST /admin/google/start",
   "POST /review/open",
+  // A batch of visitor statistics from the site, many per visit.
+  "POST /v",
 ];
 
 const RULES: Record<string, Rule> = {
@@ -203,6 +205,7 @@ const RULES: Record<string, Rule> = {
   "DELETE /admin/inquiry/:id": { area: "Aanvragen", action: "Aanvraag verwijderd", of: INQUIRY },
   "POST /admin/inquiry/:id/convert": { area: "Aanvragen", action: "Aanvraag omgezet in klant en project", of: INQUIRY },
   "PUT /admin/ads/:ref": { area: "Advertenties", action: "Advertentie bijgewerkt", of: AD, diff: true },
+  "DELETE /admin/analytics/visit/:id": { area: "Advertenties", action: "Bezoek uit de statistieken gehaald" },
   "POST /admin/quotes": { area: "Offertes", action: "Offerte aangemaakt", of: QUOTE, created: true },
   "PUT /admin/quotes/:id": { area: "Offertes", action: "Offerte bijgewerkt", of: QUOTE, diff: true },
   "DELETE /admin/quotes/:id": { area: "Offertes", action: "Offerte verwijderd", of: QUOTE },

@@ -79,10 +79,11 @@ function InquiryDetail({ inquiry: i }: { inquiry: Inquiry }) {
           {i.package && <div className="s-kv"><span>Pakket</span><span>{i.package}</span></div>}
         </div>
         <p style={{ whiteSpace: "pre-wrap", fontSize: 14, lineHeight: 1.65, background: "var(--sunken)", padding: 14, borderRadius: 8 }}>{i.message}</p>
-        {(i.clientId || i.projectId) && (
+        {(i.clientId || i.projectId || i.visitId) && (
           <div className="s-row">
             {i.clientId && <Link className="s-btn sm" to={`/admin/client/${i.clientId}`}>Naar klant</Link>}
             {i.projectId && <Link className="s-btn sm" to={`/admin/project/${i.projectId}`}>Naar project</Link>}
+            {i.visitId && <Link className="s-btn sm" to={`/admin/ads?tab=bezoeken&bezoek=${i.visitId}`}>Wat deed deze persoon op de site?</Link>}
           </div>
         )}
         <div className="s-row">

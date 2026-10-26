@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import { isAdmin } from "../../lib/supabase";
+import { excludeThisDevice } from "../lib/analytics";
 import { AppDataProvider, useAppData } from "./AppData";
 import { Splash } from "./Splash";
 import { TabBar, TABS } from "./TabBar";
@@ -36,6 +37,8 @@ function depthOf(pathname: string) {
  */
 export function MobileShell() {
   useEffect(() => {
+    // The studio's own phones should not show up in the site's visitor statistics.
+    excludeThisDevice();
     const restore = applyAppMeta();
     return restore;
   }, []);

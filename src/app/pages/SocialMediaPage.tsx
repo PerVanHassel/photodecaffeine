@@ -3,11 +3,10 @@ import { useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { FormPrivacyNote } from "../components/form/FormPrivacyNote";
 import { Faq } from "../components/Faq";
-import { track } from "../lib/analytics";
+import { track, visitCampaign, visitId } from "../lib/analytics";
 import type { InquiryForm } from "./ThankYouPage";
 import { ArrowLeft } from "lucide-react";
 import { portalFetch } from "../../lib/supabase";
-import { useAdTracking, getStoredAdRef } from "../hooks/useAdTracking";
 import { useLanguage } from "../context/LanguageContext";
 import { EMAIL_INPUT, PHONE_INPUT, PublicInput, PublicTextarea } from "../components/form/PublicField";
 import heroSmall from "@/assets/web/majd-800.webp";
@@ -15,7 +14,6 @@ import heroImage from "@/assets/web/majd-1365.webp";
 import { HIGH_PRIORITY } from "../lib/images";
 
 export function SocialMediaPage() {
-  useAdTracking("/services/social-media");
   const { t } = useLanguage();
   const ts = t.socialMediaPage;
 
@@ -57,7 +55,8 @@ export function SocialMediaPage() {
           phone: form.phone,
           package: "social-media",
           brand: form.company,
-          message: `Social media beheer aanvraag.${form.message ? `\n\n${form.message}` : ""}${getStoredAdRef() ? `\n\n[ref:${getStoredAdRef()}]` : ""}`,
+          message: `Social media beheer aanvraag.${form.message ? `\n\n${form.message}` : ""}${visitCampaign() ? `\n\n[ref:${visitCampaign()}]` : ""}`,
+          visit: visitId(),
         }),
       });
       const sent: InquiryForm = "social";
@@ -366,7 +365,7 @@ export function SocialMediaPage() {
             {ts.formSubtitle}
           </p>
 
-          <form noValidate onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+          <form data-track="Aanvraagformulier" noValidate onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
             <PublicInput
               ref={nameInput}
               label={ts.nameLabel}

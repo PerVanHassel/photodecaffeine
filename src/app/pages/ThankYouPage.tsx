@@ -8,7 +8,7 @@ export type InquiryForm = "contact" | "booking" | "social";
 
 /**
  * Where every inquiry form lands after a successful send. Its own address
- * makes a sent inquiry countable (a pageview of /bedankt in Plausible) and
+ * makes a sent inquiry countable (a pageview of /bedankt in the statistics) and
  * tells the visitor what happens next. Kept out of search results.
  */
 export function ThankYouPage() {

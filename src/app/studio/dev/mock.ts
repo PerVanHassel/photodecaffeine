@@ -364,6 +364,13 @@ export async function mockApi(path: string, method: string, body: Json): Promise
   const m = (re: RegExp) => p.match(re);
   let r: RegExpMatchArray | null;
 
+  if (p.startsWith("/admin/analytics")) {
+    const { analyticsMock } = await import("./analyticsMock");
+    const out = analyticsMock(p, method, url);
+    if (out === undefined) throw new ApiError(404, "Dit bezoek staat er niet (meer).");
+    return out;
+  }
+
   if (method === "GET") {
     if ((r = m(/^\/admin\/documents\/([^/]+)$/))) return structuredClone({ notes: docNotes, read: docRead[r[1]] || { done: [], at: null } });
     if (p === "/admin/overview") return overview();
@@ -432,9 +439,13 @@ export async function mockApi(path: string, method: string, body: Json): Promise
       { id: id(442), adminId: id(998), adminName: "Majd", amount: 38.5, vatRate: 21, vatAmount: 6.68, date: dateOnly(-3), category: "Reiskosten", description: "Parkeren Maasboulevard", receiptUrl: PHOTOS[3], receiptRef: "private:x", createdAt: iso(-3) },
     ], totals: { amount: 159.5, vatAmount: 27.68, count: 2, byCategory: {} } };
     if (p === "/admin/ads") return {
-      visits: Array.from({ length: 60 }, (_, i) => ({ ref: i % 3 ? "insta-automotive-1" : "fb-portret", page: i % 3 ? "/services/fotografie/automotive" : "/", createdAt: iso(-(i % 28), 12) })),
-      leads: [{ id: id(451), name: "Marco", ref: "insta-automotive-1", createdAt: iso(-3) }],
-      campaigns: [{ ref: "insta-automotive-1", label: "Insta automotive september", active: true, hidden: false }],
+      // Counted the old way, before the site kept its own statistics.
+      visits: Array.from({ length: 60 }, (_, i) => ({ ref: i % 3 ? "insta-automotive-1" : "ig-automotive-2", page: "/services/fotografie/automotive", createdAt: "2026-07-1" + (i % 9) + "T12:00:00Z" })),
+      leads: [],
+      campaigns: [
+        { ref: "insta-automotive-1", label: "Insta automotive najaar", active: true, hidden: false },
+        { ref: "ig-automotive-2", label: "", active: false, hidden: false },
+      ],
     };
     // portal
     if (p === "/portal/projects") return { projects: projects.filter((x) => x.clientIds.includes(id(2)) || x.clientIds.includes(id(1))).map((x) => ({ ...x, briefing: undefined })), locations: Object.fromEntries(locations.map((l) => [l.id, l])) };

@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { Toaster } from "sonner";
 import { isAdmin } from "../../lib/supabase";
+import { excludeThisDevice } from "../lib/analytics";
 import { useAuth } from "../context/AuthContext";
 import { CommandPalette } from "./CommandPalette";
 import { StudioFonts } from "./fonts";
@@ -48,6 +49,9 @@ function Shell() {
   // Until the role is known everything shows; the server checks each request anyway.
   const can = (perm?: string) => !perm || !me.data || me.data.permissions[perm] !== false;
   const o = overview.data;
+
+  // Whoever works here should not show up in the site's visitor statistics.
+  useEffect(() => excludeThisDevice(), []);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {

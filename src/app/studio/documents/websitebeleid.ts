@@ -1355,7 +1355,7 @@ export const websitebeleid: ReaderDocument = {
       "blocks": [
         {
           "t": "note",
-          "text": "**Interne invulinstructie (verwijder vóór publicatie):** Onderzoek de daadwerkelijke website, inclusief lokale opslag, pixels, ingesloten video’s, analysetools en boekingssystemen. Vul de tabel in en test de toestemmingsinstellingen vóór publicatie. Op dit moment laadt de website Plausible voor bezoekersstatistieken; Plausible werkt zonder cookies. Controleer of er nog andere diensten zijn, bijvoorbeeld in het klantportaal."
+          "text": "**Interne invulinstructie (verwijder vóór publicatie):** Onderzoek de daadwerkelijke website, inclusief lokale opslag, pixels, ingesloten video’s, analysetools en boekingssystemen. Vul de tabel in en test de toestemmingsinstellingen vóór publicatie. Op dit moment meet de website zelf bezoekersstatistieken (src/app/lib/analytics.ts) met een willekeurig bezoekersnummer in de lokale opslag; er draait geen analysetool van derden. Controleer of er nog andere diensten zijn, bijvoorbeeld in het klantportaal."
         },
         {
           "t": "p",
