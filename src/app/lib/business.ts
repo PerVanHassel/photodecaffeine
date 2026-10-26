@@ -48,7 +48,7 @@ export const BUSINESS_JSON_LD = {
       },
       {
         "@type": "Offer",
-        url: "https://www.photodecaffeine.com/services/automotive",
+        url: "https://www.photodecaffeine.com/services/fotografie/automotive",
         priceSpecification: { "@type": "PriceSpecification", minPrice: 50, priceCurrency: "EUR" },
         itemOffered: { "@type": "Service", name: "Automotive fotografie", description: "Fotografie van auto's en motoren voor showrooms, dealers en particuliere eigenaren." },
       },

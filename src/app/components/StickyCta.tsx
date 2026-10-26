@@ -13,15 +13,15 @@ export function StickyCta() {
   const { pathname } = useLocation();
 
   // Service pages book through their own form; everything else through the contact form.
-  const isCategoryPage = t.servicePages.pages.some((p) => p.path === pathname);
+  const isCategoryPage =
+    t.servicePages.pages.some((p) => p.path === pathname) ||
+    t.servicePages.packages.categories.some((c) => c.path === pathname);
   const target =
-    pathname === "/services/automotive"
-      ? { id: "boeken", to: `${pathname}#boeken`, label: t.nav.bookShoot }
-      : pathname === "/services/social-media"
-        ? { id: "boeken", to: `${pathname}#boeken`, label: t.socialMediaPage.requestLabel }
-        : isCategoryPage
-          ? { id: "boeken", to: `${pathname}#boeken`, label: t.servicePages.requestLabel }
-          : { id: "contact", to: "/#contact", label: t.nav.bookShoot };
+    pathname === "/services/social-media"
+      ? { id: "boeken", to: `${pathname}#boeken`, label: t.socialMediaPage.requestLabel }
+      : isCategoryPage
+        ? { id: "boeken", to: `${pathname}#boeken`, label: t.servicePages.requestLabel }
+        : { id: "contact", to: "/#contact", label: t.nav.bookShoot };
   const isHome = pathname === "/";
 
   const [formInView, setFormInView] = useState(false);

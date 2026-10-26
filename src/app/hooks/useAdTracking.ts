@@ -6,7 +6,7 @@ import { portalFetch } from "../../lib/supabase";
  * sessionStorage, and fires a single visit-ping per session/campaign/page combo.
  * Returns void — use getStoredAdRef() to read the value in form handlers.
  *
- * @param page - The current page path, e.g. "/services/automotive"
+ * @param page - The current page path, e.g. "/services/fotografie/automotive"
  */
 export function useAdTracking(page: string): void {
   useEffect(() => {

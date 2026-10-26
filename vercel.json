@@ -1,4 +1,7 @@
 {
+  "redirects": [
+    { "source": "/services/automotive", "destination": "/services/fotografie/automotive", "permanent": true }
+  ],
   "rewrites": [
     { "source": "/admin/:path*", "destination": "/app-shell.html" },
     { "source": "/portal/:path*", "destination": "/app-shell.html" },

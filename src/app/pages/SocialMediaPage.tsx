@@ -492,7 +492,7 @@ export function SocialMediaPage() {
           {ts.ctaBody}
         </p>
         <Link
-          to="/services/automotive"
+          to="/services/fotografie/automotive"
           className="pdc-btn pdc-btn-invert"
           style={{ padding: "13px 32px", fontSize: "10px", fontWeight: 600, letterSpacing: "0.2em", borderColor: "rgba(255,251,224,0.3)" }}
         >

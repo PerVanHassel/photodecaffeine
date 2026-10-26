@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import type { RouteObject } from "react-router";
+import { Navigate, useLocation, type RouteObject } from "react-router";
 import { Root } from "./Root";
 import { AppError } from "./components/AppError";
 import { appRoutes } from "./mobile/routes";
@@ -18,6 +18,11 @@ import { Home } from "./pages/Home";
  */
 function chunk<M>(load: () => Promise<M>, pick: (m: M) => ComponentType) {
   return async () => ({ Component: pick(await load()) });
+}
+
+function AutomotiveRedirect() {
+  const { search, hash } = useLocation();
+  return <Navigate to={{ pathname: "/services/fotografie/automotive", search, hash }} replace />;
 }
 
 /** Every route, shared by the browser router and the build-time prerender. */
@@ -41,7 +46,9 @@ export const routes: RouteObject[] = [
           { path: "services/fotografie/sport", lazy: chunk(() => import("./pages/ServicePage"), (m) => m.SportPhotographyPage) },
           { path: "services/videografie", lazy: chunk(() => import("./pages/ServicePage"), (m) => m.VideographyPage) },
           { path: "services/website", lazy: chunk(() => import("./pages/ServicePage"), (m) => m.WebsitePage) },
-          { path: "services/automotive", lazy: chunk(() => import("./pages/AutomotivePage"), (m) => m.AutomotivePage) },
+          // Moved under photography. Vercel redirects it too (vercel.json);
+          // this covers links followed inside the app. Ad links keep their ?ref=.
+          { path: "services/automotive", Component: AutomotiveRedirect },
           { path: "services/social-media", lazy: chunk(() => import("./pages/SocialMediaPage"), (m) => m.SocialMediaPage) },
           { path: "privacybeleid", lazy: chunk(() => import("./pages/LegalPage"), (m) => m.PrivacyPage) },
           { path: "algemene-voorwaarden", lazy: chunk(() => import("./pages/LegalPage"), (m) => m.TermsPage) },

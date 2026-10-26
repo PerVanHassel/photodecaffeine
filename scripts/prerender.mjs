@@ -41,7 +41,6 @@ const PAGES = [
   { route: "/services/fotografie/sport", data: ["settings", "articles"] },
   { route: "/services/videografie", data: [] },
   { route: "/services/website", data: [] },
-  { route: "/services/automotive", data: ["articles"] },
   { route: "/services/social-media", data: [] },
   { route: "/privacybeleid", data: [] },
   { route: "/algemene-voorwaarden", data: [] },

@@ -3,8 +3,8 @@ import { Helmet } from "react-helmet-async";
 import { Link, useLocation } from "react-router";
 import { useLanguage } from "../context/LanguageContext";
 
-/** Which form sent the visitor here; it only changes the wording. */
-export type InquiryForm = "contact" | "automotive" | "social";
+/** Which form sent the visitor here; it only changes the wording. "booking" is a picked package. */
+export type InquiryForm = "contact" | "booking" | "social";
 
 /**
  * Where every inquiry form lands after a successful send. Its own address
@@ -22,7 +22,7 @@ export function ThankYouPage() {
     heading.current?.focus();
   }, []);
 
-  const body = from === "automotive" ? tt.bodyAutomotive : from === "social" ? tt.bodySocial : tt.body;
+  const body = from === "booking" ? tt.bodyBooking : from === "social" ? tt.bodySocial : tt.body;
 
   return (
     <section className="pdc-thanks">

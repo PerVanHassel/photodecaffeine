@@ -145,7 +145,7 @@ export function PortfolioDetailPage() {
           </h2>
           <div className="pa-end-actions">
             <Link to="/#contact" className="pa-end-btn">{td.cta}</Link>
-            <Link to={automotive ? "/services/automotive" : "/services/fotografie"} className="pa-end-link">
+            <Link to={automotive ? "/services/fotografie/automotive" : "/services/fotografie"} className="pa-end-link">
               {automotive ? td.serviceLink : td.photographyLink}
             </Link>
           </div>

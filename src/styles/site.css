@@ -135,10 +135,12 @@
 .pdc-svc-hero { height: 65vh; }
 .pdc-svc-intro { padding: 72px 40px 0; }
 .pdc-svc-body { padding: 100px 40px; grid-template-columns: 1fr 1fr; gap: 100px; }
-.pdc-svc-price { font-size: 80px; }
 .pdc-svc-form-title { font-size: clamp(28px, 3vw, 40px); }
 .pdc-svc-submit { width: auto; }
 .pdc-svc-gallery { padding: 0 40px 80px; grid-template-columns: repeat(3, 1fr); }
+.pdc-svc-gallery-item { aspect-ratio: 4 / 3; overflow: hidden; }
+.pdc-svc-gallery-item img { display: block; width: 100%; height: 100%; object-fit: cover; filter: contrast(1.05) saturate(0.6) brightness(0.8); transition: transform 0.6s ease; }
+.pdc-svc-gallery-item:hover img { transform: scale(1.04); }
 .pdc-svc-cta { padding: 80px 40px; }
 .pdc-svc-cta-title { font-size: clamp(28px, 4vw, 52px); }
 
@@ -150,7 +152,6 @@
   .pdc-svc-hero { height: 60vw; }
   .pdc-svc-intro { padding: 48px 20px 0; }
   .pdc-svc-body { padding: 60px 20px; grid-template-columns: 1fr; gap: 56px; }
-  .pdc-svc-price { font-size: 64px; }
   .pdc-svc-form-title { font-size: 28px; }
   .pdc-svc-submit { width: 100%; }
   .pdc-svc-gallery { padding: 0 20px 60px; grid-template-columns: 1fr; }
@@ -857,17 +858,6 @@ body:has(.pdc-skip-link), body:has(.pdc-404-number) { background-color: #080401;
 /* "We gebruiken je gegevens alleen…" under every inquiry form. */
 .pdc-form-privacy { margin: 0; color: rgba(255,251,224,0.55); font-size: 12px; line-height: 1.6; }
 .pdc-form-privacy a { color: rgba(255,251,224,0.85); text-decoration: underline; text-underline-offset: 3px; }
-
-/* Automotive page: the latest automotive shoots from the portfolio. */
-.pdc-svc-recent { max-width: 1400px; margin: 0 auto; padding: 96px 24px; text-align: center; }
-.pdc-svc-recent-label { margin: 0 0 32px; color: rgba(255,251,224,0.55); font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase; }
-.pdc-svc-recent-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; margin-bottom: 40px; text-align: left; }
-.pdc-svc-recent-grid > div { aspect-ratio: 4 / 5; }
-@media (max-width: 767px) {
-  .pdc-svc-recent { padding: 64px 0; }
-  .pdc-svc-recent-grid { grid-template-columns: 1fr; }
-  .pdc-svc-recent-grid > div { aspect-ratio: 4 / 3; }
-}
 
 /* Frequently asked questions on the service pages (components/Faq.tsx). */
 .pdc-faq { border-top: 1px solid rgba(255,251,224,0.06); padding: 96px 24px; font-family: 'Inter', sans-serif; }

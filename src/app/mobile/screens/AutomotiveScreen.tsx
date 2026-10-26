@@ -148,7 +148,7 @@ export function AutomotiveScreen() {
                     Foto's toevoegen
                   </span>
                   <span style={{ fontSize: 11.5, color: c.fg4 }}>
-                    Verschijnen direct op /services/automotive
+                    Verschijnen direct op /services/fotografie/automotive
                   </span>
                 </>
               )}

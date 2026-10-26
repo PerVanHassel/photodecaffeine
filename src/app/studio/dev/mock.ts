@@ -432,7 +432,7 @@ export async function mockApi(path: string, method: string, body: Json): Promise
       { id: id(442), adminId: id(998), adminName: "Majd", amount: 38.5, vatRate: 21, vatAmount: 6.68, date: dateOnly(-3), category: "Reiskosten", description: "Parkeren Maasboulevard", receiptUrl: PHOTOS[3], receiptRef: "private:x", createdAt: iso(-3) },
     ], totals: { amount: 159.5, vatAmount: 27.68, count: 2, byCategory: {} } };
     if (p === "/admin/ads") return {
-      visits: Array.from({ length: 60 }, (_, i) => ({ ref: i % 3 ? "insta-automotive-1" : "fb-portret", page: i % 3 ? "/services/automotive" : "/", createdAt: iso(-(i % 28), 12) })),
+      visits: Array.from({ length: 60 }, (_, i) => ({ ref: i % 3 ? "insta-automotive-1" : "fb-portret", page: i % 3 ? "/services/fotografie/automotive" : "/", createdAt: iso(-(i % 28), 12) })),
       leads: [{ id: id(451), name: "Marco", ref: "insta-automotive-1", createdAt: iso(-3) }],
       campaigns: [{ ref: "insta-automotive-1", label: "Insta automotive september", active: true, hidden: false }],
     };

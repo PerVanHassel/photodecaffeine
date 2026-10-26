@@ -156,7 +156,7 @@ export function AutomotivePage() {
         sub="De foto's op de automotive-pagina van de site, in deze volgorde. Sleep om te ordenen."
         actions={
           <>
-            <a className="s-btn" href="/services/automotive" target="_blank" rel="noreferrer"><ExternalLink size={15} />Bekijk pagina</a>
+            <a className="s-btn" href="/services/fotografie/automotive" target="_blank" rel="noreferrer"><ExternalLink size={15} />Bekijk pagina</a>
             <Button variant="primary" icon={<Save />} disabled={!dirty} loading={save.isPending} onClick={() => save.mutate()}>{dirty ? "Opslaan" : "Opgeslagen"}</Button>
           </>
         }

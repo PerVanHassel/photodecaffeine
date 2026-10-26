@@ -17,7 +17,9 @@ type AdsData = {
 type Period = "7" | "30" | "90" | "365";
 const PAGES = [
   { path: "/", label: "Home" },
-  { path: "/services/automotive", label: "Automotive" },
+  { path: "/services/fotografie", label: "Fotografie" },
+  { path: "/services/fotografie/automotive", label: "Automotive" },
+  { path: "/services/fotografie/sport", label: "Sport" },
   { path: "/services/social-media", label: "Social media" },
   { path: "/portfolio", label: "Portfolio" },
 ];
@@ -163,7 +165,7 @@ export function AdsPage() {
 
 function LinkDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [name, setName] = useState("");
-  const [page, setPage] = useState("/services/automotive");
+  const [page, setPage] = useState("/services/fotografie/automotive");
   const ref = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const url = `https://www.photodecaffeine.com${page}?ref=${ref || "campagne"}`;
   return (

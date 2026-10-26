@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router";
 import { ArrowLeft } from "lucide-react";
 import { FormPrivacyNote } from "../components/form/FormPrivacyNote";
 import { ChoiceChips } from "../components/form/ChoiceChips";
+import { Faq, type FaqItem } from "../components/Faq";
 import { PhotoReel } from "../components/PhotoReel";
 import { PhotoPackages, euro, packageName, type PickedPackage } from "../components/PhotoPackages";
 import { EMAIL_INPUT, PHONE_INPUT, PublicInput, PublicTextarea } from "../components/form/PublicField";
@@ -11,7 +12,7 @@ import { track } from "../lib/analytics";
 import { HIGH_PRIORITY, webSrcSet } from "../lib/images";
 import { focusFirst, focusPhotos } from "../lib/photoFocus";
 import { scrollBehavior } from "../lib/scroll";
-import { usePortfolio, useSiteSettings } from "../lib/siteData";
+import { AUTOMOTIVE_GALLERY_TITLE, usePortfolio, useSiteSettings } from "../lib/siteData";
 import type { InquiryForm } from "./ThankYouPage";
 import { portalFetch } from "../../lib/supabase";
 import { useAdTracking, getStoredAdRef } from "../hooks/useAdTracking";
@@ -49,11 +50,16 @@ function ServicePage({
   category,
   focus,
   work = NO_WORK,
+  gallery = [],
+  faq,
 }: {
   id: ServiceId;
   category?: string;
   focus?: string;
   work?: ReturnType<typeof focusPhotos>;
+  /** Photos picked in the admin for this page, shown as a strip under the form. */
+  gallery?: string[];
+  faq?: readonly FaqItem[];
 }) {
   const { t } = useLanguage();
   const ts = t.servicePages;
@@ -132,7 +138,7 @@ function ServicePage({
           message: `${picked ? "Boeking" : "Aanvraag"} ${chosen}.${form.message.trim() ? `\n\n${form.message.trim()}` : ""}${ref ? `\n\n[ref:${ref}]` : ""}`,
         }),
       });
-      const sent: InquiryForm = "contact";
+      const sent: InquiryForm = picked ? "booking" : "contact";
       track("Aanvraag", picked ? { formulier: page.id, pakket: packageName(picked) } : { formulier: page.id });
       navigate("/bedankt", { state: { from: sent } });
     } catch {
@@ -497,6 +503,24 @@ function ServicePage({
         </div>
       </div>
 
+      {gallery.length > 0 && (
+        <div className="pdc-svc-gallery" style={{ maxWidth: "1400px", margin: "0 auto", display: "grid", gap: "3px" }}>
+          {gallery.map((src, i) => (
+            <div key={src} className="pdc-svc-gallery-item">
+              <img
+                src={src}
+                srcSet={webSrcSet(src)}
+                sizes="(max-width: 767px) 100vw, 34vw"
+                alt={ts.galleryAlt(sub?.name ?? page.name, i + 1)}
+                loading="lazy"
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {faq && <Faq items={faq} />}
+
       {/* ── The other two categories ── */}
       <div
         className="pdc-svc-cta"
@@ -555,11 +579,25 @@ function ServicePage({
  * A category page (Automotive, Sport) leads with that category instead.
  */
 function Photography({ category }: { category?: string }) {
-  const sub = useLanguage().t.servicePages.packages.categories.find((c) => c.id === category);
+  const { t } = useLanguage();
+  const sub = t.servicePages.packages.categories.find((c) => c.id === category);
   const niche = useSiteSettings().data?.photoFocus;
+  const articles = usePortfolio().data;
   const focus = sub?.name ?? niche;
-  const work = focusPhotos(usePortfolio().data, focus, 9);
-  return <ServicePage id="fotografie" category={category} focus={focus} work={work} />;
+  const work = focusPhotos(articles, focus, 9);
+  // Automotive keeps the gallery and questions of its former own page.
+  const automotive = category === "automotive";
+  const gallery = automotive ? (articles?.find((a) => a.title === AUTOMOTIVE_GALLERY_TITLE)?.galleryUrls ?? []) : [];
+  return (
+    <ServicePage
+      id="fotografie"
+      category={category}
+      focus={focus}
+      work={work}
+      gallery={gallery}
+      faq={automotive ? t.faq.automotive : undefined}
+    />
+  );
 }
 export const PhotographyPage = () => <Photography />;
 export const AutomotivePhotographyPage = () => <Photography category="automotive" />;
