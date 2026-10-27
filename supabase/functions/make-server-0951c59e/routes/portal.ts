@@ -17,8 +17,8 @@ export default r;
 
 const P = "/make-server-0951c59e/portal";
 r.use(`${P}/*`, async (c, next) => {
-  // Sign-up is the one portal route that runs before there is a login.
-  if (c.req.path === `${P}/signup`) return next();
+  // Sign-up and password reset run before there is a login.
+  if (c.req.path === `${P}/signup` || c.req.path === `${P}/password-reset`) return next();
   return requireUser(c, next);
 });
 
