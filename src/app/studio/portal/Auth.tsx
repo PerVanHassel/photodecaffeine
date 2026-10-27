@@ -87,9 +87,8 @@ export function LoginPage({ admin = false }: { admin?: boolean }) {
         const r = await signIn(email.trim(), password);
         if (r.error) setError(r.error);
       } else {
-        const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: `${window.location.origin}/portal/reset` });
-        if (err) setError(err.message);
-        else setSent(true);
+        await api("/portal/password-reset", { method: "POST", anonymous: true, body: { email: email.trim() } });
+        setSent(true);
       }
     } catch (err) {
       setError(errorMessage(err));

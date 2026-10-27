@@ -262,6 +262,10 @@ const RULES: Record<string, Rule> = {
     area: "Portaal", action: "Account aangemaakt in het portaal",
     who: (x) => ({ kind: "client", name: x.body?.name || "", email: x.body?.email || "" }),
   },
+  "POST /portal/password-reset": {
+    area: "Portaal", action: "Nieuw wachtwoord aangevraagd",
+    who: (x) => ({ kind: "visitor", email: x.body?.email || "" }),
+  },
   "PUT /portal/me": { area: "Portaal", action: "Eigen gegevens bijgewerkt" },
   "POST /portal/project/:id/messages": { area: "Berichten", action: "Bericht gestuurd aan de studio", detail: (x) => clip(x.body?.content) },
   "POST /portal/project/:id/favorites": {

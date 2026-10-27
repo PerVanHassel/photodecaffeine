@@ -150,6 +150,58 @@ r.post("/make-server-0951c59e/portal/signup", async (c) => {
   }
 });
 
+// --- POST /portal/password-reset ---
+// Sends the reset link through Resend, like every other mail of the site,
+// instead of through Supabase's own mailer. The answer is the same whether or
+// not the address has an account, so it can't be used to find out who does.
+r.post("/make-server-0951c59e/portal/password-reset", async (c) => {
+  const { email } = await readBody(c, z.object({ email: z.string().trim().toLowerCase().regex(EMAIL_RE, "Vul een geldig e-mailadres in.") }));
+
+  const throttleKey = `portal:reset:${email}`;
+  const last = Number(await kv.get(throttleKey)) || 0;
+  if (Date.now() - last < 60_000) return c.json({ success: true });
+  await kv.set(throttleKey, String(Date.now()));
+
+  const { data, error } = await db.auth.admin.generateLink({
+    type: "recovery",
+    email,
+    options: { redirectTo: `${SITE_URL}/portal/reset` },
+  });
+  const link = data?.properties?.action_link;
+  if (error || !link) return c.json({ success: true });
+
+  const sent = await sendEmail({
+    to: email,
+    subject: "Nieuw wachtwoord voor PhotoDeCaffeine",
+    html: emailWrap(`
+      <tr>
+        <td style="padding:32px 36px 0;">
+          <span style="color:#c8905a;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;">Wachtwoord</span>
+          <div style="height:10px;line-height:10px;font-size:0;">&nbsp;</div>
+          <span style="display:block;color:#fffbe0;font-size:22px;font-weight:800;letter-spacing:-0.01em;">Kies een nieuw wachtwoord</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:22px 36px 0;">
+          <span style="color:rgba(255,251,224,0.55);font-size:14px;font-weight:300;line-height:1.75;">Je hebt gevraagd om een nieuw wachtwoord. Klik op de knop en kies er zelf een.</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:26px 36px 40px;">
+          <a href="${link}" style="display:inline-block;background-color:#c8905a;color:#0d0703;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 30px;">Nieuw wachtwoord kiezen</a>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:18px 36px 28px;border-top:1px solid rgba(255,251,224,0.06);">
+          <span style="color:rgba(255,251,224,0.2);font-size:11px;">Heb je dit niet zelf gevraagd? Dan kun je deze mail negeren. Je wachtwoord blijft gewoon hetzelfde.</span>
+        </td>
+      </tr>
+    `),
+  });
+  if (!sent.ok) fail(502, sent.error || "De mail kon niet verstuurd worden.");
+  return c.json({ success: true });
+});
+
 // --- POST /admin/clients/invite — email a portal invitation to a new client ---
 // Only the address is required. The invite links to the portal with the email
 // prefilled on the sign-up tab, so the client picks their own password; no
