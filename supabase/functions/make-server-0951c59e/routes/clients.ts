@@ -1,6 +1,6 @@
 import { Hono } from "npm:hono";
 import * as kv from "../kv_store.tsx";
-import { verifyAdmin } from "../lib/auth.ts";
+import { isAdminUser, verifyAdmin } from "../lib/auth.ts";
 import { clientToApi, type ClientRow } from "../lib/clients.ts";
 import { EMAIL_ADMIN_NOTIFY, EMAIL_RE, INVITE_VALID_DAYS, SITE_URL } from "../lib/config.ts";
 import { db, found, must } from "../lib/db.ts";
@@ -336,8 +336,8 @@ r.put(`${A}/client/:id`, async (c) => {
   return c.json({ client: clientToApi(row) });
 });
 
-// Removes the client, their login, and every project that belonged to them
-// alone. Projects shared with another client stay, without this client.
+// Removes the client, their login (unless it is an admin), and every project
+// that belonged to them alone. Projects shared with another client stay, without this client.
 r.delete(`${A}/client/:id`, async (c) => {
   const id = c.req.param("id");
   const row = found(await db.from("clients").select("*").eq("id", id).maybeSingle(), "Klant niet gevonden") as ClientRow;
@@ -348,7 +348,10 @@ r.delete(`${A}/client/:id`, async (c) => {
     must(await db.from("projects").delete().in("id", soleProjects.map((l: any) => l.project_id)));
   }
   must(await db.from("clients").delete().eq("id", id));
-  if (row.user_id) {
+  // An admin who opened the portal gets a client record too. Removing that
+  // record must never take their admin login with it.
+  const login = row.user_id ? (await db.auth.admin.getUserById(row.user_id)).data?.user : null;
+  if (row.user_id && !isAdminUser(login)) {
     const { error } = await db.auth.admin.deleteUser(row.user_id);
     if (error) console.error("delete login failed:", error.message);
   }
