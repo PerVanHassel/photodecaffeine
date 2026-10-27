@@ -151,15 +151,27 @@ export function LoginPage({ admin = false }: { admin?: boolean }) {
   );
 }
 
-/** Where the reset email lands: Supabase has signed the person in; they pick a new password. */
+/** Where the reset email lands. The link carries a one-time token that signs
+ * the person in here; then they pick a new password. */
 export function ResetPasswordPage() {
-  const { session, loading } = useAuth();
+  const { session, user, loading } = useAuth();
   const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
   const { language } = usePortalLanguage();
   const t = texts[language === "en" ? "en" : "nl"];
   const [pw, setPw] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const tokenHash = params.get("token_hash");
+  const [verifying, setVerifying] = useState(Boolean(tokenHash));
+
+  useEffect(() => {
+    if (!tokenHash) return;
+    supabase.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" }).finally(() => {
+      setParams({}, { replace: true });
+      setVerifying(false);
+    });
+  }, [tokenHash, setParams]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -168,12 +180,12 @@ export function ResetPasswordPage() {
     const { error: err } = await supabase.auth.updateUser({ password: pw });
     setBusy(false);
     if (err) return setError(err.message);
-    navigate("/portal/dashboard", { replace: true });
+    navigate(isAdmin(user) ? "/admin" : "/portal/dashboard", { replace: true });
   }
 
   return (
     <Frame tag={t.portal} t={t} showLanguage>
-      {loading ? <p className="s-small s-muted">{t.wait}</p> : !session ? (
+      {loading || verifying ? <p className="s-small s-muted">{t.wait}</p> : !session ? (
         <div className="s-stack">
           <p className="s-small">{t.resetExpired}</p>
           <Link className="s-btn" to="/portal/login">{t.resetAgain}</Link>

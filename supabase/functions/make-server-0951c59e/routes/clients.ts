@@ -162,13 +162,12 @@ r.post("/make-server-0951c59e/portal/password-reset", async (c) => {
   if (Date.now() - last < 60_000) return c.json({ success: true });
   await kv.set(throttleKey, String(Date.now()));
 
-  const { data, error } = await db.auth.admin.generateLink({
-    type: "recovery",
-    email,
-    options: { redirectTo: `${SITE_URL}/portal/reset` },
-  });
-  const link = data?.properties?.action_link;
-  if (error || !link) return c.json({ success: true });
+  // The link goes straight to the site with the token; the reset page signs
+  // in with it. Supabase's own verify link would redirect to its Site URL.
+  const { data, error } = await db.auth.admin.generateLink({ type: "recovery", email });
+  const tokenHash = data?.properties?.hashed_token;
+  if (error || !tokenHash) return c.json({ success: true });
+  const link = `${SITE_URL}/portal/reset?token_hash=${encodeURIComponent(tokenHash)}`;
 
   const sent = await sendEmail({
     to: email,
