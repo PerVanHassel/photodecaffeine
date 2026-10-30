@@ -1,13 +1,15 @@
 import { Hono } from "npm:hono";
 import * as kv from "../kv_store.tsx";
 import { db } from "../lib/db.ts";
-import { type Env, fail, HttpError, nameOf, readBody, requireAdmin, text, z } from "../lib/http.ts";
+import { type Env, fail, HttpError, nameOf, readBody, requireAdmin, text, uuid, z } from "../lib/http.ts";
 import { PRIVATE_BUCKET, removePrivate, signPaths } from "../lib/storage.ts";
 import { sanitizeFileName } from "../lib/util.ts";
 
-// Investeringen: what the studio wants to buy, for every admin to add to and
-// weigh. An item starts from a link to a product page, which is read here for
-// its name, price and photo, or from a photo of the product.
+// Investeringen: the gear the studio has (status "bought", with how many) and
+// what it wants to buy, for every admin to add to and weigh. A wish says
+// whether it fits the gear already there. An item starts from a link to a
+// product page, which is read here for its name, price and photo, or from a
+// photo of the product.
 
 const r = new Hono<Env>();
 export default r;
@@ -20,6 +22,12 @@ const KEY = "investments:item:";
 const PRIVATE_PREFIX = "private:";
 const STATUSES = ["wish", "planned", "bought"] as const;
 const PRIORITIES = ["high", "medium", "low"] as const;
+const COMPAT = ["", "fits", "adapter", "no"] as const;
+
+/** Items saved before gear, counts and compatibility existed read as one of each, not yet checked. */
+const normalize = (i: any) => ({
+  quantity: 1, system: "", compatibility: "", worksWith: [], compatNote: "", ...i,
+});
 
 async function all(): Promise<any[]> {
   const values = await kv.getByPrefix(KEY);
@@ -43,13 +51,9 @@ async function withPhotos(items: any[]) {
 }
 
 r.get(A, async (c) => {
-  const items = await all();
+  const items = (await all()).map(normalize);
   items.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
-  const sum = (status: string) => items.filter((i) => i.status === status).reduce((s, i) => s + (Number(i.price) || 0), 0);
-  return c.json({
-    investments: await withPhotos(items),
-    totals: { wish: sum("wish"), planned: sum("planned"), bought: sum("bought") },
-  });
+  return c.json({ investments: await withPhotos(items) });
 });
 
 const schema = z.object({
@@ -57,9 +61,14 @@ const schema = z.object({
   url: text(2000).default(""),
   shop: text(200).default(""),
   price: z.number().min(0).max(10_000_000).nullable().default(null),
+  quantity: z.number().int("Een aantal is een heel getal.").min(1).max(999).default(1),
   status: z.enum(STATUSES).default("wish"),
   priority: z.enum(PRIORITIES).default("medium"),
   category: text(100).default(""),
+  system: text(100).default(""),
+  compatibility: z.enum(COMPAT).default(""),
+  worksWith: z.array(uuid).max(200).default([]),
+  compatNote: text(1000).default(""),
   notes: text(5000).default(""),
   photo: text(2000).default(""),
 });
@@ -84,7 +93,7 @@ r.post(A, async (c) => {
 });
 
 r.put(`${A}/:id`, async (c) => {
-  const existing = await load(c.req.param("id"));
+  const existing = normalize(await load(c.req.param("id")));
   const b = await readBody(c, schema.partial());
   const now = new Date().toISOString();
   const photo = keepPhoto(b.photo, existing.photo);
@@ -149,9 +158,11 @@ r.post(`${A}/photo`, async (c) => {
 // A link to a product page
 // ---------------------------------------------------------------------------
 
-// Shops answer a browser with the full page; a bare fetch often gets a block page.
+// Says what it is. Shops that keep automated visitors out (bol, Kamera Express,
+// Cameranu, MediaMarkt) answer 403 to this; that is their choice, and the
+// screen then asks for a screenshot instead.
 const BROWSER = {
-  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+  "User-Agent": "Mozilla/5.0 (compatible; PhotoDeCaffeine-linkpreview/1.0; +https://www.photodecaffeine.com)",
   "Accept-Language": "nl-NL,nl;q=0.9,en;q=0.8",
 };
 const MAX_PAGE = 3_000_000;
@@ -221,18 +232,41 @@ function decode(s: string): string {
     .trim();
 }
 
-/** The content of every <meta> tag, by its property, name or itemprop. */
+function attrOf(tag: string, name: string): string | null {
+  const m = tag.match(new RegExp(`\\s${name}\\s*=\\s*("([^"]*)"|'([^']*)')`, "i"));
+  return m ? decode(m[2] ?? m[3]) : null;
+}
+
+/**
+ * The content of every <meta> tag, by its property or name, and of every
+ * schema.org microdata field (itemprop) on any tag: a shop that shows its
+ * price as <span itemprop="price" content="1299.00"> has it here as "price".
+ */
 function metaTags(html: string): Map<string, string> {
   const out = new Map<string, string>();
+  const keep = (k: string | null, v: string | null) => {
+    if (k && v && !out.has(k.toLowerCase())) out.set(k.toLowerCase(), v);
+  };
   for (const tag of html.match(/<meta\b[^>]*>/gi) || []) {
-    const attr = (name: string) => tag.match(new RegExp(`\\b${name}\\s*=\\s*("([^"]*)"|'([^']*)')`, "i"));
-    const key = attr("property") || attr("name") || attr("itemprop");
-    const content = attr("content");
-    if (!key || !content) continue;
-    const k = (key[2] ?? key[3]).toLowerCase();
-    if (!out.has(k)) out.set(k, decode(content[2] ?? content[3]));
+    keep(attrOf(tag, "property") || attrOf(tag, "name") || attrOf(tag, "itemprop"), attrOf(tag, "content"));
+  }
+  for (const m of html.matchAll(/<(\w+)\b([^>]*\sitemprop\s*=\s*["'](name|price|lowPrice|priceCurrency|image)["'][^>]*)>([^<]{0,300})/gi)) {
+    const tag = ` ${m[2]}`;
+    const inner = decode(m[4]);
+    keep(m[3], attrOf(tag, "content") || attrOf(tag, "src") || attrOf(tag, "href") || inner || null);
   }
   return out;
+}
+
+/** "Canon EOS R10 | Coolblue - Voor 23.59u, morgen in huis" → "Canon EOS R10". */
+function cleanTitle(title: string, shop: string): string {
+  const brand = shop.split(".")[0].toLowerCase();
+  const parts = title.split(/\s+[|–—]\s+|\s+-\s+/);
+  const kept = parts.filter((p, i) => i === 0 || !p.toLowerCase().replace(/[^a-z0-9]/g, "").includes(brand.replace(/[^a-z0-9]/g, "")));
+  // Everything after the part that names the shop is the shop's slogan.
+  const at = parts.findIndex((p, i) => i > 0 && p.toLowerCase().replace(/[^a-z0-9]/g, "").includes(brand.replace(/[^a-z0-9]/g, "")));
+  const clean = (at > 0 ? parts.slice(0, at) : kept).join(" - ").replace(/^[^\p{L}\p{N}]+/u, "").trim();
+  return clean || title;
 }
 
 /** The first schema.org Product in the page's JSON-LD blocks. */
@@ -247,8 +281,12 @@ function ldProduct(html: string): any | null {
       }
       return null;
     }
-    const type = node["@type"];
-    if (type === "Product" || (Array.isArray(type) && type.includes("Product"))) return node;
+    const types = [node["@type"]].flat().map(String);
+    if (types.some((t) => /^(Product|ProductGroup|IndividualProduct|ProductModel)$/.test(t))) {
+      // A product with variants keeps its price on the first variant.
+      const variant = Array.isArray(node.hasVariant) ? node.hasVariant[0] : null;
+      return node.offers || !variant ? node : { ...variant, ...node, offers: variant.offers, image: node.image || variant.image };
+    }
     return find(node["@graph"]) || find(node.mainEntity) || find(node.itemListElement);
   };
   for (const block of blocks) {
@@ -314,21 +352,24 @@ const linkSchema = z.object({ url: text(2000).min(1, "Plak een link.") });
 r.post(`${A}/link`, async (c) => {
   const { url } = await readBody(c, linkSchema);
   const asked = publicUrl(url);
-  const unread = { url, title: titleFromUrl(asked), price: null, shop: siteName(asked), photoRef: "", photoUrl: "" };
+  const shop = siteName(asked);
+  // What the screen gets when the page itself could not be read: a name from
+  // the link, and `closed` so it offers to read a screenshot instead.
+  const unread = (notice: string) => ({ url, title: titleFromUrl(asked), price: null, shop, photoRef: "", photoUrl: "", closed: true, notice });
+  const closedNotice = `${shop} laat zijn pagina's niet automatisch lezen. De naam komt uit de link. Upload een screenshot van de pagina, dan lezen we de prijs eruit.`;
   let res: Response;
   try {
     res = await fetchPublic(url, { headers: { ...BROWSER, Accept: "text/html,application/xhtml+xml" } });
   } catch (err) {
     if (err instanceof HttpError) throw err;
-    return c.json({ ...unread, notice: "De winkel gaf geen antwoord. Vul de prijs zelf in en upload eventueel een foto." });
+    console.log("investment link: no answer", shop, String(err));
+    return c.json(unread(`${shop} gaf geen antwoord. Upload een screenshot van de pagina, dan lezen we de prijs eruit.`));
   }
   const page = new URL(res.url || url);
   if (!res.ok || !(res.headers.get("content-type") || "").includes("html")) {
     await res.body?.cancel();
-    const notice = res.status === 404 || res.status === 410
-      ? "Deze pagina bestaat niet (meer). Kijk of de link klopt."
-      : "Deze winkel laat zijn pagina niet uitlezen. Vul de prijs zelf in en upload eventueel een foto.";
-    return c.json({ ...unread, notice });
+    console.log("investment link: refused", shop, res.status);
+    return c.json(unread(res.status === 404 || res.status === 410 ? "Deze pagina bestaat niet (meer). Kijk of de link klopt." : closedNotice));
   }
   const bytes = await readCapped(res, MAX_PAGE);
   const html = bytes ? new TextDecoder().decode(bytes) : "";
@@ -336,13 +377,19 @@ r.post(`${A}/link`, async (c) => {
   const meta = metaTags(html);
   const product = ldProduct(html);
   const offer = firstOffer(product?.offers);
-  const titleTag = decode(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "");
-  const title = decode(String(product?.name || "")) || meta.get("og:title") || meta.get("twitter:title") || titleTag || unread.title;
   const price =
     toPrice(offer?.price ?? offer?.lowPrice) ??
-    toPrice(meta.get("product:price:amount") || meta.get("og:price:amount") || meta.get("price") || "");
+    toPrice(meta.get("product:price:amount") || meta.get("og:price:amount") || meta.get("price") || meta.get("lowprice") || "");
+  const named = decode(String(product?.name || "")) || meta.get("og:title") || meta.get("twitter:title") || "";
+  // A page with no product data at all is a cookie wall or a robot check (Amazon answers 200 with one).
+  if (!product && !named && price === null) {
+    console.log("investment link: no product data", shop, res.status);
+    return c.json(unread(closedNotice));
+  }
+  const titleTag = decode(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "");
+  const title = cleanTitle(named || meta.get("name") || titleTag, shop) || titleFromUrl(asked);
   const currency = String(offer?.priceCurrency || meta.get("product:price:currency") || meta.get("og:price:currency") || meta.get("pricecurrency") || "EUR").toUpperCase();
-  const imageUrl = imageOf(product?.image) || meta.get("og:image") || meta.get("og:image:secure_url") || meta.get("twitter:image") || "";
+  const imageUrl = imageOf(product?.image) || meta.get("og:image") || meta.get("og:image:secure_url") || meta.get("twitter:image") || meta.get("image") || "";
 
   let photo = { photoRef: "", photoUrl: "" };
   if (imageUrl) {
@@ -355,14 +402,12 @@ r.post(`${A}/link`, async (c) => {
       console.log("investment image not fetched:", imageUrl, String(err));
     }
   }
+  console.log("investment link: read", shop, { title: !!title, price: price !== null, photo: !!photo.photoRef });
 
-  const found = !!title || price !== null;
-  const notice = !found
-    ? "Op deze pagina stond geen productinformatie. Vul de gegevens zelf in."
-    : price === null
-      ? "De prijs stond niet op de pagina. Vul hem zelf in."
-      : currency !== "EUR"
-        ? `De prijs staat in ${currency}. Reken hem om naar euro's.`
-        : undefined;
-  return c.json({ url, title: title.slice(0, 300), price, shop: unread.shop, ...photo, notice });
+  const notice = price === null
+    ? "De prijs stond niet op de pagina. Vul hem zelf in, of upload een screenshot."
+    : currency !== "EUR"
+      ? `De prijs staat in ${currency}. Reken hem om naar euro's.`
+      : undefined;
+  return c.json({ url, title: title.slice(0, 300), price, shop, ...photo, closed: false, notice });
 });

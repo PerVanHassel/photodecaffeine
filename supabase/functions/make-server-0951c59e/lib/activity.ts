@@ -223,10 +223,13 @@ const RULES: Record<string, Rule> = {
   "POST /admin/declarations": { area: "Declaraties", action: "Declaratie ingediend", of: DECLARATION, created: true },
   "PUT /admin/declarations/:id": { area: "Declaraties", action: "Declaratie bijgewerkt", of: DECLARATION, diff: true },
   "DELETE /admin/declarations/:id": { area: "Declaraties", action: "Declaratie verwijderd", of: DECLARATION },
-  "POST /admin/investments": { area: "Investeringen", action: "Investering toegevoegd", of: INVESTMENT, created: true },
+  "POST /admin/investments": {
+    area: "Investeringen", of: INVESTMENT, created: true,
+    action: (x) => (x.body?.status === "bought" ? "Gear toegevoegd" : "Investering toegevoegd"),
+  },
   "PUT /admin/investments/:id": {
     area: "Investeringen", of: INVESTMENT, diff: true,
-    action: (x) => (x.body?.status === "bought" ? "Investering gekocht" : "Investering bijgewerkt"),
+    action: (x) => (x.body?.status === "bought" ? "Investering gekocht, staat bij de gear" : x.body?.quantity !== undefined && Object.keys(x.body).length === 1 ? "Aantal aangepast" : "Investering bijgewerkt"),
   },
   "DELETE /admin/investments/:id": { area: "Investeringen", action: "Investering verwijderd", of: INVESTMENT },
 

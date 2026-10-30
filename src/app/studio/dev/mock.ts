@@ -354,10 +354,19 @@ const activity: Json[] = [
   logEntry(11, iso(-4, 15, 10), PER, "Projecten", "Project verwijderd", { targetLabel: "Testproject", projectTitle: "Testproject" }),
 ];
 
+const gearItem = (n: number, title: string, category: string, system: string, price: number, quantity: number, photo = "") => ({
+  id: id(n), title, url: "", shop: "", price, quantity, status: "bought", priority: "medium", category, system, compatibility: "", worksWith: [], compatNote: "",
+  notes: "", photo: photo ? "private:g" : "", photoUrl: photo, addedBy: { id: id(999), name: "Per van Hassel" }, boughtAt: iso(-300 + (n - 460) * 20), createdAt: iso(-300 + (n - 460) * 20),
+});
 const investments: Json[] = [
-  { id: id(451), title: "Godox AD600 Pro II", url: "https://www.kamera-express.nl/godox-ad600-pro-ii", shop: "kamera-express.nl", price: 899, status: "planned", priority: "high", category: "Licht", notes: "Buiten flitsen bij automotive in de avond.", photo: "private:x", photoUrl: PHOTOS[4], addedBy: { id: id(999), name: "Per van Hassel" }, boughtAt: null, createdAt: iso(-6) },
-  { id: id(452), title: "DJI Mini 4 Pro Fly More Combo", url: "https://www.coolblue.nl/product/942131", shop: "coolblue.nl", price: 1049, status: "wish", priority: "medium", category: "Drone", notes: "", photo: "", photoUrl: "", addedBy: { id: id(998), name: "Majd" }, boughtAt: null, createdAt: iso(-2) },
-  { id: id(453), title: "SanDisk Extreme PRO CFexpress 256 GB", url: "", shop: "", price: 289.95, status: "bought", priority: "low", category: "Computer & opslag", notes: "", photo: "private:y", photoUrl: PHOTOS[2], addedBy: { id: id(999), name: "Per van Hassel" }, boughtAt: iso(-12), createdAt: iso(-20) },
+  { id: id(451), title: "Godox AD600 Pro II", url: "https://www.kamera-express.nl/godox-ad600-pro-ii", shop: "kamera-express.nl", price: 899, quantity: 1, status: "planned", priority: "high", category: "Licht", system: "Godox 2.4G", compatibility: "fits", worksWith: [id(463)], compatNote: "", notes: "Buiten flitsen bij automotive in de avond.", photo: "private:x", photoUrl: PHOTOS[4], addedBy: { id: id(999), name: "Per van Hassel" }, boughtAt: null, createdAt: iso(-6) },
+  { id: id(452), title: "DJI Mini 4 Pro Fly More Combo", url: "https://www.coolblue.nl/product/942131", shop: "coolblue.nl", price: 1049, quantity: 1, status: "wish", priority: "medium", category: "Drone", system: "", compatibility: "", worksWith: [], compatNote: "", notes: "", photo: "", photoUrl: "", addedBy: { id: id(998), name: "Majd" }, boughtAt: null, createdAt: iso(-2) },
+  { id: id(454), title: "Canon RF 85mm f/1.2L", url: "", shop: "", price: 2999, quantity: 1, status: "wish", priority: "low", category: "Lenzen", system: "Canon RF", compatibility: "adapter", worksWith: [id(461)], compatNote: "Canon RF naar Sony E bestaat niet goed", notes: "", photo: "", photoUrl: "", addedBy: { id: id(998), name: "Majd" }, boughtAt: null, createdAt: iso(-1) },
+  { id: id(455), title: "NP-FZ100 accu", url: "", shop: "", price: 79, quantity: 3, status: "wish", priority: "high", category: "Accu's & laders", system: "Sony NP-FZ100", compatibility: "fits", worksWith: [id(461)], compatNote: "", notes: "", photo: "", photoUrl: "", addedBy: { id: id(999), name: "Per van Hassel" }, boughtAt: null, createdAt: iso(-1) },
+  gearItem(461, "Sony A7 IV", "Camera", "Sony E", 2499, 2, PHOTOS[7]),
+  gearItem(462, "Sony FE 24-70mm f/2.8 GM II", "Lenzen", "Sony E", 2399, 1, PHOTOS[2]),
+  gearItem(463, "Godox X2T-S trigger", "Licht", "Godox 2.4G", 69, 2),
+  gearItem(464, "SanDisk Extreme PRO CFexpress 256 GB", "Geheugen & opslag", "CFexpress A", 289.95, 4),
 ];
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -444,10 +453,7 @@ export async function mockApi(path: string, method: string, body: Json): Promise
       { id: id(441), adminId: id(999), adminName: "Per van Hassel", amount: 121, vatRate: 21, vatAmount: 21, date: dateOnly(-10), category: "Apparatuur", description: "SD-kaarten 128 GB", receiptUrl: "", receiptRef: "", createdAt: iso(-10) },
       { id: id(442), adminId: id(998), adminName: "Majd", amount: 38.5, vatRate: 21, vatAmount: 6.68, date: dateOnly(-3), category: "Reiskosten", description: "Parkeren Maasboulevard", receiptUrl: PHOTOS[3], receiptRef: "private:x", createdAt: iso(-3) },
     ], totals: { amount: 159.5, vatAmount: 27.68, count: 2, byCategory: {} } };
-    if (p === "/admin/investments") {
-      const sum = (st: string) => investments.filter((i) => i.status === st).reduce((t, i) => t + (i.price || 0), 0);
-      return { investments, totals: { wish: sum("wish"), planned: sum("planned"), bought: sum("bought") } };
-    }
+    if (p === "/admin/investments") return { investments };
     if (p === "/admin/ads") return {
       // Counted the old way, before the site kept its own statistics.
       visits: Array.from({ length: 60 }, (_, i) => ({ ref: i % 3 ? "insta-automotive-1" : "ig-automotive-2", page: "/services/fotografie/automotive", createdAt: "2026-07-1" + (i % 9) + "T12:00:00Z" })),
@@ -489,7 +495,11 @@ export async function mockApi(path: string, method: string, body: Json): Promise
   // Writes: apply the obvious change in memory and answer like the server.
   if (p === "/admin/investments/link") {
     await delay(900);
-    return { url: body.url, title: "Sony FE 70-200mm f/2.8 GM OSS II", price: 2899, shop: new URL(body.url).hostname.replace(/^www\./, ""), photoRef: "private:investments/x.jpg", photoUrl: PHOTOS[6] };
+    const shop = new URL(body.url).hostname.replace(/^www\./, "");
+    if (/cameranu|bol\.com|kamera-express/.test(shop)) {
+      return { url: body.url, title: "Sony a7 iv body", price: null, shop, photoRef: "", photoUrl: "", closed: true, notice: `${shop} laat zijn pagina's niet automatisch lezen. De naam komt uit de link. Upload een screenshot van de pagina, dan lezen we de prijs eruit.` };
+    }
+    return { url: body.url, title: "Sony FE 70-200mm f/2.8 GM OSS II", price: 2899, shop, photoRef: "private:investments/x.jpg", photoUrl: PHOTOS[6], closed: false };
   }
   if (p === "/admin/investments/photo") {
     await delay(500);
@@ -498,7 +508,7 @@ export async function mockApi(path: string, method: string, body: Json): Promise
   }
   if (p === "/admin/investments" && method === "POST") {
     const now = new Date().toISOString();
-    const i = { id: crypto.randomUUID(), ...body, photoUrl: body.photo ? PHOTOS[6] : "", addedBy: { id: id(999), name: "Per van Hassel" }, boughtAt: body.status === "bought" ? now : null, createdAt: now };
+    const i = { id: crypto.randomUUID(), ...body, photoUrl: body.photo ? (body.photo.includes("x.jpg") ? PHOTOS[6] : PHOTOS[5]) : "", addedBy: { id: id(999), name: "Per van Hassel" }, boughtAt: body.status === "bought" ? now : null, createdAt: now };
     investments.unshift(i);
     return { investment: i };
   }

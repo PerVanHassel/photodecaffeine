@@ -295,6 +295,12 @@ button.s-item { width: 100%; border: 0; background: none; text-align: left; }
 .s-product:hover img { transform: none; }
 .s-receipt-row .s-product { border-radius: var(--r-sm); border: 1px solid var(--line); aspect-ratio: 1; }
 .s-receipt-row .s-product img { padding: 4px; }
+.s-product-cat { position: absolute; top: 8px; left: 8px; padding: 2px 8px; border-radius: 999px; background: var(--text); color: #fff; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; pointer-events: none; }
+.s-compat { display: flex; align-items: flex-start; gap: 6px; }
+.s-compat svg { width: 14px; height: 14px; flex: none; margin-top: 2px; }
+.s-scan { display: flex; align-items: center; gap: 6px; }
+.s-scan .spin { animation: s-spin 0.8s linear infinite; }
+.s-compat-box { border: 1px solid var(--line); border-radius: var(--r-sm); padding: 12px 14px; background: var(--sunken); }
 .s-fav {
   width: 28px; height: 28px; border-radius: 50%; background: rgba(15, 10, 6, 0.55); display: grid; place-items: center;
   color: #fff; border: 0; backdrop-filter: blur(4px);
@@ -304,17 +310,27 @@ button.s-item { width: 100%; border: 0; background: none; text-align: left; }
 
 /* ---------- dialogs ---------- */
 .s-overlay { position: fixed; inset: 0; background: rgba(23, 19, 15, 0.35); z-index: 60; animation: s-fade 0.15s ease-out; }
+/* Title and buttons stay in view; only the middle scrolls. dvh is the height
+   left between a phone browser's own bars, which 100vh does not leave out. */
 .s-dialog {
   position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 61; width: min(560px, calc(100vw - 32px));
-  max-height: calc(100vh - 48px); overflow-y: auto; background: var(--surface); border-radius: 14px; box-shadow: var(--shadow);
-  border: 1px solid var(--line); animation: s-pop 0.16s ease-out;
+  max-height: calc(100vh - 48px); max-height: calc(100dvh - 32px); display: flex; flex-direction: column; overflow: hidden;
+  background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); border: 1px solid var(--line); animation: s-pop 0.16s ease-out;
 }
 .s-dialog.wide { width: min(820px, calc(100vw - 32px)); }
+.s-dialog-head, .s-dialog-foot { flex: none; }
+.s-dialog-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 .s-dialog-head { padding: 18px 20px 4px; }
 .s-dialog-head h2 { font-size: 17px; font-weight: 700; }
 .s-dialog-head p { color: var(--muted); font-size: 13.5px; margin-top: 4px; }
 .s-dialog-body { padding: 14px 20px; display: flex; flex-direction: column; gap: 14px; }
 .s-dialog-foot { padding: 12px 20px 18px; display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 600px) {
+  .s-dialog, .s-dialog.wide { width: calc(100vw - 16px); max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px); }
+  .s-dialog-head { padding: 14px 16px 2px; }
+  .s-dialog-body { padding: 12px 16px; }
+  .s-dialog-foot { padding: 10px 16px 14px; border-top: 1px solid var(--line); }
+}
 .s-sheet {
   position: fixed; top: 0; right: 0; bottom: 0; z-index: 61; width: min(520px, 100vw); background: var(--surface);
   border-left: 1px solid var(--line); box-shadow: var(--shadow); display: flex; flex-direction: column; animation: s-slide 0.18s ease-out;
@@ -609,7 +625,7 @@ a.s-stat:hover { background: var(--hover); }
 .studio .s-contact-sheet > *, .studio .p-proof > * { content-visibility: auto; contain-intrinsic-size: auto 160px; }
 
 /* Scrolling inside a dialog or sheet never scrolls the page behind it. */
-.studio .s-dialog, .studio .s-sheet-body { overscroll-behavior: contain; }
+.studio .s-dialog-body, .studio .s-sheet-body { overscroll-behavior: contain; }
 
 /* Skip link: hidden until it gets keyboard focus. */
 .studio .s-skip {
