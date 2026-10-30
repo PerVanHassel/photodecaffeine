@@ -33,7 +33,7 @@ const ACTOR_TONE: Record<ActorKind, string> = { owner: "acc", team: "info", clie
 
 const AREAS = [
   "Projecten", "Galerij", "Berichten", "Planning", "Locaties", "Taken", "Klanten", "Aanvragen", "Offertes", "Facturen",
-  "Declaraties", "Portfolio", "Reviews", "Advertenties", "Instellingen", "Bestanden", "Team", "Documenten", "Portaal", "Meldingen", "Overig",
+  "Declaraties", "Investeringen", "Portfolio", "Reviews", "Advertenties", "Instellingen", "Bestanden", "Team", "Documenten", "Portaal", "Meldingen", "Overig",
 ];
 
 type Who = "all" | "studio" | "clients" | "guests";

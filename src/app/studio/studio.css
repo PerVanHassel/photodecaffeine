@@ -289,6 +289,12 @@ button.s-item { width: 100%; border: 0; background: none; text-align: left; }
 .s-ph .corner { position: absolute; top: 6px; right: 6px; display: flex; gap: 4px; }
 .s-ph-empty { display: grid; place-items: center; color: var(--faint); }
 .s-ph-empty svg { width: 22px; height: 22px; }
+/* Product shots from a webshop: whole product on white, never cropped. */
+.s-product { aspect-ratio: 4 / 3; border-radius: 0; background: #fff; }
+.s-product img { object-fit: contain; padding: 8px; }
+.s-product:hover img { transform: none; }
+.s-receipt-row .s-product { border-radius: var(--r-sm); border: 1px solid var(--line); aspect-ratio: 1; }
+.s-receipt-row .s-product img { padding: 4px; }
 .s-fav {
   width: 28px; height: 28px; border-radius: 50%; background: rgba(15, 10, 6, 0.55); display: grid; place-items: center;
   color: #fff; border: 0; backdrop-filter: blur(4px);
@@ -362,6 +368,16 @@ button.s-item { width: 100%; border: 0; background: none; text-align: left; }
 .s-stats b { display: block; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .s-stats span { font-size: 12px; color: var(--muted); }
 a.s-stat:hover { background: var(--hover); }
+/* Three totals stay side by side, also on a phone. */
+.s-stats.three { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 860px) {
+  .s-stats.three > *:nth-child(n) { border-bottom: 0; border-right: 1px solid var(--line); }
+  .s-stats.three > *:nth-child(n):last-child { border-right: 0; }
+}
+@media (max-width: 520px) {
+  .s-stats.three > * { padding: 12px; }
+  .s-stats.three b { font-size: 16px; }
+}
 @media (max-width: 860px) {
   .s-next-shoot { grid-template-columns: 1fr; }
   .s-next-shoot .visual { min-height: 190px; }

@@ -68,6 +68,7 @@ const AD = table("ad_campaigns", (r) => r.label || r.ref, () => "/admin/ads", "r
 const SHARE: Source = { ...table("gallery_shares", () => "", undefined, "token"), idOf: (r) => r.project_id };
 const ARTICLE = stored("portfolio:article:", (r) => r.title, (_r, id) => `/admin/portfolio/${id}`);
 const REVIEW = stored("review:", (r) => r.clientName || r.googleName || "Review", () => "/admin/reviews");
+const INVESTMENT = stored("investments:item:", (r) => join(r.title, euro(r.price)), () => "/admin/investments");
 const DECLARATION = stored("declarations:declaration:", (r) => join(r.description || r.category, euro(r.amount)), () => "/admin/declarations");
 const ROLE = stored("roles:role:", (r) => r.name, () => "/admin/team");
 const SETTINGS: Source = { load: async () => parse(await kv.get("site:settings")), label: () => "", link: () => "/admin/settings" };
@@ -135,6 +136,8 @@ const QUIET = [
   "PUT /admin/project/:id/gallery/:imageId/preview",
   "POST /admin/ai/generate-description",
   "POST /admin/declarations/receipt",
+  "POST /admin/investments/photo",
+  "POST /admin/investments/link",
   "POST /admin/storage/ensure-bucket",
   "POST /admin/google/start",
   "POST /review/open",
@@ -220,6 +223,12 @@ const RULES: Record<string, Rule> = {
   "POST /admin/declarations": { area: "Declaraties", action: "Declaratie ingediend", of: DECLARATION, created: true },
   "PUT /admin/declarations/:id": { area: "Declaraties", action: "Declaratie bijgewerkt", of: DECLARATION, diff: true },
   "DELETE /admin/declarations/:id": { area: "Declaraties", action: "Declaratie verwijderd", of: DECLARATION },
+  "POST /admin/investments": { area: "Investeringen", action: "Investering toegevoegd", of: INVESTMENT, created: true },
+  "PUT /admin/investments/:id": {
+    area: "Investeringen", of: INVESTMENT, diff: true,
+    action: (x) => (x.body?.status === "bought" ? "Investering gekocht" : "Investering bijgewerkt"),
+  },
+  "DELETE /admin/investments/:id": { area: "Investeringen", action: "Investering verwijderd", of: INVESTMENT },
 
   // Website
   "POST /admin/portfolio": { area: "Portfolio", action: "Portfolio-artikel aangemaakt", of: ARTICLE, created: true },

@@ -354,6 +354,12 @@ const activity: Json[] = [
   logEntry(11, iso(-4, 15, 10), PER, "Projecten", "Project verwijderd", { targetLabel: "Testproject", projectTitle: "Testproject" }),
 ];
 
+const investments: Json[] = [
+  { id: id(451), title: "Godox AD600 Pro II", url: "https://www.kamera-express.nl/godox-ad600-pro-ii", shop: "kamera-express.nl", price: 899, status: "planned", priority: "high", category: "Licht", notes: "Buiten flitsen bij automotive in de avond.", photo: "private:x", photoUrl: PHOTOS[4], addedBy: { id: id(999), name: "Per van Hassel" }, boughtAt: null, createdAt: iso(-6) },
+  { id: id(452), title: "DJI Mini 4 Pro Fly More Combo", url: "https://www.coolblue.nl/product/942131", shop: "coolblue.nl", price: 1049, status: "wish", priority: "medium", category: "Drone", notes: "", photo: "", photoUrl: "", addedBy: { id: id(998), name: "Majd" }, boughtAt: null, createdAt: iso(-2) },
+  { id: id(453), title: "SanDisk Extreme PRO CFexpress 256 GB", url: "", shop: "", price: 289.95, status: "bought", priority: "low", category: "Computer & opslag", notes: "", photo: "private:y", photoUrl: PHOTOS[2], addedBy: { id: id(999), name: "Per van Hassel" }, boughtAt: iso(-12), createdAt: iso(-20) },
+];
+
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Mirrors the edge function's routes closely enough to drive every screen. */
@@ -438,6 +444,10 @@ export async function mockApi(path: string, method: string, body: Json): Promise
       { id: id(441), adminId: id(999), adminName: "Per van Hassel", amount: 121, vatRate: 21, vatAmount: 21, date: dateOnly(-10), category: "Apparatuur", description: "SD-kaarten 128 GB", receiptUrl: "", receiptRef: "", createdAt: iso(-10) },
       { id: id(442), adminId: id(998), adminName: "Majd", amount: 38.5, vatRate: 21, vatAmount: 6.68, date: dateOnly(-3), category: "Reiskosten", description: "Parkeren Maasboulevard", receiptUrl: PHOTOS[3], receiptRef: "private:x", createdAt: iso(-3) },
     ], totals: { amount: 159.5, vatAmount: 27.68, count: 2, byCategory: {} } };
+    if (p === "/admin/investments") {
+      const sum = (st: string) => investments.filter((i) => i.status === st).reduce((t, i) => t + (i.price || 0), 0);
+      return { investments, totals: { wish: sum("wish"), planned: sum("planned"), bought: sum("bought") } };
+    }
     if (p === "/admin/ads") return {
       // Counted the old way, before the site kept its own statistics.
       visits: Array.from({ length: 60 }, (_, i) => ({ ref: i % 3 ? "insta-automotive-1" : "ig-automotive-2", page: "/services/fotografie/automotive", createdAt: "2026-07-1" + (i % 9) + "T12:00:00Z" })),
@@ -477,6 +487,28 @@ export async function mockApi(path: string, method: string, body: Json): Promise
   }
 
   // Writes: apply the obvious change in memory and answer like the server.
+  if (p === "/admin/investments/link") {
+    await delay(900);
+    return { url: body.url, title: "Sony FE 70-200mm f/2.8 GM OSS II", price: 2899, shop: new URL(body.url).hostname.replace(/^www\./, ""), photoRef: "private:investments/x.jpg", photoUrl: PHOTOS[6] };
+  }
+  if (p === "/admin/investments/photo") {
+    await delay(500);
+    const file = (body as FormData).get("file") as File;
+    return { photoRef: `private:investments/${file.name}`, photoUrl: URL.createObjectURL(file) };
+  }
+  if (p === "/admin/investments" && method === "POST") {
+    const now = new Date().toISOString();
+    const i = { id: crypto.randomUUID(), ...body, photoUrl: body.photo ? PHOTOS[6] : "", addedBy: { id: id(999), name: "Per van Hassel" }, boughtAt: body.status === "bought" ? now : null, createdAt: now };
+    investments.unshift(i);
+    return { investment: i };
+  }
+  if ((r = m(/^\/admin\/investments\/([^/]+)$/))) {
+    const i = investments.find((x) => x.id === r![1]);
+    if (!i) throw new ApiError(404, "Investering niet gevonden");
+    if (method === "DELETE") { investments.splice(investments.indexOf(i), 1); return { success: true }; }
+    Object.assign(i, body, body.status === "bought" && !i.boughtAt ? { boughtAt: new Date().toISOString() } : {});
+    return { investment: i };
+  }
   if (p === "/admin/declarations/receipt") {
     await delay(800);
     const file = (body as FormData).get("file") as File;
