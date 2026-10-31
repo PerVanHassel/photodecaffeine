@@ -1,6 +1,6 @@
 import { Hono } from "npm:hono";
 import { EMAIL_ADMIN_NOTIFY, EMAIL_RE, SITE_URL } from "../lib/config.ts";
-import { ANSWERS, consentUrl, STATEMENTS } from "../lib/consents.ts";
+import { type Answer, ANSWERS, consentUrl, statementsFor } from "../lib/consents.ts";
 import { db, found, must } from "../lib/db.ts";
 import { sendEmail } from "../lib/email.ts";
 import { type Env, fail, text, z } from "../lib/http.ts";
@@ -61,7 +61,7 @@ r.get(S, async (c) => {
     title: project.gallery_settings?.title || project.title,
     shootDate: shootOf(project.events)?.starts_at || "",
     accentColor: project.gallery_settings?.accentColor || "",
-    statements: STATEMENTS,
+    statements: statementsFor(project.gallery_settings?.consentClub || ""),
     answer: mine
       ? { childName: mine.child_name, answer: mine.answer, note: mine.note, parentName: mine.parent_name, parentEmail: mine.parent_email, photoUrl }
       : null,
@@ -105,7 +105,7 @@ r.post(S, async (c) => {
   if (restricted && !file && !before?.photo_path && !b.note) fail(400, "Voeg een foto toe, of schrijf hoe we je kind herkennen.");
 
   const project = found(await db.from("projects").select("title, gallery_settings").eq("id", form.project_id).maybeSingle(), CLOSED) as any;
-  const statement = STATEMENTS[b.language][b.answer];
+  const statement = statementsFor(project.gallery_settings?.consentClub || "")[b.language][b.answer];
   const path = file ? await uploadPrivate(`consents/${form.project_id}`, file) : "";
   const fields = {
     child_name: b.childName,
@@ -143,7 +143,8 @@ r.post(S, async (c) => {
   // The studio hears about every limit and every change, as these change the shoot.
   const changed = Boolean(before) && before.answer !== saved.answer;
   if (restricted || changed) {
-    const label = STATEMENTS.nl[b.answer].title;
+    const titles = statementsFor("").nl;
+    const label = titles[b.answer].title;
     await Promise.all([
       sendEmail({
         to: EMAIL_ADMIN_NOTIFY,
@@ -151,7 +152,7 @@ r.post(S, async (c) => {
         subject: `${saved.child_name}: ${label.toLowerCase()} · ${project.title}`,
         html: consentStudioEmail({
           childName: saved.child_name, parentName: saved.parent_name, parentEmail: saved.parent_email, projectTitle: project.title, label,
-          changedFrom: changed ? STATEMENTS.nl[before.answer as keyof typeof STATEMENTS.nl].title : "", hasPhoto: Boolean(saved.photo_path), note: saved.note,
+          changedFrom: changed ? titles[before.answer as Answer].title : "", hasPhoto: Boolean(saved.photo_path), note: saved.note,
           link: `${SITE_URL}/admin/project/${form.project_id}?tab=consent`,
         }),
       }),

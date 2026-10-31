@@ -75,6 +75,8 @@ export interface Project {
   deliverables: Deliverable[];
   gallerySettings: {
     title?: string; subtitle?: string; coverUrl?: string; coverImageId?: string; accentColor?: string; earlyDownloads?: EarlyDownloads;
+    /** Whose social media the photos go on, in the text parents agree to. */
+    consentClub?: string;
     /** The look of the client's gallery; see gallery/styles.ts. */
     style?: string;
   };

@@ -13,38 +13,43 @@ export type Language = "nl" | "en";
 
 /**
  * What a parent agrees to, word for word. The form shows these, the answer
- * keeps its own copy as proof, and the confirmation mail repeats it.
+ * keeps its own copy as proof, and the confirmation mail repeats it. `club` is
+ * whose social media the photos go on (gallerySettings.consentClub): a match
+ * also reaches the parents of the other team, for whom "the club" is their own.
  */
-export const STATEMENTS: Record<Language, Record<Answer, { title: string; body: string }>> = {
-  nl: {
-    full: {
-      title: "Op de foto en op social media",
-      body: "Mijn kind mag op de foto. De foto's mogen op social media van de club en van PhotoDeCaffeine.",
+export function statementsFor(club: string): Record<Language, Record<Answer, { title: string; body: string }>> {
+  const name = club.trim();
+  return {
+    nl: {
+      full: {
+        title: "Op de foto en op social media",
+        body: `Mijn kind mag op de foto. De foto's mogen op social media van ${name || "de club"} en van PhotoDeCaffeine.`,
+      },
+      no_social: {
+        title: "Op de foto, niet op social media",
+        body: `Mijn kind mag op de foto, maar foto's waar mijn kind op staat, komen niet op social media. ${name || "De club"} en de ouders van de spelers kunnen ze wel zien in de afgeschermde galerij.`,
+      },
+      no_photo: {
+        title: "Niet op de foto",
+        body: "Mijn kind mag niet op de foto. Staat mijn kind er toch per ongeluk op, dan haalt PhotoDeCaffeine die foto eruit. Niemand anders krijgt hem te zien.",
+      },
     },
-    no_social: {
-      title: "Op de foto, niet op social media",
-      body: "Mijn kind mag op de foto, maar foto's waar mijn kind op staat, komen niet op social media. De club en de ouders van het team kunnen ze wel zien in de afgeschermde galerij.",
+    en: {
+      full: {
+        title: "In photos and on social media",
+        body: `My child may be photographed. The photos may be posted on the social media of ${name || "the club"} and of PhotoDeCaffeine.`,
+      },
+      no_social: {
+        title: "In photos, not on social media",
+        body: `My child may be photographed, but photos showing my child will not go on social media. ${name || "The club"} and the players' parents can see them in the private gallery.`,
+      },
+      no_photo: {
+        title: "Not in photos",
+        body: "My child may not be photographed. If my child still ends up in a photo by accident, PhotoDeCaffeine takes that photo out. Nobody else gets to see it.",
+      },
     },
-    no_photo: {
-      title: "Niet op de foto",
-      body: "Mijn kind mag niet op de foto. Staat mijn kind er toch per ongeluk op, dan haalt PhotoDeCaffeine die foto eruit. Niemand anders krijgt hem te zien.",
-    },
-  },
-  en: {
-    full: {
-      title: "In photos and on social media",
-      body: "My child may be photographed. The photos may be posted on the social media of the club and of PhotoDeCaffeine.",
-    },
-    no_social: {
-      title: "In photos, not on social media",
-      body: "My child may be photographed, but photos showing my child will not go on social media. The club and the team's parents can see them in the private gallery.",
-    },
-    no_photo: {
-      title: "Not in photos",
-      body: "My child may not be photographed. If my child still ends up in a photo by accident, PhotoDeCaffeine takes that photo out. Nobody else gets to see it.",
-    },
-  },
-};
+  };
+}
 
 export const consentUrl = (token: string, key?: string) => `${SITE_URL}/toestemming/${token}${key ? `?k=${key}` : ""}`;
 

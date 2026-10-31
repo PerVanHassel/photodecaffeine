@@ -8,7 +8,8 @@ import { copyText } from "../../gallery/share";
 import { saveFile } from "../../portal/data";
 import { keys, useAction, useConsent } from "../../queries";
 import type { ConsentAnswer, ConsentRow, ConsentState, Project } from "../../types";
-import { Button, Card, Empty, ErrorState, Input, Photo, Pill, Skeleton, useConfirm } from "../../ui";
+import { Button, Card, Empty, ErrorState, Input, Photo, Pill, Skeleton, TextField, useConfirm } from "../../ui";
+import { useUnsavedChanges } from "../../unsaved";
 import { csvCell } from "./GroupLink";
 
 export const ANSWER_LABEL: Record<ConsentAnswer, string> = { full: "Mag alles", no_social: "Niet posten", no_photo: "Niet in beeld" };
@@ -132,6 +133,8 @@ export function ConsentTab({ project: p }: { project: Project }) {
             <a className="s-btn" href={new URL(form.url).pathname} target="_blank" rel="noreferrer"><ExternalLink size={15} aria-hidden="true" />Bekijken</a>
           </div>
 
+          <ClubName project={p} />
+
           <div className="s-stats" style={{ border: "1px solid var(--line)", borderRadius: "var(--r-sm)" }}>
             <div><b>{s.consents.length}</b><span>Ingevuld</span></div>
             <div><b>{s.totals.full}</b><span>Mag alles</span></div>
@@ -194,6 +197,28 @@ export function ConsentTab({ project: p }: { project: Project }) {
           </div>
         </Card>
       )}
+    </div>
+  );
+}
+
+/** Whose social media the photos go on. Parents read it in what they agree to; at a match that includes the other team's. */
+function ClubName({ project: p }: { project: Project }) {
+  const saved = p.gallerySettings.consentClub || "";
+  const [club, setClub] = useState(saved);
+  const name = club.trim();
+  useUnsavedChanges(name !== saved);
+  const save = useAction({
+    fn: () => put(`/admin/project/${p.id}`, { gallerySettings: { ...p.gallerySettings, consentClub: name } }),
+    invalidate: () => [keys.project(p.id)],
+    success: "Opgeslagen",
+  });
+  return (
+    <div className="s-row" style={{ alignItems: "flex-start" }}>
+      <div style={{ flex: "1 1 280px", minWidth: 0 }}>
+        <TextField label="Op wiens social media komen de foto's?" placeholder="Bijv. DVO'60" maxLength={60} value={club} onChange={(e) => setClub(e.target.value)}
+          hint={`Ouders lezen: "De foto's mogen op social media van ${name || "de club"} en van PhotoDeCaffeine."`} />
+      </div>
+      {name !== saved && <Button variant="primary" loading={save.isPending} style={{ marginTop: 24 }} onClick={() => save.mutate()}>Opslaan</Button>}
     </div>
   );
 }

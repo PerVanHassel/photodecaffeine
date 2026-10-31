@@ -173,12 +173,12 @@ const STRICT: Record<string, number> = { no_photo: 0, no_social: 1, full: 2 };
 const STATEMENTS = {
   nl: {
     full: { title: "Op de foto en op social media", body: "Mijn kind mag op de foto. De foto's mogen op social media van de club en van PhotoDeCaffeine." },
-    no_social: { title: "Op de foto, niet op social media", body: "Mijn kind mag op de foto, maar foto's waar mijn kind op staat, komen niet op social media. De club en de ouders van het team kunnen ze wel zien in de afgeschermde galerij." },
+    no_social: { title: "Op de foto, niet op social media", body: "Mijn kind mag op de foto, maar foto's waar mijn kind op staat, komen niet op social media. De club en de ouders van de spelers kunnen ze wel zien in de afgeschermde galerij." },
     no_photo: { title: "Niet op de foto", body: "Mijn kind mag niet op de foto. Staat mijn kind er toch per ongeluk op, dan haalt PhotoDeCaffeine die foto eruit. Niemand anders krijgt hem te zien." },
   },
   en: {
     full: { title: "In photos and on social media", body: "My child may be photographed. The photos may be posted on the social media of the club and of PhotoDeCaffeine." },
-    no_social: { title: "In photos, not on social media", body: "My child may be photographed, but photos showing my child will not go on social media. The club and the team's parents can see them in the private gallery." },
+    no_social: { title: "In photos, not on social media", body: "My child may be photographed, but photos showing my child will not go on social media. The club and the players' parents can see them in the private gallery." },
     no_photo: { title: "Not in photos", body: "My child may not be photographed. If my child still ends up in a photo by accident, PhotoDeCaffeine takes that photo out. Nobody else gets to see it." },
   },
 };
@@ -201,7 +201,7 @@ function consentForm(token: string, key: string) {
   if (!form || (!form.active && !mine)) throw new ApiError(404, "Deze link werkt niet (meer).");
   const x = projects.find((y) => y.id === form.projectId);
   return {
-    title: x.gallerySettings.title || x.title, shootDate: x.events.find((e: Json) => e.kind === "shoot")?.startsAt || iso(1, 8, 45), accentColor: "", statements: STATEMENTS,
+    title: x.gallerySettings.title || x.title, shootDate: x.events.find((e: Json) => e.kind === "shoot")?.startsAt || iso(1, 8, 45), accentColor: "", statements: JSON.parse(JSON.stringify(STATEMENTS).replace(/\b[Dd]e club|\b[Tt]he club/g, (m) => x.gallerySettings.consentClub || m)),
     answer: mine ? { childName: mine.childName, answer: mine.answer, note: mine.note, parentName: mine.parentName, parentEmail: mine.parentEmail, photoUrl: mine.photoUrl } : null,
   };
 }
