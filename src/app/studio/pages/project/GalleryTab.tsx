@@ -327,12 +327,18 @@ function SortablePhoto({ image, index, isCover, tags, onRemoveTag, picked, picki
         {image.restriction && <span className={`s-mark ${image.restriction}`}>{MARK_LABEL[image.restriction]}</span>}
         {tags && (
           <div className="s-tagchips">
-            {tags.map((t) => (
+            {/* A team photo can have the whole team on it: only who needs care gets a name. */}
+            {tags.filter((t) => t.answer !== "full").map((t) => (
               <button key={t.id} type="button" className={`s-tagchip ${t.answer}`} title={`${t.child}: ${CHILD_LABEL[t.answer]}. Aangewezen door ${t.by || "een ouder"}. Klik om weg te halen.`}
                 aria-label={`${t.child}, ${CHILD_LABEL[t.answer]}. Aanwijzing weghalen`} onPointerDown={(e) => e.stopPropagation()} onClick={() => onRemoveTag(t)}>
                 {t.child.trim().split(/\s+/)[0]}{t.answer === "unknown" ? " ?" : ""}
               </button>
             ))}
+            {tags.some((t) => t.answer === "full") && (
+              <span className="s-tagchip" title={`Mogen op de foto en op social media: ${tags.filter((t) => t.answer === "full").map((t) => t.child).join(", ")}`}>
+                {tags.filter((t) => t.answer === "full").length} ok
+              </span>
+            )}
           </div>
         )}
         <div className="corner">
