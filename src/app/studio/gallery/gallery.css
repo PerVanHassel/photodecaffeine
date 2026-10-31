@@ -494,6 +494,20 @@
 .g-share-cta:hover { text-decoration-thickness: 2px; }
 .g-share-cta svg { width: 16px; height: 16px; }
 .g-hero--zacht .g-share-cta { align-self: center; }
+/* The studio's Instagram, under the intro of every look and in the footer. */
+.g-insta {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; width: fit-content; max-width: 100%; margin-top: 16px; padding: 9px 16px;
+  border: 1px solid var(--g-line); border-radius: var(--g-control); color: var(--g-text); font-size: 14px; text-decoration: none; transition: border-color 0.2s;
+}
+.g-insta:hover { border-color: var(--g-text); }
+.g-insta svg { flex: none; width: 17px; height: 17px; color: var(--g-accent-ink); }
+.g-insta span { color: var(--g-muted); }
+.g-insta b { font-weight: 600; }
+.g-hero--zacht .g-insta { margin-inline: auto; }
+.g-foot-made { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
+.g-foot button { flex: none; white-space: nowrap; }
+.g-foot-made a { display: inline-flex; align-items: center; gap: 6px; color: var(--g-text); font-weight: 600; text-decoration: none; }
+.g-foot-made a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 /* ---------- the group page ---------- */
 .g-guest-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--g-muted); font-size: 12.5px; }

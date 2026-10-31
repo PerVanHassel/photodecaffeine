@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowRight, ArrowUp, ChevronLeft, ChevronRight, Download, Flame, Grid3x3, Heart, MegaphoneOff, Play, Rows2, Share2, Users, X } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUp, ChevronLeft, ChevronRight, Download, Flame, Grid3x3, Heart, Instagram, MegaphoneOff, Play, Rows2, Share2, Users, X } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Helmet } from "react-helmet-async";
 import { useModalFocus } from "../../lib/dialog";
@@ -36,6 +36,8 @@ export interface GalleryActions {
 }
 
 const DONE = ["delivered", "review", "archived"];
+const INSTAGRAM = "https://www.instagram.com/photodecaffeine";
+const INSTAGRAM_HANDLE = "@photodecaffeine";
 const clamp = (min: number, v: number, max: number) => Math.min(max, Math.max(min, v));
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -164,6 +166,7 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, actio
         {guest ? t.guestIntro(guest.name.split(" ")[0], downloads !== "none") : delivered ? t.galleryDownloadIntro : t.galleryChooseIntro}
       </p>
       {(downloads === "watermark" || p.watermarked) && <p className="g-small">{guest ? t.watermarkNoteGuest : t.watermarkNote}</p>}
+      <a className="g-insta" href={INSTAGRAM} target="_blank" rel="noreferrer"><Instagram aria-hidden="true" /><span>{t.followInstagram}</span><b>{INSTAGRAM_HANDLE}</b></a>
       {actions.share && !guest && (
         <button type="button" className="g-share-cta" onClick={actions.share}><Users />{t.shareCta}</button>
       )}
@@ -242,7 +245,7 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, actio
       {after}
 
       <footer className="g-foot">
-        <span>{t.madeBy}</span>
+        <span className="g-foot-made">{t.madeBy}<a href={INSTAGRAM} target="_blank" rel="noreferrer"><Instagram aria-hidden="true" />{INSTAGRAM_HANDLE}</a></span>
         <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}><ArrowUp />{t.backToTop}</button>
       </footer>
 

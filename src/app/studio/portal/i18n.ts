@@ -133,6 +133,7 @@ const nl = {
   tapToChoose: "Tik op het hartje bij je favorieten",
   favoriteOf: (names: string) => `Favoriet van ${names}`,
   madeBy: "Gemaakt door PhotoDeCaffeine",
+  followInstagram: "Volg ons op Instagram",
 
   popularShort: "Populair",
   noHearts: "Nog geen hartjes",
@@ -424,6 +425,7 @@ const en: PortalText = {
   tapToChoose: "Tap the heart on your favourites",
   favoriteOf: (names) => `Favourite of ${names}`,
   madeBy: "Made by PhotoDeCaffeine",
+  followInstagram: "Follow us on Instagram",
 
   popularShort: "Popular",
   noHearts: "No hearts yet",
