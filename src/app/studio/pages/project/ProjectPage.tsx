@@ -34,8 +34,8 @@ export function ProjectPage() {
   const p = project.data;
   // A website has no shoot to ask consent for.
   const consent = useConsent(id, !!p && p.type !== "web");
-  const answers = consent.data?.consents || [];
-  const needCare = answers.filter((c) => c.answer !== "full").length;
+  const answers = consent.data?.children || [];
+  const needCare = answers.filter((k) => k.answer !== "full").length;
 
   if (project.isError) {
     return (
@@ -111,7 +111,7 @@ function Stepper({ project: p }: { project: Project }) {
   async function go(stage: Stage) {
     if (stage === p.stage) return;
     if (stage === "delivered" && !["delivered", "review", "archived"].includes(p.stage)) {
-      const childPhotos = consent.data?.consents.some((c) => c.photoUrl) ? " De foto's van de kinderen bij Toestemming worden dan verwijderd." : "";
+      const childPhotos = consent.data?.children.some((k) => k.photoUrl) ?" De foto's van de kinderen bij Toestemming worden dan verwijderd." : "";
       const ok = await confirm({ title: "Project leveren?", body: `De klant krijgt een mail dat de galerij klaarstaat.${childPhotos}`, confirm: "Leveren en mailen" });
       if (!ok) return;
     }

@@ -53,7 +53,7 @@ r.get(S, async (c) => {
   return c.json({
     ...formFields(project),
     answer: mine
-      ? { childName: mine.child_name, answer: mine.answer, note: mine.note, parentName: mine.parent_name, parentEmail: mine.parent_email, photoUrl }
+      ? { childName: mine.child_name, shirtNumber: mine.shirt_number, answer: mine.answer, note: mine.note, parentName: mine.parent_name, parentEmail: mine.parent_email, photoUrl }
       : null,
   });
 });
@@ -62,6 +62,8 @@ r.get(S, async (c) => {
 const answerSchema = z.object({
   key: z.string().optional(),
   childName: text(120).min(1, "Vul de naam van je kind in."),
+  // 07 and 7 are the same shirt.
+  shirtNumber: z.string().trim().regex(/^\d{0,3}$/, "Vul bij het rugnummer alleen cijfers in.").transform((n) => n.replace(/^0+(?=\d)/, "")).default(""),
   answer: z.enum(ANSWERS, { errorMap: () => ({ message: "Kies wat er mag." }) }),
   note: text(300).default(""),
   parentName: text(120).min(1, "Vul je naam in."),
@@ -92,13 +94,14 @@ r.post(S, async (c) => {
   const sent = data.get("photo");
   const file = restricted && sent instanceof File && sent.size > 0 ? sent : null;
   if (file && (!PHOTO_TYPES.includes(file.type) || file.size > MAX_PHOTO_BYTES)) fail(400, "Deze foto kan niet worden opgeslagen. Kies een andere foto.");
-  if (restricted && !file && !before?.photo_path && !b.note) fail(400, "Voeg een foto toe, of schrijf hoe we je kind herkennen.");
+  if (restricted && !file && !before?.photo_path && !b.note && !b.shirtNumber) fail(400, "Voeg een foto of rugnummer toe, of schrijf hoe we je kind herkennen.");
 
   const project = found(await db.from("projects").select("title, gallery_settings").eq("id", form.project_id).maybeSingle(), CLOSED) as any;
   const statement = statementsFor(project.gallery_settings?.consentClub || "")[b.language][b.answer];
   const path = file ? await uploadPrivate(`consents/${form.project_id}`, file) : "";
   const fields = {
     child_name: b.childName,
+    shirt_number: b.shirtNumber,
     answer: b.answer,
     // With a full yes there is nothing to recognise a child by any more.
     note: restricted ? b.note : "",
@@ -141,7 +144,7 @@ r.post(S, async (c) => {
         replyTo: saved.parent_email,
         subject: `${saved.child_name}: ${label.toLowerCase()} · ${project.title}`,
         html: consentStudioEmail({
-          childName: saved.child_name, parentName: saved.parent_name, parentEmail: saved.parent_email, projectTitle: project.title, label,
+          childName: saved.child_name, shirtNumber: saved.shirt_number, parentName: saved.parent_name, parentEmail: saved.parent_email, projectTitle: project.title, label,
           changedFrom: changed ? titles[before.answer as Answer].title : "", hasPhoto: Boolean(saved.photo_path), note: saved.note,
           link: `${SITE_URL}/admin/project/${form.project_id}?tab=consent`,
         }),

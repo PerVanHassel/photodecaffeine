@@ -163,11 +163,12 @@ export function consentReceiptEmail(o: {
 
 /** To the studio: a child who may not be shown or posted, or a parent who changed their mind. No photo in here: it stays behind the login. */
 export function consentStudioEmail(o: {
-  childName: string; parentName: string; parentEmail: string; projectTitle: string; label: string; changedFrom: string; hasPhoto: boolean; note: string; link: string;
+  childName: string; shirtNumber: string; parentName: string; parentEmail: string; projectTitle: string; label: string; changedFrom: string; hasPhoto: boolean; note: string; link: string;
 }): string {
   const lines = [
     o.changedFrom ? `Eerst was het: ${escapeHtml(o.changedFrom)}.` : "",
     `Ingevuld door ${escapeHtml(o.parentName)} (${escapeHtml(o.parentEmail)}).`,
+    o.shirtNumber ? `Rugnummer: ${escapeHtml(o.shirtNumber)}.` : "",
     o.note ? `Herkenbaar aan: ${escapeHtml(o.note)}.` : "",
     o.hasPhoto ? "De foto van het kind staat in de admin." : "",
   ].filter(Boolean).join("<br>");

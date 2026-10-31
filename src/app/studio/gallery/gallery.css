@@ -596,6 +596,7 @@
 .g-consent .g-gate-form { gap: 24px; }
 .g-consent .g-small a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
 .g-field-hint { color: var(--g-faint); font-size: 12.5px; font-weight: 400; }
+.g-field-number input { max-width: 110px; }
 .g-choices { display: grid; gap: 8px; min-width: 0; margin: 0; padding: 0; border: 0; }
 .g-consent .g-field > label, .g-choices legend { color: var(--g-text); font-size: 14px; font-weight: 500; }
 .g-choices legend { padding: 0; margin-bottom: 6px; }

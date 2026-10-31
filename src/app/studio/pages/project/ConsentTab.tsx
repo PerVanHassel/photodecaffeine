@@ -7,7 +7,7 @@ import { ago, fmt, fmtDateTime } from "../../format";
 import { copyText } from "../../gallery/share";
 import { saveFile } from "../../portal/data";
 import { keys, useAction, useConsent } from "../../queries";
-import type { ConsentAnswer, ConsentRow, ConsentState, Project } from "../../types";
+import type { ConsentAnswer, ConsentChild, ConsentRow, ConsentState, Project } from "../../types";
 import { Button, Card, Empty, ErrorState, Input, Photo, Pill, Skeleton, TextField, useConfirm } from "../../ui";
 import { useUnsavedChanges } from "../../unsaved";
 import { csvCell } from "./GroupLink";
@@ -25,26 +25,29 @@ function parentMessage(p: Project, url: string) {
 }
 
 /** The children who need care, with a photo to recognise them by. Also on the callsheet and above the gallery. */
-export function RestrictedChildren({ consents, compact, onRemove }: { consents: ConsentRow[]; compact?: boolean; onRemove?: (c: ConsentRow) => void }) {
+export function RestrictedChildren({ kids, compact, onRemove }: { kids: ConsentChild[]; compact?: boolean; onRemove?: (c: ConsentRow) => void }) {
   return (
     <div className={compact ? "s-kids compact" : "s-kids"}>
-      {consents.map((c) => (
-        <article key={c.id} className="s-kid">
-          {c.photoUrl
-            ? <a href={c.photoUrl} target="_blank" rel="noreferrer" aria-label={`Foto van ${c.childName} groot openen`}><Photo src={c.photoUrl} alt={`Foto van ${c.childName}`} /></a>
+      {kids.map((k) => (
+        <article key={k.answers[0].id} className="s-kid">
+          {k.photoUrl
+            ? <a href={k.photoUrl} target="_blank" rel="noreferrer" aria-label={`Foto van ${k.name} groot openen`}><Photo src={k.photoUrl} alt={`Foto van ${k.name}`} /></a>
             : <Photo />}
           <div className="s-stack sm">
-            <b>{c.childName}</b>
-            <div><Pill tone={c.answer === "no_photo" ? "bad" : "warn"}>{ANSWER_LABEL[c.answer]}</Pill></div>
-            {c.note && <span className="s-small">{c.note}</span>}
-            {!compact && (
-              <span className="s-small s-muted">
-                {c.parentName}<br />
-                <a href={`mailto:${c.parentEmail}`}>{c.parentEmail}</a><br />
-                <span title={fmtDateTime(c.updatedAt)}>{ago(c.updatedAt)}</span>
-              </span>
-            )}
-            {onRemove && <Button size="sm" variant="ghost" icon={<Trash2 />} style={{ alignSelf: "flex-start" }} onClick={() => onRemove(c)}>Verwijderen</Button>}
+            <b>{k.name}{k.number && <span className="s-muted"> #{k.number}</span>}</b>
+            <div><Pill tone={k.answer === "no_photo" ? "bad" : "warn"}>{ANSWER_LABEL[k.answer]}</Pill></div>
+            {k.mixed && <span className="s-small">Ouders kozen iets anders. De strengste keuze telt.</span>}
+            {k.note && <span className="s-small">{k.note}</span>}
+            {!compact && k.answers.map((c) => (
+              <div key={c.id} className="s-stack sm">
+                <span className="s-small s-muted">
+                  {c.parentName}{k.mixed && <b> · {ANSWER_LABEL[c.answer].toLowerCase()}</b>}<br />
+                  <a href={`mailto:${c.parentEmail}`}>{c.parentEmail}</a><br />
+                  <span title={fmtDateTime(c.updatedAt)}>{ago(c.updatedAt)}</span>
+                </span>
+                {onRemove && <Button size="sm" variant="ghost" icon={<Trash2 />} style={{ alignSelf: "flex-start" }} onClick={() => onRemove(c)}>Verwijderen</Button>}
+              </div>
+            ))}
           </div>
         </article>
       ))}
@@ -55,14 +58,14 @@ export function RestrictedChildren({ consents, compact, onRemove }: { consents: 
 /** Above the gallery while photos are being picked out. */
 export function ConsentReminder({ project: p }: { project: Project }) {
   const consent = useConsent(p.id);
-  const kids = (consent.data?.consents || []).filter((c) => c.answer !== "full");
+  const kids = (consent.data?.children || []).filter((k) => k.answer !== "full");
   if (kids.length === 0) return null;
   return (
     <Card
       title={`Let op bij het uitzoeken: ${kids.length} ${kids.length === 1 ? "kind" : "kinderen"}`}
       action={<Link className="s-btn sm" to={`/admin/project/${p.id}?tab=consent`}>Alle toestemmingen</Link>}
     >
-      <RestrictedChildren consents={kids} compact />
+      <RestrictedChildren kids={kids} compact />
     </Card>
   );
 }
@@ -109,16 +112,16 @@ export function ConsentTab({ project: p }: { project: Project }) {
     );
   }
 
-  const restricted = s.consents.filter((c) => c.answer !== "full");
-  const allowed = s.consents.filter((c) => c.answer === "full");
-  const photos = s.consents.filter((c) => c.photoUrl).length;
+  const restricted = s.children.filter((k) => k.answer !== "full");
+  const allowed = s.children.filter((k) => k.answer === "full");
+  const numbers = allowed.some((k) => k.number);
   const message = parentMessage(p, form.url);
 
   async function copy(what: "link" | "message", text: string) {
     if (await copyText(text)) setCopied(what);
   }
   async function askRemove(c: ConsentRow) {
-    if (await confirm({ title: `${c.childName} verwijderen?`, body: `De keuze van ${c.parentName} en de foto gaan weg. Daarna weet je niet meer wat deze ouder koos.`, confirm: "Verwijderen", danger: true })) remove.mutate(c);
+    if (await confirm({ title: `Keuze van ${c.parentName} verwijderen?`, body: `Het gaat om ${c.childName}. De keuze en de foto van deze ouder gaan weg. Daarna weet je niet meer wat deze ouder koos.`, confirm: "Verwijderen", danger: true })) remove.mutate(c);
   }
 
   return (
@@ -137,7 +140,7 @@ export function ConsentTab({ project: p }: { project: Project }) {
           <ClubName project={p} />
 
           <div className="s-stats" style={{ border: "1px solid var(--line)", borderRadius: "var(--r-sm)" }}>
-            <div><b>{s.consents.length}</b><span>Ingevuld</span></div>
+            <div><b>{s.children.length}</b><span>Kinderen</span></div>
             <div><b>{s.totals.full}</b><span>Mag alles</span></div>
             <div><b>{s.totals.no_social}</b><span>Niet posten</span></div>
             <div><b>{s.totals.no_photo}</b><span>Niet in beeld</span></div>
@@ -151,7 +154,7 @@ export function ConsentTab({ project: p }: { project: Project }) {
               }}>
                 {form.active ? "Link uitzetten" : "Link weer aanzetten"}
               </Button>
-              {photos > 0 && (
+              {s.children.some((k) => k.photoUrl) && (
                 <Button size="sm" variant="ghost" icon={<Trash2 />} loading={clearPhotos.isPending} onClick={async () => {
                   if (await confirm({ title: "Foto's van de kinderen verwijderen?", body: "De keuzes blijven bewaard. Bij levering gebeurt dit vanzelf.", confirm: "Verwijderen", danger: true })) clearPhotos.mutate();
                 }}>
@@ -159,18 +162,18 @@ export function ConsentTab({ project: p }: { project: Project }) {
                 </Button>
               )}
             </div>
-            {s.consents.length > 0 && <Button size="sm" icon={<Download />} onClick={() => saveConsents(p, s.consents)}>Als CSV</Button>}
+            {s.children.length > 0 && <Button size="sm" icon={<Download />} onClick={() => saveConsents(p, s.children.flatMap((k) => k.answers))}>Als CSV</Button>}
           </div>
         </div>
       </Card>
 
-      {s.consents.length === 0 && (
+      {s.children.length === 0 && (
         <Card><Empty title="Nog niets ingevuld">Stuur de link naar de ouders. Je krijgt een mail zodra iemand aangeeft dat iets niet mag.</Empty></Card>
       )}
 
       {restricted.length > 0 && (
         <Card title={`Let op: ${restricted.length} ${restricted.length === 1 ? "kind" : "kinderen"}`}>
-          <RestrictedChildren consents={restricted} onRemove={askRemove} />
+          <RestrictedChildren kids={restricted} onRemove={askRemove} />
         </Card>
       )}
 
@@ -178,21 +181,22 @@ export function ConsentTab({ project: p }: { project: Project }) {
         <Card title={`Mag op de foto en op social media: ${allowed.length}`} bodyClass="none">
           <div className="s-table-wrap">
             <table className="s-table">
-              <thead><tr><th>Kind</th><th>Ouder</th><th>Ingevuld</th><th /></tr></thead>
+              <thead><tr><th>Kind</th>{numbers && <th>Rugnummer</th>}<th>Ouder</th><th>Ingevuld</th><th /></tr></thead>
               <tbody>
-                {allowed.map((c) => (
+                {allowed.flatMap((k) => k.answers.map((c, i) => (
                   <tr key={c.id}>
-                    <td style={{ fontWeight: 600 }}>{c.childName}</td>
+                    {i === 0 && <td rowSpan={k.answers.length} style={{ fontWeight: 600 }}>{k.name}</td>}
+                    {i === 0 && numbers && <td rowSpan={k.answers.length} className="s-mono">{k.number && `#${k.number}`}</td>}
                     <td>
                       <div>{c.parentName}</div>
                       <a className="s-small s-muted" href={`mailto:${c.parentEmail}`}>{c.parentEmail}</a>
                     </td>
                     <td className="s-small s-muted" title={fmtDateTime(c.updatedAt)} style={{ whiteSpace: "nowrap" }}>{ago(c.updatedAt)}</td>
                     <td className="right">
-                      <Button size="sm" variant="ghost" iconOnly icon={<Trash2 />} aria-label={`${c.childName} verwijderen`} title="Verwijderen" onClick={() => askRemove(c)} />
+                      <Button size="sm" variant="ghost" iconOnly icon={<Trash2 />} aria-label={`Keuze van ${c.parentName} verwijderen`} title="Verwijderen" onClick={() => askRemove(c)} />
                     </td>
                   </tr>
-                ))}
+                )))}
               </tbody>
             </table>
           </div>
@@ -228,8 +232,8 @@ function ClubName({ project: p }: { project: Project }) {
 function saveConsents(p: Project, consents: ConsentRow[]) {
   const when = (iso: string) => fmt(iso, "yyyy-MM-dd HH:mm");
   const rows = [
-    ["Kind", "Keuze", "Verklaring", "Herkenbaar aan", "Ouder", "E-mail", "Ingevuld", "Laatst gewijzigd"],
-    ...consents.map((c) => [c.childName, ANSWER_LABEL[c.answer], c.statement, c.note, c.parentName, c.parentEmail, when(c.createdAt), when(c.updatedAt)]),
+    ["Kind", "Rugnummer", "Keuze", "Verklaring", "Herkenbaar aan", "Ouder", "E-mail", "Ingevuld", "Laatst gewijzigd"],
+    ...consents.map((c) => [c.childName, c.shirtNumber, ANSWER_LABEL[c.answer], c.statement, c.note, c.parentName, c.parentEmail, when(c.createdAt), when(c.updatedAt)]),
   ];
   const name = (p.gallerySettings.title || p.title).replace(/[^\w-]+/g, "-").toLowerCase();
   saveFile(`toestemming-${name}.csv`, `﻿${rows.map((r) => r.map(csvCell).join(";")).join("\r\n")}`, "text/csv;charset=utf-8");

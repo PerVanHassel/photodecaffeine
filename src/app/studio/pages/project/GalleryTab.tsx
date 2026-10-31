@@ -331,7 +331,7 @@ function SortablePhoto({ image, index, isCover, tags, onRemoveTag, picked, picki
             {tags.filter((t) => t.answer !== "full").map((t) => (
               <button key={t.id} type="button" className={`s-tagchip ${t.answer}`} title={`${t.child}: ${CHILD_LABEL[t.answer]}. Aangewezen door ${t.by || "een ouder"}. Klik om weg te halen.`}
                 aria-label={`${t.child}, ${CHILD_LABEL[t.answer]}. Aanwijzing weghalen`} onPointerDown={(e) => e.stopPropagation()} onClick={() => onRemoveTag(t)}>
-                {t.child.trim().split(/\s+/)[0]}{t.answer === "unknown" ? " ?" : ""}
+                {t.child.trim().split(/\s+/)[0]}{t.number ? ` #${t.number}` : ""}{t.answer === "unknown" ? " ?" : ""}
               </button>
             ))}
             {tags.some((t) => t.answer === "full") && (

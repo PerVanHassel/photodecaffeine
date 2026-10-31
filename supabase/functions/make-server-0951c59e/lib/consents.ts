@@ -78,62 +78,110 @@ export async function consentFormFor(projectId: string): Promise<ConsentFormRow 
 
 // Whoever needs the most care comes first.
 const STRICTNESS: Record<Answer, number> = { no_photo: 0, no_social: 1, full: 2 };
+const strictFirst = (a: { answer: Answer }, b: { answer: Answer }) => STRICTNESS[a.answer] - STRICTNESS[b.answer];
 
-/** A project's link and every answer, for the studio. */
+const normalName = (name: string) => name.normalize("NFD").replace(/\p{M}/gu, "").trim().toLowerCase().replace(/\s+/g, " ");
+const firstName = (name: string) => normalName(name).split(" ")[0];
+
+type AboutChild = { child_name: string; answer: Answer; shirt_number: string };
+
+const numbersOf = (rows: AboutChild[]) => [...new Set(rows.map((c) => c.shirt_number).filter(Boolean))].join(" / ");
+
+/**
+ * The answers that are about the same child: both parents can fill in the form,
+ * and not always in the same words. The same full name is one child. A first
+ * name alone goes with the one child it can be. A different shirt number keeps
+ * first names apart, as a match can have a Daan in both teams.
+ */
+export function groupByChild<T extends AboutChild>(rows: T[]): T[][] {
+  const words = (c: T) => normalName(c.child_name).split(" ").length;
+  const groups: T[][] = [];
+  // Full names first, so a first name alone can see which children it could be.
+  for (const row of [...rows].sort((a, b) => words(b) - words(a))) {
+    const name = normalName(row.child_name);
+    const number = row.shirt_number;
+    const otherNumber = (g: T[]) => number !== "" && g.some((c) => c.shirt_number && c.shirt_number !== number);
+    let group = groups.find((g) => g.some((c) => normalName(c.child_name) === name) && (name.includes(" ") || !otherNumber(g)));
+    if (!group && !name.includes(" ")) {
+      const fits = groups.filter((g) => g.some((c) => firstName(c.child_name) === name) && !otherNumber(g));
+      const sameNumber = fits.filter((g) => number !== "" && g.some((c) => c.shirt_number === number));
+      group = sameNumber.length === 1 ? sameNumber[0] : fits.length === 1 ? fits[0] : undefined;
+    }
+    if (group) group.push(row);
+    else groups.push([row]);
+  }
+  return groups;
+}
+
+/** A project's link and its answers per child, for the studio. Parents can differ: the strictest answer counts. */
 export async function consentState(projectId: string) {
   const form = await consentFormFor(projectId);
   const rows = (must(await db.from("consents").select("*").eq("project_id", projectId)) || []) as any[];
   const signed = await signPaths(rows.map((c) => c.photo_path));
-  const consents = rows
-    .sort((a, b) => STRICTNESS[a.answer as Answer] - STRICTNESS[b.answer as Answer] || a.child_name.localeCompare(b.child_name, "nl"))
-    .map((c) => ({
-      id: c.id,
-      childName: c.child_name,
-      answer: c.answer as Answer,
-      note: c.note,
-      photoUrl: c.photo_path ? signed.get(c.photo_path) || "" : "",
-      parentName: c.parent_name,
-      parentEmail: c.parent_email,
-      statement: c.statement,
-      createdAt: c.created_at,
-      updatedAt: c.updated_at,
-    }));
-  const count = (answer: Answer) => rows.filter((c) => c.answer === answer).length;
+  const photoOf = (c: any) => (c.photo_path ? signed.get(c.photo_path) || "" : "");
+  const children = groupByChild(rows)
+    .map((group) => {
+      group.sort(strictFirst);
+      return {
+        // The fullest name that was given; among equals the strictest parent's.
+        name: group.map((c) => c.child_name).sort((a, b) => normalName(b).length - normalName(a).length)[0],
+        number: numbersOf(group),
+        answer: group[0].answer as Answer,
+        mixed: group.some((c) => c.answer !== group[0].answer),
+        note: [...new Set(group.map((c) => c.note).filter(Boolean))].join(" · "),
+        photoUrl: group.map(photoOf).find(Boolean) || "",
+        answers: group.map((c) => ({
+          id: c.id,
+          childName: c.child_name,
+          shirtNumber: c.shirt_number,
+          answer: c.answer as Answer,
+          note: c.note,
+          photoUrl: photoOf(c),
+          parentName: c.parent_name,
+          parentEmail: c.parent_email,
+          statement: c.statement,
+          createdAt: c.created_at,
+          updatedAt: c.updated_at,
+        })),
+      };
+    })
+    .sort((a, b) => strictFirst(a, b) || a.name.localeCompare(b.name, "nl"));
+  const count = (answer: Answer) => children.filter((k) => k.answer === answer).length;
   return {
     form: form ? { url: consentUrl(form.token), active: form.active, createdAt: form.created_at } : null,
-    consents,
+    children,
     totals: { full: count("full"), no_social: count("no_social"), no_photo: count("no_photo") },
   };
 }
 
-const normalName = (name: string) => name.trim().toLowerCase().replace(/\s+/g, " ");
-
 /**
  * What the answers say about a child a parent pointed out on a photo: the
- * strictest one for that name, or for that first name when only that was given.
+ * strictest one for that child, or for that first name when only that was given.
  * "unknown" when no form names this child, which is a question for the studio.
  */
-export function answerForChild(name: string, consents: { child_name: string; answer: Answer }[]): Answer | "unknown" {
+export function childStatus(name: string, consents: AboutChild[]): { answer: Answer | "unknown"; number: string } {
   const wanted = normalName(name);
-  let same = consents.filter((c) => normalName(c.child_name) === wanted);
-  if (same.length === 0 && !wanted.includes(" ")) same = consents.filter((c) => normalName(c.child_name).split(" ")[0] === wanted);
-  if (same.length === 0) return "unknown";
-  return same.map((c) => c.answer).sort((a, b) => STRICTNESS[a] - STRICTNESS[b])[0];
+  const groups = groupByChild(consents);
+  let same = groups.filter((g) => g.some((c) => normalName(c.child_name) === wanted));
+  if (same.length === 0 && !wanted.includes(" ")) same = groups.filter((g) => g.some((c) => firstName(c.child_name) === wanted));
+  const rows = same.flat();
+  if (rows.length === 0) return { answer: "unknown", number: "" };
+  return { answer: rows.sort(strictFirst)[0].answer, number: numbersOf(rows) };
 }
 
 /** Every child pointed out on a photo of this project, for the studio. */
 export async function childTags(projectId: string) {
   const [tags, consents] = await Promise.all([
     db.from("gallery_child_tags").select("id, image_id, child_name, gallery_guests ( name )").eq("project_id", projectId).order("created_at"),
-    db.from("consents").select("child_name, answer").eq("project_id", projectId),
+    db.from("consents").select("child_name, answer, shirt_number").eq("project_id", projectId),
   ]);
-  const answers = (must(consents) || []) as { child_name: string; answer: Answer }[];
+  const answers = (must(consents) || []) as AboutChild[];
   return {
     tags: ((must(tags) || []) as any[]).map((t) => ({
       id: t.id,
       imageId: t.image_id,
       child: t.child_name,
-      answer: answerForChild(t.child_name, answers),
+      ...childStatus(t.child_name, answers),
       by: t.gallery_guests?.name || "",
     })),
   };

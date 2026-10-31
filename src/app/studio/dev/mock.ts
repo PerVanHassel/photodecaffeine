@@ -164,41 +164,73 @@ function shareReply(token: string, key: string, preview: boolean) {
 // Consent: a team shoot with an answer of every kind.
 const consentForms: Json[] = [{ projectId: id(52), token: "Tm7pQ4xK9sLw2Bn8", active: true, createdAt: iso(-1) }];
 const consents: Json[] = [
-  ["Daan Verhoeven", "no_photo", PHOTOS[7], "Rugnummer 7", "Ruben Verhoeven", "ruben@example.nl"],
-  ["Milan Jansen", "no_social", PHOTOS[8], "", "Lieke Jansen", "lieke@example.nl"],
-  ["Noah Mulder", "no_social", "", "Rode schoenen, keeper", "Julia Mulder", "julia@example.nl"],
-  ["Sem de Vries", "full", "", "", "Emma de Vries", "emma@example.nl"],
-  ["Finn Bos", "full", "", "", "Tom Bos", "tom@example.nl"],
-  ["Levi Smit", "full", "", "", "Fatima Smit", "fatima@example.nl"],
-].map(([childName, answer, photoUrl, note, parentName, parentEmail], i) => ({
-  id: id(2000 + i), projectId: id(52), key: String(i).padStart(32, "b"), childName, answer, photoUrl, note, parentName, parentEmail,
+  ["Daan Verhoeven", "no_photo", PHOTOS[7], "", "Ruben Verhoeven", "ruben@example.nl", "7"],
+  ["Milan Jansen", "no_social", PHOTOS[8], "", "Lieke Jansen", "lieke@example.nl", "11"],
+  // Both parents, who do not agree.
+  ["Noah Mulder", "no_social", "", "Rode schoenen, keeper", "Julia Mulder", "julia@example.nl", "1"],
+  ["noah  mulder", "full", "", "", "Peter Mulder", "peter@example.nl", "1"],
+  // Both parents, one with the first name only.
+  ["Sem de Vries", "full", "", "", "Emma de Vries", "emma@example.nl", "4"],
+  ["Sem", "full", "", "", "Mark de Vries", "mark@example.nl", ""],
+  ["Finn Bos", "full", "", "", "Tom Bos", "tom@example.nl", ""],
+  ["Levi Smit", "full", "", "", "Fatima Smit", "fatima@example.nl", "9"],
+  // Another Daan, in the other team: his number keeps him apart from Daan Verhoeven.
+  ["Daan", "full", "", "", "Anouk Peeters", "anouk@example.nl", "12"],
+].map(([childName, answer, photoUrl, note, parentName, parentEmail, shirtNumber], i) => ({
+  id: id(2000 + i), projectId: id(52), key: String(i).padStart(32, "b"), childName, shirtNumber, answer, photoUrl, note, parentName, parentEmail,
   statement: "Niet op de foto: Mijn kind mag niet op de foto.", createdAt: iso(-1, 20, i), updatedAt: iso(-1, 20, i),
 }));
 // The run also asked for consent: Ruben's son may not be shown, and one parent already pointed a child out.
 consentForms.push({ projectId: id(57), token: "Rn5tK8wQ3yVb7Hs2", active: true, createdAt: iso(-4) });
-consents.push({ id: id(2100), projectId: id(57), key: "c".repeat(32), childName: "Daan Smit", answer: "no_photo", photoUrl: PHOTOS[7], note: "", parentName: "Ruben Smit", parentEmail: "ruben@example.nl", statement: "", createdAt: iso(-4), updatedAt: iso(-4) });
-consents.push({ id: id(2101), projectId: id(57), key: "d".repeat(32), childName: "Lotte Visser", answer: "no_social", photoUrl: "", note: "", parentName: "Sophie Visser", parentEmail: "sophie@example.nl", statement: "", createdAt: iso(-4), updatedAt: iso(-4) });
-consents.push({ id: id(2102), projectId: id(57), key: "e".repeat(32), childName: "Bram Jansen", answer: "full", photoUrl: "", note: "", parentName: "Milan Jansen", parentEmail: "milan@example.nl", statement: "", createdAt: iso(-4), updatedAt: iso(-4) });
+consents.push({ id: id(2100), projectId: id(57), key: "c".repeat(32), childName: "Daan Smit", shirtNumber: "7", answer: "no_photo", photoUrl: PHOTOS[7], note: "", parentName: "Ruben Smit", parentEmail: "ruben@example.nl", statement: "", createdAt: iso(-4), updatedAt: iso(-4) });
+consents.push({ id: id(2101), projectId: id(57), key: "d".repeat(32), childName: "Lotte Visser", shirtNumber: "", answer: "no_social", photoUrl: "", note: "", parentName: "Sophie Visser", parentEmail: "sophie@example.nl", statement: "", createdAt: iso(-4), updatedAt: iso(-4) });
+consents.push({ id: id(2102), projectId: id(57), key: "e".repeat(32), childName: "Bram Jansen", shirtNumber: "", answer: "full", photoUrl: "", note: "", parentName: "Milan Jansen", parentEmail: "milan@example.nl", statement: "", createdAt: iso(-4), updatedAt: iso(-4) });
 const childTags: Json[] = [
   { id: id(2200), projectId: id(57), imageId: id(5703), guestId: id(1005), child: "Lotte Visser" },
+  { id: id(2203), projectId: id(57), imageId: id(5703), guestId: id(1005), child: "Daan Smit" },
   { id: id(2201), projectId: id(57), imageId: id(5704), guestId: id(1006), child: "Bram Jansen" },
   { id: id(2202), projectId: id(57), imageId: id(5705), guestId: id(1003), child: "Sem" },
 ];
 
 const STRICT: Record<string, number> = { no_photo: 0, no_social: 1, full: 2 };
+const strictFirst = (a: Json, b: Json) => STRICT[a.answer] - STRICT[b.answer];
+const normalName = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").trim().toLowerCase().replace(/\s+/g, " ");
+const firstName = (s: string) => normalName(s).split(" ")[0];
+const numbersOf = (rows: Json[]) => [...new Set(rows.map((c) => c.shirtNumber).filter(Boolean))].join(" / ");
 
-/** Mirrors answerForChild in lib/consents.ts. */
-function childAnswer(projectId: string, name: string) {
-  const normal = (s: string) => s.trim().toLowerCase();
-  const list = consents.filter((c) => c.projectId === projectId);
-  let same = list.filter((c) => normal(c.childName) === normal(name));
-  if (!same.length && !normal(name).includes(" ")) same = list.filter((c) => normal(c.childName).split(" ")[0] === normal(name));
-  return same.length ? same.map((c) => c.answer).sort((a, b) => STRICT[a] - STRICT[b])[0] : "unknown";
+/** Mirrors groupByChild in lib/consents.ts. */
+function groupByChild(rows: Json[]) {
+  const words = (c: Json) => normalName(c.childName).split(" ").length;
+  const groups: Json[][] = [];
+  for (const row of [...rows].sort((a, b) => words(b) - words(a))) {
+    const name = normalName(row.childName);
+    const number = row.shirtNumber;
+    const otherNumber = (g: Json[]) => number !== "" && g.some((c) => c.shirtNumber && c.shirtNumber !== number);
+    let group = groups.find((g) => g.some((c) => normalName(c.childName) === name) && (name.includes(" ") || !otherNumber(g)));
+    if (!group && !name.includes(" ")) {
+      const fits = groups.filter((g) => g.some((c) => firstName(c.childName) === name) && !otherNumber(g));
+      const sameNumber = fits.filter((g) => number !== "" && g.some((c) => c.shirtNumber === number));
+      group = sameNumber.length === 1 ? sameNumber[0] : fits.length === 1 ? fits[0] : undefined;
+    }
+    if (group) group.push(row);
+    else groups.push([row]);
+  }
+  return groups;
+}
+
+/** Mirrors childStatus in lib/consents.ts. */
+function childStatus(projectId: string, name: string) {
+  const wanted = normalName(name);
+  const groups = groupByChild(consents.filter((c) => c.projectId === projectId));
+  let same = groups.filter((g) => g.some((c) => normalName(c.childName) === wanted));
+  if (!same.length && !wanted.includes(" ")) same = groups.filter((g) => g.some((c) => firstName(c.childName) === wanted));
+  const rows = same.flat();
+  return rows.length ? { answer: [...rows].sort(strictFirst)[0].answer, number: numbersOf(rows) } : { answer: "unknown", number: "" };
 }
 
 function childTagState(projectId: string) {
   return { tags: childTags.filter((t) => t.projectId === projectId).map((t) => ({
-    id: t.id, imageId: t.imageId, child: t.child, answer: childAnswer(projectId, t.child), by: guestList.find((g) => g.id === t.guestId)?.name || "",
+    id: t.id, imageId: t.imageId, child: t.child, ...childStatus(projectId, t.child), by: guestList.find((g) => g.id === t.guestId)?.name || "",
   })) };
 }
 
@@ -227,11 +259,22 @@ const STATEMENTS = {
 
 function consentState(projectId: string) {
   const form = consentForms.find((f) => f.projectId === projectId);
-  const list = consents.filter((c) => c.projectId === projectId).sort((a, b) => STRICT[a.answer] - STRICT[b.answer] || a.childName.localeCompare(b.childName));
-  const count = (a: string) => list.filter((c) => c.answer === a).length;
+  const children = groupByChild(consents.filter((c) => c.projectId === projectId)).map((group) => {
+    group.sort(strictFirst);
+    return {
+      name: group.map((c) => c.childName).sort((a, b) => normalName(b).length - normalName(a).length)[0],
+      number: numbersOf(group),
+      answer: group[0].answer,
+      mixed: group.some((c) => c.answer !== group[0].answer),
+      note: [...new Set(group.map((c) => c.note).filter(Boolean))].join(" · "),
+      photoUrl: group.map((c) => c.photoUrl).find(Boolean) || "",
+      answers: group.map(({ projectId: _p, key: _k, ...c }) => c),
+    };
+  }).sort((a, b) => strictFirst(a, b) || a.name.localeCompare(b.name));
+  const count = (a: string) => children.filter((k) => k.answer === a).length;
   return {
     form: form ? { url: `https://www.photodecaffeine.com/toestemming/${form.token}`, active: form.active, createdAt: form.createdAt } : null,
-    consents: list.map(({ projectId: _p, key: _k, ...c }) => c),
+    children,
     totals: { full: count("full"), no_social: count("no_social"), no_photo: count("no_photo") },
   };
 }
@@ -244,7 +287,7 @@ function consentForm(token: string, key: string) {
   const x = projects.find((y) => y.id === form.projectId);
   return {
     title: x.gallerySettings.title || x.title, shootDate: x.events.find((e: Json) => e.kind === "shoot")?.startsAt || iso(1, 8, 45), accentColor: "", statements: JSON.parse(JSON.stringify(STATEMENTS).replace(/\b[Dd]e club|\b[Tt]he club/g, (m) => x.gallerySettings.consentClub || m)),
-    answer: mine ? { childName: mine.childName, answer: mine.answer, note: mine.note, parentName: mine.parentName, parentEmail: mine.parentEmail, photoUrl: mine.photoUrl } : null,
+    answer: mine ? { childName: mine.childName, shirtNumber: mine.shirtNumber, answer: mine.answer, note: mine.note, parentName: mine.parentName, parentEmail: mine.parentEmail, photoUrl: mine.photoUrl } : null,
   };
 }
 
@@ -257,7 +300,7 @@ function saveConsent(token: string, body: FormData) {
   const photo = body.get("photo");
   const row = before || { id: crypto.randomUUID(), projectId: form.projectId, key: crypto.randomUUID().replace(/-/g, ""), createdAt: new Date().toISOString() };
   Object.assign(row, {
-    childName: field("childName"), answer: field("answer"), note: restricted ? field("note") : "", parentName: field("parentName"), parentEmail: field("parentEmail"),
+    childName: field("childName"), shirtNumber: field("shirtNumber"), answer: field("answer"), note: restricted ? field("note") : "", parentName: field("parentName"), parentEmail: field("parentEmail"),
     photoUrl: !restricted ? "" : photo instanceof File ? URL.createObjectURL(photo) : before?.photoUrl || "",
     statement: "", updatedAt: new Date().toISOString(),
   });

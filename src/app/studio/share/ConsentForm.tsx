@@ -29,7 +29,7 @@ export type ConsentFormData = {
   /** The wording lives on the server: what is shown here is what an answer keeps as proof. */
   statements: Record<"nl" | "en", Record<ConsentAnswer, Statement>>;
   /** The parent's own answer, when they came back with its key. */
-  answer: { childName: string; answer: ConsentAnswer; note: string; parentName: string; parentEmail: string; photoUrl: string } | null;
+  answer: { childName: string; shirtNumber: string; answer: ConsentAnswer; note: string; parentName: string; parentEmail: string; photoUrl: string } | null;
 };
 type Saved = { key: string; childName: string; answer: ConsentAnswer; parentName: string; parentEmail: string; changed: boolean; mailed: boolean };
 type Lang = ReturnType<typeof usePortalLanguage>;
@@ -129,6 +129,7 @@ function AnswerForm({ path, answerKey, data, parent, intro, lockEmail, lang, t, 
 }) {
   const before = data.answer;
   const [child, setChild] = useState(before?.childName || "");
+  const [shirtNumber, setShirtNumber] = useState(before?.shirtNumber || "");
   const [answer, setAnswer] = useState<ConsentAnswer | "">(before?.answer || "");
   const [note, setNote] = useState(before?.note || "");
   const [parentName, setParentName] = useState(before?.parentName || parent.name);
@@ -174,7 +175,7 @@ function AnswerForm({ path, answerKey, data, parent, intro, lockEmail, lang, t, 
       child: child.trim() ? undefined : t.consentChildRequired,
       answer: answer ? undefined : t.consentAnswerRequired,
       // A refusal must always go through, also from someone who has no photo at hand.
-      photo: restricted && !shownPhoto && !note.trim() ? t.consentNeedPhoto : undefined,
+      photo: restricted && !shownPhoto && !note.trim() && !shirtNumber ? t.consentNeedPhoto : undefined,
       parentName: parentName.trim() ? undefined : t.nameRequired,
       parentEmail: EMAIL.test(parentEmail.trim()) ? undefined : t.emailInvalid,
       declared: declared ? undefined : t.consentDeclareRequired,
@@ -190,6 +191,7 @@ function AnswerForm({ path, answerKey, data, parent, intro, lockEmail, lang, t, 
     const form = new FormData();
     if (answerKey) form.append("key", answerKey);
     form.append("childName", child.trim());
+    form.append("shirtNumber", shirtNumber);
     form.append("answer", answer);
     form.append("note", restricted ? note.trim() : "");
     form.append("parentName", parentName.trim());
@@ -222,6 +224,13 @@ function AnswerForm({ path, answerKey, data, parent, intro, lockEmail, lang, t, 
           {errors.child && <span id="c-child-error" className="g-gate-error" role="alert">{errors.child}</span>}
         </div>
 
+        <div className="g-field g-field-number">
+          <label htmlFor="c-number">{t.consentNumber}</label>
+          <input id="c-number" name="shirt-number" inputMode="numeric" autoComplete="off" maxLength={3} value={shirtNumber} aria-describedby="c-number-hint"
+            onChange={(e) => { setShirtNumber(e.target.value.replace(/\D/g, "")); setErrors((x) => ({ ...x, photo: undefined })); }} />
+          <span id="c-number-hint" className="g-field-hint">{t.consentNumberHint}</span>
+        </div>
+
         <fieldset ref={answerField} className="g-choices" aria-describedby={errors.answer ? "c-answer-error" : undefined}>
           <legend>{t.consentQuestion}</legend>
           {ANSWERS.map((a) => (
@@ -249,7 +258,7 @@ function AnswerForm({ path, answerKey, data, parent, intro, lockEmail, lang, t, 
             <div className="g-field">
               <label htmlFor="c-note">{t.consentNote}</label>
               <input id="c-note" name="note" autoComplete="off" maxLength={300} value={note} onChange={(e) => { setNote(e.target.value); setErrors((x) => ({ ...x, photo: undefined })); }} />
-              {!shownPhoto && <span className="g-field-hint">{t.consentNoteHint}</span>}
+              {!shownPhoto && !shirtNumber && <span className="g-field-hint">{t.consentNoteHint}</span>}
             </div>
             {errors.photo && <span className="g-gate-error" role="alert">{errors.photo}</span>}
           </div>

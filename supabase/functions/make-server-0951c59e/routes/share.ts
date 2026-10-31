@@ -1,7 +1,7 @@
 import { Hono } from "npm:hono";
 import { verifyAdmin } from "../lib/auth.ts";
 import { EMAIL_ADMIN_NOTIFY, EMAIL_RE, SITE_URL } from "../lib/config.ts";
-import { answerForChild, consentUrl, formFields } from "../lib/consents.ts";
+import { childStatus, consentUrl, formFields } from "../lib/consents.ts";
 import { db, found, must } from "../lib/db.ts";
 import { sendEmail } from "../lib/email.ts";
 import { type Env, fail, readBody, text, uuid, z } from "../lib/http.ts";
@@ -229,8 +229,8 @@ r.post(`${S}/child`, async (c) => {
   ));
 
   // The studio hears about a child who needs care: at the first photo, not at every photo.
-  const answers = (must(await db.from("consents").select("child_name, answer").eq("project_id", share.project_id)) || []) as any[];
-  const answer = answerForChild(b.child, answers);
+  const answers = (must(await db.from("consents").select("child_name, answer, shirt_number").eq("project_id", share.project_id)) || []) as any[];
+  const { answer, number } = childStatus(b.child, answers);
   if (answer !== "full") {
     const res = await db.from("gallery_child_tags").select("id", { count: "exact", head: true })
       .eq("project_id", share.project_id).eq("child_name", b.child).gte("created_at", new Date(Date.now() - CHILD_MAIL_GAP_MS).toISOString());
@@ -244,7 +244,7 @@ r.post(`${S}/child`, async (c) => {
           replyTo: guest.email,
           subject: `${b.child} staat op een foto: ${label} · ${project.title}`,
           html: childTagEmail({
-            childName: b.child, label, guestName: guest.name, guestEmail: guest.email, fileName: img.file_name, projectTitle: project.title,
+            childName: number ? `${b.child} #${number}` : b.child, label, guestName: guest.name, guestEmail: guest.email, fileName: img.file_name, projectTitle: project.title,
             link: `${SITE_URL}/admin/project/${share.project_id}?tab=gallery`,
           }),
         }),

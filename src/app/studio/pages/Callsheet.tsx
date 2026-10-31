@@ -66,10 +66,10 @@ export function CallsheetPage() {
           <section className="s-stack">
             <h3>Toestemming</h3>
             <p className="s-small s-muted">
-              {consent.data.consents.length} ingevuld.{" "}
+              {consent.data.children.length} {consent.data.children.length === 1 ? "kind" : "kinderen"} ingevuld.{" "}
               {consent.data.totals.no_photo + consent.data.totals.no_social === 0 ? "Tot nu toe mag alles." : "Let op bij deze kinderen:"}
             </p>
-            <RestrictedChildren consents={consent.data.consents.filter((c) => c.answer !== "full")} />
+            <RestrictedChildren kids={consent.data.children.filter((k) => k.answer !== "full")} />
           </section>
         )}
 

@@ -145,19 +145,36 @@ export interface ChildTag {
   imageId: string;
   child: string;
   answer: ConsentAnswer | "unknown";
+  number: string;
   by: string;
 }
 
-/** Admin: a project's consent link and every answer, strictest first. */
+/** Admin: a project's consent link and its answers per child, strictest first. */
 export interface ConsentState {
   form: { url: string; active: boolean; createdAt: string } | null;
-  consents: ConsentRow[];
+  children: ConsentChild[];
+  /** Per child, by the answer that counts. */
   totals: Record<ConsentAnswer, number>;
+}
+
+/** Both parents of a child can answer, each with their own row. */
+export interface ConsentChild {
+  name: string;
+  /** "7 / 8" when parents gave different numbers. */
+  number: string;
+  /** The strictest answer: the one that counts. */
+  answer: ConsentAnswer;
+  /** The parents chose differently. */
+  mixed: boolean;
+  note: string;
+  photoUrl: string;
+  answers: ConsentRow[];
 }
 
 export interface ConsentRow {
   id: string;
   childName: string;
+  shirtNumber: string;
   answer: ConsentAnswer;
   note: string;
   photoUrl: string;
