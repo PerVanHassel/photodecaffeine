@@ -60,7 +60,8 @@ export const translations = {
       // category one set per kind of client. Middel is the decoy: it costs
       // nearly as much as Groot and gives far less, so Groot reads as the
       // obvious pick. Each category also has its own page under
-      // /services/fotografie/, linked from the menu.
+      // /services/fotografie/, linked from the menu. A tier's units is how
+      // many of the group's unit its price covers, so 1 is a price per unit.
       packages: {
         label: "Pakketten",
         title1: "Kies je",
@@ -70,6 +71,7 @@ export const translations = {
         groupsLabel: "Voor wie?",
         photos: (n: number) => `${n} bewerkte foto's`,
         perPhoto: (price: string) => `${price} per foto`,
+        extraPhoto: (price: string) => `extra foto ${price}`,
         best: "Meeste waarde",
         upsell: (diff: string, name: string) => `Maar ${diff} meer dan ${name}`,
         notIncluded: "Niet inbegrepen:",
@@ -101,6 +103,7 @@ export const translations = {
                 intro: "Voor je eigen auto of motor.",
                 vat: "incl. btw",
                 unit: null,
+                extraPhoto: null,
                 note: null,
                 tiers: [
                   {
@@ -153,6 +156,7 @@ export const translations = {
                 intro: "Voor dealers, garages en verhuurbedrijven. We komen naar je terrein of showroom.",
                 vat: "excl. btw",
                 unit: "per voertuig",
+                extraPhoto: null,
                 note: "Meer dan 10 voertuigen of elke maand een shoot? Dan maken we een prijs op maat.",
                 tiers: [
                   {
@@ -219,6 +223,7 @@ export const translations = {
                 intro: "Voor jou als sporter, bij een wedstrijd, training of eigen shoot.",
                 vat: "incl. btw",
                 unit: null,
+                extraPhoto: null,
                 note: null,
                 tiers: [
                   {
@@ -269,6 +274,7 @@ export const translations = {
                 intro: "Voor je hele team. Samen is het per speler een stuk voordeliger.",
                 vat: "incl. btw",
                 unit: "per speler",
+                extraPhoto: null,
                 note: "Groter team of een heel toernooi? Dan maken we een prijs op maat.",
                 tiers: [
                   {
@@ -308,6 +314,58 @@ export const translations = {
                       "Portret van elke speler",
                       "Korte video van 60 seconden met de hoogtepunten",
                       "Binnen 3 werkdagen",
+                      "Eén galerij voor het hele team",
+                    ],
+                    missing: [],
+                  },
+                ],
+              },
+              {
+                id: "speler",
+                name: "Per speler",
+                intro: "Voor je hele team, met een vast aantal foto's van elke speler. Je betaalt per speler.",
+                vat: "incl. btw",
+                unit: "per speler",
+                extraPhoto: 2.99,
+                note: "Een heel toernooi of meerdere teams? Dan maken we een prijs op maat.",
+                tiers: [
+                  {
+                    id: "klein",
+                    name: "Klein",
+                    pitch: "Elke speler in actie en op de teamfoto.",
+                    price: 25,
+                    photos: 15,
+                    units: 1,
+                    best: false,
+                    items: ["Vanaf 8 spelers", "1,5 uur bij een wedstrijd of training", "Teamfoto", "Binnen 5 werkdagen", "Eén galerij voor het hele team"],
+                    missing: ["Portret van elke speler", "De hele wedstrijd", "Korte video met de hoogtepunten"],
+                  },
+                  {
+                    id: "middel",
+                    name: "Middel",
+                    pitch: "Wat meer tijd en meer foto's.",
+                    price: 49,
+                    photos: 25,
+                    units: 1,
+                    best: false,
+                    items: ["Vanaf 8 spelers", "2 uur bij een wedstrijd of training", "Teamfoto", "Portret van elke speler", "Binnen 5 werkdagen", "Eén galerij voor het hele team"],
+                    missing: ["De hele wedstrijd", "Korte video met de hoogtepunten"],
+                  },
+                  {
+                    id: "groot",
+                    name: "Groot",
+                    pitch: "De hele wedstrijd, met video erbij.",
+                    price: 59,
+                    photos: 50,
+                    units: 1,
+                    best: true,
+                    items: [
+                      "Vanaf 8 spelers",
+                      "De hele wedstrijd of tot 3 uur",
+                      "Teamfoto",
+                      "Portret van elke speler",
+                      "Korte video van 60 seconden met de hoogtepunten",
+                      "Binnen 5 werkdagen",
                       "Eén galerij voor het hele team",
                     ],
                     missing: [],

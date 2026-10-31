@@ -530,7 +530,7 @@
 .pdc-pkgs-body { max-width: 320px; margin: 0; color: rgba(255,251,224,0.55); font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 300; line-height: 1.7; }
 .pdc-pkgs-tabs { display: flex; overflow-x: auto; margin-bottom: 32px; border-bottom: 1px solid rgba(255,251,224,0.08); scrollbar-width: none; }
 .pdc-pkgs-tabs .pdc-filter { font-size: 11px; }
-/* Who it is for: Particulier/Bedrijf, Sporter/Team. */
+/* Who it is for: Particulier/Bedrijf, Sporter/Team/Per speler. */
 .pdc-pkgs-groups { display: flex; align-items: center; flex-wrap: wrap; gap: 16px 32px; margin-bottom: 56px; font-family: 'Inter', sans-serif; }
 .pdc-pkgs-switch { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .pdc-pkgs-switch-label {
@@ -559,7 +559,7 @@
 .pdc-pkg-name { margin: 0 0 12px; color: #fffbe0; font-size: 40px; font-weight: 900; line-height: 1; letter-spacing: -0.02em; text-transform: uppercase; }
 .pdc-pkg-pitch { margin: 0 0 32px; color: rgba(255,251,224,0.55); font-size: 13px; font-weight: 300; line-height: 1.7; }
 .pdc-pkg-price { margin: 0; color: #fffbe0; font-size: 64px; font-weight: 900; line-height: 1; letter-spacing: -0.04em; }
-.pdc-pkg-price span { margin-left: 10px; color: rgba(255,251,224,0.5); font-size: 12px; font-weight: 400; letter-spacing: 0.04em; }
+.pdc-pkg-price span { display: inline-block; margin-left: 10px; color: rgba(255,251,224,0.5); font-size: 12px; font-weight: 400; line-height: 1.4; letter-spacing: 0.04em; }
 .pdc-pkg-upsell { margin: 12px 0 0; color: #c8905a; font-size: 13px; font-weight: 600; line-height: 1.5; letter-spacing: 0.02em; }
 .pdc-pkg-photos {
   display: flex; flex-direction: column; gap: 4px; margin: 24px 0 28px; padding: 18px 0;

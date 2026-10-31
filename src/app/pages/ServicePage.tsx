@@ -495,7 +495,11 @@ function ServicePage({
                 alignSelf: "flex-start",
               }}
             >
-              {loading ? ts.submitting : tp && picked ? tp.submit(picked.name, euro(picked.price)) : ts.submitButton}
+              {loading
+                ? ts.submitting
+                : tp && picked
+                  ? tp.submit(picked.name, picked.priceUnit ? `${euro(picked.price)} ${picked.priceUnit}` : euro(picked.price))
+                  : ts.submitButton}
             </button>
             <FormPrivacyNote />
           </form>
