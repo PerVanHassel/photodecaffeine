@@ -3,14 +3,16 @@ import { Link, useParams } from "react-router";
 import { dayLabel, fmt, fmtTime, KIND_LABEL, mapsLink } from "../format";
 import { beaufort, compass, lightFor, useWeather } from "../light";
 import { MiniMap } from "../map";
-import { useLocations, useProject, useShots } from "../queries";
+import { useConsent, useLocations, useProject, useShots } from "../queries";
 import { Button, ErrorState, Skeleton } from "../ui";
+import { RestrictedChildren } from "./project/ConsentTab";
 
 /** One page with everything needed on the day, meant to be printed or opened on a phone. */
 export function CallsheetPage() {
   const { id = "" } = useParams();
   const project = useProject(id);
   const shots = useShots(id);
+  const consent = useConsent(id);
   const locations = useLocations();
   const p = project.data;
   const shoot = p?.events.find((e) => e.kind === "shoot" && new Date(e.startsAt).getTime() > Date.now() - 86400000) || p?.events.find((e) => e.kind === "shoot");
@@ -58,6 +60,17 @@ export function CallsheetPage() {
             <div><b>{fmtTime(light.blueHourEnd)}</b><span>Blauw uur tot</span></div>
             <div>{weather.data ? <><b>{weather.data.temperature}°</b><span>{weather.data.summary}, {beaufort(weather.data.wind)} Bft, {weather.data.precipitationChance}%</span></> : <><b>–</b><span>Weer volgt</span></>}</div>
           </div>
+        )}
+
+        {consent.data?.form && (
+          <section className="s-stack">
+            <h3>Toestemming</h3>
+            <p className="s-small s-muted">
+              {consent.data.consents.length} ingevuld.{" "}
+              {consent.data.totals.no_photo + consent.data.totals.no_social === 0 ? "Tot nu toe mag alles." : "Let op bij deze kinderen:"}
+            </p>
+            <RestrictedChildren consents={consent.data.consents.filter((c) => c.answer !== "full")} />
+          </section>
         )}
 
         <section className="s-stack">

@@ -19,6 +19,7 @@ import { queryClient } from "../queries";
 import "../studio.css";
 import type { GalleryImage, GalleryProject } from "../types";
 import { cx } from "../ui";
+import { LangSwitch } from "./LangSwitch";
 
 // The page a group link opens, /galerij/<token>. No login: a name and an
 // e-mail address at the door get a key that this browser keeps, and with it
@@ -311,15 +312,6 @@ function Closed({ t, lang, error, retry }: { t: PortalText; lang: Lang; error: u
         <a className="g-btn" href="/">{t.toSite}</a>
       </div>
     </main>
-  );
-}
-
-function LangSwitch({ lang, t }: { lang: Lang; t: PortalText }) {
-  return (
-    <div className="g-lang" role="group" aria-label={t.language}>
-      <button type="button" aria-pressed={lang.language === "nl"} onClick={() => lang.choose("nl")}>NL</button>
-      <button type="button" aria-pressed={lang.language === "en"} onClick={() => lang.choose("en")}>EN</button>
-    </div>
   );
 }
 

@@ -2,7 +2,7 @@ import { keepPreviousData, QueryClient, useMutation, useQuery, useQueryClient, t
 import { toast } from "sonner";
 import { del, errorMessage, get, post, put, upload } from "./api";
 import type {
-  Business, Client, Inquiry, Invoice, Message, Overview, Project, Quote, SearchResults, Shot, StudioEvent, StudioLocation, Task,
+  Business, Client, ConsentState, Inquiry, Invoice, Message, Overview, Project, Quote, SearchResults, Shot, StudioEvent, StudioLocation, Task,
 } from "./types";
 
 export const queryClient = new QueryClient({
@@ -22,6 +22,7 @@ export const keys = {
   messages: (id: string) => ["messages", id] as const,
   shots: (id: string) => ["shots", id] as const,
   groupLink: (id: string) => ["group-link", id] as const,
+  consent: (id: string) => ["consent", id] as const,
   clients: ["clients"] as const,
   client: (id: string) => ["client", id] as const,
   inquiries: ["inquiries"] as const,
@@ -58,6 +59,9 @@ export const useMessages = (projectId: string) =>
 
 export const useShots = (projectId: string) =>
   useQuery({ queryKey: keys.shots(projectId), queryFn: ({ signal }) => get<{ shots: Shot[] }>(`/admin/project/${projectId}/shots`, signal).then((r) => r.shots) });
+
+export const useConsent = (projectId: string, enabled = true) =>
+  useQuery({ queryKey: keys.consent(projectId), queryFn: ({ signal }) => get<ConsentState>(`/admin/project/${projectId}/consent`, signal), enabled: enabled && !!projectId });
 
 export const useClients = () =>
   useQuery({ queryKey: keys.clients, queryFn: ({ signal }) => get<{ clients: Client[] }>("/admin/clients", signal).then((r) => r.clients) });

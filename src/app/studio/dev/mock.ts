@@ -156,6 +156,73 @@ function shareReply(token: string, key: string, preview: boolean) {
   };
 }
 
+// Consent: a team shoot with an answer of every kind.
+const consentForms: Json[] = [{ projectId: id(52), token: "Tm7pQ4xK9sLw2Bn8", active: true, createdAt: iso(-1) }];
+const consents: Json[] = [
+  ["Daan Verhoeven", "no_photo", PHOTOS[7], "Rugnummer 7", "Ruben Verhoeven", "ruben@example.nl"],
+  ["Milan Jansen", "no_social", PHOTOS[8], "", "Lieke Jansen", "lieke@example.nl"],
+  ["Noah Mulder", "no_social", "", "Rode schoenen, keeper", "Julia Mulder", "julia@example.nl"],
+  ["Sem de Vries", "full", "", "", "Emma de Vries", "emma@example.nl"],
+  ["Finn Bos", "full", "", "", "Tom Bos", "tom@example.nl"],
+  ["Levi Smit", "full", "", "", "Fatima Smit", "fatima@example.nl"],
+].map(([childName, answer, photoUrl, note, parentName, parentEmail], i) => ({
+  id: id(2000 + i), projectId: id(52), key: String(i).padStart(32, "b"), childName, answer, photoUrl, note, parentName, parentEmail,
+  statement: "Niet op de foto: Mijn kind mag niet op de foto.", createdAt: iso(-1, 20, i), updatedAt: iso(-1, 20, i),
+}));
+const STRICT: Record<string, number> = { no_photo: 0, no_social: 1, full: 2 };
+const STATEMENTS = {
+  nl: {
+    full: { title: "Op de foto en op social media", body: "Mijn kind mag op de foto. De foto's mogen op social media van de club en van PhotoDeCaffeine." },
+    no_social: { title: "Op de foto, niet op social media", body: "Mijn kind mag op de foto, maar foto's waar mijn kind op staat, komen niet op social media. De club en de ouders van het team kunnen ze wel zien in de afgeschermde galerij." },
+    no_photo: { title: "Niet op de foto", body: "Mijn kind mag niet op de foto. Staat mijn kind er toch per ongeluk op, dan haalt PhotoDeCaffeine die foto eruit. Niemand anders krijgt hem te zien." },
+  },
+  en: {
+    full: { title: "In photos and on social media", body: "My child may be photographed. The photos may be posted on the social media of the club and of PhotoDeCaffeine." },
+    no_social: { title: "In photos, not on social media", body: "My child may be photographed, but photos showing my child will not go on social media. The club and the team's parents can see them in the private gallery." },
+    no_photo: { title: "Not in photos", body: "My child may not be photographed. If my child still ends up in a photo by accident, PhotoDeCaffeine takes that photo out. Nobody else gets to see it." },
+  },
+};
+
+function consentState(projectId: string) {
+  const form = consentForms.find((f) => f.projectId === projectId);
+  const list = consents.filter((c) => c.projectId === projectId).sort((a, b) => STRICT[a.answer] - STRICT[b.answer] || a.childName.localeCompare(b.childName));
+  const count = (a: string) => list.filter((c) => c.answer === a).length;
+  return {
+    form: form ? { url: `https://www.photodecaffeine.com/toestemming/${form.token}`, active: form.active, createdAt: form.createdAt } : null,
+    consents: list.map(({ projectId: _p, key: _k, ...c }) => c),
+    totals: { full: count("full"), no_social: count("no_social"), no_photo: count("no_photo") },
+  };
+}
+
+/** Mirrors routes/consent.ts. */
+function consentForm(token: string, key: string) {
+  const form = consentForms.find((f) => f.token === token);
+  const mine = consents.find((c) => c.key === key && c.projectId === form?.projectId);
+  if (!form || (!form.active && !mine)) throw new ApiError(404, "Deze link werkt niet (meer).");
+  const x = projects.find((y) => y.id === form.projectId);
+  return {
+    title: x.gallerySettings.title || x.title, shootDate: x.events.find((e: Json) => e.kind === "shoot")?.startsAt || iso(1, 8, 45), accentColor: "", statements: STATEMENTS,
+    answer: mine ? { childName: mine.childName, answer: mine.answer, note: mine.note, parentName: mine.parentName, parentEmail: mine.parentEmail, photoUrl: mine.photoUrl } : null,
+  };
+}
+
+function saveConsent(token: string, body: FormData) {
+  const form = consentForms.find((f) => f.token === token);
+  const field = (k: string) => String(body.get(k) || "");
+  const before = consents.find((c) => c.key === field("key"));
+  if (!form || (!form.active && !before)) throw new ApiError(404, "Deze link werkt niet (meer).");
+  const restricted = field("answer") !== "full";
+  const photo = body.get("photo");
+  const row = before || { id: crypto.randomUUID(), projectId: form.projectId, key: crypto.randomUUID().replace(/-/g, ""), createdAt: new Date().toISOString() };
+  Object.assign(row, {
+    childName: field("childName"), answer: field("answer"), note: restricted ? field("note") : "", parentName: field("parentName"), parentEmail: field("parentEmail"),
+    photoUrl: !restricted ? "" : photo instanceof File ? URL.createObjectURL(photo) : before?.photoUrl || "",
+    statement: "", updatedAt: new Date().toISOString(),
+  });
+  if (!before) consents.push(row);
+  return { key: row.key, childName: row.childName, answer: row.answer, parentName: row.parentName, parentEmail: row.parentEmail, changed: !!before, mailed: true };
+}
+
 function guestOf(token: string, key: string) {
   const share = shares.find((s) => s.token === token && s.active);
   if (!share) throw new ApiError(404, "Deze link werkt niet (meer).");
@@ -169,8 +236,8 @@ function forClient(x: Json) {
   if (!x) return x;
   const done = ["delivered", "review", "archived"].includes(x.stage);
   const downloads = done ? "original" : x.gallerySettings.earlyDownloads || "original";
-  const gallery = x.gallery.map((g: Json) => ({
-    id: g.id, fileName: g.fileName, w: g.w, h: g.h,
+  const gallery = x.gallery.filter((g: Json) => g.restriction !== "no_photo").map((g: Json) => ({
+    id: g.id, fileName: g.fileName, w: g.w, h: g.h, restriction: g.restriction,
     url: downloads === "watermark" && g.previewUrl ? g.previewUrl : g.url,
     download: downloads === "original" || (downloads === "watermark" && !!g.previewUrl),
   }));
@@ -395,6 +462,8 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     if ((r = m(/^\/admin\/project\/([^/]+)\/shots$/))) return { shots: shots.filter((x) => x.projectId === r![1]).sort((a, b) => a.sort - b.sort) };
     if ((r = m(/^\/admin\/project\/([^/]+)\/engagement$/))) return { reviewRequest: reviewRequests[r[1]] || null, feedbackRequest: null, review: structuredClone(reviews.find((x) => x.projectId === r![1]) || null), feedback: [] };
     if ((r = m(/^\/admin\/project\/([^/]+)\/share$/))) return shareState(r[1]);
+    if ((r = m(/^\/admin\/project\/([^/]+)\/consent$/))) return consentState(r[1]);
+    if ((r = m(/^\/consent\/([^/]+)$/))) return consentForm(r[1], url.searchParams.get("key") || "");
     if ((r = m(/^\/share\/([^/]+)$/))) return shareReply(r[1], url.searchParams.get("key") || "", url.searchParams.get("preview") === "1");
     if (p === "/admin/clients") return { clients };
     if ((r = m(/^\/admin\/client\/([^/]+)$/))) {
@@ -523,6 +592,28 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     await delay(800);
     const file = (body as FormData).get("file") as File;
     return { receiptRef: `private:receipts/${id(999)}/${Date.now()}-0a1b2c3d-${file.name}` };
+  }
+  if ((r = m(/^\/consent\/([^/]+)$/)) && method === "POST") return saveConsent(r[1], body as FormData);
+  if ((r = m(/^\/admin\/project\/([^/]+)\/consent\/photos$/)) && method === "DELETE") {
+    const list = consents.filter((c) => c.projectId === r![1] && c.photoUrl);
+    list.forEach((c) => { c.photoUrl = ""; });
+    return { ...consentState(r[1]), removed: list.length };
+  }
+  if ((r = m(/^\/admin\/project\/([^/]+)\/consent\/([^/]+)$/)) && method === "DELETE") {
+    consents.splice(consents.findIndex((c) => c.id === r![2]), 1);
+    return consentState(r[1]);
+  }
+  if ((r = m(/^\/admin\/project\/([^/]+)\/consent$/))) {
+    const form = consentForms.find((f) => f.projectId === r![1]);
+    if (method === "PUT") form.active = body.active;
+    else if (form) form.active = true;
+    else consentForms.push({ projectId: r[1], token: "Zk4vB8nR2wPq6Ty3", active: true, createdAt: new Date().toISOString() });
+    return consentState(r[1]);
+  }
+  if ((r = m(/^\/admin\/project\/([^/]+)\/gallery\/restriction$/)) && method === "PUT") {
+    const x = projects.find((y) => y.id === r![1]);
+    for (const g of x.gallery) if (body.ids.includes(g.id)) g.restriction = body.restriction || undefined;
+    return { success: true, updated: body.ids.length };
   }
   if ((r = m(/^\/admin\/project\/([^/]+)\/share(\/renew)?$/)) && method !== "GET") {
     const share = shares.find((s) => s.projectId === r![1]);

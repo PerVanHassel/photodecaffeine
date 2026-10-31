@@ -2,19 +2,22 @@ import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useQueryClient } from "@tanstack/react-query";
-import { Heart, ImagePlus, Mail, Star, Trash2, Upload, Users } from "lucide-react";
+import { Check, EyeOff, Heart, ImagePlus, Mail, MegaphoneOff, Star, Trash2, Upload, Users, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { api, del, errorMessage, post, put } from "../../api";
 import { keys, useAction } from "../../queries";
-import type { EarlyDownloads, GalleryImage, Project } from "../../types";
-import { Button, Card, Empty, Field, isVideo, Photo, Pill, Segmented, TextField, useConfirm } from "../../ui";
+import type { EarlyDownloads, GalleryImage, Project, Restriction } from "../../types";
+import { Button, Card, cx, Empty, Field, isVideo, Photo, Pill, Segmented, TextField, useConfirm } from "../../ui";
 import { useUnsavedChanges } from "../../unsaved";
 import { StylePicker } from "../../gallery/StylePicker";
 import { prepareUpload, watermark } from "../../watermark";
+import { ConsentReminder } from "./ConsentTab";
 import { GroupLink, useGroupLink } from "./GroupLink";
 
 const BATCH = 8;
+
+const MARK_LABEL: Record<Restriction, string> = { no_photo: "Niet in beeld", no_social: "Niet posten" };
 
 export function GalleryTab({ project: p }: { project: Project }) {
   const qc = useQueryClient();
@@ -23,7 +26,9 @@ export function GalleryTab({ project: p }: { project: Project }) {
   const [over, setOver] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [addedThisVisit, setAddedThisVisit] = useState(0);
-  const [onlyFavorites, setOnlyFavorites] = useState(false);
+  const [filter, setFilter] = useState<"all" | "favorites" | Restriction>("all");
+  const [picked, setPicked] = useState<Set<string>>(() => new Set());
+  const lastPicked = useRef<string | null>(null);
   const favorites = p.favorites || {};
   const favoriteCount = Object.keys(favorites).length;
   const coverId = p.gallerySettings.coverImageId;
@@ -93,7 +98,39 @@ export function GalleryTab({ project: p }: { project: Project }) {
     onSuccess: () => setAddedThisVisit(0),
   });
 
-  const shown = onlyFavorites ? p.gallery.filter((g) => favorites[g.id]) : p.gallery;
+  const shown = filter === "all" ? p.gallery : filter === "favorites" ? p.gallery.filter((g) => favorites[g.id]) : p.gallery.filter((g) => g.restriction === filter);
+  const marked = (r: Restriction) => p.gallery.filter((g) => g.restriction === r).length;
+
+  /** One photo, or with shift everything between it and the one picked before: a burst goes in one go. */
+  function pick(id: string, range: boolean) {
+    const ids = shown.map((g) => g.id);
+    const from = lastPicked.current ? ids.indexOf(lastPicked.current) : -1;
+    const to = ids.indexOf(id);
+    setPicked((old) => {
+      const next = new Set(old);
+      if (range && from >= 0) ids.slice(Math.min(from, to), Math.max(from, to) + 1).forEach((x) => next.add(x));
+      else if (!next.delete(id)) next.add(id);
+      return next;
+    });
+    lastPicked.current = id;
+  }
+
+  const mark = useAction({
+    fn: (v: { ids: string[]; restriction: Restriction | "" }) => put(`/admin/project/${p.id}/gallery/restriction`, v),
+    success: (_r, { ids, restriction }) => {
+      const what = `${ids.length} ${ids.length === 1 ? "foto" : "foto's"}`;
+      return restriction ? `${what}: ${MARK_LABEL[restriction].toLowerCase()}` : `Markering weg bij ${what}`;
+    },
+    onSuccess: (_r, { ids, restriction }) => {
+      qc.setQueryData(keys.project(p.id), (old: Project | undefined) => old && {
+        ...old,
+        gallery: old.gallery.map((g) => (ids.includes(g.id) ? { ...g, restriction: restriction || undefined } : g)),
+      });
+      setPicked(new Set());
+    },
+  });
+  const markPicked = (restriction: Restriction | "") => mark.mutate({ ids: [...picked], restriction });
+
   const publicCount = p.gallery.filter((g) => g.url.includes("/object/public/")).length;
   const privatize = useAction({
     fn: () => post<{ moved: number; failed: string[] }>(`/admin/project/${p.id}/gallery/privatize`),
@@ -134,16 +171,21 @@ export function GalleryTab({ project: p }: { project: Project }) {
         <input ref={input} type="file" accept="image/*,video/mp4,video/quicktime" multiple hidden onChange={(e) => { uploadFiles(Array.from(e.target.files || [])); e.target.value = ""; }} />
       </div>
 
+      <ConsentReminder project={p} />
+
       <div className="s-row between">
         <div className="s-row">
           <b>{p.gallery.length} {p.gallery.length === 1 ? "bestand" : "bestanden"}</b>
           {favoriteCount > 0 && <Pill tone="acc"><Heart size={11} /> {favoriteCount} favorieten van de klant</Pill>}
-          <span className="s-small s-faint">Sleep om de volgorde te wijzigen</span>
+          <span className="s-small s-faint">Sleep om de volgorde te wijzigen, vink aan om te markeren</span>
         </div>
         <div className="s-row">
           {favoriteCount > 0 && (
-            <Button size="sm" aria-pressed={onlyFavorites} variant={onlyFavorites ? "primary" : "default"} onClick={() => setOnlyFavorites((v) => !v)}>Alleen favorieten</Button>
+            <Button size="sm" aria-pressed={filter === "favorites"} variant={filter === "favorites" ? "primary" : "default"} onClick={() => setFilter((v) => (v === "favorites" ? "all" : "favorites"))}>Alleen favorieten</Button>
           )}
+          {(["no_photo", "no_social"] as const).map((r) => (marked(r) > 0 || filter === r) && (
+            <Button key={r} size="sm" aria-pressed={filter === r} variant={filter === r ? "primary" : "default"} onClick={() => setFilter((v) => (v === r ? "all" : r))}>{MARK_LABEL[r]} · {marked(r)}</Button>
+          ))}
           {/* The card sits under a gallery that can be long; this jumps there. */}
           <Button size="sm" icon={<Users />} onClick={() => document.getElementById("groepslink")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
             Groepslink{groupLink?.share?.active ? ` · ${groupLink.totals.guests} ${groupLink.totals.guests === 1 ? "bezoeker" : "bezoekers"}` : ""}
@@ -154,7 +196,7 @@ export function GalleryTab({ project: p }: { project: Project }) {
             disabled={p.gallery.length === 0}
             loading={notify.isPending}
             onClick={async () => {
-              const n = addedThisVisit || p.gallery.length;
+              const n = addedThisVisit || p.gallery.length - marked("no_photo");
               if (await confirm({ title: "Klant laten weten?", body: `De klant krijgt een mail dat er ${n} ${n === 1 ? "nieuwe foto staat" : "nieuwe foto's staan"}.`, confirm: "Mail versturen" })) notify.mutate(n);
             }}
           >
@@ -164,17 +206,22 @@ export function GalleryTab({ project: p }: { project: Project }) {
       </div>
 
       {shown.length === 0 ? (
-        <Card><Empty title={onlyFavorites ? "Geen favorieten" : "Nog geen foto's"}>{onlyFavorites ? "De klant heeft nog niets gekozen." : "Upload de eerste foto's hierboven."}</Empty></Card>
+        filter === "all" ? <Card><Empty title="Nog geen foto's">Upload de eerste foto's hierboven.</Empty></Card>
+          : filter === "favorites" ? <Card><Empty title="Geen favorieten">De klant heeft nog niets gekozen.</Empty></Card>
+          : <Card><Empty title="Geen foto's met deze markering" /></Card>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={reorder}>
           <SortableContext items={shown.map((g) => g.id)} strategy={rectSortingStrategy}>
-            <div className="s-contact-sheet">
+            <div className={cx("s-contact-sheet", picked.size > 0 && "s-picking")}>
               {shown.map((g, i) => (
                 <SortablePhoto
                   key={g.id}
                   image={g}
                   index={i}
                   isCover={g.id === coverId}
+                  picked={picked.has(g.id)}
+                  picking={picked.size > 0}
+                  onPick={(range) => pick(g.id, range)}
                   onSize={(w, h) => reportSize(g, w, h)}
                   favoritedBy={favorites[g.id]}
                   onCover={() => setCover.mutate(g)}
@@ -188,6 +235,19 @@ export function GalleryTab({ project: p }: { project: Project }) {
         </DndContext>
       )}
 
+      {picked.size > 0 && (
+        <div className="s-selbar" role="toolbar" aria-label="Geselecteerde foto's">
+          <b aria-live="polite">{picked.size} geselecteerd</b>
+          <Button size="sm" variant="danger" icon={<EyeOff />} loading={mark.isPending} title="De klant en de groepslink zien deze foto's niet" onClick={() => markPicked("no_photo")}>Niet in beeld</Button>
+          <Button size="sm" icon={<MegaphoneOff />} disabled={mark.isPending} title="De foto's blijven in de galerij, met het label 'Niet posten'" onClick={() => markPicked("no_social")}>Niet posten</Button>
+          <Button size="sm" variant="ghost" disabled={mark.isPending} onClick={() => markPicked("")}>Markering weg</Button>
+          <span className="s-selbar-end">
+            <Button size="sm" variant="ghost" onClick={() => setPicked(new Set(shown.map((g) => g.id)))}>Alles</Button>
+            <Button size="sm" variant="ghost" iconOnly icon={<X />} aria-label="Selectie wissen" title="Selectie wissen" onClick={() => setPicked(new Set())} />
+          </span>
+        </div>
+      )}
+
       <StylePicker project={p} />
       <GallerySettings project={p} />
       <GroupLink project={p} />
@@ -195,17 +255,25 @@ export function GalleryTab({ project: p }: { project: Project }) {
   );
 }
 
-function SortablePhoto({ image, index, isCover, favoritedBy, onCover, onRemove, onSize }: {
-  image: GalleryImage; index: number; isCover: boolean; favoritedBy?: string[]; onCover: () => void; onRemove: () => void;
+function SortablePhoto({ image, index, isCover, picked, picking, favoritedBy, onPick, onCover, onRemove, onSize }: {
+  image: GalleryImage; index: number; isCover: boolean; picked: boolean; picking: boolean; favoritedBy?: string[];
+  onPick: (range: boolean) => void; onCover: () => void; onRemove: () => void;
   onSize: (w: number, h: number) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: image.id });
+  const number = String(index + 1).padStart(3, "0");
   return (
-    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }} {...attributes} {...listeners}>
-      <Photo src={image.url} video={isVideo(image.fileName || image.url)} caption={String(index + 1).padStart(3, "0")} onSize={image.w ? undefined : onSize}>
+    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }} {...attributes} {...listeners}
+      // Once a photo is picked, a tap anywhere on the next one picks it too.
+      onClick={picking ? (e) => { if (!(e.target as HTMLElement).closest("button")) onPick(e.shiftKey); } : undefined}>
+      <Photo src={image.url} video={isVideo(image.fileName || image.url)} caption={number} onSize={image.w ? undefined : onSize}
+        className={cx(picked && "picked", image.restriction === "no_photo" && "held")}>
+        <button type="button" role="checkbox" aria-checked={picked} className={cx("s-pick", picked && "on")} title="Selecteren (met shift een reeks)" aria-label={`Foto ${number} selecteren`}
+          onPointerDown={(e) => e.stopPropagation()} onClick={(e) => onPick(e.shiftKey)}><Check /></button>
+        {image.restriction && <span className={`s-mark ${image.restriction}`}>{MARK_LABEL[image.restriction]}</span>}
         <div className="corner">
           {favoritedBy && <span className="s-fav on" title={`Favoriet van ${favoritedBy.join(", ")}`}><Heart /></span>}
-          <button type="button" className={`s-fav ${isCover ? "on" : ""}`} title={isCover ? "Omslagfoto" : "Maak omslagfoto"} aria-label="Maak omslagfoto" onPointerDown={(e) => e.stopPropagation()} onClick={onCover}><Star /></button>
+          {image.restriction !== "no_photo" && <button type="button" className={`s-fav ${isCover ? "on" : ""}`} title={isCover ? "Omslagfoto" : "Maak omslagfoto"} aria-label="Maak omslagfoto" onPointerDown={(e) => e.stopPropagation()} onClick={onCover}><Star /></button>}
           <button type="button" className="s-fav" title="Verwijderen" aria-label="Verwijderen" onPointerDown={(e) => e.stopPropagation()} onClick={onRemove}><Trash2 /></button>
         </div>
       </Photo>

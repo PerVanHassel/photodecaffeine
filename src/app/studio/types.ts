@@ -20,7 +20,11 @@ export interface GalleryImage {
   /** Pixel size when known; the gallery lays photos out by their shape. */
   w?: number;
   h?: number;
+  /** A child on it who may not be posted, or (admin only) may not be shown at all. */
+  restriction?: Restriction;
 }
+
+export type Restriction = "no_social" | "no_photo";
 
 /** What a client may download before delivery; after delivery always the original. */
 export type EarlyDownloads = "original" | "watermark" | "none";
@@ -128,6 +132,30 @@ export interface ShareGuest {
   hearts: number;
   firstSeenAt: string;
   lastSeenAt: string;
+}
+
+/** What a parent says may be done with their child at a shoot. */
+export type ConsentAnswer = "full" | Restriction;
+
+/** Admin: a project's consent link and every answer, strictest first. */
+export interface ConsentState {
+  form: { url: string; active: boolean; createdAt: string } | null;
+  consents: ConsentRow[];
+  totals: Record<ConsentAnswer, number>;
+}
+
+export interface ConsentRow {
+  id: string;
+  childName: string;
+  answer: ConsentAnswer;
+  note: string;
+  photoUrl: string;
+  parentName: string;
+  parentEmail: string;
+  /** Word for word what the parent agreed to. */
+  statement: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Client {

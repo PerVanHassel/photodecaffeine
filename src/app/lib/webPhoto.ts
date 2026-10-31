@@ -45,6 +45,28 @@ export async function webCopies(file: File): Promise<{ large: File; small: File 
 }
 
 /**
+ * A photo as a JPEG of at most 1280 px wide, or null when this browser cannot
+ * open it. Drawing it anew also leaves out what the file says about the phone
+ * and the place it was taken.
+ */
+export async function smallJpeg(file: File): Promise<File | null> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    const copy = scaled(img, img.naturalWidth, img.naturalHeight, Math.min(SMALL, img.naturalWidth));
+    const blob = await jpeg(copy);
+    release(copy);
+    return blob && new File([blob], "foto.jpg", { type: "image/jpeg" });
+  } catch {
+    return null;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+/**
  * The image drawn `width` px wide. It is halved step by step first, because a
  * browser that shrinks a camera file in one go can leave jagged edges.
  */

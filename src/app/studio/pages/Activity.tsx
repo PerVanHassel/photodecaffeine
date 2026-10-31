@@ -32,7 +32,7 @@ const ACTOR_LABEL: Record<ActorKind, string> = { owner: "Eigenaar", team: "Team"
 const ACTOR_TONE: Record<ActorKind, string> = { owner: "acc", team: "info", client: "ok", guest: "", visitor: "" };
 
 const AREAS = [
-  "Projecten", "Galerij", "Berichten", "Planning", "Locaties", "Taken", "Klanten", "Aanvragen", "Offertes", "Facturen",
+  "Projecten", "Galerij", "Toestemming", "Berichten", "Planning", "Locaties", "Taken", "Klanten", "Aanvragen", "Offertes", "Facturen",
   "Declaraties", "Investeringen", "Portfolio", "Reviews", "Advertenties", "Instellingen", "Bestanden", "Team", "Documenten", "Portaal", "Meldingen", "Overig",
 ];
 

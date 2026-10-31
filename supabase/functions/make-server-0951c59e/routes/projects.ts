@@ -1,6 +1,7 @@
 import { Hono } from "npm:hono";
 import { BRIEFING_MAX_CHARS, SITE_URL } from "../lib/config.ts";
 import { projectRecipients } from "../lib/clients.ts";
+import { consentFormFor, consentState, removeConsentPhotos } from "../lib/consents.ts";
 import { db, found, must } from "../lib/db.ts";
 import { sendEmail } from "../lib/email.ts";
 import { type Env, fail, isoDate, nameOf, readBody, requireAdmin, requirePermission, text, uuid, z } from "../lib/http.ts";
@@ -205,17 +206,20 @@ r.put(`${P}/project/:id`, async (c) => {
   const afterMeeting = primaryMeeting(updated);
   const meetingChanged = !!afterMeeting && afterMeeting.starts_at !== beforeMeeting;
   if (added > 0 || justDelivered || meetingChanged) {
-    await notifyClients(updated, project, { added: added > 0 ? added : 0, justDelivered, meetingChanged });
+    await notifyClients(updated, { added: added > 0 ? added : 0, justDelivered, meetingChanged });
   }
+  // Delivered: nothing left to pick out, so the photos of the children go.
+  if (justDelivered) await removeConsentPhotos([id]);
 
   return c.json({ project });
 });
 
 async function notifyClients(
   row: ProjectRow,
-  project: any,
   what: { added: number; justDelivered: boolean; meetingChanged: boolean },
 ) {
+  // The client's view of the project, so a photo that is held back stays out of the mail too.
+  const project = projectToApi(row, await gallerySigner([row]), { forClient: true });
   const recipients = await projectRecipients(row.id);
   const gs = project.gallerySettings || {};
   const galleryLink = `${SITE_URL}/portal/project/${row.id}/gallery`;
@@ -255,6 +259,7 @@ r.delete(`${P}/project/:id`, async (c) => {
   const id = c.req.param("id");
   const row = await loadProject(id);
   await removePrivate((row.gallery_images || []).flatMap((g: any) => [g.storage_path, g.preview_path]));
+  await removeConsentPhotos([id]);
   must(await db.from("projects").delete().eq("id", id));
   return c.json({ success: true });
 });
@@ -419,16 +424,26 @@ r.post(`${P}/project/:id/gallery/privatize`, async (c) => {
   return c.json({ moved, failed, project: await respond(id) });
 });
 
+// Photos with a child on it who may not be shown or posted (see lib/consents.ts).
+// In chunks: the ids go in the address of the request to the database.
+r.put(`${P}/project/:id/gallery/restriction`, async (c) => {
+  const id = c.req.param("id");
+  const { ids, restriction } = await readBody(c, z.object({ ids: z.array(uuid).min(1).max(5000), restriction: z.enum(["", "no_social", "no_photo"]) }));
+  for (let i = 0; i < ids.length; i += 200) {
+    must(await db.from("gallery_images").update({ restriction }).eq("project_id", id).in("id", ids.slice(i, i + 200)));
+  }
+  return c.json({ success: true, updated: ids.length });
+});
+
 // Uploading in batches would otherwise mail the client once per batch; the
 // studio decides when the gallery is ready to announce.
 r.post(`${P}/project/:id/gallery/notify`, async (c) => {
   const id = c.req.param("id");
   const { added } = await readBody(c, z.object({ added: z.number().int().positive().max(5000) }));
   const row = await loadProject(id);
-  const project = projectToApi(row, await gallerySigner([row]));
   const recipients = await projectRecipients(id);
   if (recipients.length === 0) fail(400, "Er staat geen klant met een e-mailadres bij dit project.");
-  await notifyClients(row, project, { added, justDelivered: false, meetingChanged: false });
+  await notifyClients(row, { added, justDelivered: false, meetingChanged: false });
   return c.json({ success: true, sentTo: recipients.map((p) => p.email) });
 });
 
@@ -504,6 +519,46 @@ r.delete(`${P}/project/:id/share/guests/:guestId`, async (c) => {
   const id = c.req.param("id");
   must(await db.from("gallery_guests").delete().eq("id", c.req.param("guestId")).eq("project_id", id));
   return c.json(await shareState(id));
+});
+
+// ---------------------------------------------------------------------------
+// Consent
+// ---------------------------------------------------------------------------
+// The link that goes to all parents (see lib/consents.ts), and their answers.
+
+r.get(`${P}/project/:id/consent`, async (c) => c.json(await consentState(c.req.param("id"))));
+
+// Makes the link, or switches an existing one back on with the same address.
+r.post(`${P}/project/:id/consent`, async (c) => {
+  const id = c.req.param("id");
+  found(await db.from("projects").select("id").eq("id", id).maybeSingle(), "Project niet gevonden");
+  if (await consentFormFor(id)) must(await db.from("consent_forms").update({ active: true }).eq("project_id", id));
+  else must(await db.from("consent_forms").insert({ project_id: id, token: shareToken() }));
+  return c.json(await consentState(id));
+});
+
+r.put(`${P}/project/:id/consent`, async (c) => {
+  const id = c.req.param("id");
+  const { active } = await readBody(c, z.object({ active: z.boolean() }));
+  found(await db.from("consent_forms").update({ active }).eq("project_id", id).select("project_id").maybeSingle(), "Dit project heeft nog geen toestemmingslink.");
+  return c.json(await consentState(id));
+});
+
+r.delete(`${P}/project/:id/consent/photos`, async (c) => {
+  const id = c.req.param("id");
+  const removed = await removeConsentPhotos([id]);
+  return c.json({ ...(await consentState(id)), removed });
+});
+
+r.delete(`${P}/project/:id/consent/:consentId`, async (c) => {
+  const id = c.req.param("id");
+  const row = found(
+    await db.from("consents").select("id, photo_path").eq("id", c.req.param("consentId")).eq("project_id", id).maybeSingle(),
+    "Toestemming niet gevonden",
+  ) as any;
+  must(await db.from("consents").delete().eq("id", row.id));
+  await removePrivate([row.photo_path]);
+  return c.json(await consentState(id));
 });
 
 // ---------------------------------------------------------------------------

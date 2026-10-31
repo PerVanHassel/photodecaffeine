@@ -7,6 +7,7 @@ import { onError } from "./lib/http.ts";
 import activity from "./routes/activity.ts";
 import analytics from "./routes/analytics.ts";
 import clients from "./routes/clients.ts";
+import consent from "./routes/consent.ts";
 import declarations from "./routes/declarations.ts";
 import documents from "./routes/documents.ts";
 import engagement from "./routes/engagement.ts";
@@ -52,7 +53,7 @@ app.use("*", activityLog);
 
 const modules: Hono<any>[] = [
   clients, portal, projects, quotes, invoices, inquiries, tasks, locations, events, overview,
-  engagement, google, portfolio, team, declarations, investments, documents, settings, notifications, storage, share, activity, analytics,
+  engagement, google, portfolio, team, declarations, investments, documents, settings, notifications, storage, share, consent, activity, analytics,
 ];
 for (const module of modules) app.route("/", module);
 

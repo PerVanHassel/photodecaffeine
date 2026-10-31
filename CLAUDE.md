@@ -40,6 +40,10 @@ API-aanroepen te onderscheppen.
 - Elke geslaagde POST/PUT/DELETE komt in het logboek (`lib/activity.ts`,
   tabel `activity_log`, admin `/admin/activity`, alleen voor de eigenaar).
   Geef een nieuwe route daar een regel, anders staat hij als "Overig" in de lijst.
+- Toestemming van ouders per kind staat in `lib/consents.ts` en `routes/consent.ts`.
+  Een foto met `restriction = no_photo` mag nooit buiten de admin komen.
+  `projectToApi` (`forClient`), `gateOf` en `downloadLink` houden hem tegen; een
+  nieuwe route die foto's naar klanten of gasten stuurt, moet dat ook doen.
 - Er zijn geen geautomatiseerde tests.
 
 ## Edge function deployen

@@ -3,6 +3,7 @@ import * as kv from "../kv_store.tsx";
 import { isAdminUser, verifyAdmin } from "../lib/auth.ts";
 import { clientToApi, type ClientRow } from "../lib/clients.ts";
 import { EMAIL_ADMIN_NOTIFY, EMAIL_RE, INVITE_VALID_DAYS, SITE_URL } from "../lib/config.ts";
+import { removeConsentPhotos } from "../lib/consents.ts";
 import { db, found, must } from "../lib/db.ts";
 import { emailWrap, escapeHtml, sendEmail } from "../lib/email.ts";
 import { type Env, fail, readBody, requireAdmin, requirePermission, text, z } from "../lib/http.ts";
@@ -396,6 +397,7 @@ r.delete(`${A}/client/:id`, async (c) => {
   const soleProjects = links.filter((l: any) => (l.projects?.project_clients || []).length <= 1);
   if (soleProjects.length) {
     await removePrivate(soleProjects.flatMap((l: any) => (l.projects?.gallery_images || []).map((g: any) => g.storage_path)));
+    await removeConsentPhotos(soleProjects.map((l: any) => l.project_id));
     must(await db.from("projects").delete().in("id", soleProjects.map((l: any) => l.project_id)));
   }
   must(await db.from("clients").delete().eq("id", id));

@@ -307,6 +307,37 @@ button.s-item { width: 100%; border: 0; background: none; text-align: left; }
 }
 .s-fav svg { width: 14px; height: 14px; }
 .s-fav.on { background: var(--accent); }
+/* Picking photos in the contact sheet, and what they are marked with. */
+.s-pick {
+  position: absolute; top: 6px; left: 6px; z-index: 2; display: grid; place-items: center; width: 26px; height: 26px; padding: 0;
+  border: 1.5px solid rgba(255, 255, 255, 0.9); border-radius: 7px; background: rgba(15, 10, 6, 0.4); color: #fff;
+  backdrop-filter: blur(4px); opacity: 0; transition: opacity 0.15s;
+}
+.s-pick svg { width: 15px; height: 15px; visibility: hidden; }
+.s-pick.on svg { visibility: visible; }
+.s-ph:hover .s-pick, .s-pick:focus-visible, .s-pick.on, .s-picking .s-pick { opacity: 1; }
+@media (hover: none) { .s-pick { opacity: 1; } }
+.s-pick.on { background: var(--accent); border-color: var(--accent); }
+.s-picking .s-ph { cursor: pointer; }
+/* Drawn inside the tile: the contact sheet's tiles clip what falls outside them. */
+.s-ph.picked::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; box-shadow: inset 0 0 0 3px var(--accent); pointer-events: none; }
+.s-ph.held img, .s-ph.held video { opacity: 0.45; filter: grayscale(0.7); }
+.s-mark { position: absolute; right: 6px; bottom: 6px; z-index: 1; padding: 2px 8px; border-radius: 999px; color: #fff; font-size: 11px; font-weight: 600; pointer-events: none; }
+.s-mark.no_photo { background: var(--bad); }
+.s-mark.no_social { background: var(--warn); }
+.s-selbar {
+  position: sticky; bottom: 12px; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px;
+  border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); box-shadow: var(--shadow);
+}
+.s-selbar-end { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
+@media (max-width: 860px) { .s-selbar { bottom: 76px; } }
+/* The children who need care, each with a photo large enough to recognise them by. */
+.s-kids { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 18px 14px; }
+.s-kid { display: flex; flex-direction: column; gap: 10px; min-width: 0; overflow-wrap: anywhere; }
+.s-kid .s-ph { aspect-ratio: 1; }
+.s-kid > a { display: block; }
+.s-kids.compact { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 12px; }
+.s-kids.compact .s-kid { gap: 6px; }
 
 /* ---------- dialogs ---------- */
 .s-overlay { position: fixed; inset: 0; background: rgba(23, 19, 15, 0.35); z-index: 60; animation: s-fade 0.15s ease-out; }

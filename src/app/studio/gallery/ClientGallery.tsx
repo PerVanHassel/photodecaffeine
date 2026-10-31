@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowRight, ArrowUp, ChevronLeft, ChevronRight, Download, Flame, Grid3x3, Heart, Play, Rows2, Share2, Users, X } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUp, ChevronLeft, ChevronRight, Download, Flame, Grid3x3, Heart, MegaphoneOff, Play, Rows2, Share2, Users, X } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Helmet } from "react-helmet-async";
 import { useModalFocus } from "../../lib/dialog";
@@ -463,6 +463,7 @@ function Tile({ img, label, alt, fav, favBy, count, countAs, onOpen, onToggle, o
         />
       )}
       {video && <span className="g-play" aria-hidden="true"><Play fill="currentColor" /></span>}
+      {img.restriction === "no_social" && <span className="g-nopost" title={t.noSocialHint}><MegaphoneOff aria-hidden="true" /><span>{t.noSocial}</span></span>}
       {heart && <HeartButton on={fav} by={favBy} count={countAs === "heart" ? count : 0} onToggle={onToggle} t={t} />}
       {countAs === "badge" && count > 0 && (
         <span className="g-group" title={t.groupLikes(count)}>
@@ -577,6 +578,7 @@ function Lightbox({ list, start, total, numberOf, favs, favNames, counts, countA
         )}
       </div>
       <p className="g-lb-foot">
+        {img.restriction === "no_social" && <span className="g-lb-group"><MegaphoneOff aria-hidden="true" />{t.noSocialHint}</span>}
         {countAs === "badge" && hearts > 0 && <span className="g-lb-group"><Users aria-hidden="true" />{t.groupLikes(hearts)}</span>}
         <span>{onToggle ? t.lightboxHint : `${index + 1} / ${list.length}`}</span>
       </p>

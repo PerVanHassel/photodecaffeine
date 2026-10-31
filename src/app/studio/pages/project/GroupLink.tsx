@@ -163,14 +163,16 @@ export function GroupLink({ project: p }: { project: Project }) {
   );
 }
 
+/** One cell of a spreadsheet. A name typed in a form must not run as a formula when the file is opened. */
+export function csvCell(v: string | number) {
+  let text = String(v);
+  if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+  return /[";\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
 /** A spreadsheet of the visitors (semicolons, for Excel in Dutch). */
 function saveGuests(p: Project, guests: ShareGuest[]) {
-  // A name typed at the door must not run as a formula when the file is opened.
-  const cell = (v: string | number) => {
-    let text = String(v);
-    if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
-    return /[";\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-  };
+  const cell = csvCell;
   const when = (iso: string) => fmt(iso, "yyyy-MM-dd HH:mm");
   const rows = [
     ["Naam", "E-mail", "Bezoeken", "Hartjes", "Downloads", "Eerste bezoek", "Laatste bezoek"],

@@ -35,23 +35,27 @@ export const policies = {
         body: "Wij houden zelf bij hoe bezoekers de website gebruiken: via welke link of site u binnenkwam, welke pagina's u bekeek, hoe ver u scrolde, waar u op klikte, of u een formulier begon, en het soort apparaat en browser. Daarvoor bewaart uw browser een willekeurig nummer, zodat wij een tweede bezoek herkennen. Wij slaan geen IP-adres op en niets van wat u in een formulier typt zolang u het niet verstuurt. Stuurt u een aanvraag, dan koppelen wij die aan uw bezoek, zodat wij zien hoe u bij ons terechtkwam. Deze gegevens staan in onze eigen database en gaan niet naar andere bedrijven. Wij gebruiken ze alleen om de website en onze advertenties te verbeteren.",
       },
       {
-        heading: "5. Dienstverleners",
-        body: "Voor de website en het verwerken van aanvragen werken wij met Vercel (hosting van de website) en Supabase (database en opslag). Zij verwerken gegevens alleen voor ons en niet voor eigen doeleinden.",
+        heading: "5. Toestemming voor foto's van kinderen",
+        body: "Bij een shoot met kinderen vragen wij ouders per kind om toestemming, via een formulier. Daarin staan de naam van het kind, de keuze, en de naam en het e-mailadres van de ouder. Mag een kind niet of beperkt in beeld, dan vragen wij ook een foto van het kind of een beschrijving, zodat wij het kind kunnen herkennen. Alleen de studio ziet die foto, en wij verwijderen hem zodra de foto's zijn geleverd. De keuze zelf bewaren wij als bewijs zolang de foto's worden gebruikt. Een ouder kan de keuze altijd wijzigen of intrekken via de link in de bevestigingsmail.",
       },
       {
-        heading: "6. Bewaartermijn",
+        heading: "6. Dienstverleners",
+        body: "Voor de website en het verwerken van aanvragen werken wij met Vercel (hosting van de website), Supabase (database en opslag) en Resend (versturen van e-mail). Zij verwerken gegevens alleen voor ons en niet voor eigen doeleinden.",
+      },
+      {
+        heading: "7. Bewaartermijn",
         body: "Contactaanvragen en bezoekersstatistieken bewaren wij maximaal 2 jaar. Gegevens van klantprojecten bewaren wij 7 jaar, vanwege de wettelijke bewaarplicht voor de administratie.",
       },
       {
-        heading: "7. Uw rechten (AVG)",
+        heading: "8. Uw rechten (AVG)",
         body: "U heeft recht op inzage, correctie en verwijdering van uw persoonsgegevens. Stuur uw verzoek naar contact@photodecaffeine.com. Wij reageren binnen 30 dagen.",
       },
       {
-        heading: "8. Beveiliging",
+        heading: "9. Beveiliging",
         body: "Wij nemen passende technische en organisatorische maatregelen om uw persoonsgegevens te beschermen. Onze systemen gebruiken versleutelde verbindingen en opslag met toegangscontrole.",
       },
       {
-        heading: "9. Contact",
+        heading: "10. Contact",
         body: "Vragen over dit beleid? Mail naar contact@photodecaffeine.com of schrijf naar Middenstraat 47, Roosendaal.",
       },
     ],

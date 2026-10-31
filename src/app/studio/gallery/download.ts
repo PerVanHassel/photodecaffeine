@@ -26,6 +26,8 @@ export async function saveZip(list: GalleryImage[], title: string, opts: { water
       const res = await fetch(img.url);
       if (!res.ok) throw new Error(`${img.fileName || "Een foto"} kon niet worden opgehaald.`);
       let name = img.fileName || `foto-${done + 1}.jpg`;
+      // A photo that may not be posted says so in its name, also once it has left the gallery.
+      if (img.restriction === "no_social") name = name.replace(/(\.\w+)?$/, (ext) => `-niet-op-social-media${ext}`);
       if (opts.watermarked) name = `${name.replace(/\.\w+$/, "")}-voorbeeld.jpg`;
       while (used.has(name)) name = name.replace(/(\.\w+)?$/, (ext) => `-${done}${ext}`);
       used.add(name);

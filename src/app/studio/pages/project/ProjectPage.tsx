@@ -4,9 +4,10 @@ import { useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { del, put } from "../../api";
 import { PIPELINE, STAGE_LABEL, TYPE_LABEL } from "../../format";
-import { keys, useAction, useProject } from "../../queries";
+import { keys, useAction, useConsent, useProject } from "../../queries";
 import type { Project, Stage } from "../../types";
 import { Button, ErrorState, PageHead, Skeleton, useConfirm } from "../../ui";
+import { ConsentTab } from "./ConsentTab";
 import { FinanceTab } from "./FinanceTab";
 import { GalleryTab } from "./GalleryTab";
 import { MessagesTab } from "./MessagesTab";
@@ -18,6 +19,7 @@ const TABS = [
   { id: "overview", label: "Overzicht" },
   { id: "planning", label: "Planning" },
   { id: "gallery", label: "Galerij" },
+  { id: "consent", label: "Toestemming" },
   { id: "messages", label: "Berichten" },
   { id: "finance", label: "Financieel" },
   { id: "notes", label: "Notities" },
@@ -30,6 +32,10 @@ export function ProjectPage() {
   const tab = (TABS.some((t) => t.id === params.get("tab")) ? params.get("tab") : "overview") as TabId;
   const project = useProject(id);
   const p = project.data;
+  // A website has no shoot to ask consent for.
+  const consent = useConsent(id, !!p && p.type !== "web");
+  const answers = consent.data?.consents || [];
+  const needCare = answers.filter((c) => c.answer !== "full").length;
 
   if (project.isError) {
     return (
@@ -62,7 +68,7 @@ export function ProjectPage() {
       />
       <Stepper project={p} />
       <div className="s-tabs" role="tablist" aria-label="Projectonderdelen">
-        {TABS.map((t) => (
+        {TABS.filter((t) => t.id !== "consent" || p.type !== "web").map((t) => (
           <button
             key={t.id}
             role="tab"
@@ -73,6 +79,9 @@ export function ProjectPage() {
             {t.label}
             {t.id === "messages" && !!p.unreadMessages && <span className="badge">{p.unreadMessages}</span>}
             {t.id === "gallery" && p.gallery.length > 0 && <span className="s-faint s-mono" style={{ marginLeft: 6, fontSize: 11 }}>{p.gallery.length}</span>}
+            {t.id === "consent" && (needCare > 0
+              ? <span className="badge" title={`${needCare} ${needCare === 1 ? "kind" : "kinderen"} om op te letten`}>{needCare}</span>
+              : answers.length > 0 && <span className="s-faint s-mono" style={{ marginLeft: 6, fontSize: 11 }}>{answers.length}</span>)}
           </button>
         ))}
       </div>
@@ -80,6 +89,7 @@ export function ProjectPage() {
         {tab === "overview" && <OverviewTab project={p} />}
         {tab === "planning" && <PlanningTab project={p} />}
         {tab === "gallery" && <GalleryTab project={p} />}
+        {tab === "consent" && <ConsentTab project={p} />}
         {tab === "messages" && <MessagesTab project={p} />}
         {tab === "finance" && <FinanceTab project={p} />}
         {tab === "notes" && <NotesTab project={p} />}
@@ -90,6 +100,7 @@ export function ProjectPage() {
 
 function Stepper({ project: p }: { project: Project }) {
   const confirm = useConfirm();
+  const consent = useConsent(p.id, p.type !== "web");
   const index = PIPELINE.indexOf(p.stage);
   const move = useAction({
     fn: (stage: Stage) => put(`/admin/project/${p.id}`, { stage }),
@@ -100,7 +111,8 @@ function Stepper({ project: p }: { project: Project }) {
   async function go(stage: Stage) {
     if (stage === p.stage) return;
     if (stage === "delivered" && !["delivered", "review", "archived"].includes(p.stage)) {
-      const ok = await confirm({ title: "Project leveren?", body: "De klant krijgt een mail dat de galerij klaarstaat.", confirm: "Leveren en mailen" });
+      const childPhotos = consent.data?.consents.some((c) => c.photoUrl) ? " De foto's van de kinderen bij Toestemming worden dan verwijderd." : "";
+      const ok = await confirm({ title: "Project leveren?", body: `De klant krijgt een mail dat de galerij klaarstaat.${childPhotos}`, confirm: "Leveren en mailen" });
       if (!ok) return;
     }
     move.mutate(stage);
@@ -161,7 +173,7 @@ function HeaderActions({ project: p }: { project: Project }) {
                   setOpen(false);
                   const ok = await confirm({
                     title: "Project verwijderen?",
-                    body: "Galerij, berichten, shotlist en afspraken van dit project gaan definitief weg. Dit kan niet ongedaan worden.",
+                    body: "Galerij, toestemmingen, berichten, shotlist en afspraken van dit project gaan definitief weg. Dit kan niet ongedaan worden.",
                     confirm: "Definitief verwijderen",
                     danger: true,
                   });

@@ -66,6 +66,9 @@ const INQUIRY = table("inquiries", (r) => r.name || r.email, () => "/admin/inqui
 const AD = table("ad_campaigns", (r) => r.label || r.ref, () => "/admin/ads", "ref");
 // A share is only ever about its project, which the log shows on its own.
 const SHARE: Source = { ...table("gallery_shares", () => "", undefined, "token"), idOf: (r) => r.project_id };
+// So is a consent form.
+const CONSENT_FORM: Source = { ...table("consent_forms", () => "", undefined, "token"), idOf: (r) => r.project_id };
+const CONSENT = table("consents", (r) => r.child_name);
 const ARTICLE = stored("portfolio:article:", (r) => r.title, (_r, id) => `/admin/portfolio/${id}`);
 const REVIEW = stored("review:", (r) => r.clientName || r.googleName || "Review", () => "/admin/reviews");
 const INVESTMENT = stored("investments:item:", (r) => join(r.title, euro(r.price)), () => "/admin/investments");
@@ -168,6 +171,17 @@ const RULES: Record<string, Rule> = {
   },
   "POST /admin/project/:id/share/renew": { area: "Galerij", action: "Nieuwe deellink gemaakt, de oude werkt niet meer" },
   "DELETE /admin/project/:id/share/guests/:guestId": { area: "Galerij", action: "Gast van de deellink verwijderd", of: GUEST },
+  "PUT /admin/project/:id/gallery/restriction": {
+    area: "Galerij",
+    action: (x) => (x.body?.restriction === "no_photo" ? "Foto's gemarkeerd: niet in beeld" : x.body?.restriction === "no_social" ? "Foto's gemarkeerd: niet posten" : "Markering van foto's weggehaald"),
+    detail: (x) => plural(x.body?.ids?.length || 0, "foto", "foto's"),
+  },
+  "POST /admin/project/:id/consent": { area: "Toestemming", action: "Toestemmingslink aangezet" },
+  "PUT /admin/project/:id/consent": { area: "Toestemming", action: (x) => (x.body?.active ? "Toestemmingslink aangezet" : "Toestemmingslink uitgezet") },
+  "DELETE /admin/project/:id/consent/photos": {
+    area: "Toestemming", action: "Foto's van de kinderen verwijderd", detail: (x) => plural(x.json?.removed || 0, "foto", "foto's"),
+  },
+  "DELETE /admin/project/:id/consent/:consentId": { area: "Toestemming", action: "Toestemming verwijderd", of: CONSENT },
   "POST /admin/project/:id/shots": { area: "Projecten", action: "Shot toegevoegd", of: SHOT, created: true },
   "PUT /admin/project/:id/shots/order": { area: "Projecten", action: "Volgorde van de shotlijst aangepast" },
   "PUT /admin/shots/:id": { area: "Projecten", action: "Shot bijgewerkt", of: SHOT, diff: true },
@@ -299,6 +313,13 @@ const RULES: Record<string, Rule> = {
     action: (x) => (x.body?.answer === "accepted" ? "Offerte geaccepteerd" : "Offerte afgewezen"),
     who: (x) => ({ kind: "client", name: x.row?.client_name || "", email: x.row?.client_email || "" }),
     detail: (x) => clip(x.body?.message),
+  },
+  // A form with a photo: what it said comes from the response, not the body.
+  "POST /consent/:token": {
+    area: "Toestemming", of: CONSENT_FORM,
+    action: (x) => (x.json?.changed ? "Toestemming gewijzigd" : "Toestemming ingevuld"),
+    who: (x) => ({ kind: "visitor", name: x.json?.parentName || "", email: x.json?.parentEmail || "" }),
+    detail: (x) => join(x.json?.childName, ({ full: "mag op de foto en op social media", no_social: "niet op social media", no_photo: "niet op de foto" } as Record<string, string>)[x.json?.answer]),
   },
   "POST /share/:token/guest": {
     area: "Galerij", action: "Gedeelde galerij geopend", of: SHARE,

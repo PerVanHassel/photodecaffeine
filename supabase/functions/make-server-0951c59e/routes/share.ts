@@ -3,7 +3,7 @@ import { verifyAdmin } from "../lib/auth.ts";
 import { EMAIL_RE } from "../lib/config.ts";
 import { db, found, must } from "../lib/db.ts";
 import { type Env, fail, readBody, text, uuid, z } from "../lib/http.ts";
-import { clientDownloads, downloadLink, gallerySigner, loadProject, type ProjectRow, projectToApi, type Signer } from "../lib/projects.ts";
+import { clientDownloads, downloadLink, gallerySigner, heldBack, loadProject, type ProjectRow, projectToApi, type Signer } from "../lib/projects.ts";
 import { guestCount, guestHearts, VISIT_GAP_MS } from "../lib/shares.ts";
 import { signPaths } from "../lib/storage.ts";
 
@@ -48,7 +48,7 @@ async function mustGuest(share: Share, key: string): Promise<Guest> {
 /** What shows at the door: enough to see whose photos these are. */
 async function gateOf(row: ProjectRow) {
   const gs = row.gallery_settings || {};
-  const images = [...(row.gallery_images || [])].sort((a: any, b: any) => a.sort - b.sort);
+  const images = (row.gallery_images || []).filter((g: any) => !heldBack(g)).sort((a: any, b: any) => a.sort - b.sort);
   const isVideo = (g: any) => /\.(mp4|mov|m4v|webm)$/i.test(String(g.file_name || g.url).split("?")[0]);
   const videos = images.filter(isVideo).length;
   const cover = images.find((g: any) => g.id === gs.coverImageId) || images.find((g: any) => !isVideo(g));

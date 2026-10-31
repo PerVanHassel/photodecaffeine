@@ -110,6 +110,86 @@ export function deliveredEmail(o: { firstName: string; title: string; coverUrl?:
             `);
 }
 
+/** To a parent: what they chose for their child, and the way to change it. */
+export function consentReceiptEmail(o: {
+  language: "nl" | "en"; childName: string; parentName: string; projectTitle: string; title: string; body: string; changeLink: string;
+}): string {
+  const firstName = escapeHtml(o.parentName.split(" ")[0]);
+  const child = escapeHtml(o.childName);
+  const project = escapeHtml(o.projectTitle);
+  const t = o.language === "en"
+    ? {
+      eyebrow: "Consent for photos",
+      intro: `Hi ${firstName}, we have saved your choice for ${child} for ${project}.`,
+      button: "Change my choice",
+      foot: "You can change or withdraw your choice at any time with this button. Questions? Just reply to this e-mail.",
+    }
+    : {
+      eyebrow: "Toestemming voor foto's",
+      intro: `Hoi ${firstName}, we hebben je keuze voor ${child} bij ${project} opgeslagen.`,
+      button: "Keuze wijzigen",
+      foot: "Je kunt je keuze altijd wijzigen of intrekken met deze knop. Vragen? Beantwoord deze mail gewoon.",
+    };
+  return emailWrap(`              <tr>
+                <td style="padding:32px 36px 0;">
+                  <span style="color:#c8905a;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;">${t.eyebrow}</span>
+                  <div style="height:10px;line-height:10px;font-size:0;">&nbsp;</div>
+                  <span style="display:block;color:#fffbe0;font-size:22px;font-weight:800;letter-spacing:-0.01em;">${child}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:16px 36px 0;"><span style="color:rgba(255,251,224,0.7);font-size:14px;line-height:1.7;">${t.intro}</span></td>
+              </tr>
+              <tr>
+                <td style="padding:20px 36px 0;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:rgba(255,251,224,0.03);border-left:2px solid #c8905a;">
+                    <tr><td style="padding:16px 18px;">
+                      <span style="display:block;color:#fffbe0;font-size:14px;font-weight:700;">${escapeHtml(o.title)}</span>
+                      <span style="display:block;margin-top:6px;color:rgba(255,251,224,0.65);font-size:13.5px;line-height:1.7;">${escapeHtml(o.body)}</span>
+                    </td></tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:26px 36px 0;">
+                  <a href="${o.changeLink}" style="display:inline-block;background-color:#fffbe0;color:#1a0c04;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 26px;">${t.button}</a>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:20px 36px 32px;"><span style="color:rgba(255,251,224,0.45);font-size:12px;line-height:1.6;">${t.foot}</span></td>
+              </tr>
+            `);
+}
+
+/** To the studio: a child who may not be shown or posted, or a parent who changed their mind. No photo in here: it stays behind the login. */
+export function consentStudioEmail(o: {
+  childName: string; parentName: string; parentEmail: string; projectTitle: string; label: string; changedFrom: string; hasPhoto: boolean; note: string; link: string;
+}): string {
+  const lines = [
+    o.changedFrom ? `Eerst was het: ${escapeHtml(o.changedFrom)}.` : "",
+    `Ingevuld door ${escapeHtml(o.parentName)} (${escapeHtml(o.parentEmail)}).`,
+    o.note ? `Herkenbaar aan: ${escapeHtml(o.note)}.` : "",
+    o.hasPhoto ? "De foto van het kind staat in de admin." : "",
+  ].filter(Boolean).join("<br>");
+  return emailWrap(`              <tr>
+                <td style="padding:32px 36px 0;">
+                  <span style="color:#c8905a;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;">Toestemming</span>
+                  <div style="height:10px;line-height:10px;font-size:0;">&nbsp;</div>
+                  <span style="display:block;color:#fffbe0;font-size:22px;font-weight:800;letter-spacing:-0.01em;">${escapeHtml(o.childName)}: ${escapeHtml(o.label.toLowerCase())}</span>
+                  <span style="display:block;color:rgba(255,251,224,0.3);font-size:12px;margin-top:4px;">${escapeHtml(o.projectTitle)}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:18px 36px 0;"><span style="color:rgba(255,251,224,0.65);font-size:14px;line-height:1.7;">${lines}</span></td>
+              </tr>
+              <tr>
+                <td style="padding:26px 36px 36px;">
+                  <a href="${o.link}" style="display:inline-block;background-color:#fffbe0;color:#1a0c04;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 26px;">Open in admin</a>
+                </td>
+              </tr>
+            `);
+}
+
 export function meetingEmail(o: { title: string; date: string; location?: string; projectLink: string }): string {
   const { projectLink } = o;
   const updated = { title: o.title, meeting: { location: o.location || "" } };

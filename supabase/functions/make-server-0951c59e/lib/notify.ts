@@ -7,7 +7,7 @@ export const NOTIFICATION_LIMIT = 100;
  * a failed melding must not fail the message, signup or enquiry that caused it.
  */
 export async function notify(n: {
-  type: "message" | "client" | "inquiry" | "review" | "feedback" | "quote" | "invoice" | "favorites";
+  type: "message" | "client" | "inquiry" | "review" | "feedback" | "quote" | "invoice" | "favorites" | "consent";
   title: string;
   body?: string;
   link?: string;

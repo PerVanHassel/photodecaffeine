@@ -36,7 +36,7 @@ export function stageForStatus(status: Status, current: Stage): Stage {
 export const PROJECT_SELECT = `
   *,
   project_clients ( client_id, position, clients ( id, name, email, company, user_id ) ),
-  gallery_images ( id, url, storage_path, preview_path, file_name, sort, width, height ),
+  gallery_images ( id, url, storage_path, preview_path, file_name, sort, width, height, restriction ),
   events ( id, kind, title, starts_at, ends_at, all_day, location_text, link, notes, location_id, client_visible )
 `;
 
@@ -122,17 +122,28 @@ export function watermarkedName(name: string): string {
   return `${(name || "foto").replace(/\.\w+$/, "")}-voorbeeld.jpg`;
 }
 
+/** A photo with a child on it who may not be shown: the studio sees it, nobody else. */
+export const heldBack = (img: any) => img.restriction === "no_photo";
+
+/** A photo that may not be posted says so in its file name, so it still does once it has left the gallery. */
+function savedName(img: any): string {
+  const name = img.file_name || "foto.jpg";
+  return img.restriction === "no_social" ? name.replace(/(\.\w+)?$/, (ext: string) => `-niet-op-social-media${ext}`) : name;
+}
+
 /** A link that saves one gallery photo, as far as `downloads` allows; fails when it allows nothing. */
 export async function downloadLink(img: any, downloads: Downloads): Promise<{ url: string; fileName: string }> {
+  if (heldBack(img)) fail(404, "Foto niet gevonden");
   if (downloads === "none" || (downloads === "watermark" && !img.preview_path)) {
     fail(403, "Downloaden kan zodra de foto's geleverd zijn.");
   }
   if (downloads === "watermark") {
-    const fileName = watermarkedName(img.file_name);
+    const fileName = watermarkedName(savedName(img));
     return { url: await signDownload(img.preview_path, fileName), fileName };
   }
-  const url = img.storage_path ? await signDownload(img.storage_path, img.file_name) : img.url;
-  return { url, fileName: img.file_name };
+  const fileName = savedName(img);
+  const url = img.storage_path ? await signDownload(img.storage_path, fileName) : img.url;
+  return { url, fileName };
 }
 
 export type Signer = (img: any, preview?: boolean) => string;
@@ -158,10 +169,12 @@ export function projectToApi(row: ProjectRow, sign: Signer, opts: { forClient?: 
   // A client on a watermarked project only ever gets the watermarked copy, so
   // the original can't be saved from the page either.
   const watermarked = opts.forClient && downloads === "watermark";
-  const images = sortedImages(row).map((g) => {
+  const all = sortedImages(row);
+  const images = (opts.forClient ? all.filter((g) => !heldBack(g)) : all).map((g) => {
     const img: Record<string, any> = { id: g.id, url: sign(g, watermarked), fileName: g.file_name };
     if (opts.forClient) img.download = downloads === "original" || (downloads === "watermark" && Boolean(g.preview_path));
     else img.watermark = Boolean(g.preview_path);
+    if (g.restriction) img.restriction = g.restriction;
     if (g.width > 0 && g.height > 0) {
       img.w = g.width;
       img.h = g.height;
@@ -172,9 +185,12 @@ export function projectToApi(row: ProjectRow, sign: Signer, opts: { forClient?: 
   // Private images have short-lived URLs, so the cover is remembered by image
   // id and turned into a fresh URL here.
   const gallerySettings = { ...(row.gallery_settings || {}) };
-  if (gallerySettings.coverImageId) {
-    const cover = images.find((i) => i.id === gallerySettings.coverImageId);
-    if (cover) gallerySettings.coverUrl = cover.url;
+  const cover = gallerySettings.coverImageId ? images.find((i) => i.id === gallerySettings.coverImageId) : null;
+  if (cover) gallerySettings.coverUrl = cover.url;
+  else if (images.length < all.length) {
+    // The cover may be the photo that is held back; the gallery then opens with its first photo.
+    delete gallerySettings.coverImageId;
+    delete gallerySettings.coverUrl;
   }
   const events = (row.events || [])
     .filter((e: any) => !opts.forClient || e.client_visible)
