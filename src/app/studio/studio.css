@@ -308,7 +308,7 @@ button.s-item { width: 100%; border: 0; background: none; text-align: left; }
 .s-fav svg { width: 14px; height: 14px; }
 .s-fav.on { background: var(--accent); }
 /* Picking photos in the contact sheet, and what they are marked with. */
-.s-pick {
+.studio .s-pick {
   position: absolute; top: 6px; left: 6px; z-index: 2; display: grid; place-items: center; width: 26px; height: 26px; padding: 0;
   border: 1.5px solid rgba(255, 255, 255, 0.9); border-radius: 7px; background: rgba(15, 10, 6, 0.4); color: #fff;
   backdrop-filter: blur(4px); opacity: 0; transition: opacity 0.15s;
@@ -319,6 +319,12 @@ button.s-item { width: 100%; border: 0; background: none; text-align: left; }
 @media (hover: none) { .s-pick { opacity: 1; } }
 .s-pick.on { background: var(--accent); border-color: var(--accent); }
 .s-picking .s-ph { cursor: pointer; }
+/* Children their parents pointed out on this photo, coloured by what may be done with them. */
+.s-tagchips { position: absolute; left: 6px; right: 6px; bottom: 28px; z-index: 2; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 3px; pointer-events: none; }
+.studio .s-tagchip { max-width: 100%; padding: 2px 7px; border: 0; border-radius: 999px; background: rgba(15, 10, 6, 0.72); color: #fff; font-size: 11px; font-weight: 600; line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: auto; }
+.studio .s-tagchip.no_photo { background: var(--bad); }
+.studio .s-tagchip.no_social { background: var(--warn); }
+.studio .s-tagchip.unknown { background: #fff; color: var(--bad); box-shadow: inset 0 0 0 1.5px var(--bad); }
 /* Drawn inside the tile: the contact sheet's tiles clip what falls outside them. */
 .s-ph.picked::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; box-shadow: inset 0 0 0 3px var(--accent); pointer-events: none; }
 .s-ph.held img, .s-ph.held video { opacity: 0.45; filter: grayscale(0.7); }

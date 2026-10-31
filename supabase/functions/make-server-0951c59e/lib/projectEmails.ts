@@ -190,6 +190,27 @@ export function consentStudioEmail(o: {
             `);
 }
 
+/** To the studio: a parent says their child is on a photo, and that child needs care. No photo in here: it stays behind the login. */
+export function childTagEmail(o: { childName: string; label: string; guestName: string; guestEmail: string; fileName: string; projectTitle: string; link: string }): string {
+  return emailWrap(`              <tr>
+                <td style="padding:32px 36px 0;">
+                  <span style="color:#c8905a;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;">Kind op een foto</span>
+                  <div style="height:10px;line-height:10px;font-size:0;">&nbsp;</div>
+                  <span style="display:block;color:#fffbe0;font-size:22px;font-weight:800;letter-spacing:-0.01em;">${escapeHtml(o.childName)}: ${escapeHtml(o.label)}</span>
+                  <span style="display:block;color:rgba(255,251,224,0.3);font-size:12px;margin-top:4px;">${escapeHtml(o.projectTitle)}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:18px 36px 0;"><span style="color:rgba(255,251,224,0.65);font-size:14px;line-height:1.7;">${escapeHtml(o.guestName)} (${escapeHtml(o.guestEmail)}) geeft aan dat dit kind op ${escapeHtml(o.fileName || "een foto")} staat. Komen er meer foto's bij, dan zie je die in de galerij.</span></td>
+              </tr>
+              <tr>
+                <td style="padding:26px 36px 36px;">
+                  <a href="${o.link}" style="display:inline-block;background-color:#fffbe0;color:#1a0c04;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 26px;">Open de galerij</a>
+                </td>
+              </tr>
+            `);
+}
+
 export function meetingEmail(o: { title: string; date: string; location?: string; projectLink: string }): string {
   const { projectLink } = o;
   const updated = { title: o.title, meeting: { location: o.location || "" } };

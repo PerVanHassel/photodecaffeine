@@ -53,6 +53,23 @@ export function statementsFor(club: string): Record<Language, Record<Answer, { t
 
 export const consentUrl = (token: string, key?: string) => `${SITE_URL}/toestemming/${token}${key ? `?k=${key}` : ""}`;
 
+/** The shoot a form is about: the next one, or else the most recent. */
+function shootOf(events: any[]): any {
+  const shoots = (events || []).filter((e) => e.kind === "shoot" && e.client_visible).sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+  const since = new Date(Date.now() - 86400000).toISOString();
+  return shoots.find((e) => e.starts_at >= since) || shoots[shoots.length - 1];
+}
+
+/** What the form shows, on its own page and as a step on the way into the group's gallery. */
+export function formFields(project: any) {
+  return {
+    title: project.gallery_settings?.title || project.title,
+    shootDate: shootOf(project.events)?.starts_at || "",
+    accentColor: project.gallery_settings?.accentColor || "",
+    statements: statementsFor(project.gallery_settings?.consentClub || ""),
+  };
+}
+
 export type ConsentFormRow = { project_id: string; token: string; active: boolean; created_at: string };
 
 export async function consentFormFor(projectId: string): Promise<ConsentFormRow | null> {
@@ -86,6 +103,39 @@ export async function consentState(projectId: string) {
     form: form ? { url: consentUrl(form.token), active: form.active, createdAt: form.created_at } : null,
     consents,
     totals: { full: count("full"), no_social: count("no_social"), no_photo: count("no_photo") },
+  };
+}
+
+const normalName = (name: string) => name.trim().toLowerCase().replace(/\s+/g, " ");
+
+/**
+ * What the answers say about a child a parent pointed out on a photo: the
+ * strictest one for that name, or for that first name when only that was given.
+ * "unknown" when no form names this child, which is a question for the studio.
+ */
+export function answerForChild(name: string, consents: { child_name: string; answer: Answer }[]): Answer | "unknown" {
+  const wanted = normalName(name);
+  let same = consents.filter((c) => normalName(c.child_name) === wanted);
+  if (same.length === 0 && !wanted.includes(" ")) same = consents.filter((c) => normalName(c.child_name).split(" ")[0] === wanted);
+  if (same.length === 0) return "unknown";
+  return same.map((c) => c.answer).sort((a, b) => STRICTNESS[a] - STRICTNESS[b])[0];
+}
+
+/** Every child pointed out on a photo of this project, for the studio. */
+export async function childTags(projectId: string) {
+  const [tags, consents] = await Promise.all([
+    db.from("gallery_child_tags").select("id, image_id, child_name, gallery_guests ( name )").eq("project_id", projectId).order("created_at"),
+    db.from("consents").select("child_name, answer").eq("project_id", projectId),
+  ]);
+  const answers = (must(consents) || []) as { child_name: string; answer: Answer }[];
+  return {
+    tags: ((must(tags) || []) as any[]).map((t) => ({
+      id: t.id,
+      imageId: t.image_id,
+      child: t.child_name,
+      answer: answerForChild(t.child_name, answers),
+      by: t.gallery_guests?.name || "",
+    })),
   };
 }
 

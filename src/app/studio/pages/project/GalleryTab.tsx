@@ -6,8 +6,8 @@ import { Check, EyeOff, Heart, ImagePlus, Mail, MegaphoneOff, Star, Trash2, Uplo
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { api, del, errorMessage, post, put } from "../../api";
-import { keys, useAction } from "../../queries";
-import type { EarlyDownloads, GalleryImage, Project, Restriction } from "../../types";
+import { keys, useAction, useChildTags } from "../../queries";
+import type { ChildTag, EarlyDownloads, GalleryImage, Project, Restriction } from "../../types";
 import { Button, Card, cx, Empty, Field, isVideo, Photo, Pill, Segmented, TextField, useConfirm } from "../../ui";
 import { useUnsavedChanges } from "../../unsaved";
 import { StylePicker } from "../../gallery/StylePicker";
@@ -18,6 +18,14 @@ import { GroupLink, useGroupLink } from "./GroupLink";
 const BATCH = 8;
 
 const MARK_LABEL: Record<Restriction, string> = { no_photo: "Niet in beeld", no_social: "Niet posten" };
+const CHILD_LABEL: Record<ChildTag["answer"], string> = { full: "mag op de foto en op social media", no_social: "niet op social media", no_photo: "niet op de foto", unknown: "geen toestemming gevonden" };
+
+/** The mark a photo should have for the children parents pointed out on it, when that is stricter than the one it has. */
+function missingMark(g: GalleryImage, tags: ChildTag[] = []): Restriction | "" {
+  if (g.restriction === "no_photo") return "";
+  if (tags.some((t) => t.answer === "no_photo")) return "no_photo";
+  return !g.restriction && tags.some((t) => t.answer === "no_social") ? "no_social" : "";
+}
 
 export function GalleryTab({ project: p }: { project: Project }) {
   const qc = useQueryClient();
@@ -26,7 +34,7 @@ export function GalleryTab({ project: p }: { project: Project }) {
   const [over, setOver] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [addedThisVisit, setAddedThisVisit] = useState(0);
-  const [filter, setFilter] = useState<"all" | "favorites" | Restriction>("all");
+  const [filter, setFilter] = useState<"all" | "favorites" | "attention" | Restriction>("all");
   const [picked, setPicked] = useState<Set<string>>(() => new Set());
   const lastPicked = useRef<string | null>(null);
   const favorites = p.favorites || {};
@@ -98,7 +106,17 @@ export function GalleryTab({ project: p }: { project: Project }) {
     onSuccess: () => setAddedThisVisit(0),
   });
 
-  const shown = filter === "all" ? p.gallery : filter === "favorites" ? p.gallery.filter((g) => favorites[g.id]) : p.gallery.filter((g) => g.restriction === filter);
+  const allTags = useChildTags(p.id).data;
+  const tagsOf: Record<string, ChildTag[]> = {};
+  for (const t of allTags || []) (tagsOf[t.imageId] ||= []).push(t);
+  const toMark = p.gallery.filter((g) => missingMark(g, tagsOf[g.id]));
+  // A child no form names: nothing to apply by itself, so the studio looks at it.
+  const unknownKids = p.gallery.filter((g) => !g.restriction && tagsOf[g.id]?.some((t) => t.answer === "unknown"));
+  const attention = new Set([...toMark, ...unknownKids].map((g) => g.id));
+  const shown = filter === "all" ? p.gallery
+    : filter === "favorites" ? p.gallery.filter((g) => favorites[g.id])
+    : filter === "attention" ? p.gallery.filter((g) => attention.has(g.id))
+    : p.gallery.filter((g) => g.restriction === filter);
   const marked = (r: Restriction) => p.gallery.filter((g) => g.restriction === r).length;
 
   /** One photo, or with shift everything between it and the one picked before: a burst goes in one go. */
@@ -130,6 +148,25 @@ export function GalleryTab({ project: p }: { project: Project }) {
     },
   });
   const markPicked = (restriction: Restriction | "") => mark.mutate({ ids: [...picked], restriction });
+
+  const markTagged = useAction({
+    fn: async () => {
+      for (const restriction of ["no_photo", "no_social"] as const) {
+        const ids = toMark.filter((g) => missingMark(g, tagsOf[g.id]) === restriction).map((g) => g.id);
+        if (ids.length) await put(`/admin/project/${p.id}/gallery/restriction`, { ids, restriction });
+      }
+    },
+    invalidate: () => [keys.project(p.id)],
+    success: "Foto's gemarkeerd",
+  });
+  const removeTag = useAction({
+    fn: (t: ChildTag) => del(`/admin/project/${p.id}/child-tags/${t.id}`),
+    invalidate: () => [keys.childTags(p.id)],
+    success: "Aanwijzing weggehaald",
+  });
+  async function askRemoveTag(t: ChildTag) {
+    if (await confirm({ title: `${t.child} staat hier niet op?`, body: `${t.by || "Een ouder"} wees dit kind aan op deze foto. De aanwijzing gaat weg; de foto blijft staan.`, confirm: "Weghalen" })) removeTag.mutate(t);
+  }
 
   const publicCount = p.gallery.filter((g) => g.url.includes("/object/public/")).length;
   const privatize = useAction({
@@ -170,6 +207,21 @@ export function GalleryTab({ project: p }: { project: Project }) {
         )}
         <input ref={input} type="file" accept="image/*,video/mp4,video/quicktime" multiple hidden onChange={(e) => { uploadFiles(Array.from(e.target.files || [])); e.target.value = ""; }} />
       </div>
+
+      {attention.size > 0 && (
+        <div className="s-card" style={{ background: "var(--bad-soft)", borderColor: "transparent" }} role="status">
+          <div className="s-card-body s-row between">
+            <span className="s-small">
+              {toMark.length > 0 && <><b>{toMark.length} {toMark.length === 1 ? "foto" : "foto's"}</b> met een kind dat niet in beeld of niet gepost mag worden, volgens de ouders. </>}
+              {unknownKids.length > 0 && <><b>{unknownKids.length} {unknownKids.length === 1 ? "foto" : "foto's"}</b> met een kind zonder toestemming.</>}
+            </span>
+            <div className="s-row">
+              <Button size="sm" aria-pressed={filter === "attention"} variant={filter === "attention" ? "primary" : "default"} onClick={() => setFilter((v) => (v === "attention" ? "all" : "attention"))}>Bekijken</Button>
+              {toMark.length > 0 && <Button size="sm" variant="primary" loading={markTagged.isPending} onClick={() => markTagged.mutate()}>Goed markeren</Button>}
+            </div>
+          </div>
+        </div>
+      )}
 
       <ConsentReminder project={p} />
 
@@ -219,6 +271,8 @@ export function GalleryTab({ project: p }: { project: Project }) {
                   image={g}
                   index={i}
                   isCover={g.id === coverId}
+                  tags={tagsOf[g.id]}
+                  onRemoveTag={askRemoveTag}
                   picked={picked.has(g.id)}
                   picking={picked.size > 0}
                   onPick={(range) => pick(g.id, range)}
@@ -255,8 +309,8 @@ export function GalleryTab({ project: p }: { project: Project }) {
   );
 }
 
-function SortablePhoto({ image, index, isCover, picked, picking, favoritedBy, onPick, onCover, onRemove, onSize }: {
-  image: GalleryImage; index: number; isCover: boolean; picked: boolean; picking: boolean; favoritedBy?: string[];
+function SortablePhoto({ image, index, isCover, tags, onRemoveTag, picked, picking, favoritedBy, onPick, onCover, onRemove, onSize }: {
+  image: GalleryImage; index: number; isCover: boolean; tags?: ChildTag[]; onRemoveTag: (t: ChildTag) => void; picked: boolean; picking: boolean; favoritedBy?: string[];
   onPick: (range: boolean) => void; onCover: () => void; onRemove: () => void;
   onSize: (w: number, h: number) => void;
 }) {
@@ -271,6 +325,16 @@ function SortablePhoto({ image, index, isCover, picked, picking, favoritedBy, on
         <button type="button" role="checkbox" aria-checked={picked} className={cx("s-pick", picked && "on")} title="Selecteren (met shift een reeks)" aria-label={`Foto ${number} selecteren`}
           onPointerDown={(e) => e.stopPropagation()} onClick={(e) => onPick(e.shiftKey)}><Check /></button>
         {image.restriction && <span className={`s-mark ${image.restriction}`}>{MARK_LABEL[image.restriction]}</span>}
+        {tags && (
+          <div className="s-tagchips">
+            {tags.map((t) => (
+              <button key={t.id} type="button" className={`s-tagchip ${t.answer}`} title={`${t.child}: ${CHILD_LABEL[t.answer]}. Aangewezen door ${t.by || "een ouder"}. Klik om weg te halen.`}
+                aria-label={`${t.child}, ${CHILD_LABEL[t.answer]}. Aanwijzing weghalen`} onPointerDown={(e) => e.stopPropagation()} onClick={() => onRemoveTag(t)}>
+                {t.child.trim().split(/\s+/)[0]}{t.answer === "unknown" ? " ?" : ""}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="corner">
           {favoritedBy && <span className="s-fav on" title={`Favoriet van ${favoritedBy.join(", ")}`}><Heart /></span>}
           {image.restriction !== "no_photo" && <button type="button" className={`s-fav ${isCover ? "on" : ""}`} title={isCover ? "Omslagfoto" : "Maak omslagfoto"} aria-label="Maak omslagfoto" onPointerDown={(e) => e.stopPropagation()} onClick={onCover}><Star /></button>}

@@ -1,5 +1,5 @@
-import { ArrowDown, ArrowRight, ArrowUp, ChevronLeft, ChevronRight, Download, Flame, Grid3x3, Heart, Instagram, MegaphoneOff, Play, Rows2, Share2, Users, X } from "lucide-react";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { ArrowDown, ArrowRight, ArrowUp, Check, ChevronLeft, ChevronRight, Download, Flame, Grid3x3, Heart, Instagram, MegaphoneOff, Play, Plus, Rows2, Share2, Users, X } from "lucide-react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { Helmet } from "react-helmet-async";
 import { useModalFocus } from "../../lib/dialog";
 import { fmt } from "../format";
@@ -22,6 +22,22 @@ type Filter = "all" | "fav" | "popular";
 /** How a photo's hearts from the group show: in the heart itself (guests), as a badge (the client), or not. */
 type CountAs = "heart" | "badge" | "none";
 type TileFn = (g: GalleryImage, i: number, opts?: { heart?: boolean; eager?: boolean }) => ReactNode;
+
+/** A parent on the group page: their own children, and on which photos they say a child is. */
+export interface GalleryKids {
+  names: string[];
+  /** The child a tap on a photo is about. */
+  active: string;
+  /** Per photo, this parent's children on it. */
+  tags: Record<string, string[]>;
+  /** The consent form, when this parent has not filled it in yet. */
+  consentUrl?: string;
+  onChoose: (name: string) => void;
+  onAdd: (name: string) => void;
+  onTag: (img: GalleryImage) => void;
+}
+
+const firstName = (name: string) => name.trim().split(/\s+/)[0];
 
 export interface GalleryActions {
   toggle?: (img: GalleryImage) => void;
@@ -62,7 +78,7 @@ function tempo(ratios: number[], w: number) {
   return rowBoxes(rows, ratios, w, gap);
 }
 
-export function ClientGallery({ project: p, favs, favNames, counts, guest, actions, back, after, openId, preview }: {
+export function ClientGallery({ project: p, favs, favNames, counts, guest, kids, actions, back, after, openId, preview }: {
   project: GalleryProject;
   favs: Set<string>;
   /** Preview: who picked each photo. */
@@ -71,6 +87,7 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, actio
   counts?: Record<string, number>;
   /** Someone who came in with the group link: their texts, and the hearts counted in the heart. */
   guest?: { name: string; guests: number };
+  kids?: GalleryKids;
   actions: GalleryActions;
   back: ReactNode;
   /** Under the photos, above the footer. */
@@ -85,6 +102,7 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, actio
   const [filter, setFilter] = useUrlState<Filter>("filter", "all", ["all", "fav", "popular"]);
   const [view, setView] = useUrlState<View>("view", "large", ["large", "compact"]);
   const [open, setOpen] = useState<{ list: GalleryImage[]; index: number } | null>(null);
+  const [onlyKid, setOnlyKid] = useState(false);
   const { ratioOf, report } = useRatios();
   const top = useStickyTop();
   const grid = useRef<HTMLElement>(null);
@@ -96,7 +114,12 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, actio
   // Most hearts first; equal ones keep the studio's order.
   const popular = p.gallery.filter((g) => countOf(g) > 0).sort((a, b) => countOf(b) - countOf(a) || numberOf.get(a.id)! - numberOf.get(b.id)!);
   const showPopular = popular.length > 0 || filter === "popular";
-  const shown = filter === "fav" ? p.gallery.filter((g) => favs.has(g.id)) : filter === "popular" ? popular : p.gallery;
+  const listed = filter === "fav" ? p.gallery.filter((g) => favs.has(g.id)) : filter === "popular" ? popular : p.gallery;
+  const hasKid = (g: GalleryImage) => !!kids?.tags[g.id]?.includes(kids.active);
+  const kidCount = p.gallery.filter(hasKid).length;
+  // With no photo of this child left, the filter lets go by itself.
+  const onlyKidOn = onlyKid && kidCount > 0;
+  const shown = onlyKidOn ? listed.filter(hasKid) : listed;
   const countAs: CountAs = guest ? "heart" : filter === "popular" ? "badge" : "none";
   const ratios = shown.map(ratioOf);
   const videos = p.gallery.filter((g) => isVideo(g.fileName || g.url)).length;
@@ -126,6 +149,7 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, actio
       onOpen={() => setOpen({ list: shown, index: i })}
       onToggle={actions.toggle && (() => actions.toggle!(g))}
       onSize={(w, h) => report(g, w, h)}
+      kid={kids?.active ? { name: firstName(kids.active), on: hasKid(g), onTag: () => kids.onTag(g) } : undefined}
       eager={opts.eager ?? i < 8}
       heart={opts.heart}
       t={t}
@@ -200,6 +224,7 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, actio
           <div className="g-empty"><p className="g-title">{t.noPhotos}</p><p>{guest ? t.noPhotosGuest : t.noPhotosHint}</p></div>
         ) : (
           <>
+            {kids && <KidsPanel kids={kids} count={kidCount} only={onlyKidOn} onOnly={setOnlyKid} t={t} />}
             <div className="g-bar">
               <div className={cx("g-tabs", showPopular && "three")} role="group" aria-label="Filter">
                 <button type="button" className="g-tab" aria-pressed={filter === "all"} onClick={() => setFilter("all")}>
@@ -261,6 +286,7 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, actio
       {open && (
         <Lightbox list={open.list} start={open.index} total={p.gallery.length} numberOf={numberOf} favs={favs} favNames={favNames}
           counts={counts} countAs={guest ? "heart" : "badge"}
+          kid={kids?.active ? { name: firstName(kids.active), isOn: hasKid, onTag: kids.onTag } : undefined}
           onToggle={actions.toggle} onDownload={downloads === "none" ? undefined : actions.downloadOne} onShare={actions.sharePhoto}
           protect={downloads !== "original" && !preview} onClose={() => setOpen(null)} t={t} />
       )}
@@ -442,9 +468,9 @@ function SheetLayout({ images, ratios, tile, numberOf, favs, favNames, counts, o
 /** Photos already shown once this visit appear without fading in again. */
 const seen = new Set<string>();
 
-function Tile({ img, label, alt, fav, favBy, count, countAs, onOpen, onToggle, onSize, eager, heart = true, t }: {
+function Tile({ img, label, alt, fav, favBy, count, countAs, onOpen, onToggle, onSize, kid, eager, heart = true, t }: {
   img: GalleryImage; label: string; alt: string; fav: boolean; favBy?: string[]; count: number; countAs: CountAs; onOpen: () => void; onToggle?: () => void;
-  onSize: (w: number, h: number) => void; eager?: boolean; heart?: boolean; t: T;
+  onSize: (w: number, h: number) => void; kid?: { name: string; on: boolean; onTag: () => void }; eager?: boolean; heart?: boolean; t: T;
 }) {
   const video = isVideo(img.fileName || img.url);
   const [loaded, setLoaded] = useState(() => seen.has(img.url));
@@ -466,6 +492,12 @@ function Tile({ img, label, alt, fav, favBy, count, countAs, onOpen, onToggle, o
         />
       )}
       {video && <span className="g-play" aria-hidden="true"><Play fill="currentColor" /></span>}
+      {kid && (
+        <button type="button" className={cx("g-kid", kid.on && "on")} aria-pressed={kid.on} aria-label={t.kidsOnPhoto(kid.name)} title={t.kidsOnPhoto(kid.name)}
+          onClick={(e) => { e.stopPropagation(); kid.onTag(); }}>
+          {kid.on ? <Check aria-hidden="true" /> : <Plus aria-hidden="true" />}<span>{kid.name}</span>
+        </button>
+      )}
       {img.restriction === "no_social" && <span className="g-nopost" title={t.noSocialHint}><MegaphoneOff aria-hidden="true" /><span>{t.noSocial}</span></span>}
       {heart && <HeartButton on={fav} by={favBy} count={countAs === "heart" ? count : 0} onToggle={onToggle} t={t} />}
       {countAs === "badge" && count > 0 && (
@@ -474,6 +506,45 @@ function Tile({ img, label, alt, fav, favBy, count, countAs, onOpen, onToggle, o
         </span>
       )}
     </figure>
+  );
+}
+
+/** Above the photos of a shoot with a consent form: which child a tap is about. Only this parent's own children are ever listed. */
+function KidsPanel({ kids, count, only, onOnly, t }: { kids: GalleryKids; count: number; only: boolean; onOnly: (on: boolean) => void; t: T }) {
+  const [adding, setAdding] = useState(kids.names.length === 0);
+  const [name, setName] = useState("");
+  const add = (e: FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    kids.onAdd(name.trim());
+    setName("");
+    setAdding(false);
+  };
+  const first = firstName(kids.active);
+  return (
+    <section className="g-kids" aria-labelledby="g-kids-title">
+      <h2 id="g-kids-title">{t.kidsTitle}</h2>
+      <p>{kids.active ? t.kidsIntro(first) : t.kidsAsk}</p>
+      {kids.names.length > 0 && (
+        <div className="g-kids-row" role="group" aria-label={t.kidsChoose}>
+          {kids.names.map((n) => (
+            <button key={n} type="button" className="g-kids-chip" aria-pressed={n === kids.active} onClick={() => kids.onChoose(n)}>{firstName(n)}</button>
+          ))}
+          {!adding && <button type="button" className="g-kids-chip" onClick={() => setAdding(true)}><Plus aria-hidden="true" />{t.kidsOther}</button>}
+          {count > 0 && <button type="button" className="g-kids-chip" aria-pressed={only} onClick={() => onOnly(!only)}>{t.kidsOnly(first, count)}</button>}
+        </div>
+      )}
+      {adding && (
+        <form className="g-kids-add" onSubmit={add}>
+          <div className="g-field">
+            <label htmlFor="g-kid-name">{t.kidsName}</label>
+            <input id="g-kid-name" autoComplete="off" autoCapitalize="words" maxLength={120} value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <button type="submit" className="g-btn primary" disabled={!name.trim()}>{t.kidsAdd}</button>
+        </form>
+      )}
+      {kids.consentUrl && <p className="g-small">{t.kidsConsent} <a href={kids.consentUrl} target="_blank" rel="noreferrer">{t.kidsConsentLink}</a>.</p>}
+    </section>
   );
 }
 
@@ -500,9 +571,9 @@ function HeartButton({ on, by, count = 0, onToggle, t, inline }: { on: boolean; 
 // Lightbox
 // ---------------------------------------------------------------------------
 
-function Lightbox({ list, start, total, numberOf, favs, favNames, counts, countAs, onToggle, onDownload, onShare, protect, onClose, t }: {
+function Lightbox({ list, start, total, numberOf, favs, favNames, counts, countAs, kid, onToggle, onDownload, onShare, protect, onClose, t }: {
   list: GalleryImage[]; start: number; total: number; numberOf: Map<string, number>; favs: Set<string>; favNames?: Record<string, string[]>;
-  counts?: Record<string, number>; countAs: CountAs;
+  counts?: Record<string, number>; countAs: CountAs; kid?: { name: string; isOn: (g: GalleryImage) => boolean; onTag: (g: GalleryImage) => void };
   onToggle?: (g: GalleryImage) => void; onDownload?: (g: GalleryImage) => void; onShare?: (g: GalleryImage) => void;
   protect: boolean; onClose: () => void; t: T;
 }) {
@@ -553,6 +624,11 @@ function Lightbox({ list, start, total, numberOf, favs, favNames, counts, countA
           <span className="g-lb-name">{img.fileName}</span>
         </div>
         <div className="g-lb-actions">
+          {kid && (
+            <button type="button" className={cx("g-btn g-lb-kid", kid.isOn(img) && "on")} aria-pressed={kid.isOn(img)} aria-label={t.kidsOnPhoto(kid.name)} title={t.kidsOnPhoto(kid.name)} onClick={() => kid.onTag(img)}>
+              {kid.isOn(img) ? <Check aria-hidden="true" /> : <Plus aria-hidden="true" />}<span>{kid.name}</span>
+            </button>
+          )}
           {onToggle ? (
             <button type="button" className={cx("g-btn", fav && "on")} aria-pressed={fav} onClick={() => onToggle(img)}>
               <Heart fill={fav ? "currentColor" : "none"} /><span className="g-btn-label">{fav ? t.favorite : t.makeFavorite}</span>

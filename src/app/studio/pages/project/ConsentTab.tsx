@@ -80,6 +80,7 @@ export function ConsentTab({ project: p }: { project: Project }) {
   const update = useAction({
     fn: (active: boolean) => put<ConsentState>(base, { active }),
     onSuccess: store,
+    invalidate: () => [keys.groupLink(p.id)],
     success: (_s, active) => (active ? "Link staat weer aan" : "Link staat uit"),
   });
   const remove = useAction({ fn: (c: ConsentRow) => del<ConsentState>(`${base}/${c.id}`), onSuccess: store, success: "Verwijderd" });
@@ -145,7 +146,7 @@ export function ConsentTab({ project: p }: { project: Project }) {
           <div className="s-row between">
             <div className="s-row">
               <Button size="sm" disabled={update.isPending} onClick={async () => {
-                if (form.active && !(await confirm({ title: "Link uitzetten?", body: "Nieuwe ouders kunnen dan niets meer invullen. Wie al heeft ingevuld, kan zijn keuze nog wijzigen via de link in de mail.", confirm: "Uitzetten" }))) return;
+                if (form.active && !(await confirm({ title: "Link uitzetten?", body: "Nieuwe ouders kunnen dan niets meer invullen. Wie al heeft ingevuld, kan zijn keuze nog wijzigen via de link in de mail. Staat 'Eerst toestemming vragen' aan bij de groepslink, dan gaat die ook uit.", confirm: "Uitzetten"}))) return;
                 update.mutate(!form.active);
               }}>
                 {form.active ? "Link uitzetten" : "Link weer aanzetten"}

@@ -36,7 +36,7 @@ export const policies = {
       },
       {
         heading: "5. Toestemming voor foto's van kinderen",
-        body: "Bij een shoot met kinderen vragen wij ouders per kind om toestemming, via een formulier. Daarin staan de naam van het kind, de keuze, en de naam en het e-mailadres van de ouder. Mag een kind niet of beperkt in beeld, dan vragen wij ook een foto van het kind of een beschrijving, zodat wij het kind kunnen herkennen. Alleen de studio ziet die foto, en wij verwijderen hem zodra de foto's zijn geleverd. De keuze zelf bewaren wij als bewijs zolang de foto's worden gebruikt. Een ouder kan de keuze altijd wijzigen of intrekken via de link in de bevestigingsmail.",
+        body: "Bij een shoot met kinderen vragen wij ouders per kind om toestemming, via een formulier. Daarin staan de naam van het kind, de keuze, en de naam en het e-mailadres van de ouder. Mag een kind niet of beperkt in beeld, dan vragen wij ook een foto van het kind of een beschrijving, zodat wij het kind kunnen herkennen. Alleen de studio ziet die foto, en wij verwijderen hem zodra de foto's zijn geleverd. De keuze zelf bewaren wij als bewijs zolang de foto's worden gebruikt. Een ouder kan de keuze altijd wijzigen of intrekken via de link in de bevestigingsmail. In de galerij kan een ouder ook aanwijzen op welke foto's het eigen kind staat. Dat zien alleen die ouder en de studio.",
       },
       {
         heading: "6. Dienstverleners",

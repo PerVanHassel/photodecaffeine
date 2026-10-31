@@ -1,7 +1,7 @@
 import { Hono } from "npm:hono";
 import { BRIEFING_MAX_CHARS, SITE_URL } from "../lib/config.ts";
 import { projectRecipients } from "../lib/clients.ts";
-import { consentFormFor, consentState, removeConsentPhotos } from "../lib/consents.ts";
+import { childTags, consentFormFor, consentState, removeConsentPhotos } from "../lib/consents.ts";
 import { db, found, must } from "../lib/db.ts";
 import { sendEmail } from "../lib/email.ts";
 import { type Env, fail, isoDate, nameOf, readBody, requireAdmin, requirePermission, text, uuid, z } from "../lib/http.ts";
@@ -472,7 +472,7 @@ async function shareState(id: string) {
   }));
   const sum = (list: number[]) => list.reduce((s, n) => s + n, 0);
   return {
-    share: { url: shareUrl(share.token), active: share.active, downloads: share.downloads, createdAt: share.created_at },
+    share: { url: shareUrl(share.token), active: share.active, downloads: share.downloads, consentRequired: share.consent_required, createdAt: share.created_at },
     guests,
     hearts: hearts.images,
     totals: {
@@ -497,9 +497,12 @@ r.post(`${P}/project/:id/share`, async (c) => {
 
 r.put(`${P}/project/:id/share`, async (c) => {
   const id = c.req.param("id");
-  const b = await readBody(c, z.object({ active: z.boolean().optional(), downloads: z.boolean().optional() }));
-  if (Object.keys(b).length) {
-    found(await db.from("gallery_shares").update(b).eq("project_id", id).select("project_id").maybeSingle(), "Deze galerij heeft nog geen groepslink.");
+  const { consentRequired, ...b } = await readBody(c, z.object({ active: z.boolean().optional(), downloads: z.boolean().optional(), consentRequired: z.boolean().optional() }));
+  const patch = consentRequired === undefined ? b : { ...b, consent_required: consentRequired };
+  // Asking for consent takes a form that is there and open.
+  if (consentRequired) await openConsentForm(id);
+  if (Object.keys(patch).length) {
+    found(await db.from("gallery_shares").update(patch).eq("project_id", id).select("project_id").maybeSingle(), "Deze galerij heeft nog geen groepslink.");
   }
   return c.json(await shareState(id));
 });
@@ -526,14 +529,29 @@ r.delete(`${P}/project/:id/share/guests/:guestId`, async (c) => {
 // ---------------------------------------------------------------------------
 // The link that goes to all parents (see lib/consents.ts), and their answers.
 
+/** Makes the form, or switches an existing one back on with the same address. */
+async function openConsentForm(id: string) {
+  if (await consentFormFor(id)) must(await db.from("consent_forms").update({ active: true }).eq("project_id", id));
+  else must(await db.from("consent_forms").insert({ project_id: id, token: shareToken() }));
+}
+
+// Children their parents pointed out on a photo, in the group's gallery.
+r.get(`${P}/project/:id/child-tags`, async (c) => c.json(await childTags(c.req.param("id"))));
+
+// A parent can be wrong about a photo; the studio decides.
+r.delete(`${P}/project/:id/child-tags/:tagId`, async (c) => {
+  const id = c.req.param("id");
+  must(await db.from("gallery_child_tags").delete().eq("id", c.req.param("tagId")).eq("project_id", id));
+  return c.json(await childTags(id));
+});
+
 r.get(`${P}/project/:id/consent`, async (c) => c.json(await consentState(c.req.param("id"))));
 
 // Makes the link, or switches an existing one back on with the same address.
 r.post(`${P}/project/:id/consent`, async (c) => {
   const id = c.req.param("id");
   found(await db.from("projects").select("id").eq("id", id).maybeSingle(), "Project niet gevonden");
-  if (await consentFormFor(id)) must(await db.from("consent_forms").update({ active: true }).eq("project_id", id));
-  else must(await db.from("consent_forms").insert({ project_id: id, token: shareToken() }));
+  await openConsentForm(id);
   return c.json(await consentState(id));
 });
 
@@ -541,6 +559,8 @@ r.put(`${P}/project/:id/consent`, async (c) => {
   const id = c.req.param("id");
   const { active } = await readBody(c, z.object({ active: z.boolean() }));
   found(await db.from("consent_forms").update({ active }).eq("project_id", id).select("project_id").maybeSingle(), "Dit project heeft nog geen toestemmingslink.");
+  // A closed form cannot be the way in: the group link stops asking for it too.
+  if (!active) must(await db.from("gallery_shares").update({ consent_required: false }).eq("project_id", id));
   return c.json(await consentState(id));
 });
 

@@ -118,7 +118,7 @@ export type GalleryProject = Pick<Project, "title" | "stage" | "gallerySettings"
 
 /** Admin: a project's group link and everyone who came in with it. */
 export interface ShareState {
-  share: { url: string; active: boolean; downloads: boolean; createdAt: string } | null;
+  share: { url: string; active: boolean; downloads: boolean; consentRequired: boolean; createdAt: string } | null;
   guests: ShareGuest[];
   /** Hearts per photo. */
   hearts: Record<string, number>;
@@ -138,6 +138,15 @@ export interface ShareGuest {
 
 /** What a parent says may be done with their child at a shoot. */
 export type ConsentAnswer = "full" | Restriction;
+
+/** Admin: a child a parent pointed out on a photo, with what the answers say about them. */
+export interface ChildTag {
+  id: string;
+  imageId: string;
+  child: string;
+  answer: ConsentAnswer | "unknown";
+  by: string;
+}
 
 /** Admin: a project's consent link and every answer, strictest first. */
 export interface ConsentState {

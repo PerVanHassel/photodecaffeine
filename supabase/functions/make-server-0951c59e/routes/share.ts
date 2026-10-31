@@ -1,8 +1,12 @@
 import { Hono } from "npm:hono";
 import { verifyAdmin } from "../lib/auth.ts";
-import { EMAIL_RE } from "../lib/config.ts";
+import { EMAIL_ADMIN_NOTIFY, EMAIL_RE, SITE_URL } from "../lib/config.ts";
+import { answerForChild, consentUrl, formFields } from "../lib/consents.ts";
 import { db, found, must } from "../lib/db.ts";
+import { sendEmail } from "../lib/email.ts";
 import { type Env, fail, readBody, text, uuid, z } from "../lib/http.ts";
+import { notify } from "../lib/notify.ts";
+import { childTagEmail } from "../lib/projectEmails.ts";
 import { clientDownloads, downloadLink, gallerySigner, heldBack, loadProject, type ProjectRow, projectToApi, type Signer } from "../lib/projects.ts";
 import { guestCount, guestHearts, VISIT_GAP_MS } from "../lib/shares.ts";
 import { signPaths } from "../lib/storage.ts";
@@ -21,12 +25,12 @@ export default r;
 
 const S = "/make-server-0951c59e/share/:token";
 
-type Share = { project_id: string; downloads: boolean };
-type Guest = { id: string; name: string; visits: number; downloads: number; last_seen_at: string };
+type Share = { project_id: string; downloads: boolean; consent_required: boolean };
+type Guest = { id: string; name: string; email: string; visits: number; downloads: number; last_seen_at: string };
 
 async function openShare(token: string): Promise<Share> {
   const share = /^[A-Za-z0-9]{8,64}$/.test(token)
-    ? must(await db.from("gallery_shares").select("project_id, active, downloads").eq("token", token).maybeSingle()) as any
+    ? must(await db.from("gallery_shares").select("project_id, active, downloads, consent_required").eq("token", token).maybeSingle()) as any
     : null;
   if (!share?.active) fail(404, "Deze link werkt niet (meer). Vraag degene die hem stuurde om een nieuwe.");
   return share;
@@ -34,14 +38,23 @@ async function openShare(token: string): Promise<Share> {
 
 async function guestFor(share: Share, key: string): Promise<Guest | null> {
   if (!/^[0-9a-f]{32}$/.test(key)) return null;
-  return must(await db.from("gallery_guests").select("id, name, visits, downloads, last_seen_at")
+  return must(await db.from("gallery_guests").select("id, name, email, visits, downloads, last_seen_at")
     .eq("key", key).eq("project_id", share.project_id).maybeSingle()) as Guest | null;
+}
+
+/** With the studio's switch on: no answer from this e-mail address yet, so no photos yet. */
+async function owesConsent(share: Share, guest: Guest): Promise<boolean> {
+  if (!share.consent_required) return false;
+  const res = await db.from("consents").select("id", { count: "exact", head: true }).eq("project_id", share.project_id).eq("parent_email", guest.email);
+  must(res);
+  return (res.count || 0) === 0;
 }
 
 /** 401 sends the page back to the door (the studio may have removed this guest). */
 async function mustGuest(share: Share, key: string): Promise<Guest> {
   const guest = await guestFor(share, key);
   if (!guest) fail(401, "Vul eerst je naam en e-mail in.");
+  if (await owesConsent(share, guest)) fail(403, "Vul eerst de toestemming in.");
   return guest;
 }
 
@@ -90,6 +103,30 @@ function guestProject(row: ProjectRow, sign: Signer, canDownload: boolean) {
   };
 }
 
+/**
+ * At a shoot with a consent form: this guest's own children, from the form they
+ * filled in and the photos they pointed out, and only theirs. Other parents'
+ * children and every answer stay out of this: names go to the studio alone.
+ */
+async function kidsOf(projectId: string, guest: Guest) {
+  const form = must(await db.from("consent_forms").select("token, active").eq("project_id", projectId).maybeSingle()) as any;
+  if (!form) return null;
+  const [answers, tagged] = await Promise.all([
+    db.from("consents").select("child_name").eq("project_id", projectId).eq("parent_email", guest.email),
+    db.from("gallery_child_tags").select("image_id, child_name").eq("guest_id", guest.id),
+  ]);
+  const own = (must(answers) || []) as any[];
+  const rows = (must(tagged) || []) as any[];
+  const tags: Record<string, string[]> = {};
+  for (const t of rows) (tags[t.image_id] ||= []).push(t.child_name);
+  return {
+    names: [...new Set([...own.map((c) => c.child_name), ...rows.map((t) => t.child_name)])],
+    tags,
+    // Someone who has not said anything yet can still do so from here.
+    consentUrl: own.length === 0 && form.active ? consentUrl(form.token) : "",
+  };
+}
+
 async function seen(guest: Guest, patch: Record<string, unknown> = {}) {
   must(await db.from("gallery_guests").update({ last_seen_at: new Date().toISOString(), ...patch }).eq("id", guest.id));
 }
@@ -101,16 +138,21 @@ r.get(S, async (c) => {
   const preview = c.req.query("preview") === "1" && Boolean(await verifyAdmin(c.req.header("Authorization") ?? null));
   const guest = preview ? null : await guestFor(share, c.req.query("key") || "");
   if (!guest && !preview) return c.json({ gate: await gateOf(row) });
+  if (guest && await owesConsent(share, guest)) {
+    const form = found(await db.from("consent_forms").select("token").eq("project_id", row.id).maybeSingle(), "Deze link werkt niet (meer).") as any;
+    return c.json({ consent: { token: form.token, ...formFields(row), answer: null }, guest: { name: guest.name, email: guest.email } });
+  }
 
   if (guest) {
     const away = Date.now() - new Date(guest.last_seen_at).getTime() >= VISIT_GAP_MS;
     await seen(guest, { visits: guest.visits === 0 || away ? guest.visits + 1 : guest.visits });
   }
-  const [sign, hearts, guests, mine] = await Promise.all([
+  const [sign, hearts, guests, mine, kids] = await Promise.all([
     gallerySigner([row]),
     guestHearts(row.id),
     guestCount(row.id),
     guest ? db.from("gallery_guest_hearts").select("image_id").eq("guest_id", guest.id) : null,
+    guest ? kidsOf(row.id, guest) : null,
   ]);
   return c.json({
     guest: guest ? { name: guest.name } : null,
@@ -118,6 +160,7 @@ r.get(S, async (c) => {
     project: guestProject(row, sign, share.downloads && !preview),
     hearts: hearts.images,
     mine: mine ? (must(mine) || []).map((h: any) => h.image_id) : [],
+    kids,
     guests,
   });
 });
@@ -151,6 +194,65 @@ r.post(`${S}/heart`, async (c) => {
   const res = await db.from("gallery_guest_hearts").select("image_id", { count: "exact", head: true }).eq("image_id", b.imageId);
   must(res);
   return c.json({ count: res.count || 0 });
+});
+
+// --- "my child is on this photo" ---
+const CHILD_LABEL: Record<string, string> = { no_photo: "mag niet op de foto", no_social: "mag niet op social media", unknown: "geen toestemming gevonden" };
+// More children than one family has: keeps this from becoming a place to leave text.
+const MAX_CHILDREN_PER_GUEST = 6;
+// Pointing out a whole gallery should not become a mail per photo.
+const CHILD_MAIL_GAP_MS = 30 * 60 * 1000;
+
+r.post(`${S}/child`, async (c) => {
+  const share = await openShare(c.req.param("token"));
+  const b = await readBody(c, z.object({ key: z.string(), imageId: uuid, child: text(120).min(1, "Vul de naam van je kind in."), on: z.boolean() }));
+  const guest = await mustGuest(share, b.key);
+  found(await db.from("consent_forms").select("project_id").eq("project_id", share.project_id).maybeSingle(), "Dit kan niet bij deze galerij.");
+  const img = found(
+    await db.from("gallery_images").select("id, file_name, restriction").eq("id", b.imageId).eq("project_id", share.project_id).maybeSingle(),
+    "Foto niet gevonden",
+  ) as any;
+  if (heldBack(img)) fail(404, "Foto niet gevonden");
+  await seen(guest);
+
+  if (!b.on) {
+    must(await db.from("gallery_child_tags").delete().eq("image_id", img.id).eq("guest_id", guest.id).eq("child_name", b.child));
+    return c.json({ success: true });
+  }
+
+  const own = (must(await db.from("gallery_child_tags").select("child_name").eq("guest_id", guest.id)) || []) as any[];
+  const names = new Set(own.map((t) => t.child_name));
+  if (!names.has(b.child) && names.size >= MAX_CHILDREN_PER_GUEST) fail(400, "Je hebt al veel kinderen ingevuld. Neem contact op met de fotograaf.");
+  must(await db.from("gallery_child_tags").upsert(
+    { project_id: share.project_id, image_id: img.id, guest_id: guest.id, child_name: b.child },
+    { onConflict: "image_id,guest_id,child_name", ignoreDuplicates: true },
+  ));
+
+  // The studio hears about a child who needs care: at the first photo, not at every photo.
+  const answers = (must(await db.from("consents").select("child_name, answer").eq("project_id", share.project_id)) || []) as any[];
+  const answer = answerForChild(b.child, answers);
+  if (answer !== "full") {
+    const res = await db.from("gallery_child_tags").select("id", { count: "exact", head: true })
+      .eq("project_id", share.project_id).eq("child_name", b.child).gte("created_at", new Date(Date.now() - CHILD_MAIL_GAP_MS).toISOString());
+    must(res);
+    if ((res.count || 0) <= 1) {
+      const project = found(await db.from("projects").select("title").eq("id", share.project_id).maybeSingle(), "Project niet gevonden") as any;
+      const label = CHILD_LABEL[answer];
+      await Promise.all([
+        sendEmail({
+          to: EMAIL_ADMIN_NOTIFY,
+          replyTo: guest.email,
+          subject: `${b.child} staat op een foto: ${label} · ${project.title}`,
+          html: childTagEmail({
+            childName: b.child, label, guestName: guest.name, guestEmail: guest.email, fileName: img.file_name, projectTitle: project.title,
+            link: `${SITE_URL}/admin/project/${share.project_id}?tab=gallery`,
+          }),
+        }),
+        notify({ type: "consent", title: `${b.child} staat op een foto: ${label}`, body: `Aangewezen door ${guest.name} · ${project.title}`, link: `/admin/project/${share.project_id}?tab=gallery` }),
+      ]);
+    }
+  }
+  return c.json({ success: true });
 });
 
 // --- downloads ---

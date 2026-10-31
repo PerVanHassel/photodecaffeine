@@ -22,7 +22,7 @@ const ANSWERS: ConsentAnswer[] = ["full", "no_social", "no_photo"];
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 type Statement = { title: string; body: string };
-type Reply = {
+export type ConsentFormData = {
   title: string;
   shootDate: string;
   accentColor: string;
@@ -54,7 +54,7 @@ function Consent() {
   const path = `/consent/${encodeURIComponent(token)}`;
   const query = useQuery({
     queryKey: ["consent-form", token, key],
-    queryFn: ({ signal }) => api<Reply>(key ? `${path}?key=${encodeURIComponent(key)}` : path, { signal, anonymous: true }),
+    queryFn: ({ signal }) => api<ConsentFormData>(key ?`${path}?key=${encodeURIComponent(key)}` : path, { signal, anonymous: true }),
     retry: false,
     // A half-filled form stays as it is when someone comes back to the tab.
     staleTime: Infinity,
@@ -121,8 +121,11 @@ function Consent() {
 
 type Errors = { child?: string; answer?: string; photo?: string; parentName?: string; parentEmail?: string; declared?: string; form?: string };
 
-function AnswerForm({ path, answerKey, data, parent, lang, t, onSaved }: {
-  path: string; answerKey: string; data: Reply; parent: { name: string; email: string }; lang: Lang; t: PortalText; onSaved: (s: Saved) => void;
+function AnswerForm({ path, answerKey, data, parent, intro, lockEmail, lang, t, onSaved }: {
+  path: string; answerKey: string; data: ConsentFormData; parent: { name: string; email: string }; intro?: string;
+  /** On the way into a gallery the answer has to be under the address given at its door. */
+  lockEmail?: boolean;
+  lang: Lang; t: PortalText; onSaved: (s: Saved) => void;
 }) {
   const before = data.answer;
   const [child, setChild] = useState(before?.childName || "");
@@ -209,7 +212,7 @@ function AnswerForm({ path, answerKey, data, parent, lang, t, onSaved }: {
     <>
       {data.title && <p className="g-kicker">{data.title}</p>}
       <h1 className="g-title">{before ? t.consentEditTitle : t.consentTitle}</h1>
-      <p className="g-intro">{before ? t.consentEditIntro : t.consentIntro(data.title, when)}</p>
+      <p className="g-intro">{intro || (before ? t.consentEditIntro : t.consentIntro(data.title, when))}</p>
 
       <form className="g-gate-form" onSubmit={submit} noValidate>
         <div className="g-field">
@@ -260,7 +263,7 @@ function AnswerForm({ path, answerKey, data, parent, lang, t, onSaved }: {
         </div>
         <div className="g-field">
           <label htmlFor="c-email">{t.consentParentEmail}</label>
-          <input ref={emailInput} id="c-email" name="email" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} maxLength={254} value={parentEmail}
+          <input ref={emailInput} id="c-email" name="email" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} maxLength={254} value={parentEmail} readOnly={lockEmail}
             onChange={(e) => setParentEmail(e.target.value)} aria-invalid={errors.parentEmail ? true : undefined} aria-describedby={errors.parentEmail ? "c-email-error" : "c-email-hint"} />
           {errors.parentEmail
             ? <span id="c-email-error" className="g-gate-error" role="alert">{errors.parentEmail}</span>
@@ -288,8 +291,10 @@ function AnswerForm({ path, answerKey, data, parent, lang, t, onSaved }: {
 // Saved
 // ---------------------------------------------------------------------------
 
-function Done({ saved, data, lang, t, onAnother, onChange }: {
-  saved: Saved; data: Reply; lang: Lang; t: PortalText; onAnother: () => void; onChange: () => void;
+function Done({ saved, data, lang, t, onAnother, onChange, onContinue }: {
+  saved: Saved; data: ConsentFormData; lang: Lang; t: PortalText; onAnother: () => void; onChange?: () => void;
+  /** On the way into a gallery: on to the photos. */
+  onContinue?: () => void;
 }) {
   const statement = data.statements[lang.language === "en" ? "en" : "nl"][saved.answer];
   return (
@@ -300,10 +305,43 @@ function Done({ saved, data, lang, t, onAnother, onChange }: {
       <div className="g-consent-choice"><b>{statement.title}</b><span>{statement.body}</span></div>
       <p className="g-small">{saved.mailed ? t.consentMailed(saved.parentEmail) : t.consentNotMailed}</p>
       <div className="g-consent-actions">
-        <button type="button" className="g-btn primary" onClick={onAnother}>{t.consentAnother}<ArrowRight /></button>
-        <button type="button" className="g-btn" onClick={onChange}>{t.consentChange}</button>
+        {onContinue && <button type="button" className="g-btn primary" onClick={onContinue}>{t.gateEnter}<ArrowRight /></button>}
+        <button type="button" className={onContinue ? "g-btn" : "g-btn primary"} onClick={onAnother}>{t.consentAnother}{!onContinue && <ArrowRight />}</button>
+        {onChange && <button type="button" className="g-btn" onClick={onChange}>{t.consentChange}</button>}
       </div>
     </div>
+  );
+}
+
+/** The same form as a step on the way into a group's gallery, when the studio asks for consent first. */
+export function ConsentStep({ form, guest, lang, t, onContinue }: {
+  form: ConsentFormData & { token: string }; guest: { name: string; email: string }; lang: Lang; t: PortalText; onContinue: () => void;
+}) {
+  const [saved, setSaved] = useState<Saved | null>(null);
+  const [round, setRound] = useState(0);
+  const [parentName, setParentName] = useState(guest.name);
+  const accent = accentOf({ gallerySettings: { accentColor: form.accentColor } });
+  return (
+    <main className="g-page g-gate no-cover g-consent" data-tone="light" style={{ "--g-accent": accent, "--g-on-accent": onAccent(accent) } as CSSProperties}>
+      <Head t={t} />
+      <div className="g-gate-top g-guest-top"><span className="g-brand">PhotoDeCaffeine</span><LangSwitch lang={lang} t={t} /></div>
+      <div className="g-gate-body">
+        {saved ? (
+          <Done saved={saved} data={form} lang={lang} t={t} onContinue={onContinue} onAnother={() => {
+            setSaved(null);
+            setRound((n) => n + 1);
+            window.scrollTo({ top: 0 });
+          }} />
+        ) : (
+          <AnswerForm key={round} path={`/consent/${encodeURIComponent(form.token)}`} answerKey="" data={form} parent={{ name: parentName, email: guest.email }}
+            intro={t.consentGateIntro} lockEmail lang={lang} t={t} onSaved={(s) => {
+              setParentName(s.parentName);
+              setSaved(s);
+              window.scrollTo({ top: 0 });
+            }} />
+        )}
+      </div>
+    </main>
   );
 }
 

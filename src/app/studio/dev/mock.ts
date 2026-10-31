@@ -118,7 +118,7 @@ function shareState(projectId: string) {
   const hearts = heartCounts(projectId);
   const sum = (ns: number[]) => ns.reduce((s, n) => s + n, 0);
   return {
-    share: { url: `https://www.photodecaffeine.com/galerij/${share.token}`, active: share.active, downloads: share.downloads, createdAt: share.createdAt },
+    share: { url: `https://www.photodecaffeine.com/galerij/${share.token}`, active: share.active, downloads: share.downloads, consentRequired: !!share.consentRequired, createdAt: share.createdAt },
     guests: list.map(({ projectId: _p, key: _k, ...g }) => g),
     hearts,
     totals: { guests: list.length, visits: sum(list.map((g) => g.visits)), hearts: sum(Object.values(hearts)), downloads: sum(list.map((g) => g.downloads)) },
@@ -139,6 +139,10 @@ function shareReply(token: string, key: string, preview: boolean) {
       style: x.gallerySettings.style || "", accentColor: x.gallerySettings.accentColor || "", cover: cover?.url || "", photos: x.gallery.length, videos: 0,
     } };
   }
+  if (guest && share.consentRequired && !consents.some((c) => c.projectId === x.id && c.parentEmail === guest.email)) {
+    const form = consentForms.find((f) => f.projectId === x.id);
+    return { consent: { token: form.token, ...consentForm(form.token, ""), answer: null }, guest: { name: guest.name, email: guest.email } };
+  }
   const client = forClient(x);
   const canDownload = share.downloads && !preview;
   return {
@@ -152,6 +156,7 @@ function shareReply(token: string, key: string, preview: boolean) {
     },
     hearts: heartCounts(x.id),
     mine: guest ? guestHearts.filter((h) => h.guestId === guest.id).map((h) => h.imageId) : [],
+    kids: guest ? kidsOf(x.id, guest) : null,
     guests: guestList.filter((g) => g.projectId === x.id).length,
   };
 }
@@ -169,7 +174,44 @@ const consents: Json[] = [
   id: id(2000 + i), projectId: id(52), key: String(i).padStart(32, "b"), childName, answer, photoUrl, note, parentName, parentEmail,
   statement: "Niet op de foto: Mijn kind mag niet op de foto.", createdAt: iso(-1, 20, i), updatedAt: iso(-1, 20, i),
 }));
+// The run also asked for consent: Ruben's son may not be shown, and one parent already pointed a child out.
+consentForms.push({ projectId: id(57), token: "Rn5tK8wQ3yVb7Hs2", active: true, createdAt: iso(-4) });
+consents.push({ id: id(2100), projectId: id(57), key: "c".repeat(32), childName: "Daan Smit", answer: "no_photo", photoUrl: PHOTOS[7], note: "", parentName: "Ruben Smit", parentEmail: "ruben@example.nl", statement: "", createdAt: iso(-4), updatedAt: iso(-4) });
+consents.push({ id: id(2101), projectId: id(57), key: "d".repeat(32), childName: "Lotte Visser", answer: "no_social", photoUrl: "", note: "", parentName: "Sophie Visser", parentEmail: "sophie@example.nl", statement: "", createdAt: iso(-4), updatedAt: iso(-4) });
+consents.push({ id: id(2102), projectId: id(57), key: "e".repeat(32), childName: "Bram Jansen", answer: "full", photoUrl: "", note: "", parentName: "Milan Jansen", parentEmail: "milan@example.nl", statement: "", createdAt: iso(-4), updatedAt: iso(-4) });
+const childTags: Json[] = [
+  { id: id(2200), projectId: id(57), imageId: id(5703), guestId: id(1005), child: "Lotte Visser" },
+  { id: id(2201), projectId: id(57), imageId: id(5704), guestId: id(1006), child: "Bram Jansen" },
+  { id: id(2202), projectId: id(57), imageId: id(5705), guestId: id(1003), child: "Sem" },
+];
+
 const STRICT: Record<string, number> = { no_photo: 0, no_social: 1, full: 2 };
+
+/** Mirrors answerForChild in lib/consents.ts. */
+function childAnswer(projectId: string, name: string) {
+  const normal = (s: string) => s.trim().toLowerCase();
+  const list = consents.filter((c) => c.projectId === projectId);
+  let same = list.filter((c) => normal(c.childName) === normal(name));
+  if (!same.length && !normal(name).includes(" ")) same = list.filter((c) => normal(c.childName).split(" ")[0] === normal(name));
+  return same.length ? same.map((c) => c.answer).sort((a, b) => STRICT[a] - STRICT[b])[0] : "unknown";
+}
+
+function childTagState(projectId: string) {
+  return { tags: childTags.filter((t) => t.projectId === projectId).map((t) => ({
+    id: t.id, imageId: t.imageId, child: t.child, answer: childAnswer(projectId, t.child), by: guestList.find((g) => g.id === t.guestId)?.name || "",
+  })) };
+}
+
+/** Mirrors kidsOf in routes/share.ts. */
+function kidsOf(projectId: string, guest: Json) {
+  const form = consentForms.find((f) => f.projectId === projectId);
+  if (!form) return null;
+  const own = consents.filter((c) => c.projectId === projectId && c.parentEmail === guest.email).map((c) => c.childName);
+  const rows = childTags.filter((t) => t.guestId === guest.id);
+  const tags: Record<string, string[]> = {};
+  for (const t of rows) (tags[t.imageId] ||= []).push(t.child);
+  return { names: [...new Set([...own, ...rows.map((t) => t.child)])], tags, consentUrl: own.length ? "" : `/toestemming/${form.token}` };
+}
 const STATEMENTS = {
   nl: {
     full: { title: "Op de foto en op social media", body: "Mijn kind mag op de foto. De foto's mogen op social media van de club en van PhotoDeCaffeine." },
@@ -463,6 +505,7 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     if ((r = m(/^\/admin\/project\/([^/]+)\/engagement$/))) return { reviewRequest: reviewRequests[r[1]] || null, feedbackRequest: null, review: structuredClone(reviews.find((x) => x.projectId === r![1]) || null), feedback: [] };
     if ((r = m(/^\/admin\/project\/([^/]+)\/share$/))) return shareState(r[1]);
     if ((r = m(/^\/admin\/project\/([^/]+)\/consent$/))) return consentState(r[1]);
+    if ((r = m(/^\/admin\/project\/([^/]+)\/child-tags$/))) return childTagState(r[1]);
     if ((r = m(/^\/consent\/([^/]+)$/))) return consentForm(r[1], url.searchParams.get("key") || "");
     if ((r = m(/^\/share\/([^/]+)$/))) return shareReply(r[1], url.searchParams.get("key") || "", url.searchParams.get("preview") === "1");
     if (p === "/admin/clients") return { clients };
@@ -594,6 +637,17 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     return { receiptRef: `private:receipts/${id(999)}/${Date.now()}-0a1b2c3d-${file.name}` };
   }
   if ((r = m(/^\/consent\/([^/]+)$/)) && method === "POST") return saveConsent(r[1], body as FormData);
+  if ((r = m(/^\/admin\/project\/([^/]+)\/child-tags\/([^/]+)$/)) && method === "DELETE") {
+    childTags.splice(childTags.findIndex((t) => t.id === r![2]), 1);
+    return childTagState(r[1]);
+  }
+  if ((r = m(/^\/share\/([^/]+)\/child$/))) {
+    const { share, guest } = guestOf(r[1], body.key);
+    const at = childTags.findIndex((t) => t.imageId === body.imageId && t.guestId === guest.id && t.child === body.child);
+    if (body.on && at < 0) childTags.push({ id: crypto.randomUUID(), projectId: share.projectId, imageId: body.imageId, guestId: guest.id, child: body.child });
+    if (!body.on && at >= 0) childTags.splice(at, 1);
+    return { success: true };
+  }
   if ((r = m(/^\/admin\/project\/([^/]+)\/consent\/photos$/)) && method === "DELETE") {
     const list = consents.filter((c) => c.projectId === r![1] && c.photoUrl);
     list.forEach((c) => { c.photoUrl = ""; });

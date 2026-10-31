@@ -19,6 +19,7 @@ import { queryClient } from "../queries";
 import "../studio.css";
 import type { GalleryImage, GalleryProject } from "../types";
 import { cx } from "../ui";
+import { ConsentStep, type ConsentFormData } from "./ConsentForm";
 import { LangSwitch } from "./LangSwitch";
 
 // The page a group link opens, /galerij/<token>. No login: a name and an
@@ -36,8 +37,12 @@ type Inside = {
   /** This guest's own hearts. */
   mine: string[];
   guests: number;
+  /** At a shoot with a consent form: this guest's own children and the photos they pointed them out on. */
+  kids: { names: string[]; tags: Record<string, string[]>; consentUrl: string } | null;
 };
-type Reply = { gate: Gate } | Inside;
+/** The studio asks for consent first, and this guest has not given it yet. */
+type OwesConsent = { consent: ConsentFormData & { token: string }; guest: { name: string; email: string } };
+type Reply = { gate: Gate } | OwesConsent | Inside;
 type Lang = ReturnType<typeof usePortalLanguage>;
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -107,6 +112,7 @@ function GuestGallery() {
     return <Closed t={t} lang={lang} error={gone ? null : query.error} retry={() => query.refetch()} />;
   }
   if (!data) return <main className="g-page" aria-busy="true"><span className="s-sr">{t.wait}</span></main>;
+  if ("consent" in data) return <ConsentStep form={data.consent} guest={data.guest} lang={lang} t={t} onContinue={() => query.refetch()} />;
   if ("gate" in data) {
     // While the gallery loads after the door, the door stays up with its button busy.
     return <Door path={path} gate={data.gate} busy={query.isPlaceholderData} onEnter={setKey} admin={isAdmin(user)} onPreview={() => setPreview(true)} t={t} lang={lang} />;
@@ -200,6 +206,10 @@ function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, t, la
   const qc = useQueryClient();
   const [sharing, setSharing] = useState(false);
   const [zip, setZip] = useState<{ done: number; total: number } | null>(null);
+  const [addedKids, setAddedKids] = useState<string[]>([]);
+  const [activeKid, setActiveKid] = useState("");
+  const kidNames = [...new Set([...(data.kids?.names || []), ...addedKids])];
+  const kid = kidNames.includes(activeKid) ? activeKid : kidNames[0] || "";
   const p = data.project;
   const title = p.gallerySettings.title || p.title;
   const url = `${window.location.origin}/galerij/${token}`;
@@ -223,6 +233,22 @@ function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, t, la
     try {
       const r = await send<{ count: number }>("heart", { imageId: img.id, on });
       patch((d) => ({ hearts: { ...d.hearts, [img.id]: r.count } }));
+    } catch (err) {
+      qc.setQueryData(queryKey, before);
+      failed(err);
+    }
+  }
+
+  async function tagKid(img: GalleryImage) {
+    const on = !data.kids?.tags[img.id]?.includes(kid);
+    const before = qc.getQueryData(queryKey);
+    qc.setQueryData(queryKey, (d: Inside | undefined) => {
+      if (!d?.kids) return d;
+      const current = d.kids.tags[img.id] || [];
+      return { ...d, kids: { ...d.kids, tags: { ...d.kids.tags, [img.id]: on ? [...current, kid] : current.filter((x) => x !== kid) } } };
+    });
+    try {
+      await send("child", { imageId: img.id, child: kid, on });
     } catch (err) {
       qc.setQueryData(queryKey, before);
       failed(err);
@@ -265,6 +291,10 @@ function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, t, la
         project={p}
         favs={favs}
         counts={data.hearts}
+        kids={data.kids && !data.preview ? {
+          names: kidNames, active: kid, tags: data.kids.tags, consentUrl: data.kids.consentUrl, onChoose: setActiveKid, onTag: tagKid,
+          onAdd: (name) => { setAddedKids((old) => [...old, name]); setActiveKid(name); },
+        } : undefined}
         guest={{ name: data.guest?.name || "", guests: data.guests }}
         actions={data.preview ? { share, sharePhoto } : { toggle, downloadOne, downloadAll, zip, share, sharePhoto }}
         back={

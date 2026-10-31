@@ -34,7 +34,8 @@ export function GroupLink({ project: p }: { project: Project }) {
 
   const create = useAction({ fn: () => post<ShareState>(base), onSuccess: store, success: "Groepslink gemaakt" });
   const update = useAction({
-    fn: (b: { active?: boolean; downloads?: boolean }) => put<ShareState>(base, b),
+    fn: (b: { active?: boolean; downloads?: boolean; consentRequired?: boolean }) => put<ShareState>(base, b),
+    invalidate: () => [keys.consent(p.id)],
     onSuccess: store,
     success: (_s, b) => (b.active === false ? "Link staat uit" : b.active ? "Link staat weer aan" : "Opgeslagen"),
   });
@@ -85,6 +86,14 @@ export function GroupLink({ project: p }: { project: Project }) {
             <Segmented<"no" | "yes"> label="Gasten mogen downloaden" value={share.downloads ? "yes" : "no"}
               onChange={(v) => !busy && update.mutate({ downloads: v === "yes" })}
               options={[{ value: "no", label: "Nee" }, { value: "yes", label: "Ja" }]} />
+          </div>
+        </Field>
+
+        <Field label="Eerst toestemming vragen" hint="Bezoekers van wie nog geen toestemming binnen is, krijgen na hun naam en e-mail eerst het toestemmingsformulier. Daarna pas de foto's. Wie geen kind in de groep heeft, komt er dan niet op.">
+          <div>
+            <Segmented<"no" | "yes"> label="Eerst toestemming vragen" value={share.consentRequired ? "yes" : "no"}
+              onChange={(v) => !busy && update.mutate({ consentRequired: v === "yes" })}
+              options={[{ value: "no", label: "Uit" }, { value: "yes", label: "Aan" }]} />
           </div>
         </Field>
 

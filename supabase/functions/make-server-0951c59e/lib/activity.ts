@@ -69,6 +69,7 @@ const SHARE: Source = { ...table("gallery_shares", () => "", undefined, "token")
 // So is a consent form.
 const CONSENT_FORM: Source = { ...table("consent_forms", () => "", undefined, "token"), idOf: (r) => r.project_id };
 const CONSENT = table("consents", (r) => r.child_name);
+const CHILD_TAG = table("gallery_child_tags", (r) => r.child_name);
 const ARTICLE = stored("portfolio:article:", (r) => r.title, (_r, id) => `/admin/portfolio/${id}`);
 const REVIEW = stored("review:", (r) => r.clientName || r.googleName || "Review", () => "/admin/reviews");
 const INVESTMENT = stored("investments:item:", (r) => join(r.title, euro(r.price)), () => "/admin/investments");
@@ -167,6 +168,7 @@ const RULES: Record<string, Rule> = {
     detail: (x) => join(
       x.body?.active === undefined ? "" : x.body.active ? "aan" : "uit",
       x.body?.downloads === undefined ? "" : x.body.downloads ? "downloaden mag" : "downloaden mag niet",
+      x.body?.consentRequired === undefined ? "" : x.body.consentRequired ? "eerst toestemming" : "geen toestemmingscheck",
     ),
   },
   "POST /admin/project/:id/share/renew": { area: "Galerij", action: "Nieuwe deellink gemaakt, de oude werkt niet meer" },
@@ -176,6 +178,7 @@ const RULES: Record<string, Rule> = {
     action: (x) => (x.body?.restriction === "no_photo" ? "Foto's gemarkeerd: niet in beeld" : x.body?.restriction === "no_social" ? "Foto's gemarkeerd: niet posten" : "Markering van foto's weggehaald"),
     detail: (x) => plural(x.body?.ids?.length || 0, "foto", "foto's"),
   },
+  "DELETE /admin/project/:id/child-tags/:tagId": { area: "Toestemming", action: "Aanwijzing van een kind op een foto weggehaald", of: CHILD_TAG },
   "POST /admin/project/:id/consent": { area: "Toestemming", action: "Toestemmingslink aangezet" },
   "PUT /admin/project/:id/consent": { area: "Toestemming", action: (x) => (x.body?.active ? "Toestemmingslink aangezet" : "Toestemmingslink uitgezet") },
   "DELETE /admin/project/:id/consent/photos": {
@@ -320,6 +323,12 @@ const RULES: Record<string, Rule> = {
     action: (x) => (x.json?.changed ? "Toestemming gewijzigd" : "Toestemming ingevuld"),
     who: (x) => ({ kind: "visitor", name: x.json?.parentName || "", email: x.json?.parentEmail || "" }),
     detail: (x) => join(x.json?.childName, ({ full: "mag op de foto en op social media", no_social: "niet op social media", no_photo: "niet op de foto" } as Record<string, string>)[x.json?.answer]),
+  },
+  "POST /share/:token/child": {
+    area: "Toestemming", of: SHARE,
+    action: (x) => (x.body?.on ? "Kind aangewezen op een foto" : "Kind niet meer aangewezen op een foto"),
+    who: (x) => guestByKey(x.params.token, x.body?.key),
+    detail: async (x) => join(x.body?.child, await imageName(x.body?.imageId)),
   },
   "POST /share/:token/guest": {
     area: "Galerij", action: "Gedeelde galerij geopend", of: SHARE,

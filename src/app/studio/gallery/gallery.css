@@ -363,6 +363,39 @@
 .g-group svg { width: 14px; height: 14px; }
 .g-page[data-view="compact"] .g-group { left: 6px; bottom: 6px; height: 24px; padding: 0 8px; font-size: 11.5px; }
 .g-page[data-style="arena"] .g-group { border-radius: 0; }
+/* A parent saying their child is on this photo: one tap, always in view. */
+.studio .g-kid {
+  position: absolute; z-index: 2; right: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 5px; height: 34px; max-width: calc(100% - 20px); padding: 0 12px 0 9px;
+  border: 0; border-radius: 999px; background: rgba(20, 16, 12, 0.58); color: #fff; font-size: 13px; font-weight: 600; white-space: nowrap;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transition: background 0.2s;
+}
+.g-kid svg { flex: none; width: 15px; height: 15px; }
+.g-kid span { overflow: hidden; text-overflow: ellipsis; }
+.studio .g-kid.on { background: var(--g-accent); color: var(--g-on-accent); }
+/* Next to the other buttons of the large view, which are icons on a phone: this one keeps its name. */
+.g-lb-actions .g-btn.g-lb-kid { width: auto; max-width: 110px; padding: 0 11px; }
+.g-lb-kid span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-consent .g-field input[readonly] { opacity: 0.7; }
+.g-kid:active { transform: scale(0.95); }
+.studio .g-page[data-view="compact"] .g-kid { right: 6px; bottom: 6px; width: 30px; height: 30px; padding: 0; justify-content: center; }
+.g-page[data-view="compact"] .g-kid span { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); }
+.g-page[data-style="arena"] .g-kid { border-radius: 0; }
+.g-kids { margin-bottom: 18px; padding: 18px; border: 1px solid var(--g-line); border-radius: max(var(--g-radius), 4px); background: color-mix(in srgb, var(--g-accent) 7%, var(--g-bg)); }
+.g-kids h2 { margin: 0; color: var(--g-text); font-size: 17px; font-weight: 600; letter-spacing: 0; text-transform: none; font-style: normal; }
+.g-kids > p { margin: 4px 0 0; max-width: 62ch; color: var(--g-muted); font-size: 14px; line-height: 1.5; }
+.g-kids > .g-small a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.g-kids-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.g-kids-chip {
+  display: inline-flex; align-items: center; gap: 5px; min-height: 38px; padding: 0 14px; border: 1px solid color-mix(in srgb, var(--g-text) 25%, transparent);
+  border-radius: var(--g-control); background: var(--g-bg); color: var(--g-text); font-size: 14px; font-weight: 500;
+}
+.g-kids-chip svg { width: 15px; height: 15px; }
+.g-kids-chip:hover { border-color: var(--g-text); }
+.g-kids-chip[aria-pressed="true"] { background: var(--g-text); border-color: var(--g-text); color: var(--g-bg); }
+.g-kids-add { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin-top: 12px; }
+.g-kids-add .g-field { flex: 1 1 240px; min-width: 0; }
+.g-kids-add .g-btn { height: 48px; padding: 0 20px; }
+
 /* A photo with a child on it who may not appear on social media. */
 .g-nopost {
   position: absolute; z-index: 2; top: 10px; left: 10px; display: inline-flex; align-items: center; gap: 5px; height: 28px; max-width: calc(100% - 66px); padding: 0 10px;

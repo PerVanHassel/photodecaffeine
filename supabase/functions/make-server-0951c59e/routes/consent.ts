@@ -1,6 +1,6 @@
 import { Hono } from "npm:hono";
 import { EMAIL_ADMIN_NOTIFY, EMAIL_RE, SITE_URL } from "../lib/config.ts";
-import { type Answer, ANSWERS, consentUrl, statementsFor } from "../lib/consents.ts";
+import { type Answer, ANSWERS, consentUrl, formFields, statementsFor } from "../lib/consents.ts";
 import { db, found, must } from "../lib/db.ts";
 import { sendEmail } from "../lib/email.ts";
 import { type Env, fail, text, z } from "../lib/http.ts";
@@ -39,13 +39,6 @@ async function answerOf(form: Form, key: string): Promise<any | null> {
   return must(await db.from("consents").select("*").eq("key", key).eq("project_id", form.project_id).maybeSingle());
 }
 
-/** The shoot this is about: the next one, or else the most recent. */
-function shootOf(events: any[]): any {
-  const shoots = (events || []).filter((e) => e.kind === "shoot" && e.client_visible).sort((a, b) => a.starts_at.localeCompare(b.starts_at));
-  const since = new Date(Date.now() - 86400000).toISOString();
-  return shoots.find((e) => e.starts_at >= since) || shoots[shoots.length - 1];
-}
-
 // --- the form, with a parent's own answer when they came back with their key ---
 r.get(S, async (c) => {
   const form = await formOf(c.req.param("token"));
@@ -58,10 +51,7 @@ r.get(S, async (c) => {
   ) as any;
   const photoUrl = mine?.photo_path ? (await signPaths([mine.photo_path])).get(mine.photo_path) || "" : "";
   return c.json({
-    title: project.gallery_settings?.title || project.title,
-    shootDate: shootOf(project.events)?.starts_at || "",
-    accentColor: project.gallery_settings?.accentColor || "",
-    statements: statementsFor(project.gallery_settings?.consentClub || ""),
+    ...formFields(project),
     answer: mine
       ? { childName: mine.child_name, answer: mine.answer, note: mine.note, parentName: mine.parent_name, parentEmail: mine.parent_email, photoUrl }
       : null,
