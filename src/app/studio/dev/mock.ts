@@ -262,7 +262,7 @@ function consentState(projectId: string) {
   const children = groupByChild(consents.filter((c) => c.projectId === projectId)).map((group) => {
     group.sort(strictFirst);
     return {
-      name: group.map((c) => c.childName).sort((a, b) => normalName(b).length - normalName(a).length)[0],
+      name: group.map((c) => c.childName).sort((a, b) => normalName(b).length - normalName(a).length || Number(/^\p{Lu}/u.test(b)) - Number(/^\p{Lu}/u.test(a)))[0],
       number: numbersOf(group),
       answer: group[0].answer,
       mixed: group.some((c) => c.answer !== group[0].answer),

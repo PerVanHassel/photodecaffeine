@@ -116,15 +116,15 @@ export function groupByChild<T extends AboutChild>(rows: T[]): T[][] {
 /** A project's link and its answers per child, for the studio. Parents can differ: the strictest answer counts. */
 export async function consentState(projectId: string) {
   const form = await consentFormFor(projectId);
-  const rows = (must(await db.from("consents").select("*").eq("project_id", projectId)) || []) as any[];
+  const rows = (must(await db.from("consents").select("*").eq("project_id", projectId).order("created_at")) || []) as any[];
   const signed = await signPaths(rows.map((c) => c.photo_path));
   const photoOf = (c: any) => (c.photo_path ? signed.get(c.photo_path) || "" : "");
   const children = groupByChild(rows)
     .map((group) => {
       group.sort(strictFirst);
       return {
-        // The fullest name that was given; among equals the strictest parent's.
-        name: group.map((c) => c.child_name).sort((a, b) => normalName(b).length - normalName(a).length)[0],
+        // The fullest name that was given, and among equals one that starts with a capital.
+        name: group.map((c) => c.child_name).sort((a, b) => normalName(b).length - normalName(a).length || Number(/^\p{Lu}/u.test(b)) - Number(/^\p{Lu}/u.test(a)))[0],
         number: numbersOf(group),
         answer: group[0].answer as Answer,
         mixed: group.some((c) => c.answer !== group[0].answer),
