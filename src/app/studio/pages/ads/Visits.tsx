@@ -38,7 +38,7 @@ export function VisitsTab({ query }: { query: string }) {
                 <thead>
                   <tr>
                     <th>Wanneer</th><th>Kwam via</th><th>Apparaat</th><th>Eerste pagina</th>
-                    <th className="right">Pagina's</th><th className="right">Tijd</th><th className="right">Kliks</th><th className="right">Gescrold</th><th>Aanvraag</th>
+                    <th className="right">Pagina's</th><th className="right" title="Hoe lang dit bezoek op de site was">Tijd</th><th className="right">Kliks</th><th className="right">Gescrold</th><th>Aanvraag</th>
                   </tr>
                 </thead>
                 <tbody>

@@ -2,7 +2,7 @@ import { PdcLogo } from "../components/PdcLogo";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Helmet } from "react-helmet-async";
 import {
-  BookOpen, CalendarDays, CheckSquare, Euro, FileText, Globe, History, Images, Inbox, Kanban, Layers, LogOut, MapPin, Megaphone, Menu, PiggyBank, Receipt,
+  BarChart3, BookOpen, CalendarDays, CheckSquare, Euro, FileText, Globe, History, Images, Inbox, Kanban, Layers, LogOut, MapPin, Menu, PiggyBank, Receipt,
   Search, Settings, Shield, Star, Sun, Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -162,7 +162,7 @@ function NavSections({ can, owner, waiting, tasks, inquiries }: { can: (perm?: s
         <NavItem show={can("managePortfolio")} to="/admin/portfolio" icon={<Images />} label="Portfolio" />
         <NavItem show={can("managePortfolio")} to="/admin/services/automotive" icon={<Layers />} label="Automotive" />
         <NavItem show={can("managePortfolio")} to="/admin/reviews" icon={<Star />} label="Reviews" />
-        <NavItem show={can("manageAds")} to="/admin/ads" icon={<Megaphone />} label="Advertenties" />
+        <NavItem show={can("manageAds")} to="/admin/ads" icon={<BarChart3 />} label="Statistieken" />
         <NavItem show={can("manageClients")} to="/admin/demos" icon={<Globe />} label="Webdemo's" />
         <NavItem show={can("manageSettings")} to="/admin/settings" icon={<Settings />} label="Instellingen" />
       </nav>

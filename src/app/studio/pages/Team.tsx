@@ -11,7 +11,7 @@ export const PERMISSIONS: { key: string; label: string; hint: string }[] = [
   { key: "manageQuotes", label: "Offertes en facturen", hint: "Maken, versturen, betaald zetten" },
   { key: "manageInquiries", label: "Aanvragen", hint: "Contactformulier en omzetten" },
   { key: "managePortfolio", label: "Portfolio en reviews", hint: "Wat op de site staat" },
-  { key: "manageAds", label: "Advertenties", hint: "Campagnes en bezoekers" },
+  { key: "manageAds", label: "Statistieken", hint: "Bezoekers en campagnes" },
   { key: "manageSettings", label: "Site-instellingen", hint: "Hero, secties, bedrijfsgegevens" },
   { key: "manageDeclarations", label: "Eigen declaraties", hint: "Bonnetjes indienen" },
   { key: "viewAllDeclarations", label: "Alle declaraties", hint: "Van iedereen zien en beheren" },

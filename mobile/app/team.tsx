@@ -18,7 +18,7 @@ const PERMISSION_LABELS: Record<string, string> = {
   managePortfolio: "Portfolio beheren",
   manageInquiries: "Aanvragen inzien",
   manageReminders: "Actiepunten inzien",
-  manageAds: "Advertenties beheren",
+  manageAds: "Statistieken beheren",
   manageSettings: "Site-instellingen beheren",
   manageDeclarations: "Eigen declaraties indienen",
   viewAllDeclarations: "Alle declaraties inzien & beheren (CFO)",

@@ -1,4 +1,4 @@
-// Development only: three months of made-up visits for the Advertenties page,
+// Development only: three months of made-up visits for the Statistieken page,
 // summed the way the SQL functions in 20261026120000_site_analytics.sql do.
 
 type Json = any;

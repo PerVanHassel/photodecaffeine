@@ -1,4 +1,5 @@
 import { Monitor, Smartphone, Tablet } from "lucide-react";
+import { Fragment } from "react";
 import { percent } from "../../format";
 
 // The shapes the analytics routes answer with (routes/analytics.ts and the SQL
@@ -188,13 +189,21 @@ export function DeviceIcon({ device, size = 14 }: { device: string; size?: numbe
 
 export const deviceName = (d: string) => (d === "mobile" ? "Telefoon" : d === "tablet" ? "Tablet" : d === "desktop" ? "Computer" : d || "Onbekend");
 
-/** 75 → "1:15", 3700 → "1:01:40". */
+/** 45 → "45 sec", 75 → "1 min 15 sec", 3700 → "1 uur 1 min". Never breaks over two lines. */
 export function duration(seconds: number | null | undefined): string {
   const s = Math.max(0, Math.round(seconds || 0));
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
-  const r = String(s % 60).padStart(2, "0");
-  return h ? `${h}:${String(m).padStart(2, "0")}:${r}` : `${m}:${r}`;
+  const r = s % 60;
+  const parts = h ? [`${h} uur`, m && `${m} min`] : m ? [`${m} min`, r && `${r} sec`] : [`${r} sec`];
+  return parts.filter(Boolean).join(" ").replace(/ /g, " ");
+}
+
+/** duration() for the big numbers: the words smaller, so it fits its tile. */
+export function BigDuration({ seconds }: { seconds: number | null | undefined }) {
+  return <>{duration(seconds).split(" ").map((part, i) => (
+    <Fragment key={i}>{i > 0 && " "}{/\d/.test(part) ? part : <small>{part}</small>}</Fragment>
+  ))}</>;
 }
 
 export const share = (part: number, whole: number) => (whole ? percent(part / whole) : "–");

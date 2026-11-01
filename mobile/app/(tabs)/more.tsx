@@ -26,7 +26,7 @@ const SECTIONS: { title: string; items: Entry[] }[] = [
     items: [
       { label: "Portfolio", hint: "Artikelen publiceren en uitlichten", icon: "image", to: "/portfolio" },
       { label: "Automotive", hint: "Galerij van de automotive-pagina", icon: "truck", to: "/automotive" },
-      { label: "Advertenties", hint: "Campagnes en hun leads", icon: "target", to: "/ads" },
+      { label: "Campagnes", hint: "Klikken en aanvragen per campagne", icon: "target", to: "/ads" },
     ],
   },
   {

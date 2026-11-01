@@ -106,7 +106,7 @@ export function AdsScreen() {
 
   return (
     <Screen
-      title="Advertenties"
+      title="Campagnes"
       eyebrow={`${campaigns.length} campagne${campaigns.length === 1 ? "" : "s"}`}
       back="/app/more"
       fullBleedBottom

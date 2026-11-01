@@ -10,11 +10,11 @@ import { CampaignsTab, LinkDialog } from "./ads/Campaigns";
 import { PagesTab } from "./ads/Pages";
 import { VisitsTab } from "./ads/Visits";
 import {
-  type AdsMeta, Delta, type Device, DeviceIcon, deviceName, duration, mediumName, pageName, type Period, PERIODS, share, type Summary,
+  type AdsMeta, BigDuration, Delta, type Device, DeviceIcon, deviceName, duration, mediumName, pageName, type Period, PERIODS, share, type Summary,
 } from "./ads/shared";
 import "./ads/ads.css";
 
-// Advertenties: the site's own visitor statistics (src/app/lib/analytics.ts)
+// Statistieken: the site's own visitor statistics (src/app/lib/analytics.ts)
 // with the ad campaigns on top. Every filter is in the address, so a view can
 // be reloaded or sent to someone else.
 
@@ -54,7 +54,7 @@ export function AdsPage() {
   return (
     <div className="s-view">
       <PageHead
-        title="Advertenties"
+        title="Statistieken"
         sub="Waar bezoekers vandaan komen, wat ze op de site doen en wat je advertenties opleveren."
         actions={<Button variant="primary" icon={<Link2 />} onClick={() => setLinkOpen(true)}>Campagnelink maken</Button>}
       />
@@ -135,7 +135,7 @@ function Overview({ data, loading, onLink }: { data?: Summary; loading: boolean;
         <div className="s-stats a-kpis">
           <Kpi label="Bezoekers" value={n(t.visitors)} hint={t.returning ? `${n(t.returning)} kwam eerder al eens` : undefined}><Delta now={t.visitors} before={p.visitors} /></Kpi>
           <Kpi label="Bezoeken" value={n(t.sessions)} hint={`${n(t.pageviews)} pagina's bekeken`}><Delta now={t.sessions} before={p.sessions} /></Kpi>
-          <Kpi label="Gem. tijd op de site" value={duration(t.seconds)}><Delta now={t.seconds} before={p.seconds} /></Kpi>
+          <Kpi label="Gem. tijd op de site" value={<BigDuration seconds={t.seconds} />}><Delta now={t.seconds} before={p.seconds} /></Kpi>
           <Kpi label="Direct weggeklikt" value={share(t.bounces, t.sessions)} hint="1 pagina, korter dan 10 sec"><Delta now={bounce} before={bouncePrev} lowerIsBetter /></Kpi>
           <Kpi label="Aanvragen" value={n(t.conversions)}><Delta now={t.conversions} before={p.conversions} /></Kpi>
           <Kpi label="Conversie" value={share(t.conversions, t.sessions)} hint="Bezoeken met een aanvraag"><Delta now={conv} before={convPrev} /></Kpi>
@@ -160,7 +160,7 @@ function Overview({ data, loading, onLink }: { data?: Summary; loading: boolean;
         <Card title="Waar komen ze vandaan" bodyClass="none">
           <div className="s-table-wrap">
             <table className="s-table">
-              <thead><tr><th>Bron</th><th className="right">Bezoeken</th><th className="right">Weggeklikt</th><th className="right">Tijd</th><th className="right">Aanvragen</th></tr></thead>
+              <thead><tr><th>Bron</th><th className="right">Bezoeken</th><th className="right">Weggeklikt</th><th className="right">Gem. tijd</th><th className="right">Aanvragen</th></tr></thead>
               <tbody>
                 {data.sources.map((s) => (
                   <tr key={`${s.source}|${s.medium}`}>
@@ -227,7 +227,7 @@ function Overview({ data, loading, onLink }: { data?: Summary; loading: boolean;
   );
 }
 
-function Kpi({ label, value, hint, children }: { label: string; value: string; hint?: string; children?: ReactNode }) {
+function Kpi({ label, value, hint, children }: { label: string; value: ReactNode; hint?: string; children?: ReactNode }) {
   return (
     <div>
       <b>{value}</b>

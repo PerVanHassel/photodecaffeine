@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { get } from "../../api";
 import { Card, Empty, ErrorState, Segmented, SkeletonList } from "../../ui";
 import { useUrlState } from "../../urlState";
-import { type Device, duration, pageName, type PageStats, share, type Summary } from "./shared";
+import { BigDuration, type Device, duration, pageName, type PageStats, share, type Summary } from "./shared";
 
 // Pagina's: per page how far people scroll and where they click, drawn over
 // the page itself. The page loads in an iframe (same site, so the admin can
@@ -34,7 +34,8 @@ export function PagesTab({ summary, query, device }: { summary?: Summary; query:
                 </span>
                 <span className="a-page-nums s-small">
                   <span><b className="s-mono">{n(p.views)}</b> keer</span>
-                  <span className="s-faint">{duration(p.seconds)} · {p.scroll ?? 0}% · {share(p.exits, p.views)} weg</span>
+                  <span className="s-faint">gem. {duration(p.seconds)}</span>
+                  <span className="s-faint">{p.scroll ?? 0}% gescrold · {share(p.exits, p.views)} weg</span>
                 </span>
               </button>
             </li>
@@ -75,7 +76,7 @@ function PageDetail({ path, query, device }: { path: string; query: string; devi
       <Card bodyClass="none">
         <div className="s-stats a-kpis three">
           <div><b>{n(d.views)}</b><span>Keer bekeken</span></div>
-          <div><b>{duration(d.seconds)}</b><span>Gem. tijd</span></div>
+          <div><b><BigDuration seconds={d.seconds} /></b><span>Gem. tijd</span></div>
           <div><b>{d.scroll}%</b><span>Gem. gescrold</span></div>
           <div><b>{share(d.entries, d.views)}</b><span>Kwam hier binnen</span></div>
           <div><b>{share(d.exits, d.views)}</b><span>Ging hier weg</span></div>

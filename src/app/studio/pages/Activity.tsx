@@ -36,6 +36,9 @@ const AREAS = [
   "Declaraties", "Investeringen", "Portfolio", "Reviews", "Advertenties", "Instellingen", "Bestanden", "Team", "Documenten", "Portaal", "Meldingen", "Overig",
 ];
 
+/** The log keeps the area under its old name; on screen it goes by the current one. */
+const areaName = (area: string) => (area === "Advertenties" ? "Statistieken" : area);
+
 type Who = "all" | "studio" | "clients" | "guests";
 const WHO_KINDS: Record<Who, string> = { all: "", studio: "owner,team", clients: "client", guests: "guest,visitor" };
 
@@ -107,7 +110,7 @@ export function ActivityPage() {
         </Select>
         <Select aria-label="Onderdeel" value={area} onChange={(e) => setArea(e.target.value)}>
           <option value="">Alle onderdelen</option>
-          {AREAS.map((a) => <option key={a} value={a}>{a}</option>)}
+          {AREAS.map((a) => <option key={a} value={a}>{areaName(a)}</option>)}
         </Select>
         <Segmented<Who> label="Wie" value={who} onChange={setWho} options={[
           { value: "all", label: "Alles" },
@@ -193,8 +196,8 @@ function EntryRow({ entry: e }: { entry: Entry }) {
         )}
       </div>
       <div className="s-log-side">
-        <Pill plain>{e.area}</Pill>
-        {e.link && <Link to={e.link} className="s-btn ghost sm" aria-label={`Open ${target || e.projectTitle || e.area}`} title="Openen"><ArrowUpRight size={14} /></Link>}
+        <Pill plain>{areaName(e.area)}</Pill>
+        {e.link && <Link to={e.link} className="s-btn ghost sm" aria-label={`Open ${target || e.projectTitle || areaName(e.area)}`} title="Openen"><ArrowUpRight size={14} /></Link>}
       </div>
     </li>
   );
@@ -228,7 +231,7 @@ const FIELD: Record<string, string> = {
 
 const PERMISSION: Record<string, string> = {
   manageAdmins: "Team & rollen", manageClients: "Klanten en projecten", manageQuotes: "Offertes en facturen",
-  managePortfolio: "Portfolio", manageInquiries: "Aanvragen", manageReminders: "Herinneringen", manageAds: "Advertenties",
+  managePortfolio: "Portfolio", manageInquiries: "Aanvragen", manageReminders: "Herinneringen", manageAds: "Statistieken",
   manageSettings: "Instellingen", manageDeclarations: "Declaraties", viewAllDeclarations: "Alle declaraties zien",
 };
 

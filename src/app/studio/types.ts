@@ -254,7 +254,7 @@ export interface Inquiry {
   handled: boolean;
   clientId: string | null;
   projectId: string | null;
-  /** The site visit it was sent from (Advertenties shows the whole route). */
+  /** The site visit it was sent from (Statistieken shows the whole route). */
   visitId?: string | null;
   createdAt: string;
 }

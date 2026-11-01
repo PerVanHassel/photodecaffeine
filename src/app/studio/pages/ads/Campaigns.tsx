@@ -68,7 +68,7 @@ export function CampaignsTab({ summary, meta, loading, onOpen, onLink }: {
                   <th>Campagne</th>
                   <th className="right">Bezoeken</th>
                   <th className="right" title="Eén pagina, korter dan 10 seconden">Weggeklikt</th>
-                  <th className="right">Tijd</th>
+                  <th className="right" title="Gemiddelde tijd per bezoek">Gem. tijd</th>
                   <th className="right" title="Hoe ver ze gemiddeld scrolden op de eerste pagina">Gescrold</th>
                   <th className="right" title="Klikten op een knop, link of invulveld">Klikten</th>
                   <th className="right" title="Begonnen aan een formulier">Formulier</th>
@@ -121,7 +121,7 @@ export function CampaignsTab({ summary, meta, loading, onOpen, onLink }: {
         <Card title="Per advertentie" bodyClass="none">
           <div className="s-table-wrap">
             <table className="s-table">
-              <thead><tr><th>Campagne</th><th>Advertentie</th><th className="right">Bezoeken</th><th className="right">Weggeklikt</th><th className="right">Tijd</th><th className="right">Gescrold</th><th className="right">Aanvragen</th></tr></thead>
+              <thead><tr><th>Campagne</th><th>Advertentie</th><th className="right">Bezoeken</th><th className="right">Weggeklikt</th><th className="right">Gem. tijd</th><th className="right">Gescrold</th><th className="right">Aanvragen</th></tr></thead>
               <tbody>
                 {variants.map((v) => (
                   <tr key={`${v.campaign}|${v.content}`}>
