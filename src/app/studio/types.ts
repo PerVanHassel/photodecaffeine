@@ -132,6 +132,8 @@ export interface ShareGuest {
   visits: number;
   downloads: number;
   hearts: number;
+  /** Asked for a mail when new photos arrive. */
+  notifyPhotos: boolean;
   firstSeenAt: string;
   lastSeenAt: string;
 }

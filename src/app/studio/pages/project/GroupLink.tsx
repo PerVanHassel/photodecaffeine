@@ -62,6 +62,7 @@ export function GroupLink({ project: p }: { project: Project }) {
   } else {
     const loved = p.gallery.filter((g) => s.hearts[g.id]).sort((a, b) => s.hearts[b.id] - s.hearts[a.id]).slice(0, 8);
     const guests = showAll ? s.guests : s.guests.slice(0, FIRST);
+    const waiting = s.guests.filter((g) => g.notifyPhotos).length;
     body = (
       <div className="s-stack lg">
         <div className="s-row">
@@ -112,6 +113,7 @@ export function GroupLink({ project: p }: { project: Project }) {
           <Empty title="Nog geen bezoekers">Stuur de link rond, of laat de klant dat doen vanuit de galerij.</Empty>
         ) : (
           <div className="s-stack sm">
+            {waiting > 0 && <p className="s-small s-muted">{waiting === 1 ? "1 bezoeker wil" : `${waiting} bezoekers willen`} een mail bij nieuwe foto's. Die gaat mee als je bij de galerij op "Klant laten weten" drukt.</p>}
             <div className="s-table-wrap">
               <table className="s-table">
                 <thead>
@@ -184,8 +186,8 @@ function saveGuests(p: Project, guests: ShareGuest[]) {
   const cell = csvCell;
   const when = (iso: string) => fmt(iso, "yyyy-MM-dd HH:mm");
   const rows = [
-    ["Naam", "E-mail", "Bezoeken", "Hartjes", "Downloads", "Eerste bezoek", "Laatste bezoek"],
-    ...guests.map((g) => [g.name, g.email, g.visits, g.hearts, g.downloads, when(g.firstSeenAt), when(g.lastSeenAt)]),
+    ["Naam", "E-mail", "Bezoeken", "Hartjes", "Downloads", "Mail bij nieuwe foto's", "Eerste bezoek", "Laatste bezoek"],
+    ...guests.map((g) => [g.name, g.email, g.visits, g.hearts, g.downloads, g.notifyPhotos ? "Ja" : "Nee", when(g.firstSeenAt), when(g.lastSeenAt)]),
   ];
   const name = (p.gallerySettings.title || p.title).replace(/[^\w-]+/g, "-").toLowerCase();
   saveFile(`bezoekers-${name}.csv`, `﻿${rows.map((r) => r.map(cell).join(";")).join("\r\n")}`, "text/csv;charset=utf-8");

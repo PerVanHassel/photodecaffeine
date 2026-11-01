@@ -95,7 +95,7 @@ const guestList: Json[] = [
   ["Noah Mulder", "noah@example.nl", 1, 0, 0, 0],
   ["Julia Bos", "julia@example.nl", 2, 2, -2, -1],
 ].map(([name, email, visits, downloads, first, last], i) => ({
-  id: id(1000 + i), projectId: id(57), key: String(i).padStart(32, "a"), name, email, visits, downloads,
+  id: id(1000 + i), projectId: id(57), key: String(i).padStart(32, "a"), name, email, visits, downloads, notifyPhotos: i < 2,
   firstSeenAt: iso(first as number, 20, i), lastSeenAt: iso(last as number, 9 + i, 5 * i),
 }));
 // Who hearted which photo of the run, by photo index and guest index.
@@ -146,7 +146,7 @@ function shareReply(token: string, key: string, preview: boolean) {
   const client = forClient(x);
   const canDownload = share.downloads && !preview;
   return {
-    guest: guest ? { name: guest.name } : null,
+    guest: guest ? { name: guest.name, email: guest.email, notifyPhotos: !!guest.notifyPhotos } : null,
     preview: !guest,
     project: {
       id: x.id, title: x.title, stage: x.stage, gallerySettings: x.gallerySettings,
@@ -750,6 +750,18 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     }
     Object.assign(guest, { name: String(body.name).trim(), lastSeenAt: new Date().toISOString() });
     return { key: guest.key, name: guest.name };
+  }
+  if ((r = m(/^\/admin\/project\/([^/]+)\/gallery\/notify$/))) {
+    return { success: true, sentTo: ["klant@example.nl"], guests: guestList.filter((g) => g.projectId === r![1] && g.notifyPhotos).length };
+  }
+  if ((r = m(/^\/share\/([^/]+)\/notify$/))) {
+    guestOf(r[1], body.key).guest.notifyPhotos = body.on;
+    return { notifyPhotos: body.on };
+  }
+  if (p === "/guest-mails/off") {
+    const guest = guestList.find((g) => g.key === body.key);
+    if (guest) guest.notifyPhotos = false;
+    return { success: true };
   }
   if ((r = m(/^\/share\/([^/]+)\/review$/))) {
     guestOf(r[1], body.key);

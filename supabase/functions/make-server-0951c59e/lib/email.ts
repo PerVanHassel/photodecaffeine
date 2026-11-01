@@ -45,6 +45,40 @@ export async function sendEmail(opts: {
   }
 }
 
+// Many personal mails in one go: one request per 100, with room for Resend's
+// limit of two requests a second. Returns how many went out. "Permissive": one
+// bad address does not hold back the rest.
+export async function sendEmailBatch(mails: { to: string; subject: string; html: string; replyTo?: string }[]): Promise<number> {
+  const apiKey = Deno.env.get("RESEND_API_KEY");
+  if (!apiKey) {
+    console.log("sendEmailBatch: RESEND_API_KEY not set, skipping email send");
+    return 0;
+  }
+  let sent = 0;
+  for (let i = 0; i < mails.length; i += 100) {
+    if (i > 0) await new Promise((done) => setTimeout(done, 600));
+    try {
+      const res = await fetch("https://api.resend.com/emails/batch", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "x-batch-validation": "permissive",
+        },
+        body: JSON.stringify(mails.slice(i, i + 100).map((m) => ({ from: EMAIL_FROM, to: m.to, subject: m.subject, html: m.html, reply_to: m.replyTo }))),
+      });
+      if (!res.ok) {
+        console.log("sendEmailBatch: Resend API error", res.status, await res.text());
+        continue;
+      }
+      sent += (await res.json()).data?.length || 0;
+    } catch (err) {
+      console.log("sendEmailBatch: failed to send", err);
+    }
+  }
+  return sent;
+}
+
 // Escapes values interpolated into email HTML so a stray quote or angle
 // bracket in a name or address can't break out of the surrounding markup.
 export function escapeHtml(value: unknown): string {

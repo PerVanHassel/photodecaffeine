@@ -112,8 +112,8 @@ export function GalleryTab({ project: p }: { project: Project }) {
     success: "Omslagfoto ingesteld",
   });
   const notify = useAction({
-    fn: (added: number) => post<{ sentTo: string[] }>(`/admin/project/${p.id}/gallery/notify`, { added }),
-    success: (r) => `Mail verstuurd naar ${r.sentTo.join(", ")}`,
+    fn: (added: number) => post<{ sentTo: string[]; guests: number }>(`/admin/project/${p.id}/gallery/notify`, { added }),
+    success: (r) => `Mail verstuurd naar ${[...r.sentTo, ...(r.guests ? [`${r.guests} ${r.guests === 1 ? "gast" : "gasten"}`] : [])].join(", ")}`,
     onSuccess: () => setAddedThisVisit(0),
   });
 
@@ -284,7 +284,9 @@ export function GalleryTab({ project: p }: { project: Project }) {
             loading={notify.isPending}
             onClick={async () => {
               const n = addedThisVisit || p.gallery.length - marked("no_photo");
-              if (await confirm({ title: "Klant laten weten?", body: `De klant krijgt een mail dat er ${n} ${n === 1 ? "nieuwe foto staat" : "nieuwe foto's staan"}.`, confirm: "Mail versturen" })) notify.mutate(n);
+              const waiting = groupLink?.share?.active ? groupLink.guests.filter((g) => g.notifyPhotos).length : 0;
+              const who = waiting ? `De klant en ${waiting} ${waiting === 1 ? "gast krijgen" : "gasten krijgen"}` : "De klant krijgt";
+              if (await confirm({ title: "Klant laten weten?", body: `${who} een mail dat er ${n} ${n === 1 ? "nieuwe foto staat" : "nieuwe foto's staan"}.`, confirm: "Mail versturen" })) notify.mutate(n);
             }}
           >
             Klant laten weten{addedThisVisit ? ` (${addedThisVisit} nieuw)` : ""}

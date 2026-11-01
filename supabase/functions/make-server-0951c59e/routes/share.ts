@@ -9,7 +9,7 @@ import { notify } from "../lib/notify.ts";
 import { childTagEmail } from "../lib/projectEmails.ts";
 import { clientDownloads, downloadLink, gallerySigner, heldBack, loadProject, type ProjectRow, projectToApi, type Signer } from "../lib/projects.ts";
 import { noteGuestReviewer, reviewLink } from "../lib/reviews.ts";
-import { guestCount, guestHearts, VISIT_GAP_MS } from "../lib/shares.ts";
+import { guestCount, guestHearts, setPhotoMails, VISIT_GAP_MS, wantsPhotoMails } from "../lib/shares.ts";
 import { signPaths } from "../lib/storage.ts";
 
 const r = new Hono<Env>();
@@ -156,7 +156,7 @@ r.get(S, async (c) => {
     guest ? kidsOf(row.id, guest) : null,
   ]);
   return c.json({
-    guest: guest ? { name: guest.name } : null,
+    guest: guest ? { name: guest.name, email: guest.email, notifyPhotos: await wantsPhotoMails(row.id, guest.id) } : null,
     preview,
     project: guestProject(row, sign, share.downloads && !preview),
     hearts: hearts.images,
@@ -197,6 +197,25 @@ r.post(`${S}/heart`, async (c) => {
   const res = await db.from("gallery_guest_hearts").select("image_id", { count: "exact", head: true }).eq("image_id", b.imageId);
   must(res);
   return c.json({ count: res.count || 0 });
+});
+
+// --- a mail when new photos arrive, on or off ---
+r.post(`${S}/notify`, async (c) => {
+  const share = await openShare(c.req.param("token"));
+  const b = await readBody(c, z.object({ key: z.string(), on: z.boolean(), language: z.enum(["nl", "en"]).default("nl") }));
+  const guest = await mustGuest(share, b.key);
+  await setPhotoMails(share.project_id, guest.id, b.on, b.language);
+  await seen(guest);
+  return c.json({ notifyPhotos: b.on });
+});
+
+// The link in such a mail. The key is enough, so it keeps working when the
+// group link was switched off or replaced after the mail went out.
+r.post("/make-server-0951c59e/guest-mails/off", async (c) => {
+  const { key } = await readBody(c, z.object({ key: z.string().regex(/^[0-9a-f]{32}$/, "Deze link werkt niet.") }));
+  const guest = must(await db.from("gallery_guests").select("id, project_id").eq("key", key).maybeSingle()) as any;
+  if (guest) await setPhotoMails(guest.project_id, guest.id, false);
+  return c.json({ success: true });
 });
 
 // --- the review button: the link itself counts the click, this says who it was ---

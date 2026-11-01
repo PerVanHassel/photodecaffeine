@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowRight, ArrowUp, Check, ChevronLeft, ChevronRight, Download, Flame, Grid3x3, Heart, Instagram, MegaphoneOff, Play, Plus, Rows2, Share2, Star, Users, X } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUp, Bell, BellRing, Check, ChevronLeft, ChevronRight, Download, Flame, Grid3x3, Heart, Instagram, MegaphoneOff, Play, Plus, Rows2, Share2, Star, Users, X } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { Helmet } from "react-helmet-async";
 import { useModalFocus } from "../../lib/dialog";
@@ -49,6 +49,8 @@ export interface GalleryActions {
   share?: () => void;
   /** Passes on a link to one photo. */
   sharePhoto?: (img: GalleryImage) => void;
+  /** A guest's mail when new photos arrive. */
+  photoMails?: { on: boolean; toggle: () => void };
 }
 
 const DONE = ["delivered", "review", "archived"];
@@ -199,6 +201,11 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
       {actions.share && !guest && (
         <button type="button" className="g-share-cta" onClick={actions.share}><Users />{t.shareCta}</button>
       )}
+      {actions.photoMails && (
+        <button type="button" className="g-share-cta" aria-pressed={actions.photoMails.on} onClick={actions.photoMails.toggle}>
+          {actions.photoMails.on ? <BellRing /> : <Bell />}{actions.photoMails.on ? t.photoMailsOn : t.photoMailsAsk}
+        </button>
+      )}
       {toReview && <a className="g-share-cta" {...toReview}><Star aria-hidden="true" />{t.writeGoogleReview}</a>}
     </>
   );
@@ -255,6 +262,12 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
                     aria-label={filter === "fav" ? t.downloadFavorites : t.downloadAll}>
                     <Download />
                     <span className="g-btn-label">{actions.zip ? t.zipping(actions.zip.done, actions.zip.total) : filter === "fav" ? t.downloadFavorites : t.downloadAll}</span>
+                  </button>
+                )}
+                {actions.photoMails && (
+                  <button type="button" className={cx("g-btn", actions.photoMails.on && "on")} aria-pressed={actions.photoMails.on} onClick={actions.photoMails.toggle}
+                    aria-label={actions.photoMails.on ? t.photoMailsOn : t.photoMailsAsk} title={actions.photoMails.on ? t.photoMailsOn : t.photoMailsAsk}>
+                    {actions.photoMails.on ? <BellRing /> : <Bell />}<span className="g-btn-label">{t.photoMailsShort}</span>
                   </button>
                 )}
                 {actions.share && (

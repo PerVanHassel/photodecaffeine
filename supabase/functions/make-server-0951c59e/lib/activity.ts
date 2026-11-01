@@ -161,7 +161,9 @@ const RULES: Record<string, Rule> = {
   "PUT /admin/project/:id/gallery/order": { area: "Galerij", action: "Volgorde van de galerij aangepast" },
   "DELETE /admin/project/:id/gallery/:imageId": { area: "Galerij", action: "Foto verwijderd", of: IMAGE },
   "POST /admin/project/:id/gallery/privatize": { area: "Galerij", action: "Galerij naar privé-opslag verplaatst" },
-  "POST /admin/project/:id/gallery/notify": { area: "Galerij", action: "Klant gemaild dat de galerij klaar staat" },
+  "POST /admin/project/:id/gallery/notify": {
+    area: "Galerij", action: "Klant gemaild dat de galerij klaar staat", detail: (x) => (x.json?.guests ? `Ook ${plural(x.json.guests, "gast", "gasten")}` : ""),
+  },
   "POST /admin/project/:id/share": { area: "Galerij", action: "Deellink aangezet" },
   "PUT /admin/project/:id/share": {
     area: "Galerij", action: "Deellink aangepast",
@@ -342,6 +344,18 @@ const RULES: Record<string, Rule> = {
     action: (x) => (x.body?.on ? "Hartje gegeven aan een foto" : "Hartje weggehaald"),
     who: (x) => guestByKey(x.params.token, x.body?.key),
     detail: (x) => imageName(x.body?.imageId),
+  },
+  "POST /share/:token/notify": {
+    area: "Galerij", of: SHARE,
+    action: (x) => (x.body?.on ? "Mail bij nieuwe foto's aangezet" : "Mail bij nieuwe foto's uitgezet"),
+    who: (x) => guestByKey(x.params.token, x.body?.key),
+  },
+  "POST /guest-mails/off": {
+    area: "Galerij", action: "Afgemeld via de mail over nieuwe foto's",
+    who: async (x) => {
+      const g = (await db.from("gallery_guests").select("name, email").eq("key", String(x.body?.key)).maybeSingle()).data;
+      return { kind: "guest", name: g?.name || "", email: g?.email || "" };
+    },
   },
   "POST /share/:token/review": {
     area: "Reviews", action: "Op de reviewknop in de galerij gedrukt", of: SHARE,

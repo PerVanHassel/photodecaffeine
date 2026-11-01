@@ -21,7 +21,7 @@ import {
   syncGalleryUrls,
 } from "../lib/projects.ts";
 import { consentMessageEmail, deliveredEmail, galleryGrewEmail, meetingEmail, studioMessageToClientEmail } from "../lib/projectEmails.ts";
-import { guestHearts, shareFor, shareToken, shareUrl } from "../lib/shares.ts";
+import { forgetPhotoMails, guestHearts, mailGuestsNewPhotos, photoMailGuests, setPhotoMails, shareFor, shareToken, shareUrl } from "../lib/shares.ts";
 import { removePrivate, uploadPrivate } from "../lib/storage.ts";
 import { demoSlugOf, projectDemos } from "../lib/util.ts";
 
@@ -252,6 +252,7 @@ async function notifyClients(
       });
     }
   }
+  return what.added > 0 ? await mailGuestsNewPhotos(row, what.added) : 0;
 }
 
 // --- delete ---
@@ -260,6 +261,7 @@ r.delete(`${P}/project/:id`, async (c) => {
   const row = await loadProject(id);
   await removePrivate((row.gallery_images || []).flatMap((g: any) => [g.storage_path, g.preview_path]));
   await removeConsentPhotos([id]);
+  await forgetPhotoMails(id);
   must(await db.from("projects").delete().eq("id", id));
   return c.json({ success: true });
 });
@@ -442,9 +444,9 @@ r.post(`${P}/project/:id/gallery/notify`, async (c) => {
   const { added } = await readBody(c, z.object({ added: z.number().int().positive().max(5000) }));
   const row = await loadProject(id);
   const recipients = await projectRecipients(id);
-  if (recipients.length === 0) fail(400, "Er staat geen klant met een e-mailadres bij dit project.");
-  await notifyClients(row, { added, justDelivered: false, meetingChanged: false });
-  return c.json({ success: true, sentTo: recipients.map((p) => p.email) });
+  const guests = await notifyClients(row, { added, justDelivered: false, meetingChanged: false });
+  if (recipients.length === 0 && guests === 0) fail(400, "Er staat geen klant met een e-mailadres bij dit project, en er wachten geen gasten op een mail.");
+  return c.json({ success: true, sentTo: recipients.map((p) => p.email), guests });
 });
 
 // ---------------------------------------------------------------------------
@@ -460,6 +462,7 @@ async function shareState(id: string) {
       .eq("project_id", id).order("last_seen_at", { ascending: false }),
     guestHearts(id),
   ]);
+  const wanted = await photoMailGuests(id);
   const guests = (must(rows) || []).map((g: any) => ({
     id: g.id,
     name: g.name,
@@ -467,6 +470,7 @@ async function shareState(id: string) {
     visits: g.visits,
     downloads: g.downloads,
     hearts: hearts.guests[g.id] || 0,
+    notifyPhotos: wanted.has(g.id),
     firstSeenAt: g.first_seen_at,
     lastSeenAt: g.last_seen_at,
   }));
@@ -521,6 +525,7 @@ r.post(`${P}/project/:id/share/renew`, async (c) => {
 r.delete(`${P}/project/:id/share/guests/:guestId`, async (c) => {
   const id = c.req.param("id");
   must(await db.from("gallery_guests").delete().eq("id", c.req.param("guestId")).eq("project_id", id));
+  await setPhotoMails(id, c.req.param("guestId"), false);
   return c.json(await shareState(id));
 });
 

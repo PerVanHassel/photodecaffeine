@@ -28,7 +28,7 @@ export const policies = {
       },
       {
         heading: "3. Hoe wij uw gegevens gebruiken",
-        body: "Wij gebruiken uw gegevens uitsluitend om uw aanvraag te beantwoorden en, waar nodig, om onze klantrelatie te beheren. Wij verkopen, delen of verhuren uw gegevens niet aan derden.",
+        body: "Wij gebruiken uw gegevens uitsluitend om uw aanvraag te beantwoorden en, waar nodig, om onze klantrelatie te beheren. Vraagt u in een gedeelde galerij om een mail bij nieuwe foto's, dan gebruiken wij uw e-mailadres ook daarvoor. In elke mail staat een link om u weer af te melden. Wij verkopen, delen of verhuren uw gegevens niet aan derden.",
       },
       {
         heading: "4. Bezoekersstatistieken",

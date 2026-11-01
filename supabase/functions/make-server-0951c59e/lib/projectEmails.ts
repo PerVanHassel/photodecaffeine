@@ -86,6 +86,48 @@ export function galleryGrewEmail(o: { firstName: string; galleryTitle: string; c
             `);
 }
 
+/**
+ * To a guest who asked to hear about new photos. No photo in here: what a guest
+ * may see depends on the door they still have to pass (consent, a held back photo).
+ */
+export function guestNewPhotosEmail(o: { language: "nl" | "en"; name: string; title: string; added: number; link: string; offLink: string }): string {
+  const first = escapeHtml(o.name.split(" ")[0]);
+  const t = o.language === "en"
+    ? {
+      eyebrow: "New photos",
+      intro: `Hi ${first}, ${o.added === 1 ? "there is 1 new photo" : `there are ${o.added} new photos`} in the gallery. You asked us to let you know.`,
+      button: "View the photos",
+      foot: "You get this e-mail because you turned it on in the gallery.",
+      off: "Stop these e-mails",
+    }
+    : {
+      eyebrow: "Nieuwe foto's",
+      intro: `Hoi ${first}, er ${o.added === 1 ? "staat 1 nieuwe foto" : `staan ${o.added} nieuwe foto's`} in de galerij. Je vroeg of we je dat wilden laten weten.`,
+      button: "Bekijk de foto's",
+      foot: "Je krijgt deze mail omdat je dit in de galerij hebt aangezet.",
+      off: "Geen mails meer",
+    };
+  return emailWrap(`              <tr>
+                <td style="padding:32px 36px 0;">
+                  <span style="color:#c8905a;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;">${t.eyebrow}</span>
+                  <div style="height:10px;line-height:10px;font-size:0;">&nbsp;</div>
+                  <span style="display:block;color:#fffbe0;font-size:22px;font-weight:800;letter-spacing:-0.01em;">${escapeHtml(o.title)}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:16px 36px 0;"><span style="color:rgba(255,251,224,0.7);font-size:14px;line-height:1.7;">${t.intro}</span></td>
+              </tr>
+              <tr>
+                <td style="padding:26px 36px 0;">
+                  <a href="${o.link}" style="display:inline-block;background-color:#fffbe0;color:#1a0c04;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 26px;">${t.button}</a>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:20px 36px 32px;"><span style="color:rgba(255,251,224,0.45);font-size:12px;line-height:1.6;">${t.foot} <a href="${o.offLink}" style="color:rgba(255,251,224,0.7);">${t.off}</a></span></td>
+              </tr>
+            `);
+}
+
 export function deliveredEmail(o: { firstName: string; title: string; coverUrl?: string; galleryLink: string }): string {
   const { firstName, coverUrl, galleryLink } = o;
   const updated = { title: o.title };

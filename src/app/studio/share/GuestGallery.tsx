@@ -28,7 +28,7 @@ import { LangSwitch } from "./LangSwitch";
 
 type Gate = { title: string; subtitle: string; shootDate: string; style: string; accentColor: string; cover: string; photos: number; videos: number };
 type Inside = {
-  guest: { name: string } | null;
+  guest: { name: string; email: string; notifyPhotos: boolean } | null;
   /** A studio admin looking without being counted. */
   preview: boolean;
   project: GalleryProject & { id: string };
@@ -80,6 +80,40 @@ export function GuestGalleryPage() {
 }
 
 function GuestGallery() {
+  const [params] = useSearchParams();
+  const mailsOff = params.get("afmelden");
+  return mailsOff ? <MailsOff guestKey={mailsOff} /> : <Entrance />;
+}
+
+/** The link in a mail about new photos. No door: the key says who it is. */
+function MailsOff({ guestKey }: { guestKey: string }) {
+  const { token = "" } = useParams();
+  const t = useT();
+  const lang = usePortalLanguage();
+  const done = useQuery({
+    queryKey: ["mails-off", guestKey],
+    queryFn: () => api("/guest-mails/off", { method: "POST", body: { key: guestKey }, anonymous: true }),
+    retry: false,
+    // Once. Coming back to this tab should not undo turning the mails on again.
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+  });
+  if (done.isError) return <Closed t={t} lang={lang} error={done.error} retry={() => done.refetch()} />;
+  if (!done.data) return <main className="g-page" aria-busy="true"><span className="s-sr">{t.wait}</span></main>;
+  return (
+    <main className="g-page g-closed">
+      <Head title="PhotoDeCaffeine" font={styleOf({ gallerySettings: {} }).font} />
+      <div className="g-empty">
+        <LangSwitch lang={lang} t={t} />
+        <p className="g-title">{t.mailsOffTitle}</p>
+        <p>{t.mailsOffHint}</p>
+        <a className="g-btn" href={`/galerij/${encodeURIComponent(token)}`}>{t.toGallery}</a>
+      </div>
+    </main>
+  );
+}
+
+function Entrance() {
   const { token = "" } = useParams();
   const [params] = useSearchParams();
   const t = useT();
@@ -241,6 +275,21 @@ function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, t, la
     }
   }
 
+  async function togglePhotoMails() {
+    if (!data.guest) return;
+    const { email, notifyPhotos } = data.guest;
+    const on = !notifyPhotos;
+    const before = qc.getQueryData(queryKey);
+    qc.setQueryData(queryKey, (d: Inside | undefined) => d?.guest && { ...d, guest: { ...d.guest, notifyPhotos: on } });
+    try {
+      await send("notify", { on, language: lang.language === "en" ? "en" : "nl" });
+      toast.success(on ? t.photoMailsOnToast(email) : t.photoMailsOffToast);
+    } catch (err) {
+      qc.setQueryData(queryKey, before);
+      failed(err);
+    }
+  }
+
   async function tagKid(img: GalleryImage) {
     const on = !data.kids?.tags[img.id]?.includes(kid);
     const before = qc.getQueryData(queryKey);
@@ -298,7 +347,7 @@ function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, t, la
           onAdd: (name) => { setAddedKids((old) => [...old, name]); setActiveKid(name); },
         } : undefined}
         guest={{ name: data.guest?.name || "", guests: data.guests }}
-        actions={data.preview ? { share, sharePhoto } : { toggle, downloadOne, downloadAll, zip, share, sharePhoto }}
+        actions={data.preview || !data.guest ? { share, sharePhoto } : { toggle, downloadOne, downloadAll, zip, share, sharePhoto, photoMails: { on: data.guest.notifyPhotos, toggle: togglePhotoMails } }}
         review={data.reviewUrl ? { url: data.reviewUrl, onOpen: () => { send("review", {}).catch(() => {}); } } : undefined}
         back={
           <>
