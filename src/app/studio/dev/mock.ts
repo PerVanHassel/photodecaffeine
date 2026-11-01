@@ -185,10 +185,18 @@ consentForms.push({ projectId: id(57), token: "Rn5tK8wQ3yVb7Hs2", active: true, 
 consents.push({ id: id(2100), projectId: id(57), key: "c".repeat(32), childName: "Daan Smit", shirtNumber: "7", answer: "no_photo", photoUrl: PHOTOS[7], note: "", parentName: "Ruben Smit", parentEmail: "ruben@example.nl", statement: "", createdAt: iso(-4), updatedAt: iso(-4) });
 consents.push({ id: id(2101), projectId: id(57), key: "d".repeat(32), childName: "Lotte Visser", shirtNumber: "", answer: "no_social", photoUrl: "", note: "", parentName: "Sophie Visser", parentEmail: "sophie@example.nl", statement: "", createdAt: iso(-4), updatedAt: iso(-4) });
 consents.push({ id: id(2102), projectId: id(57), key: "e".repeat(32), childName: "Bram Jansen", shirtNumber: "", answer: "full", photoUrl: "", note: "", parentName: "Milan Jansen", parentEmail: "milan@example.nl", statement: "", createdAt: iso(-4), updatedAt: iso(-4) });
+// Two children with the same first name, who may both be shown.
+consents.push({ id: id(2103), projectId: id(57), key: "f".repeat(32), childName: "Finn Peters", shirtNumber: "", answer: "full", photoUrl: "", note: "", parentName: "Roos Peters", parentEmail: "roos@example.nl", statement: "", createdAt: iso(-4), updatedAt: iso(-4) });
+consents.push({ id: id(2104), projectId: id(57), key: "a".repeat(32), childName: "Finn Bakker", shirtNumber: "", answer: "full", photoUrl: "", note: "", parentName: "Ivo Bakker", parentEmail: "ivo@example.nl", statement: "", createdAt: iso(-4), updatedAt: iso(-4) });
 const childTags: Json[] = [
   { id: id(2200), projectId: id(57), imageId: id(5703), guestId: id(1005), child: "Lotte Visser" },
   { id: id(2203), projectId: id(57), imageId: id(5703), guestId: id(1005), child: "Daan Smit" },
   { id: id(2201), projectId: id(57), imageId: id(5704), guestId: id(1006), child: "Bram Jansen" },
+  // The same child by two parents, one with the first name only: one name on the photo.
+  { id: id(2204), projectId: id(57), imageId: id(5704), guestId: id(1003), child: "Bram" },
+  { id: id(2205), projectId: id(57), imageId: id(5704), guestId: id(1003), child: "Finn Peters" },
+  { id: id(2206), projectId: id(57), imageId: id(5704), guestId: id(1006), child: "Finn Bakker" },
+  { id: id(2207), projectId: id(57), imageId: id(5705), guestId: id(1006), child: "Bram Jansen" },
   { id: id(2202), projectId: id(57), imageId: id(5705), guestId: id(1003), child: "Sem" },
 ];
 
@@ -197,6 +205,8 @@ const strictFirst = (a: Json, b: Json) => STRICT[a.answer] - STRICT[b.answer];
 const normalName = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").trim().toLowerCase().replace(/\s+/g, " ");
 const firstName = (s: string) => normalName(s).split(" ")[0];
 const numbersOf = (rows: Json[]) => [...new Set(rows.map((c) => c.shirtNumber).filter(Boolean))].join(" / ");
+const fullestName = (rows: Json[]) =>
+  rows.map((c) => c.childName).sort((a, b) => normalName(b).length - normalName(a).length || Number(/^\p{Lu}/u.test(b)) - Number(/^\p{Lu}/u.test(a)))[0];
 
 /** Mirrors groupByChild in lib/consents.ts. */
 function groupByChild(rows: Json[]) {
@@ -225,7 +235,9 @@ function childStatus(projectId: string, name: string) {
   let same = groups.filter((g) => g.some((c) => normalName(c.childName) === wanted));
   if (!same.length && !wanted.includes(" ")) same = groups.filter((g) => g.some((c) => firstName(c.childName) === wanted));
   const rows = same.flat();
-  return rows.length ? { answer: [...rows].sort(strictFirst)[0].answer, number: numbersOf(rows) } : { answer: "unknown", number: "" };
+  return rows.length
+    ? { name: same.length === 1 ? fullestName(same[0]) : name, answer: [...rows].sort(strictFirst)[0].answer, number: numbersOf(rows) }
+    : { name, answer: "unknown", number: "" };
 }
 
 function childTagState(projectId: string) {
@@ -262,7 +274,7 @@ function consentState(projectId: string) {
   const children = groupByChild(consents.filter((c) => c.projectId === projectId)).map((group) => {
     group.sort(strictFirst);
     return {
-      name: group.map((c) => c.childName).sort((a, b) => normalName(b).length - normalName(a).length || Number(/^\p{Lu}/u.test(b)) - Number(/^\p{Lu}/u.test(a)))[0],
+      name: fullestName(group),
       number: numbersOf(group),
       answer: group[0].answer,
       mixed: group.some((c) => c.answer !== group[0].answer),

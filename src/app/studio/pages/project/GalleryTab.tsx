@@ -12,13 +12,24 @@ import { Button, Card, cx, Empty, Field, isVideo, Photo, Pill, Segmented, TextFi
 import { useUnsavedChanges } from "../../unsaved";
 import { StylePicker } from "../../gallery/StylePicker";
 import { prepareUpload, watermark } from "../../watermark";
-import { ConsentReminder } from "./ConsentTab";
+import { ANSWER_LABEL, ConsentReminder } from "./ConsentTab";
 import { GroupLink, useGroupLink } from "./GroupLink";
 
 const BATCH = 8;
 
 const MARK_LABEL: Record<Restriction, string> = { no_photo: "Niet in beeld", no_social: "Niet posten" };
 const CHILD_LABEL: Record<ChildTag["answer"], string> = { full: "mag op de foto en op social media", no_social: "niet op social media", no_photo: "niet op de foto", unknown: "geen toestemming gevonden" };
+// Who needs a decision comes first.
+const CHILD_ORDER: Record<ChildTag["answer"], number> = { no_photo: 0, no_social: 1, unknown: 2, full: 3 };
+
+/** The same child can be pointed out by both parents: one entry per child. */
+function byChild(tags: ChildTag[] = []): ChildTag[][] {
+  const kids = new Map<string, ChildTag[]>();
+  for (const t of tags) kids.set(t.name, [...(kids.get(t.name) || []), t]);
+  return [...kids.values()];
+}
+
+const pointedOutBy = (tags: ChildTag[]) => [...new Set(tags.map((t) => t.by).filter(Boolean))].join(" en ") || "een ouder";
 
 /** The mark a photo should have for the children parents pointed out on it, when that is stricter than the one it has. */
 function missingMark(g: GalleryImage, tags: ChildTag[] = []): Restriction | "" {
@@ -34,7 +45,7 @@ export function GalleryTab({ project: p }: { project: Project }) {
   const [over, setOver] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [addedThisVisit, setAddedThisVisit] = useState(0);
-  const [filter, setFilter] = useState<"all" | "favorites" | "attention" | Restriction>("all");
+  const [filter, setFilter] = useState<"all" | "favorites" | "attention" | Restriction | `kid:${string}`>("all");
   const [picked, setPicked] = useState<Set<string>>(() => new Set());
   const lastPicked = useRef<string | null>(null);
   const favorites = p.favorites || {};
@@ -113,7 +124,11 @@ export function GalleryTab({ project: p }: { project: Project }) {
   // A child no form names: nothing to apply by itself, so the studio looks at it.
   const unknownKids = p.gallery.filter((g) => !g.restriction && tagsOf[g.id]?.some((t) => t.answer === "unknown"));
   const attention = new Set([...toMark, ...unknownKids].map((g) => g.id));
-  const shown = filter === "all" ? p.gallery
+  const kids = byChild(allTags).sort((a, b) => CHILD_ORDER[a[0].answer] - CHILD_ORDER[b[0].answer] || a[0].name.localeCompare(b[0].name, "nl"));
+  // Once nothing points to a child any more, there is nothing left to filter on.
+  const kid = filter.startsWith("kid:") && kids.some(([t]) => `kid:${t.name}` === filter) ? filter.slice(4) : "";
+  const shown = filter === "all" || (filter.startsWith("kid:") && !kid) ? p.gallery
+    : kid ? p.gallery.filter((g) => tagsOf[g.id]?.some((t) => t.name === kid))
     : filter === "favorites" ? p.gallery.filter((g) => favorites[g.id])
     : filter === "attention" ? p.gallery.filter((g) => attention.has(g.id))
     : p.gallery.filter((g) => g.restriction === filter);
@@ -160,12 +175,12 @@ export function GalleryTab({ project: p }: { project: Project }) {
     success: "Foto's gemarkeerd",
   });
   const removeTag = useAction({
-    fn: (t: ChildTag) => del(`/admin/project/${p.id}/child-tags/${t.id}`),
+    fn: (tags: ChildTag[]) => Promise.all(tags.map((t) => del(`/admin/project/${p.id}/child-tags/${t.id}`))),
     invalidate: () => [keys.childTags(p.id)],
     success: "Aanwijzing weggehaald",
   });
-  async function askRemoveTag(t: ChildTag) {
-    if (await confirm({ title: `${t.child} staat hier niet op?`, body: `${t.by || "Een ouder"} wees dit kind aan op deze foto. De aanwijzing gaat weg; de foto blijft staan.`, confirm: "Weghalen" })) removeTag.mutate(t);
+  async function askRemoveTag(tags: ChildTag[]) {
+    if (await confirm({ title: `${tags[0].name} staat hier niet op?`, body: `Aangewezen door ${pointedOutBy(tags)}. De aanwijzing gaat weg; de foto blijft staan.`, confirm: "Weghalen" })) removeTag.mutate(tags);
   }
 
   const publicCount = p.gallery.filter((g) => g.url.includes("/object/public/")).length;
@@ -225,6 +240,26 @@ export function GalleryTab({ project: p }: { project: Project }) {
 
       <ConsentReminder project={p} />
 
+      {kids.length > 0 && (
+        <Card title={`Aangewezen door ouders: ${kids.length} ${kids.length === 1 ? "kind" : "kinderen"}`}>
+          <div className="s-stack">
+            <div className="s-row">
+              {kids.map((tags) => {
+                const t = tags[0];
+                const photos = new Set(tags.map((x) => x.imageId)).size;
+                const on = kid === t.name;
+                return (
+                  <Button key={t.name} size="sm" aria-pressed={on} variant={on ? "primary" : "default"} title={`Aangewezen door ${pointedOutBy(tags)}`} onClick={() => setFilter(on ? "all" : `kid:${t.name}`)}>
+                    {t.name}{t.number && ` #${t.number}`} · {photos} {photos === 1 ? "foto" : "foto's"}{t.answer !== "full" && ` · ${t.answer === "unknown" ? "Geen toestemming" : ANSWER_LABEL[t.answer]}`}
+                  </Button>
+                );
+              })}
+            </div>
+            <span className="s-small s-faint">Klik op een naam om alleen de foto's van dat kind te zien.</span>
+          </div>
+        </Card>
+      )}
+
       <div className="s-row between">
         <div className="s-row">
           <b>{p.gallery.length} {p.gallery.length === 1 ? "bestand" : "bestanden"}</b>
@@ -272,6 +307,7 @@ export function GalleryTab({ project: p }: { project: Project }) {
                   index={i}
                   isCover={g.id === coverId}
                   tags={tagsOf[g.id]}
+                  focusKid={kid}
                   onRemoveTag={askRemoveTag}
                   picked={picked.has(g.id)}
                   picking={picked.size > 0}
@@ -309,13 +345,19 @@ export function GalleryTab({ project: p }: { project: Project }) {
   );
 }
 
-function SortablePhoto({ image, index, isCover, tags, onRemoveTag, picked, picking, favoritedBy, onPick, onCover, onRemove, onSize }: {
-  image: GalleryImage; index: number; isCover: boolean; tags?: ChildTag[]; onRemoveTag: (t: ChildTag) => void; picked: boolean; picking: boolean; favoritedBy?: string[];
+function SortablePhoto({ image, index, isCover, tags, focusKid, onRemoveTag, picked, picking, favoritedBy, onPick, onCover, onRemove, onSize }: {
+  image: GalleryImage; index: number; isCover: boolean; tags?: ChildTag[]; focusKid: string; onRemoveTag: (tags: ChildTag[]) => void; picked: boolean; picking: boolean; favoritedBy?: string[];
   onPick: (range: boolean) => void; onCover: () => void; onRemove: () => void;
   onSize: (w: number, h: number) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: image.id });
   const number = String(index + 1).padStart(3, "0");
+  const [allNames, setAllNames] = useState(false);
+  const kids = byChild(tags);
+  // A team photo can have the whole team on it: who needs care gets a name, the rest on request.
+  const fine = kids.filter(([t]) => t.answer === "full" && t.name !== focusKid);
+  const named = allNames ? kids : kids.filter(([t]) => t.answer !== "full" || t.name === focusKid);
+  const firstName = (t: ChildTag) => t.name.trim().split(/\s+/)[0];
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }} {...attributes} {...listeners}
       // Once a photo is picked, a tap anywhere on the next one picks it too.
@@ -325,19 +367,23 @@ function SortablePhoto({ image, index, isCover, tags, onRemoveTag, picked, picki
         <button type="button" role="checkbox" aria-checked={picked} className={cx("s-pick", picked && "on")} title="Selecteren (met shift een reeks)" aria-label={`Foto ${number} selecteren`}
           onPointerDown={(e) => e.stopPropagation()} onClick={(e) => onPick(e.shiftKey)}><Check /></button>
         {image.restriction && <span className={`s-mark ${image.restriction}`}>{MARK_LABEL[image.restriction]}</span>}
-        {tags && (
+        {kids.length > 0 && (
           <div className="s-tagchips">
-            {/* A team photo can have the whole team on it: only who needs care gets a name. */}
-            {tags.filter((t) => t.answer !== "full").map((t) => (
-              <button key={t.id} type="button" className={`s-tagchip ${t.answer}`} title={`${t.child}: ${CHILD_LABEL[t.answer]}. Aangewezen door ${t.by || "een ouder"}. Klik om weg te halen.`}
-                aria-label={`${t.child}, ${CHILD_LABEL[t.answer]}. Aanwijzing weghalen`} onPointerDown={(e) => e.stopPropagation()} onClick={() => onRemoveTag(t)}>
-                {t.child.trim().split(/\s+/)[0]}{t.number ? ` #${t.number}` : ""}{t.answer === "unknown" ? " ?" : ""}
+            {named.map((list) => {
+              const t = list[0];
+              return (
+                <button key={t.name} type="button" className={`s-tagchip ${t.answer}`} title={`${t.name}: ${CHILD_LABEL[t.answer]}. Aangewezen door ${pointedOutBy(list)}. Klik om weg te halen.`}
+                  aria-label={`${t.name}, ${CHILD_LABEL[t.answer]}. Aanwijzing weghalen`} onPointerDown={(e) => e.stopPropagation()} onClick={() => onRemoveTag(list)}>
+                  {/* Two Finns on one photo need their last names. */}
+                  {kids.filter(([x]) => firstName(x) === firstName(t)).length > 1 ? t.name : firstName(t)}{t.number ? ` #${t.number}` : ""}{t.answer === "unknown" ? " ?" : ""}
+                </button>
+              );
+            })}
+            {fine.length > 0 && (
+              <button type="button" className="s-tagchip" aria-expanded={allNames} title={allNames ? "Namen verbergen" : `Mogen op de foto en op social media: ${fine.map(([t]) => t.name).join(", ")}`}
+                onPointerDown={(e) => e.stopPropagation()} onClick={() => setAllNames((v) => !v)}>
+                {allNames ? "Minder" : `${fine.length} ok`}
               </button>
-            ))}
-            {tags.some((t) => t.answer === "full") && (
-              <span className="s-tagchip" title={`Mogen op de foto en op social media: ${tags.filter((t) => t.answer === "full").map((t) => t.child).join(", ")}`}>
-                {tags.filter((t) => t.answer === "full").length} ok
-              </span>
             )}
           </div>
         )}

@@ -144,6 +144,8 @@ export interface ChildTag {
   id: string;
   imageId: string;
   child: string;
+  /** One name per child, however each parent wrote it. */
+  name: string;
   answer: ConsentAnswer | "unknown";
   number: string;
   by: string;
