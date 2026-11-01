@@ -13,7 +13,7 @@ export function Root() {
   const { pathname } = useLocation();
   usePageScroll();
 
-  // Own visitor statistics (Advertenties in the admin): every page, scroll and click.
+  // Own visitor statistics (Statistieken in the admin): every page, scroll and click.
   useEffect(() => startAnalytics(), []);
   useEffect(() => trackPageview(pathname), [pathname]);
 

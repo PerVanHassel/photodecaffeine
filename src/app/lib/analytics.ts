@@ -1,6 +1,6 @@
 /**
  * The site's own visitor statistics, read back in the admin under
- * Advertenties. Where a visitor came in, every page they open, how far they
+ * Statistieken. Where a visitor came in, every page they open, how far they
  * scroll and how long they stay, what they click and where, and which forms
  * they start: it goes in small batches to the site itself (/api/v, which
  * passes it to the edge function) and into our own database. Nothing is sent
