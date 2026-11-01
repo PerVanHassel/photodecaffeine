@@ -87,6 +87,10 @@ type AboutChild = { child_name: string; answer: Answer; shirt_number: string };
 
 const numbersOf = (rows: AboutChild[]) => [...new Set(rows.map((c) => c.shirt_number).filter(Boolean))].join(" / ");
 
+/** The fullest name that was given for a child, and among equals one that starts with a capital. */
+const fullestName = (rows: AboutChild[]) =>
+  rows.map((c) => c.child_name).sort((a, b) => normalName(b).length - normalName(a).length || Number(/^\p{Lu}/u.test(b)) - Number(/^\p{Lu}/u.test(a)))[0];
+
 /**
  * The answers that are about the same child: both parents can fill in the form,
  * and not always in the same words. The same full name is one child. A first
@@ -123,8 +127,7 @@ export async function consentState(projectId: string) {
     .map((group) => {
       group.sort(strictFirst);
       return {
-        // The fullest name that was given, and among equals one that starts with a capital.
-        name: group.map((c) => c.child_name).sort((a, b) => normalName(b).length - normalName(a).length || Number(/^\p{Lu}/u.test(b)) - Number(/^\p{Lu}/u.test(a)))[0],
+        name: fullestName(group),
         number: numbersOf(group),
         answer: group[0].answer as Answer,
         mixed: group.some((c) => c.answer !== group[0].answer),
@@ -158,15 +161,17 @@ export async function consentState(projectId: string) {
  * What the answers say about a child a parent pointed out on a photo: the
  * strictest one for that child, or for that first name when only that was given.
  * "unknown" when no form names this child, which is a question for the studio.
+ * `name` puts a child under one name, however each parent wrote it; when it could
+ * be two children it stays as written.
  */
-export function childStatus(name: string, consents: AboutChild[]): { answer: Answer | "unknown"; number: string } {
+export function childStatus(name: string, consents: AboutChild[]): { name: string; answer: Answer | "unknown"; number: string } {
   const wanted = normalName(name);
   const groups = groupByChild(consents);
   let same = groups.filter((g) => g.some((c) => normalName(c.child_name) === wanted));
   if (same.length === 0 && !wanted.includes(" ")) same = groups.filter((g) => g.some((c) => firstName(c.child_name) === wanted));
   const rows = same.flat();
-  if (rows.length === 0) return { answer: "unknown", number: "" };
-  return { answer: rows.sort(strictFirst)[0].answer, number: numbersOf(rows) };
+  if (rows.length === 0) return { name, answer: "unknown", number: "" };
+  return { name: same.length === 1 ? fullestName(same[0]) : name, answer: rows.sort(strictFirst)[0].answer, number: numbersOf(rows) };
 }
 
 /** Every child pointed out on a photo of this project, for the studio. */
