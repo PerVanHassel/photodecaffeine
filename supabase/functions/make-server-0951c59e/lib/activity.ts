@@ -185,6 +185,9 @@ const RULES: Record<string, Rule> = {
     area: "Toestemming", action: "Foto's van de kinderen verwijderd", detail: (x) => plural(x.json?.removed || 0, "foto", "foto's"),
   },
   "DELETE /admin/project/:id/consent/:consentId": { area: "Toestemming", action: "Toestemming verwijderd", of: CONSENT },
+  "POST /admin/project/:id/consent/:consentId/mail": {
+    area: "Toestemming", action: "Mail naar een ouder gestuurd", of: CONSENT, detail: (x) => join(x.row?.parent_name, clip(x.body?.subject)),
+  },
   "POST /admin/project/:id/shots": { area: "Projecten", action: "Shot toegevoegd", of: SHOT, created: true },
   "PUT /admin/project/:id/shots/order": { area: "Projecten", action: "Volgorde van de shotlijst aangepast" },
   "PUT /admin/shots/:id": { area: "Projecten", action: "Shot bijgewerkt", of: SHOT, diff: true },

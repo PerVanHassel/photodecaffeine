@@ -161,6 +161,33 @@ export function consentReceiptEmail(o: {
             `);
 }
 
+/** To a parent: a message the studio wrote itself about their child, with the way to change their choice. */
+export function consentMessageEmail(o: { language: "nl" | "en"; childName: string; projectTitle: string; message: string; changeLink: string }): string {
+  const t = o.language === "en"
+    ? { eyebrow: "Consent for photos", button: "View or change my choice", foot: "Questions? Just reply to this e-mail." }
+    : { eyebrow: "Toestemming voor foto's", button: "Keuze bekijken of wijzigen", foot: "Vragen? Beantwoord deze mail gewoon." };
+  return emailWrap(`              <tr>
+                <td style="padding:32px 36px 0;">
+                  <span style="color:#c8905a;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;">${t.eyebrow}</span>
+                  <div style="height:10px;line-height:10px;font-size:0;">&nbsp;</div>
+                  <span style="display:block;color:#fffbe0;font-size:22px;font-weight:800;letter-spacing:-0.01em;">${escapeHtml(o.childName)}</span>
+                  <span style="display:block;color:rgba(255,251,224,0.3);font-size:12px;margin-top:4px;">${escapeHtml(o.projectTitle)}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:18px 36px 0;"><span style="color:rgba(255,251,224,0.75);font-size:14px;line-height:1.7;">${escapeHtml(o.message).replace(/\n/g, "<br>")}</span></td>
+              </tr>
+              <tr>
+                <td style="padding:26px 36px 0;">
+                  <a href="${o.changeLink}" style="display:inline-block;background-color:#fffbe0;color:#1a0c04;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 26px;">${t.button}</a>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:20px 36px 32px;"><span style="color:rgba(255,251,224,0.45);font-size:12px;line-height:1.6;">${t.foot}</span></td>
+              </tr>
+            `);
+}
+
 /** To the studio: a child who may not be shown or posted, or a parent who changed their mind. No photo in here: it stays behind the login. */
 export function consentStudioEmail(o: {
   childName: string; shirtNumber: string; parentName: string; parentEmail: string; projectTitle: string; label: string; changedFrom: string; hasPhoto: boolean; note: string; link: string;

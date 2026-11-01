@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, Copy, Download, ExternalLink, Link2, MessageCircle, Trash2 } from "lucide-react";
+import { Check, Copy, Download, ExternalLink, Link2, Mail, MessageCircle, Send, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 import { del, post, put } from "../../api";
@@ -8,7 +8,7 @@ import { copyText } from "../../gallery/share";
 import { saveFile } from "../../portal/data";
 import { keys, useAction, useConsent } from "../../queries";
 import type { ConsentAnswer, ConsentChild, ConsentRow, ConsentState, Project } from "../../types";
-import { Button, Card, Empty, ErrorState, Input, Photo, Pill, Skeleton, TextField, useConfirm } from "../../ui";
+import { Button, Card, Empty, ErrorState, Input, Modal, Photo, Pill, Skeleton, TextAreaField, TextField, useConfirm } from "../../ui";
 import { useUnsavedChanges } from "../../unsaved";
 import { csvCell } from "./GroupLink";
 
@@ -25,7 +25,7 @@ function parentMessage(p: Project, url: string) {
 }
 
 /** The children who need care, with a photo to recognise them by. Also on the callsheet and above the gallery. */
-export function RestrictedChildren({ kids, compact, onRemove }: { kids: ConsentChild[]; compact?: boolean; onRemove?: (c: ConsentRow) => void }) {
+export function RestrictedChildren({ kids, compact, onRemove, onMail }: { kids: ConsentChild[]; compact?: boolean; onRemove?: (c: ConsentRow) => void; onMail?: (c: ConsentRow) => void }) {
   return (
     <div className={compact ? "s-kids compact" : "s-kids"}>
       {kids.map((k) => (
@@ -45,6 +45,7 @@ export function RestrictedChildren({ kids, compact, onRemove }: { kids: ConsentC
                   <a href={`mailto:${c.parentEmail}`}>{c.parentEmail}</a><br />
                   <span title={fmtDateTime(c.updatedAt)}>{ago(c.updatedAt)}</span>
                 </span>
+                {onMail && c.answer !== "full" && <Button size="sm" icon={<Mail />} style={{ alignSelf: "flex-start" }} onClick={() => onMail(c)}>Mail sturen</Button>}
                 {onRemove && <Button size="sm" variant="ghost" icon={<Trash2 />} style={{ alignSelf: "flex-start" }} onClick={() => onRemove(c)}>Verwijderen</Button>}
               </div>
             ))}
@@ -76,7 +77,8 @@ export function ConsentTab({ project: p }: { project: Project }) {
   const confirm = useConfirm();
   const state = useConsent(p.id);
   const [copied, setCopied] = useState<"" | "link" | "message">("");
-  const store = (s: ConsentState) => qc.setQueryData(keys.consent(p.id), s);
+  const [mailing, setMailing] = useState<ConsentRow | null>(null);
+  const store =(s: ConsentState) => qc.setQueryData(keys.consent(p.id), s);
   const base = `/admin/project/${p.id}/consent`;
 
   const create = useAction({ fn: () => post<ConsentState>(base), onSuccess: store, success: "Toestemmingslink gemaakt" });
@@ -173,9 +175,11 @@ export function ConsentTab({ project: p }: { project: Project }) {
 
       {restricted.length > 0 && (
         <Card title={`Let op: ${restricted.length} ${restricted.length === 1 ? "kind" : "kinderen"}`}>
-          <RestrictedChildren kids={restricted} onRemove={askRemove} />
+          <RestrictedChildren kids={restricted} onRemove={askRemove} onMail={setMailing} />
         </Card>
       )}
+
+      {mailing && <MailParent key={mailing.id} project={p} consent={mailing} onClose={() => setMailing(null)} />}
 
       {allowed.length > 0 && (
         <Card title={`Mag op de foto en op social media: ${allowed.length}`} bodyClass="none">
@@ -203,6 +207,45 @@ export function ConsentTab({ project: p }: { project: Project }) {
         </Card>
       )}
     </div>
+  );
+}
+
+/** A start for the mail, in the language the parent filled in the form in. */
+function parentMail(p: Project, c: ConsentRow) {
+  const shoot = p.gallerySettings.title || p.title;
+  const first = c.parentName.split(" ")[0];
+  const child = c.childName;
+  if (c.language === "en") {
+    const choice = c.answer === "no_photo" ? `${child} may not be photographed at ${shoot}` : `photos of ${child} at ${shoot} may not go on social media`;
+    return {
+      subject: `About the photos of ${child}`,
+      message: `Hi ${first},\n\nYou told us that ${choice}. We stick to that.\n\nWould you like to change something? You can do that with the button below.\n\nKind regards,\nPhotoDeCaffeine`,
+    };
+  }
+  const choice = c.answer === "no_photo" ? `${child} bij ${shoot} niet op de foto mag` : `foto's van ${child} bij ${shoot} niet op social media mogen`;
+  return {
+    subject: `Over de foto's van ${child}`,
+    message: `Hoi ${first},\n\nJe hebt aangegeven dat ${choice}. Daar houden we ons aan.\n\nWil je iets aanpassen? Dat kan met de knop hieronder.\n\nGroeten,\nPhotoDeCaffeine`,
+  };
+}
+
+/** Writing to one parent. The text is a start: the studio says what it needs to say. */
+function MailParent({ project: p, consent: c, onClose }: { project: Project; consent: ConsentRow; onClose: () => void }) {
+  const [start] = useState(() => parentMail(p, c));
+  const [subject, setSubject] = useState(start.subject);
+  const [message, setMessage] = useState(start.message);
+  const send = useAction({
+    fn: () => post(`/admin/project/${p.id}/consent/${c.id}/mail`, { subject, message }),
+    success: `Mail gestuurd naar ${c.parentEmail}`,
+    onSuccess: onClose,
+  });
+  return (
+    <Modal open onOpenChange={(o) => !o && onClose()} title={`Mail over ${c.childName}`} description={`Naar ${c.parentName} · ${c.parentEmail}`}
+      footer={<><Button onClick={onClose}>Annuleren</Button><Button variant="primary" icon={<Send />} loading={send.isPending} disabled={!subject.trim() || !message.trim()} onClick={() => send.mutate()}>Versturen</Button></>}>
+      <TextField label="Onderwerp" maxLength={150} value={subject} onChange={(e) => setSubject(e.target.value)} />
+      <TextAreaField label="Bericht" rows={10} maxLength={5000} value={message} onChange={(e) => setMessage(e.target.value)}
+        hint="Onder je bericht komt een knop waarmee de ouder de keuze kan wijzigen. Antwoorden en een kopie komen binnen op contact@photodecaffeine.com." />
+    </Modal>
   );
 }
 

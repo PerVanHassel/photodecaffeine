@@ -143,6 +143,7 @@ export async function consentState(projectId: string) {
           parentName: c.parent_name,
           parentEmail: c.parent_email,
           statement: c.statement,
+          language: c.language,
           createdAt: c.created_at,
           updatedAt: c.updated_at,
         })),

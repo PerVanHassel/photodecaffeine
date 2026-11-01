@@ -708,6 +708,7 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     list.forEach((c) => { c.photoUrl = ""; });
     return { ...consentState(r[1]), removed: list.length };
   }
+  if ((r = m(/^\/admin\/project\/([^/]+)\/consent\/([^/]+)\/mail$/)) && method === "POST") return { success: true };
   if ((r = m(/^\/admin\/project\/([^/]+)\/consent\/([^/]+)$/)) && method === "DELETE") {
     consents.splice(consents.findIndex((c) => c.id === r![2]), 1);
     return consentState(r[1]);

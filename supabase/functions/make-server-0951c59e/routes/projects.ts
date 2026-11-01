@@ -1,7 +1,7 @@
 import { Hono } from "npm:hono";
-import { BRIEFING_MAX_CHARS, SITE_URL } from "../lib/config.ts";
+import { BRIEFING_MAX_CHARS, EMAIL_ADMIN_NOTIFY, SITE_URL } from "../lib/config.ts";
 import { projectRecipients } from "../lib/clients.ts";
-import { childTags, consentFormFor, consentState, removeConsentPhotos } from "../lib/consents.ts";
+import { childTags, consentFormFor, consentState, consentUrl, removeConsentPhotos } from "../lib/consents.ts";
 import { db, found, must } from "../lib/db.ts";
 import { sendEmail } from "../lib/email.ts";
 import { type Env, fail, isoDate, nameOf, readBody, requireAdmin, requirePermission, text, uuid, z } from "../lib/http.ts";
@@ -20,7 +20,7 @@ import {
   statusForStage,
   syncGalleryUrls,
 } from "../lib/projects.ts";
-import { deliveredEmail, galleryGrewEmail, meetingEmail, studioMessageToClientEmail } from "../lib/projectEmails.ts";
+import { consentMessageEmail, deliveredEmail, galleryGrewEmail, meetingEmail, studioMessageToClientEmail } from "../lib/projectEmails.ts";
 import { guestHearts, shareFor, shareToken, shareUrl } from "../lib/shares.ts";
 import { removePrivate, uploadPrivate } from "../lib/storage.ts";
 import { demoSlugOf, projectDemos } from "../lib/util.ts";
@@ -568,6 +568,35 @@ r.delete(`${P}/project/:id/consent/photos`, async (c) => {
   const id = c.req.param("id");
   const removed = await removeConsentPhotos([id]);
   return c.json({ ...(await consentState(id)), removed });
+});
+
+// A message to one parent, written by the studio. It links to their own answer;
+// the copy is the studio's only record of what was said.
+r.post(`${P}/project/:id/consent/:consentId/mail`, async (c) => {
+  const id = c.req.param("id");
+  const { subject, message } = await readBody(c, z.object({
+    subject: text(150).min(1, "Vul een onderwerp in."),
+    message: text(5000).min(1, "Schrijf een bericht."),
+  }));
+  const row = found(
+    await db.from("consents").select("key, child_name, parent_email, language, projects ( title, gallery_settings )").eq("id", c.req.param("consentId")).eq("project_id", id).maybeSingle(),
+    "Toestemming niet gevonden",
+  ) as any;
+  const form = await consentFormFor(id);
+  if (!form) fail(404, "Dit project heeft nog geen toestemmingslink.");
+  const sent = await sendEmail({
+    to: row.parent_email,
+    replyTo: EMAIL_ADMIN_NOTIFY,
+    bcc: EMAIL_ADMIN_NOTIFY,
+    subject,
+    html: consentMessageEmail({
+      language: row.language, childName: row.child_name, message,
+      projectTitle: row.projects.gallery_settings?.title || row.projects.title,
+      changeLink: consentUrl(form.token, row.key),
+    }),
+  });
+  if (!sent.ok) fail(502, sent.error || "De mail kon niet verstuurd worden.");
+  return c.json({ success: true });
 });
 
 r.delete(`${P}/project/:id/consent/:consentId`, async (c) => {

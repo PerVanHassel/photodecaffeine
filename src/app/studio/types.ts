@@ -184,6 +184,8 @@ export interface ConsentRow {
   parentEmail: string;
   /** Word for word what the parent agreed to. */
   statement: string;
+  /** The language they filled in the form in. */
+  language: "nl" | "en";
   createdAt: string;
   updatedAt: string;
 }
