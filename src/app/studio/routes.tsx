@@ -53,6 +53,7 @@ const Team = page(() => import("./pages/Team"), "TeamPage");
 const Declarations = page(() => import("./pages/Declarations"), "DeclarationsPage");
 const Investments = page(() => import("./pages/Investments"), "InvestmentsPage");
 const Documents = page(() => import("./pages/Documents"), "DocumentsPage");
+const Files = page(() => import("./pages/Files"), "FilesPage");
 const Activity = page(() => import("./pages/Activity"), "ActivityPage");
 const GalleryPreview = page(() => import("./pages/GalleryPreview"), "GalleryPreviewPage");
 const Settings = page(() => import("./pages/Settings"), "SettingsPage");
@@ -93,6 +94,7 @@ export const studioRoutes: RouteObject = {
         { path: "investments", Component: wrap(Investments) },
         { path: "documents", Component: wrap(Documents) },
         { path: "documents/:docId", Component: wrap(Documents) },
+        { path: "files", Component: wrap(Files) },
         { path: "activity", Component: wrap(Activity) },
         { path: "settings", Component: wrap(Settings) },
       ],

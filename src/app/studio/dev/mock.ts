@@ -536,6 +536,13 @@ const investments: Json[] = [
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+const teamPeople = [{ id: id(999), name: "Per van Hassel" }, { id: id(998), name: "Majd" }, { id: id(997), name: "Sanne" }];
+const teamFiles: Json[] = [
+  { id: id(451), name: "logo-martine-definitief.zip", size: 18_400_000, type: "application/zip", note: "De logo's voor Martine, alle formaten.", createdAt: iso(-1), from: teamPeople[1], to: teamPeople[0], viewUrl: "", canDelete: true },
+  { id: id(452), name: "Voorwaarden v1.2.pdf", size: 412_000, type: "application/pdf", note: "", createdAt: iso(-3), from: teamPeople[0], to: null, viewUrl: PHOTOS[0], canDelete: true },
+  { id: id(453), name: "IMG_4021.jpg", size: 6_800_000, type: "image/jpeg", note: "", createdAt: iso(-6), from: teamPeople[2], to: teamPeople[1], viewUrl: PHOTOS[1], canDelete: false },
+];
+
 /** Mirrors the edge function's routes closely enough to drive every screen. */
 export async function mockApi(path: string, method: string, body: Json): Promise<Json> {
   await delay(120 + Math.random() * 180);
@@ -592,6 +599,7 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     if (p === "/admin/calendar-feed") return { url: "https://www.photodecaffeine.com/api/calendar/0123456789abcdef0123456789abcdef0123456789abcdef.ics" };
     if (p === "/admin/settings") return { settings: { ...siteSettings, heroImageUrl: PHOTOS[0], heroImageMobileUrl: "", frameImageUrl: PHOTOS[6], studioName: "PhotoDeCaffeine", contactEmail: "contact@photodecaffeine.com", sections: { workProcess: true, portfolio: true, about: true, services: true, socialProof: false, customCTA: true }, business: { name: "PhotoDeCaffeine Productions" } } };
     if (p === "/admin/notifications") return { notifications: [], unread: 0, readAt: "" };
+    if (p === "/admin/files") return { files: structuredClone(teamFiles), people: teamPeople, free: 151_000_000, maxFile: 50 * 1024 * 1024 };
     if (p === "/admin/me") return { id: id(999), email: "per@example.nl", name: "Per van Hassel", isOwner: true, roleName: "Eigenaar", permissions: Object.fromEntries(["manageClients", "manageQuotes", "manageInquiries", "managePortfolio", "manageAds", "manageSettings", "manageDeclarations", "viewAllDeclarations", "manageAdmins"].map((k) => [k, true])) };
     if (p === "/admin/portfolio") return { articles: structuredClone(portfolio) };
     if ((r = m(/^\/admin\/portfolio\/([^/]+)$/))) return { article: structuredClone(portfolio.find((a) => a.id === r![1])) };
@@ -661,6 +669,18 @@ export async function mockApi(path: string, method: string, body: Json): Promise
   }
 
   // Writes: apply the obvious change in memory and answer like the server.
+  if (p === "/admin/files/start") return { id: crypto.randomUUID(), url: "mock" };
+  if (p === "/admin/files/announce") return { mailed: true };
+  if (p === "/admin/files" && method === "POST") {
+    const file = { id: body.id, name: body.name, size: 2_400_000, type: "", note: body.note, createdAt: new Date().toISOString(), from: teamPeople[0], to: teamPeople.find((x) => x.id === body.toId) || null, viewUrl: "", canDelete: true };
+    teamFiles.unshift(file);
+    return { file };
+  }
+  if (/^\/admin\/files\/[^/]+\/download$/.test(p)) return { url: "#gedownload" };
+  if (p.startsWith("/admin/files/") && method === "DELETE") {
+    teamFiles.splice(teamFiles.findIndex((f) => f.id === p.split("/").pop()), 1);
+    return { success: true };
+  }
   if (p === "/admin/investments/link") {
     await delay(900);
     const shop = new URL(body.url).hostname.replace(/^www\./, "");

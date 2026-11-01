@@ -85,6 +85,12 @@ Site en admin nemen de 1280-versie waar die genoeg is (`src/app/lib/images.ts`).
 workflow "Foto's webklaar maken"; een lege `limit` wordt daar 3, geef dus een
 getal op.
 
+De bestandenpool (`/admin/files`, `routes/files.ts`, bucket `team-files-0951c59e`)
+is alleen voor het team. De browser uploadt rechtstreeks naar de bucket met een
+signed URL, dus niet via de functie. Omdat Supabase op het gratis plan staat: 50 MB
+per bestand, en de pool stopt als alle opslag samen 950 MB is. Bij een betaald plan
+`MAX_FILE`, `STORAGE_CEILING` en de limiet op de bucket ophogen.
+
 ## Taal
 
 De site is tweetalig (`src/app/i18n/translations.ts`, standaard Nederlands).

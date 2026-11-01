@@ -14,6 +14,8 @@ async function accessToken(): Promise<string | null> {
   return data.session?.access_token ?? null;
 }
 
+const mocked = () => import.meta.env.DEV && typeof localStorage !== "undefined" && localStorage.getItem("pdc-mock") === "1";
+
 type Options = {
   method?: "GET" | "POST" | "PUT" | "DELETE";
   body?: unknown;
@@ -29,7 +31,7 @@ type Options = {
  */
 export async function api<T>(path: string, opts: Options = {}): Promise<T> {
   // Dev-server only: answer from local fixtures (see dev/mock.ts).
-  if (import.meta.env.DEV && typeof localStorage !== "undefined" && localStorage.getItem("pdc-mock") === "1") {
+  if (mocked()) {
     const { mockApi } = await import("./dev/mock");
     return (await mockApi(path, opts.method || (opts.body !== undefined || opts.form ? "POST" : "GET"), opts.body ?? opts.form)) as T;
   }
@@ -70,6 +72,38 @@ export function upload<T>(path: string, files: File[], field = "files"): Promise
   const form = new FormData();
   for (const f of files) form.append(field, f);
   return api<T>(path, { method: "POST", form });
+}
+
+/** Sends a file straight to a signed storage URL. XHR, because fetch cannot report upload progress. */
+export async function putFile(url: string, file: File, onProgress: (share: number) => void, signal?: AbortSignal): Promise<void> {
+  const stopped = () => new DOMException("Gestopt", "AbortError");
+  if (mocked()) {
+    for (let done = 0; done < 1; done += 0.1) {
+      if (signal?.aborted) throw stopped();
+      onProgress(done);
+      await new Promise((r) => setTimeout(r, 120));
+    }
+    return;
+  }
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url);
+    xhr.setRequestHeader("apikey", publicAnonKey);
+    xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(e.loaded / e.total); };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) return resolve();
+      const tooBig = xhr.status === 413 || /exceeded|too large/i.test(xhr.responseText);
+      reject(new ApiError(xhr.status, tooBig ? `${file.name} is te groot.` : `${file.name} kon niet worden geüpload (${xhr.status}).`));
+    };
+    xhr.onerror = () => reject(new ApiError(0, "Geen verbinding met de opslag. Controleer je internet en probeer het opnieuw."));
+    xhr.onabort = () => reject(stopped());
+    signal?.addEventListener("abort", () => xhr.abort());
+    // The same form supabase-js sends a file in.
+    const form = new FormData();
+    form.append("cacheControl", "3600");
+    form.append("", file);
+    xhr.send(form);
+  });
 }
 
 export function errorMessage(err: unknown): string {

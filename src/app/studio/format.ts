@@ -66,6 +66,15 @@ export const percent = (fraction: number) => pctFmt.format(fraction);
 /** 4.5 → "4,5". */
 export const decimal1 = (n: number) => oneDecimal.format(n);
 
+/** 1572864 → "1,5 MB", 52428800 → "50 MB". */
+export function fileSize(bytes: number): string {
+  const units = ["B", "KB", "MB", "GB"];
+  let n = bytes;
+  let unit = 0;
+  while (n >= 1024 && unit < units.length - 1) { n /= 1024; unit++; }
+  return `${unit >= 2 && n < 10 && n % 1 >= 0.05 ? oneDecimal.format(n) : Math.round(n)} ${units[unit]}`;
+}
+
 export function euro(amount: number | null | undefined): string {
   const n = Number(amount) || 0;
   return Math.round(n * 100) % 100 === 0 ? eurRound.format(n) : eurFmt.format(n);

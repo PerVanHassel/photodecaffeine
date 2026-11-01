@@ -2,7 +2,7 @@ import { PdcLogo } from "../components/PdcLogo";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Helmet } from "react-helmet-async";
 import {
-  BarChart3, BookOpen, CalendarDays, CheckSquare, Euro, FileText, Globe, History, Images, Inbox, Kanban, Layers, LogOut, MapPin, Menu, PiggyBank, Receipt,
+  BarChart3, BookOpen, CalendarDays, CheckSquare, Euro, FileText, FolderUp, Globe, History, Images, Inbox, Kanban, Layers, LogOut, MapPin, Menu, PiggyBank, Receipt,
   Search, Settings, Shield, Star, Sun, Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -172,6 +172,7 @@ function NavSections({ can, owner, waiting, tasks, inquiries }: { can: (perm?: s
         <NavItem to="/admin/declarations" icon={<Receipt />} label="Declaraties" />
         <NavItem to="/admin/investments" icon={<PiggyBank />} label="Investeringen" />
         <NavItem to="/admin/documents" icon={<BookOpen />} label="Documenten" />
+        <NavItem to="/admin/files" icon={<FolderUp />} label="Bestanden" />
         <NavItem show={owner} to="/admin/activity" icon={<History />} label="Logboek" />
       </nav>
     </>
