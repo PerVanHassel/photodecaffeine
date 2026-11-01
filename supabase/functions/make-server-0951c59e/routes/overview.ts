@@ -3,6 +3,7 @@ import { db, must } from "../lib/db.ts";
 import { type Env, requireAdmin } from "../lib/http.ts";
 import { demoSlugOf, projectDemos } from "../lib/util.ts";
 import { verifyAdmin } from "../lib/auth.ts";
+import { purgeExpiredOncePerDay } from "../lib/retention.ts";
 import { invoiceTotals } from "./invoices.ts";
 import { quoteLines, quoteSum } from "./quotes.ts";
 
@@ -15,6 +16,7 @@ r.use(`${A}/search`, requireAdmin);
 
 // Everything the "Vandaag" screen needs, in one round trip.
 r.get(`${A}/overview`, async (c) => {
+  await purgeExpiredOncePerDay();
   const now = new Date();
   const weekAhead = new Date(now.getTime() + 8 * 86400000).toISOString();
   const today = now.toLocaleDateString("sv-SE", { timeZone: "Europe/Amsterdam" });

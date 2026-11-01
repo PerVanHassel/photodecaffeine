@@ -1,4 +1,11 @@
 {
+  "regions": ["fra1"],
+  "headers": [
+    {
+      "source": "/fonts/files/:file*",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    }
+  ],
   "redirects": [
     { "source": "/services/automotive", "destination": "/services/fotografie/automotive", "permanent": true }
   ],
@@ -11,6 +18,7 @@
     { "source": "/factuur/:path*", "destination": "/app-shell.html" },
     { "source": "/galerij/:path*", "destination": "/app-shell.html" },
     { "source": "/toestemming/:path*", "destination": "/app-shell.html" },
+    { "source": "/werk-toestemming/:path*", "destination": "/app-shell.html" },
     { "source": "/review/:path*", "destination": "/app-shell.html" },
     { "source": "/portfolio/:id", "destination": "/app-shell.html" }
   ]

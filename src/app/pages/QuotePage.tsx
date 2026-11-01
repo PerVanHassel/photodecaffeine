@@ -3,7 +3,9 @@ import { useParams, useSearchParams } from "react-router";
 import { Helmet } from "react-helmet-async";
 import { api } from "../studio/api";
 import { QuoteDocument, QuoteFonts } from "../components/quote/QuoteDocument";
-import { euroCents, sumLines, vatSplit, type Business, type QuoteDoc } from "../components/quote/model";
+import { euroCents, sumLines, todayIso, vatSplit, type Business, type QuoteDoc } from "../components/quote/model";
+import { LEGAL_VERSION } from "../lib/legalVersion";
+import { policies } from "../lib/policies";
 import "../components/quote/quote.css";
 
 interface Quote extends QuoteDoc {
@@ -39,6 +41,11 @@ export function QuotePage() {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
+  // Each its own tick, none ticked beforehand: the terms ask for it this way.
+  const [agreed, setAgreed] = useState(false);
+  const [earlyStart, setEarlyStart] = useState(false);
+  const [earlyStartEnd, setEarlyStartEnd] = useState(false);
+  const [portfolio, setPortfolio] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -63,13 +70,20 @@ export function QuotePage() {
 
   async function respond() {
     if (!answer || sending) return;
+    if (answer === "accepted" && !agreed) {
+      setSendError("Vink eerst aan dat je akkoord gaat met de voorwaarden.");
+      return;
+    }
     setSending(true);
     setSendError("");
     try {
       const data = await api<{ quote: Quote }>(`/quote/${id}/respond?t=${encodeURIComponent(token)}`, {
         method: "POST",
         anonymous: true,
-        body: { answer, message, options: answer === "accepted" ? [...chosen] : [] },
+        body: {
+          answer, message, options: answer === "accepted" ? [...chosen] : [],
+          termsAccepted: answer === "accepted" && agreed, earlyStart, earlyStartEnd, portfolio,
+        },
       });
       setQuote((q) => ({ ...data.quote, replacedBy: q?.replacedBy ?? null }));
       setAnswer(null);
@@ -82,7 +96,13 @@ export function QuotePage() {
   }
 
   const answered = quote?.status === "accepted" || quote?.status === "declined";
-  const open = quote?.status === "sent";
+  const expired = quote?.status === "sent" && !!quote.validUntil && quote.validUntil < todayIso();
+  const open = quote?.status === "sent" && !expired;
+  const consumer = quote?.details?.audience === "consumer";
+  const withdrawn = quote?.details?.withdrawal;
+  // The withdrawal link stays on the page during the 14 days of the cooling-off period.
+  const canWithdraw = consumer && quote?.status === "accepted" && !withdrawn && !!quote.respondedAt && Date.now() - new Date(quote.respondedAt).getTime() < 14 * 86400000;
+  const web = !!quote && (quote.type === "web" || !!quote.details?.services?.includes("web"));
   const hasOptions = !!quote && [...quote.oneTime, ...quote.monthly].some((l) => l.optional);
   const toggle = (key: string) => setChosen((s) => {
     const n = new Set(s);
@@ -166,9 +186,23 @@ export function QuotePage() {
                       </h2>
                       <p className="pq-p pq-quiet">
                         {quote.status === "accepted"
-                          ? "We nemen contact met je op om te starten. De eerste factuur volgt volgens de betaalafspraken hierboven."
+                          ? "We hebben je een bevestiging gemaild. We nemen contact met je op om te starten. De eerste factuur volgt volgens de betaalafspraken hierboven."
                           : "Wil je toch iets aanpassen? Mail ons gerust, dan maken we een nieuwe versie."}
                       </p>
+                      {withdrawn && <p className="pq-p">Je hebt deze overeenkomst herroepen op {new Date(withdrawn.at).toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" })}.</p>}
+                      {canWithdraw && (
+                        <p className="pq-p pq-quiet">
+                          Je hebt 14 dagen bedenktijd.{" "}
+                          <a className="pq-link" href={`/herroepen?offerte=${encodeURIComponent(quote.number || "")}&id=${quote.id}&t=${encodeURIComponent(token)}`}>Overeenkomst herroepen</a>
+                        </p>
+                      )}
+                      <a className="pq-link" href={`mailto:${CONTACT}`}>{CONTACT}</a>
+                    </>
+                  ) : expired ? (
+                    <>
+                      <span className="pq-label">Verlopen</span>
+                      <h2 id="pq-answer-title" className="pq-answer-title">Deze prijsopgave is verlopen.</h2>
+                      <p className="pq-p pq-quiet">Wil je toch verder? Mail ons gerust, dan maken we een nieuwe.</p>
                       <a className="pq-link" href={`mailto:${CONTACT}`}>{CONTACT}</a>
                     </>
                   ) : open ? (
@@ -210,15 +244,51 @@ export function QuotePage() {
                             autoComplete="off"
                             placeholder={answer === "accepted" ? "Bijvoorbeeld: wanneer kunnen we starten?" : "Bijvoorbeeld: wat er anders moet"}
                           />
+                          {answer === "accepted" && (
+                            <div className="pq-consents">
+                              <label className="pq-check">
+                                <input type="checkbox" checked={agreed} onChange={(e) => { setAgreed(e.target.checked); setSendError(""); }} />
+                                <span>Ik heb de prijsopgave en de voorwaarden gelezen en ga ermee akkoord.</span>
+                              </label>
+                              <p className="pq-p pq-quiet pq-small">
+                                Voorwaarden, versie {LEGAL_VERSION}:{" "}
+                                {[policies.terms, policies.rights, policies.cancel, policies.delivery, ...(web ? [policies.websites] : [])].map((p, i) => (
+                                  <span key={p.path}>{i > 0 && " · "}<a className="pq-link" href={p.path} target="_blank" rel="noreferrer">{p.short}</a></span>
+                                ))}
+                              </p>
+                              {consumer && (
+                                <fieldset className="pq-fieldset">
+                                  <legend>Bedenktijd (mag, hoeft niet)</legend>
+                                  <p className="pq-p pq-quiet pq-small">Je hebt 14 dagen bedenktijd. Moeten we in die tijd al beginnen? Zet dan beide vinkjes. Zonder vinkjes beginnen we pas na de bedenktijd.</p>
+                                  <label className="pq-check">
+                                    <input type="checkbox" checked={earlyStart} onChange={(e) => setEarlyStart(e.target.checked)} />
+                                    <span>Ik verzoek PDC uitdrukkelijk om vóór het einde van de bedenktijd van 14 dagen met de afgesproken diensten te beginnen. Ik begrijp dat ik bij herroeping tijdens die periode een evenredige vergoeding voor daadwerkelijk geleverde diensten verschuldigd kan zijn, voor zover de wet dat toestaat.</span>
+                                  </label>
+                                  <label className="pq-check">
+                                    <input type="checkbox" checked={earlyStartEnd} onChange={(e) => setEarlyStartEnd(e.target.checked)} />
+                                    <span>Ik begrijp dat mijn herroepingsrecht na volledige uitvoering van de diensten vervalt als aan de wettelijke voorwaarden voor vroege uitvoering is voldaan.</span>
+                                  </label>
+                                </fieldset>
+                              )}
+                              <fieldset className="pq-fieldset">
+                                <legend>Portfolio (mag, hoeft niet)</legend>
+                                <label className="pq-check">
+                                  <input type="checkbox" checked={portfolio} onChange={(e) => setPortfolio(e.target.checked)} />
+                                  <span>PDC mag het opgeleverde werk laten zien in het eigen portfolio op de website en op eigen social media. Dit is vrijwillig, verandert niets aan mijn prijs, en ik kan het altijd intrekken. Staan er anderen op, dan vraagt PDC hun toestemming apart.</span>
+                                </label>
+                              </fieldset>
+                            </div>
+                          )}
                           <div>
                             <button type="button" className="pq-btn" onClick={respond} disabled={sending} aria-busy={sending || undefined}>
-                              {sending ? "Versturen…" : answer === "accepted" ? "Akkoord versturen" : "Antwoord versturen"}
+                              {sending ? "Versturen…" : answer === "accepted" ? "Akkoord met betalingsverplichting" : "Antwoord versturen"}
                               <span className="pq-btn-ico" aria-hidden="true">→</span>
                             </button>
                           </div>
+                          {answer === "accepted" && <p className="pq-p pq-quiet pq-small">Met deze knop ga je een overeenkomst aan waarvoor je moet betalen. Je krijgt meteen een bevestiging per mail.</p>}
                         </div>
                       )}
-                      <p className="pq-p pq-quiet pq-small">Met je akkoord ga je ook akkoord met onze <a className="pq-link" href="/algemene-voorwaarden" target="_blank" rel="noreferrer">algemene voorwaarden</a> en het beleid op de website.</p>
+                      <p className="pq-p pq-quiet pq-small">Hoe we met je gegevens omgaan, lees je in onze <a className="pq-link" href={policies.privacy.path} target="_blank" rel="noreferrer">privacyverklaring</a>.</p>
                       {sendError && <p role="alert" className="pq-error">{sendError}</p>}
                     </>
                   ) : (

@@ -111,7 +111,8 @@ export function QuotesPage() {
                     <td className="right s-mono">{euro(x.totals.chosenOneTime ?? x.totals.oneTime)}{x.totals.monthly ? <span className="s-faint"> + {euro(x.totals.chosenMonthly ?? x.totals.monthly)} p/m</span> : null}</td>
                     <td><Pill tone={QUOTE_STATUS[x.status].tone}>{QUOTE_STATUS[x.status].label}</Pill></td>
                     <td className="s-muted s-small">
-                      {x.respondedAt ? `Antwoord ${ago(x.respondedAt)}`
+                      {x.status === "accepted" && x.details?.accepted?.termsVersion ? `Akkoord ${ago(x.respondedAt || x.details.accepted.at || "")}, voorwaarden ${x.details.accepted.termsVersion}${x.details.accepted.portfolio ? ", portfolio ja" : ""}${x.details.withdrawal ? ", herroepen" : ""}`
+                        : x.respondedAt ? `Antwoord ${ago(x.respondedAt)}`
                         : x.viewedAt ? `Bekeken ${ago(x.viewedAt)}${x.viewCount > 1 ? ` (${x.viewCount}×)` : ""}`
                         : x.sentAt ? `Verstuurd ${ago(x.sentAt)}, nog niet geopend`
                         : `Aangemaakt ${fmtDate(x.createdAt)}`}

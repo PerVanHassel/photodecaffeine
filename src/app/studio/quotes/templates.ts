@@ -1,11 +1,10 @@
 import { addWorkdays, todayIso, type QuoteDetails, type QuoteLicense, type QuoteLine, type QuoteTerm, type Service } from "../../components/quote/model";
 
 /**
- * Starting points for a new quote. The working agreements are the ones
- * approved so far in the terms (Websitebeleid & Gebruiksrechten v1.1, with
- * Per's notes of 23 October 2026): valid for 10 working days, 40% on booking,
- * 14 days to pay, 3 revision rounds, feedback within 10 working days,
- * downloads for a quarter on photo and video.
+ * Starting points for a new quote. The working agreements are the ones in the
+ * terms (Websitebeleid & Gebruiksrechten v1.2): valid for 10 working days, 40%
+ * on booking, 10 working days to pay, 3 revision rounds, feedback within 10
+ * working days, downloads for a quarter on photo and video.
  */
 
 export interface QuoteDraft {
@@ -63,7 +62,7 @@ function base(services: Service[]): QuoteDetails {
     extraCosts: [],
     clientDelivers: [],
     planning: "",
-    payment: { steps: [{ label: "Aanbetaling", percent: 40, moment: "bij akkoord" }, { label: "Restant", percent: 60, moment: "bij oplevering" }], termDays: 14 },
+    payment: { steps: [{ label: "Aanbetaling", percent: 40, moment: "bij akkoord" }, { label: "Restant", percent: 60, moment: "bij oplevering" }], termWorkdays: 10 },
     extraWork: { hourly: DEFAULT_HOURLY, note: "" },
     openPoints: [],
   };
@@ -89,7 +88,7 @@ export function fromTemplate(id: TemplateId, defaults: { projectId?: string; cli
         "Beheeromgeving waarin je zelf teksten en pagina's aanpast",
         "Contactformulier dat binnenkomt op je eigen mail",
         "Basis voor Google: titels, sitemap en snelle laadtijd",
-        "Beveiligde verbinding (https) en dagelijkse back-ups",
+        "Beveiligde verbinding (https)",
       ],
       details: {
         ...base(["web"]),
@@ -97,11 +96,11 @@ export function fromTemplate(id: TemplateId, defaults: { projectId?: string; cli
         extraCosts: ["Hosting en domein komen er per maand bij. Die belasten we door zonder opslag."],
         clientDelivers: ["Teksten", "Logo en huisstijl", "Toegang tot je domein en hosting"],
         planning: "Reken op ongeveer zes weken vanaf je akkoord op het ontwerp, als teksten en logo op tijd binnen zijn.",
-        payment: { steps: [{ label: "Aanbetaling", percent: 40, moment: "bij akkoord" }, { label: "Restant", percent: 60, moment: "bij livegang" }], termDays: 14 },
+        payment: { steps: [{ label: "Aanbetaling", percent: 40, moment: "bij akkoord" }, { label: "Restant", percent: 60, moment: "bij livegang" }], termWorkdays: 10 },
         revisions: { rounds: 3, untilRight: false, feedbackDays: 10 },
         aftercare: { days: 30, note: "" },
         maintenance: {
-          covers: ["Updates van de site en het contactformulier", "Beveiliging van de gegevens van mensen die contact opnemen", "Back-ups, zodat er nooit iets kwijtraakt", "Eén kleine wijziging per maand"],
+          covers: ["Updates van de site en het contactformulier", "Beveiliging van de gegevens van mensen die contact opnemen", "Eén kleine wijziging per maand"],
           smallChange: "Iets in de vormgeving of de volgorde aanpassen, bijvoorbeeld een blok verplaatsen, een kleur bijstellen of een knop toevoegen. Teksten pas je zelf aan in je beheeromgeving.",
           excluded: "Een nieuwe pagina, een nieuwe functie of een nieuw ontwerp. Dat prijzen we vooraf apart.",
           cancel: "Per maand opzegbaar. Stop je ermee, dan kun je de site kopen en meenemen. Je teksten en gegevens zijn altijd van jou.",
@@ -152,7 +151,7 @@ export function fromTemplate(id: TemplateId, defaults: { projectId?: string; cli
         extraCosts: ["Reiskosten buiten 30 km, alleen na overleg"],
         clientDelivers: ["Een locatie en de toestemming om daar te fotograferen", "Wie er op de foto mag, en wie niet"],
         planning: video ? "Levering binnen drie weken na de opnamedag." : "Levering binnen tien werkdagen na de shoot.",
-        payment: { steps: [{ label: "Aanbetaling", percent: 40, moment: "bij boeking" }, { label: "Restant", percent: 60, moment: "voor de levering van de bestanden" }], termDays: 14 },
+        payment: { steps: [{ label: "Aanbetaling", percent: 40, moment: "bij boeking" }, { label: "Restant", percent: 60, moment: "voor de levering van de bestanden" }], termWorkdays: 10 },
         revisions: video ? { rounds: 3, untilRight: false, feedbackDays: 10 } : undefined,
         license: defaultLicense(),
       },

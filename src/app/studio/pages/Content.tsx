@@ -1,4 +1,4 @@
-import { ExternalLink, Eye, EyeOff, ImagePlus, LayoutTemplate, Plus, Save, Search, Star } from "lucide-react";
+import { ExternalLink, Eye, EyeOff, ImagePlus, LayoutTemplate, Plus, Save, Search, ShieldCheck, Star } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { post, put } from "../api";
@@ -6,18 +6,21 @@ import { MediaGrid } from "../components/MediaGrid";
 import { fmtDate } from "../format";
 import { useAction } from "../queries";
 import { Button, Card, Empty, ErrorState, isVideo, Modal, PageHead, Photo, Pill, Segmented, SkeletonList, TextField } from "../ui";
+import { ArticleConsentDialog, ConsentPill, consentOpen, useConsentSummary } from "./ArticleConsentDialog";
 import { useUnsavedChanges } from "../unsaved";
 import { useUrlState } from "../urlState";
 import { AUTOMOTIVE_CATEGORY, AUTOMOTIVE_TITLE, isWork, portfolioKey, useArticles, type Article } from "./pagemaker/data";
 
 export type { Article };
 
-type Filter = "all" | "published" | "draft" | "featured";
+type Filter = "all" | "published" | "draft" | "featured" | "consent";
 
 export function PortfolioPage() {
   const articles = useArticles();
   const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
+  const consents = useConsentSummary();
+  const [asking, setAsking] = useState<Article | null>(null);
   const [filter, setFilter] = useUrlState<Filter>("filter", "all");
   const [category, setCategory] = useState("");
   const [q, setQ] = useState("");
@@ -26,7 +29,7 @@ export function PortfolioPage() {
   const list = (articles.data || []).filter(isWork);
   const categories = useMemo(() => [...new Set(list.map((a) => a.category).filter(Boolean))].sort(), [list]);
   const rows = list.filter((a) =>
-    (filter === "all" || (filter === "published" ? a.published : filter === "draft" ? !a.published : a.featured)) &&
+    (filter === "all" || (filter === "published" ? a.published : filter === "draft" ? !a.published : filter === "consent" ? consentOpen(consents.data?.[a.id]) : a.featured)) &&
     (!category || a.category === category) &&
     (!q.trim() || `${a.title} ${a.category} ${a.description}`.toLowerCase().includes(q.trim().toLowerCase()))
   );
@@ -47,7 +50,7 @@ export function PortfolioPage() {
       <div className="s-row between">
         <div className="s-row">
           <Segmented<Filter> label="Filter" value={filter} onChange={setFilter} options={[
-            { value: "all", label: "Alles" }, { value: "published", label: "Op de site" }, { value: "draft", label: "Concept" }, { value: "featured", label: "Uitgelicht" },
+            { value: "all", label: "Alles" }, { value: "published", label: "Op de site" }, { value: "draft", label: "Concept" }, { value: "featured", label: "Uitgelicht" }, { value: "consent", label: "Toestemming open" },
           ]} />
           {categories.length > 1 && (
             <div className="s-chips">
@@ -74,6 +77,7 @@ export function PortfolioPage() {
                   {a.featured && <Star size={15} fill="currentColor" style={{ color: "var(--accent)" }} aria-label="Uitgelicht" />}
                 </div>
                 <span className="s-small s-muted">{a.category || "Geen categorie"} · {a.galleryUrls.length} foto's · {a.page ? "eigen opmaak" : "automatisch"} · {fmtDate(a.updatedAt)}</span>
+                <div className="s-row"><ConsentPill s={consents.data?.[a.id]} /><Button size="sm" variant="ghost" icon={<ShieldCheck />} onClick={() => setAsking(a)}>Toestemming</Button></div>
                 <div className="s-row" style={{ marginTop: "auto", paddingTop: 6 }}>
                   <Pill tone={a.published ? "ok" : undefined}>{a.published ? "Op de site" : "Concept"}</Pill>
                   <span className="s-spacer" />
@@ -89,6 +93,7 @@ export function PortfolioPage() {
         </div>
       )}
       {creating && <NewArticle categories={categories} onClose={() => setCreating(false)} onCreated={open} />}
+      {asking && <ArticleConsentDialog article={asking} onClose={() => setAsking(null)} />}
     </div>
   );
 }

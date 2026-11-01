@@ -167,7 +167,7 @@ export const translations = {
                     photos: 45,
                     units: 3,
                     best: false,
-                    items: ["Tot 3 voertuigen", "15 foto's per voertuig", "Binnen 5 werkdagen", "Te gebruiken voor advertenties, website en socials", "Online galerij in je klantportaal"],
+                    items: ["Tot 3 voertuigen", "15 foto's per voertuig", "Binnen 5 werkdagen", "Te gebruiken voor verkoopadvertenties, website en socials", "Online galerij in je klantportaal"],
                     missing: ["Detailfoto's van interieur en motor", "Korte video voor je socials"],
                   },
                   {
@@ -178,7 +178,7 @@ export const translations = {
                     photos: 75,
                     units: 5,
                     best: false,
-                    items: ["Tot 5 voertuigen", "15 foto's per voertuig", "Detailfoto's van interieur en motor", "Binnen 5 werkdagen", "Te gebruiken voor advertenties, website en socials", "Online galerij in je klantportaal"],
+                    items: ["Tot 5 voertuigen", "15 foto's per voertuig", "Detailfoto's van interieur en motor", "Binnen 5 werkdagen", "Te gebruiken voor verkoopadvertenties, website en socials", "Online galerij in je klantportaal"],
                     missing: ["Korte video voor je socials"],
                   },
                   {
@@ -195,7 +195,7 @@ export const translations = {
                       "Detailfoto's van interieur en motor",
                       "Korte video van 30 seconden voor je socials",
                       "Binnen 3 werkdagen",
-                      "Te gebruiken voor advertenties, website en socials",
+                      "Te gebruiken voor verkoopadvertenties, website en socials",
                       "Online galerij in je klantportaal",
                     ],
                     missing: [],
@@ -629,6 +629,7 @@ export const translations = {
       ],
     },
     socialProof: {
+      reviewsNote: "Reviews komen uit ons klantportaal, van klanten met een echte opdracht, of van ons Google-profiel. Google-reviews kunnen we niet zelf controleren.",
       viewWork: "Bekijk het werk",
       rating: (stars: number) => `${stars} van de 5 sterren`,
       label: "Wat klanten zeggen",
@@ -688,11 +689,11 @@ export const translations = {
       clientPortal: "Klantportaal",
       kvk: "94948933",
       btw: "NL823807071B01",
-      privacy: "Privacybeleid",
-      terms: "Algemene voorwaarden",
-      cookiePolicy: "Cookiebeleid",
+      legal: "Voorwaarden",
+      withdraw: "Overeenkomst herroepen",
+      cookieSettings: "Cookie-instellingen",
       madeIn: "Gemaakt in Roosendaal.",
-      copyright: (year: number) => `© ${year} Photo De Caffeine. Alle rechten voorbehouden.`,
+      copyright: (year: number) => `© ${year} PhotoDeCaffeine Productions, handelend onder de namen PhotoDeCaffeine en PDC Productions. Alle rechten voorbehouden.`,
     },
     socialMediaPage: {
       backLabel: "Videografie",
@@ -762,6 +763,8 @@ export const translations = {
       photographyLink: "Meer over fotografie →",
       moreFromSeries: "Meer uit deze serie",
       video: (title: string) => `Video bij ${title}`,
+      videoLoad: "Video afspelen",
+      videoNote: (provider: string) => `De video staat bij ${provider}. Klik je erop, dan krijgt ${provider} je IP-adres en de pagina die je bekijkt.`,
     },
     notFound: {
       title: "Frame niet gevonden",
@@ -794,7 +797,7 @@ export const translations = {
         },
         {
           q: "Mag ik de foto's overal gebruiken?",
-          a: "Ja. Je krijgt een licentie voor persoonlijk en commercieel gebruik: social media, advertenties, je website of een verkoopadvertentie.",
+          a: "Dat staat in je licentie. Particulier: voor jezelf, je familie en je eigen social media, en een verkoopadvertentie voor je eigen voertuig. Zakelijk: je eigen website, social media, mail, drukwerk en verkoopadvertenties. Betaalde reclame spreken we apart af. Alles staat in onze gebruiksrechten.",
         },
         {
           q: "Wat gebeurt er bij slecht weer?",
@@ -829,7 +832,7 @@ export const translations = {
       ],
     },
     forms: {
-      privacyNote: "We gebruiken je gegevens alleen om je aanvraag te beantwoorden. Meer in ons",
+      privacyNote: "We gebruiken je gegevens alleen om je aanvraag te beantwoorden. Meer in onze",
     },
     thanks: {
       label: "Aanvraag ontvangen",

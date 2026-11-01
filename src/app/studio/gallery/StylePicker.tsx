@@ -6,7 +6,7 @@ import { put } from "../api";
 import { keys, useAction } from "../queries";
 import type { Project } from "../types";
 import { Card, cx, Field, isVideo } from "../ui";
-import { ACCENTS, ALL_FONTS, accentOf, STYLES, styleOf, suggestStyle, type StyleDef } from "./styles";
+import { ACCENTS, ALL_FONTS, accentOf, fontHref, STYLES, styleOf, suggestStyle, type StyleDef } from "./styles";
 import "./gallery.css";
 
 /** Admin: pick the look of a client's gallery and its accent colour. Saves on click. */
@@ -37,7 +37,7 @@ export function StylePicker({ project: p }: { project: Project }) {
   return (
     <Card title="Stijl van de galerij" action={<Link className="s-btn sm" to={`/admin/project/${p.id}/gallery`}><Eye size={14} />Bekijk als klant</Link>}>
       <Helmet>
-        {ALL_FONTS.map((f) => <link key={f} rel="stylesheet" href={`https://fonts.googleapis.com/css2?family=${f}&display=swap`} />)}
+        {ALL_FONTS.map((f) => <link key={f} rel="stylesheet" href={fontHref(f)} />)}
       </Helmet>
       <div className="s-stack lg">
         <div className="gp-wrap">

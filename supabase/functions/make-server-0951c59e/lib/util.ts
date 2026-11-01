@@ -75,3 +75,19 @@ export function sanitizeFileName(fileName: string): string {
 
   return sanitized + ext.toLowerCase();
 }
+
+/** Today in the Netherlands, as YYYY-MM-DD. */
+export function todayAmsterdam(): string {
+  return new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Amsterdam" });
+}
+
+/** A date n working days later (Monday to Friday, as the terms define them). */
+export function addWorkdays(fromIso: string, n: number): string {
+  const d = new Date(`${fromIso}T12:00:00Z`);
+  let left = n;
+  while (left > 0) {
+    d.setUTCDate(d.getUTCDate() + 1);
+    if (d.getUTCDay() !== 0 && d.getUTCDay() !== 6) left--;
+  }
+  return d.toISOString().slice(0, 10);
+}

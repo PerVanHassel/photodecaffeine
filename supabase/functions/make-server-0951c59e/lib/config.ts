@@ -5,6 +5,12 @@ export const EMAIL_ADMIN_NOTIFY = "contact@photodecaffeine.com";
 export const EMAIL_INVOICE_BCC = "pervanhassel@gmail.com";
 export const SITE_URL = "https://www.photodecaffeine.com";
 
+// The version of the terms on the site; same as src/app/lib/legalVersion.ts, change
+// both together. A quote keeps which version someone agreed to.
+export const TERMS_VERSION = "1.2";
+// How long an invoice runs, unless the quote says otherwise (terms, article 5).
+export const PAYMENT_WORKDAYS = 10;
+
 // The site owner — always has every permission regardless of what's stored in
 // the roles table, and can never be demoted, reassigned, or removed by anyone
 // (including themselves via the team-management UI). Checked by email rather

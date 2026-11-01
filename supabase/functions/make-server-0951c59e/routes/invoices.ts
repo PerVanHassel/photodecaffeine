@@ -1,10 +1,11 @@
 import { Hono, type MiddlewareHandler } from "npm:hono";
 import { hasPermission } from "../lib/auth.ts";
 import { business } from "../lib/business.ts";
-import { EMAIL_ADMIN_NOTIFY, EMAIL_INVOICE_BCC, EMAIL_RE, SITE_URL } from "../lib/config.ts";
+import { EMAIL_ADMIN_NOTIFY, EMAIL_INVOICE_BCC, EMAIL_RE, SITE_URL, PAYMENT_WORKDAYS } from "../lib/config.ts";
 import { db, found, must, nextDocumentNumber } from "../lib/db.ts";
 import { emailWrap, escapeHtml, sendEmail } from "../lib/email.ts";
 import { type Env, fail, isoDate, readBody, requireAdmin, text, uuid, z } from "../lib/http.ts";
+import { addWorkdays } from "../lib/util.ts";
 import { chosenOptions, euro, linesThatCount, paymentSteps, quoteLines, rowToQuote } from "./quotes.ts";
 
 const r = new Hono<Env>();
@@ -146,7 +147,7 @@ r.get(`${A}/:id`, async (c) => {
 
 r.post(A, async (c) => {
   const b = await readBody(c, invoiceSchema);
-  const row = must(await db.from("invoices").insert({ ...toRow(b), number: await nextDocumentNumber("FA") }).select("*").single());
+  const row = must(await db.from("invoices").insert({ due_on: addWorkdays(todayIso(), PAYMENT_WORKDAYS), ...toRow(b), number: await nextDocumentNumber("FA") }).select("*").single());
   return c.json({ invoice: toApi(row) });
 });
 
@@ -192,10 +193,12 @@ r.post(`${A}/from-quote/:quoteId`, async (c) => {
   const company = String(d.client?.company || "").trim();
   const address = [company && quote.clientName ? `t.a.v. ${quote.clientName}` : "", String(d.client?.address || "").trim(), d.client?.vatId ? `Btw ${d.client.vatId}` : ""]
     .filter(Boolean).join("\n");
+  // Older quotes count calendar days; the terms now say working days.
+  const workdays = Number(d.payment?.termWorkdays);
   const term = Number(d.payment?.termDays);
-  const dueOn = term >= 1 && term <= 90
-    ? new Date(Date.now() + term * 86400000).toLocaleDateString("sv-SE", { timeZone: "Europe/Amsterdam" })
-    : undefined;
+  const dueOn = workdays >= 1 && workdays <= 60 ? addWorkdays(todayIso(), workdays)
+    : term >= 1 && term <= 90 ? new Date(Date.now() + term * 86400000).toLocaleDateString("sv-SE", { timeZone: "Europe/Amsterdam" })
+    : addWorkdays(todayIso(), PAYMENT_WORKDAYS);
 
   const row = must(await db.from("invoices").insert({
     number: await nextDocumentNumber("FA"),
@@ -209,7 +212,7 @@ r.post(`${A}/from-quote/:quoteId`, async (c) => {
     vat_basis: quote.vatBasis,
     vat_rate: quote.vatRate,
     notes,
-    ...(dueOn ? { due_on: dueOn } : {}),
+    due_on: dueOn,
   }).select("*").single());
   return c.json({ invoice: toApi(row) });
 });

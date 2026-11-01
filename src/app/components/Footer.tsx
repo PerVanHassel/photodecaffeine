@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import { Instagram, Linkedin, MapPin, Mail, Phone } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 import { PdcLogo } from "./PdcLogo";
+import { openCookieSettings } from "../lib/cookieChoice";
 import { policies } from "../lib/policies";
 
 function TikTokIcon({ className }: { className?: string }) {
@@ -135,29 +136,22 @@ export function Footer() {
 
           {/* Bottom bar */}
           <div className="border-t border-[#fffbe0]/10 py-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1 sm:max-w-[40%]">
               <p className="text-[11px] text-[#fffbe0]/60 tracking-wide">
                 KvK {t.footer.kvk} &nbsp;·&nbsp; BTW {t.footer.btw}
               </p>
               <p className="text-[11px] text-[#fffbe0]/60 italic">
                 {t.footer.madeIn}
               </p>
+              <p className="text-[11px] text-[#fffbe0]/60">{t.footer.copyright(year)}</p>
             </div>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[9px] tracking-[0.18em] uppercase font-normal text-[#fffbe0]/60">
-              <Link to={policies.privacy.path} className="hover:text-[#fffbe0] transition-colors duration-200 text-[9px]">
-                {t.footer.privacy}
-              </Link>
-              <span className="opacity-40" aria-hidden="true">·</span>
-              <Link to={policies.terms.path} className="hover:text-[#fffbe0] transition-colors duration-200 text-[9px]">
-                {t.footer.terms}
-              </Link>
-              <span className="opacity-40" aria-hidden="true">·</span>
-              <Link to={policies.cookie.path} className="hover:text-[#fffbe0] transition-colors duration-200 text-[9px]">
-                {t.footer.cookiePolicy}
-              </Link>
-              <span className="opacity-40" aria-hidden="true">·</span>
-              <span>{t.footer.copyright(year)}</span>
-            </div>
+            <nav aria-label={t.footer.legal} className="pdc-footer-legal">
+              {Object.values(policies).map((p) => (
+                <Link key={p.path} to={p.path}>{p.short}</Link>
+              ))}
+              <Link to="/herroepen">{t.footer.withdraw}</Link>
+              <button type="button" onClick={openCookieSettings}>{t.footer.cookieSettings}</button>
+            </nav>
           </div>
         </div>
       </footer>

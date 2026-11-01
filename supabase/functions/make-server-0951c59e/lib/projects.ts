@@ -111,8 +111,25 @@ export type Downloads = "original" | "watermark" | "none";
  * What a client may download. Once the project is delivered that is always
  * the original; before that the studio chooses per project.
  */
+/** After delivery a client can download for a quarter (terms, Oplevering & revisies, article 5). */
+const DOWNLOAD_MONTHS = 3;
+
+/** The last day of downloading, YYYY-MM-DD; empty when it is not running yet. A date the studio set wins. */
+export function downloadsUntil(row: { gallery_settings?: any }): string {
+  const gs = row.gallery_settings || {};
+  if (gs.downloadsUntil) return String(gs.downloadsUntil);
+  if (!gs.deliveredAt) return "";
+  const d = new Date(gs.deliveredAt);
+  d.setMonth(d.getMonth() + DOWNLOAD_MONTHS);
+  return d.toISOString().slice(0, 10);
+}
+
+const dayPassed = (day: string) => !!day && day < new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Amsterdam" });
+
 export function clientDownloads(row: ProjectRow): Downloads {
-  if (DONE_STAGES.includes(row.stage)) return "original";
+  // A website is delivered by going live, unless the studio sets a date for its photos.
+  if (row.type === "web" && !row.gallery_settings?.downloadsUntil) return "none";
+  if (DONE_STAGES.includes(row.stage)) return dayPassed(downloadsUntil(row)) ? "none" : "original";
   const early = row.gallery_settings?.earlyDownloads;
   return early === "watermark" || early === "none" ? early : "original";
 }
@@ -231,6 +248,7 @@ export function projectToApi(row: ProjectRow, sign: Signer, opts: { forClient?: 
     updatedAt: row.updated_at,
   };
 
+  api.downloadsUntil = downloadsUntil(row);
   if (opts.forClient) api.downloads = downloads;
   else {
     const clients = clientsOf(row);

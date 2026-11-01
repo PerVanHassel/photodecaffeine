@@ -196,6 +196,7 @@ export function SocialProof() {
             );
           })}
         </div>
+        <p style={{ margin: "32px auto 0", maxWidth: 620, color: "rgba(255,251,224,0.5)", fontSize: 12, lineHeight: 1.6, textAlign: "center" }}>{t.socialProof.reviewsNote}</p>
       </div>
     </section>
   );

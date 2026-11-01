@@ -128,7 +128,7 @@ export function guestNewPhotosEmail(o: { language: "nl" | "en"; name: string; ti
             `);
 }
 
-export function deliveredEmail(o: { firstName: string; title: string; coverUrl?: string; galleryLink: string }): string {
+export function deliveredEmail(o: { firstName: string; title: string; coverUrl?: string; galleryLink: string; until?: string }): string {
   const { firstName, coverUrl, galleryLink } = o;
   const updated = { title: o.title };
   return emailWrap(`              ${glassImageCard({
@@ -142,6 +142,9 @@ export function deliveredEmail(o: { firstName: string; title: string; coverUrl?:
               <tr>
                 <td style="padding:32px 36px 0;text-align:center;"><span style="color:rgba(255,251,224,0.55);font-size:14px;font-weight:300;line-height:1.75;">Hi ${firstName}, je volledige galerij staat klaar. Alle foto's zijn bewerkt en in hoge resolutie beschikbaar om te bekijken en downloaden.</span></td>
               </tr>
+              ${o.until ? `<tr>
+                <td style="padding:16px 36px 0;text-align:center;"><span style="color:rgba(255,251,224,0.55);font-size:13px;font-weight:300;line-height:1.7;">Je kunt alles downloaden tot ${new Date(o.until).toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" })}. Bewaar de bestanden zelf goed. Wat je ermee mag doen, staat in onze <a href="${SITE_URL}/gebruiksrechten" style="color:#fffbe0;">gebruiksrechten</a>.</span></td>
+              </tr>` : ""}
               <tr>
                 <td style="padding:26px 36px 44px;text-align:center;">
                   <a href="${galleryLink}" style="display:inline-block;background-color:#fffbe0;color:#1a0c04;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:14px 32px;">Bekijk &amp; download</a>

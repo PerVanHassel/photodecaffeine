@@ -16,7 +16,7 @@ const CONTACT_LIMIT_PER_HOUR = 5;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Counts a contact submission for this IP; false once the hourly limit is reached. */
-async function withinContactLimit(forwardedFor: string | undefined): Promise<boolean> {
+export async function withinContactLimit(forwardedFor: string | undefined): Promise<boolean> {
   const ip = String(forwardedFor || "").split(",")[0].trim();
   if (!ip) return true;
   const key = `ratelimit:contact:${ip}`;

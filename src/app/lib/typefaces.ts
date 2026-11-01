@@ -3,7 +3,8 @@ import type { ArticlePage, TextLook, TypeId } from "./articlePage";
 // The letters an article can be set in.
 //
 // The library is from Fontshare (Indian Type Foundry): free for commercial
-// use, served from their CDN, one stylesheet per family. On top of that the
+// use, one stylesheet per family in public/fonts (scripts/fetch_fonts.mjs), so
+// visitors never talk to Fontshare themselves. On top of that the
 // studio can link its own Adobe Fonts web project; those fonts are keyed
 // "adobe:<family>" and the page stores the project id (`kit`), so the site
 // knows which stylesheet to load.
@@ -110,7 +111,7 @@ export function fontCss(key: string | undefined, kit?: string): string | null {
   if (!key || key === "inter") return null;
   if (key.startsWith("adobe:")) return kit ? adobeKitCss(kit) : null;
   const f = FONTS.find((x) => x.key === key);
-  return f?.spec ? `https://api.fontshare.com/v2/css?f[]=${f.spec}&display=swap` : null;
+  return f?.spec ? `/fonts/${f.key}.css` : null;
 }
 
 export const adobeKitCss = (kit: string) => `https://use.typekit.net/${kit}.css`;

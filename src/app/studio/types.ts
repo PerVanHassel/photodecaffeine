@@ -79,9 +79,15 @@ export interface Project {
     consentClub?: string;
     /** The look of the client's gallery; see gallery/styles.ts. */
     style?: string;
+    /** Set by the server on delivery; starts the quarter the client can download in. */
+    deliveredAt?: string;
+    /** A last day the studio set by hand, instead of a quarter after delivery. */
+    downloadsUntil?: string;
   };
   /** Portal only: what this client may download right now. */
   downloads?: EarlyDownloads;
+  /** The last day of downloading, YYYY-MM-DD; empty while it is not running yet. */
+  downloadsUntil?: string;
   galleryUrls: string[];
   gallery: GalleryImage[];
   events: StudioEvent[];
@@ -110,7 +116,7 @@ export interface Project {
 }
 
 /** What the client gallery shows: the portal's project, or the part a group link gets to see. */
-export type GalleryProject = Pick<Project, "title" | "stage" | "gallerySettings" | "gallery" | "downloads"> & {
+export type GalleryProject = Pick<Project, "title" | "stage" | "gallerySettings" | "gallery" | "downloads" | "downloadsUntil"> & {
   events?: Pick<StudioEvent, "kind" | "startsAt">[];
   /** The photos are watermarked copies, also when there is nothing to download. */
   watermarked?: boolean;

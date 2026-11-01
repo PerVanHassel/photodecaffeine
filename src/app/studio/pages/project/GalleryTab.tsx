@@ -449,6 +449,11 @@ function GallerySettings({ project: p }: { project: Project }) {
     invalidate: () => [keys.project(p.id)],
     success: "Opgeslagen",
   });
+  const saveUntil = useAction({
+    fn: (downloadsUntil: string) => put(`/admin/project/${p.id}`, { gallerySettings: { ...p.gallerySettings, downloadsUntil: downloadsUntil || undefined } }),
+    invalidate: () => [keys.project(p.id)],
+    success: "Opgeslagen",
+  });
 
   // Photos from before watermarks existed get theirs here, from the original.
   async function makeWatermarks(list: GalleryImage[]) {
@@ -483,13 +488,15 @@ function GallerySettings({ project: p }: { project: Project }) {
       <div className="s-form-grid">
         <TextField label="Titel van de galerij" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={p.title} />
         <TextField label="Ondertitel" value={subtitle} onChange={(e) => setSubtitle(e.target.value)} placeholder="Bijv. Teamfoto's, september 2026" />
-        <Field label="Downloaden vóór levering" hint={marking ? `Watermerk maken… ${marking.done} van ${marking.total}` : "Na levering kan de klant altijd de originelen downloaden."}>
+        <Field label="Downloaden vóór levering" hint={marking ? `Watermerk maken… ${marking.done} van ${marking.total}` : "Na levering kan de klant een kwartaal lang de originelen downloaden."}>
           <Segmented<EarlyDownloads> label="Downloaden vóór levering" value={early} onChange={(v) => !marking && v !== early && chooseEarly(v)} options={[
             { value: "original", label: "Origineel" },
             { value: "watermark", label: "Met watermerk" },
             { value: "none", label: "Niet" },
           ]} />
         </Field>
+        <TextField label="Downloaden kan tot" type="date" value={p.gallerySettings.downloadsUntil || p.downloadsUntil || ""} onChange={(e) => saveUntil.mutate(e.target.value)}
+          hint={p.type === "web" ? "Bij een website is er geen download. Zet een datum als je er toch foto's bij levert." : "Vanzelf een kwartaal na levering. Zet een andere datum als dat is afgesproken."} />
         {early === "watermark" && missing.length > 0 && !marking && (
           <div className="s-row" style={{ alignSelf: "end" }}>
             <span className="s-small s-muted">{missing.length} {missing.length === 1 ? "foto heeft" : "foto's hebben"} nog geen watermerk</span>

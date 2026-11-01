@@ -68,7 +68,8 @@ export interface QuoteDetails {
   extraCosts?: string[];
   clientDelivers?: string[];
   planning?: string;
-  payment?: { steps: PaymentStep[]; termDays: number };
+  /** termWorkdays is what the terms say now; older quotes have termDays, in calendar days. */
+  payment?: { steps: PaymentStep[]; termDays?: number; termWorkdays?: number };
   revisions?: { rounds: number; untilRight: boolean; feedbackDays: number };
   extraWork?: { hourly: number; note: string };
   aftercare?: { days: number; note: string };
@@ -78,8 +79,10 @@ export interface QuoteDetails {
   termsVersion?: string;
   /** Internal: what still has to be found out before this goes out. Never shown to the client. */
   openPoints?: string[];
-  /** Set by the client's answer: the options they picked ("o2", "m0"). */
-  accepted?: { options: string[]; at?: string };
+  /** Set by the client's answer: the options they picked ("o2", "m0"), and the proof of their yes. */
+  accepted?: { options: string[]; at?: string; termsVersion?: string; earlyStart?: boolean; portfolio?: boolean };
+  /** Set when a consumer withdrew through /herroepen. */
+  withdrawal?: { at: string; name: string; email: string };
 }
 
 export interface Business {
@@ -191,6 +194,12 @@ export function paymentPlan(steps: PaymentStep[] | undefined, total: number): (P
   const amounts = valid.map((s) => round2((total * Number(s.percent)) / 100));
   amounts[amounts.length - 1] = round2(total - amounts.slice(0, -1).reduce((s, a) => s + a, 0));
   return valid.map((s, i) => ({ ...s, amount: amounts[i] }));
+}
+
+/** How long an invoice runs, in words: "10 werkdagen". Empty when not set. */
+export function paymentTermText(d: QuoteDetails | undefined): string {
+  if (d?.payment?.termWorkdays) return `${d.payment.termWorkdays} werkdagen`;
+  return d?.payment?.termDays ? `${d.payment.termDays} dagen` : "";
 }
 
 export const percentTotal = (steps: PaymentStep[] | undefined) => round2((steps || []).reduce((s, x) => s + (Number(x.percent) || 0), 0));

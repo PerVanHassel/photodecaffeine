@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { LEGAL_VERSION } from "../../lib/legalVersion";
 import {
-  DEFAULT_VAT_RATE, SERVICE_LABEL, convertVat, euro, euroCents, formatDate, lineTotal, optionKey, paymentPlan, sumLines, todayIso, vatSplit,
+  DEFAULT_VAT_RATE, SERVICE_LABEL, convertVat, euro, euroCents, formatDate, lineTotal, optionKey, paymentPlan, paymentTermText, sumLines, todayIso, vatSplit,
   type Business, type QuoteDoc, type QuoteLine, type VatBasis,
 } from "./model";
 import "./quote.css";
@@ -21,12 +22,7 @@ export type { QuoteDoc, QuoteLine, QuoteTerm, VatBasis } from "./model";
 export function QuoteFonts() {
   return (
     <>
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap"
-      />
+      <link rel="stylesheet" href="/fonts/schibsted-grotesk.css" />
     </>
   );
 }
@@ -153,7 +149,8 @@ export function QuoteDocument({ quote, business, animate, chosen, onToggleOption
     });
   }
 
-  if (plan.length > 0 || d.payment?.termDays) {
+  const term = paymentTermText(d);
+  if (plan.length > 0 || term) {
     sections.push({
       id: "payment",
       title: "Betaling",
@@ -172,7 +169,7 @@ export function QuoteDocument({ quote, business, animate, chosen, onToggleOption
             </ol>
           )}
           <p className="pq-p pq-quiet pq-small">
-            {d.payment?.termDays ? `Elke factuur betaal je binnen ${d.payment.termDays} dagen. ` : ""}
+            {term ? `Elke factuur betaal je binnen ${term}. ` : ""}
             {monthly.length > 0 ? "De maandelijkse kosten factureren we per maand." : ""}
           </p>
         </>
@@ -299,8 +296,8 @@ export function QuoteDocument({ quote, business, animate, chosen, onToggleOption
       body: (
         <div className="pq-terms">
           {terms.map((t, i) => <p key={i}>{t.label && <b>{t.label}. </b>}{t.text}</p>)}
-          {consumer && <p><b>Bedenktijd.</b> Ga je als particulier online akkoord, dan heb je 14 dagen bedenktijd. Hoe dat werkt staat in onze regeling Annuleren en terugbetaling.</p>}
-          <p><b>Voorwaarden.</b> Met je akkoord op deze prijsopgave ga je ook akkoord met onze algemene voorwaarden{d.termsVersion ? ` (${d.termsVersion})` : ""} en ons beleid op photodecaffeine.com/algemene-voorwaarden. Afspraken in deze prijsopgave gaan voor.</p>
+          {consumer && <p><b>Bedenktijd.</b> Ga je als particulier online akkoord, dan heb je 14 dagen bedenktijd. Herroepen kan op photodecaffeine.com/herroepen. Hoe dat werkt staat in onze regeling Annuleren en terugbetaling.</p>}
+          <p><b>Voorwaarden.</b> Bij deze prijsopgave horen onze voorwaarden, versie {d.accepted?.termsVersion || LEGAL_VERSION}: photodecaffeine.com/algemene-voorwaarden, en daaronder de gebruiksrechten, annuleren, oplevering{services.includes("web") ? " en websites" : ""}. Afspraken in deze prijsopgave gaan voor.</p>
         </div>
       ),
     });

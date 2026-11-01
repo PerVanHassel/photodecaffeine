@@ -1289,6 +1289,7 @@ function NoteItem({ note, mine, actions, onQuote, onHover }: {
         <div className="rd-note-head">
           <b>{note.authorName.split(" ")[0]}</b>
           <span className="rd-quiet">{ago(note.updatedAt)}</span>
+          {note.processedIn && <span className="rd-note-done">Verwerkt in versie {note.processedIn}</span>}
           {mine && !editing && (
             <span className="rd-note-actions">
               <Button

@@ -19,6 +19,7 @@ import {
   STATUSES,
   statusForStage,
   syncGalleryUrls,
+  downloadsUntil,
 } from "../lib/projects.ts";
 import { consentMessageEmail, deliveredEmail, galleryGrewEmail, meetingEmail, studioMessageToClientEmail } from "../lib/projectEmails.ts";
 import { forgetPhotoMails, guestHearts, mailGuestsNewPhotos, photoMailGuests, setPhotoMails, shareFor, shareToken, shareUrl } from "../lib/shares.ts";
@@ -197,6 +198,11 @@ r.put(`${P}/project/:id`, async (c) => {
   if (b.meeting !== undefined) await setPrimaryMeeting(existing, b.meeting);
 
   const updated = await loadProject(id);
+  // The day of delivery starts the quarter the client can download in.
+  if (updated.status === "delivered" && !updated.gallery_settings?.deliveredAt) {
+    updated.gallery_settings = { ...(updated.gallery_settings || {}), deliveredAt: new Date().toISOString() };
+    must(await db.from("projects").update({ gallery_settings: updated.gallery_settings }).eq("id", id));
+  }
   const sign = await gallerySigner([updated]);
   const project = projectToApi(updated, sign);
 
@@ -241,7 +247,7 @@ async function notifyClients(
       await sendEmail({
         to: person.email,
         subject: `Je project is afgerond — ${row.title}`,
-        html: deliveredEmail({ firstName, title: row.title, coverUrl, galleryLink }),
+        html: deliveredEmail({ firstName, title: row.title, coverUrl, galleryLink, until: downloadsUntil(row) }),
       });
     }
     if (what.meetingChanged && project.meeting) {

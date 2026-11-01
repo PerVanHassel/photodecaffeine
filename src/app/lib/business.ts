@@ -1,6 +1,6 @@
 // The business as search engines read it (schema.org), on the homepage only.
-// PhotoDeCaffeine works on location across the Netherlands; Middenstraat 47
-// is only a postal address, so the street is left out and there are no
+// PhotoDeCaffeine works on location across the Netherlands; the address is only
+// where the company is registered, so the street is left out and there are no
 // opening hours — customers can call any time.
 export const BUSINESS_JSON_LD = {
   "@context": "https://schema.org",

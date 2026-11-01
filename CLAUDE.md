@@ -91,6 +91,25 @@ signed URL, dus niet via de functie. Omdat Supabase op het gratis plan staat: 50
 per bestand, en de pool stopt als alle opslag samen 950 MB is. Bij een betaald plan
 `MAX_FILE`, `STORAGE_CEILING` en de limiet op de bucket ophogen.
 
+## Voorwaarden en toestemming
+
+De teksten voor klanten staan in `src/app/lib/legal.ts`, de pagina's erbij in
+`src/app/lib/policies.ts`. De admin (Documenten) toont dezelfde tekst met interne
+notities (`studio/documents/websitebeleid.ts`); onderdeel H daarin is wat nog openstaat.
+Verander je de inhoud, verhoog dan `LEGAL_VERSION` (`lib/legalVersion.ts`) en
+`TERMS_VERSION` (`lib/config.ts` in de functie): bij elk akkoord bewaren we de versie.
+
+- Akkoord op een offerte: `routes/quotes.ts` bewaart datum, versie, keuzes en een kopie in
+  `details.accepted`, en mailt de klant een bevestiging. Herroepen: `/herroepen`, `routes/withdrawal.ts`.
+- Portfolio: toestemming per werk in `routes/articleConsent.ts` (`/werk-toestemming/<token>`).
+  Een nee haalt het werk vanzelf van de site.
+- Cookies: statistieken draaien volledig pas na een ja in de banner (`lib/cookieChoice.ts`).
+  Een nieuwe externe dienst hoort in de privacyverklaring en het cookiebeleid.
+- Lettertypes staan in `public/fonts` (`scripts/fetch_fonts.mjs`). Laad ze nooit bij Google.
+- Betaaltermijn is 10 werkdagen, downloads een kwartaal na levering, bij websites geen download.
+- Opruimen volgens de bewaartermijnen: `lib/retention.ts`, een keer per dag als iemand de admin opent.
+- Toestemming per werk staat in de kv-tabel (`lib/articleConsents.ts`), niet in een eigen tabel.
+
 ## Taal
 
 De site is tweetalig (`src/app/i18n/translations.ts`, standaard Nederlands).

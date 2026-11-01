@@ -2,13 +2,13 @@ import { ArrowDown, ArrowRight, ArrowUp, Bell, BellRing, Check, ChevronLeft, Che
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { Helmet } from "react-helmet-async";
 import { useModalFocus } from "../../lib/dialog";
-import { fmt } from "../format";
+import { fmt, fmtDate } from "../format";
 import { useT } from "../portal/i18n";
 import type { GalleryImage, GalleryProject } from "../types";
 import { cx, isVideo } from "../ui";
 import { useUrlState } from "../urlState";
 import { DEFAULT_RATIO, justify, masonry, rowBoxes, story, type Box } from "./layout";
-import { accentOf, onAccent, styleOf, type StyleDef } from "./styles";
+import { fontHref, accentOf, onAccent, styleOf, type StyleDef } from "./styles";
 import "./gallery.css";
 
 // The client's gallery in the look the studio chose for the project. Used by
@@ -197,6 +197,10 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
         {guest ? t.guestIntro(guest.name.split(" ")[0], downloads !== "none") : delivered ? t.galleryDownloadIntro : t.galleryChooseIntro}
       </p>
       {(downloads === "watermark" || p.watermarked) && <p className="g-small">{guest ? t.watermarkNoteGuest : t.watermarkNote}</p>}
+      {p.downloadsUntil && !preview && (
+        <p className="g-small">{p.downloadsUntil < new Date().toLocaleDateString("sv-SE") ? t.downloadsClosed(fmtDate(p.downloadsUntil)) : downloads !== "none" && t.downloadsOpen(fmtDate(p.downloadsUntil))}</p>
+      )}
+      <p className="g-small">{t.rightsNote} <a href="/gebruiksrechten" target="_blank" rel="noreferrer">{t.rightsLink}</a>.</p>
       <a className="g-insta" href={INSTAGRAM} target="_blank" rel="noreferrer"><Instagram aria-hidden="true" /><span>{t.followInstagram}</span><b>{INSTAGRAM_HANDLE}</b></a>
       {actions.share && !guest && (
         <button type="button" className="g-share-cta" onClick={actions.share}><Users />{t.shareCta}</button>
@@ -222,7 +226,7 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
       style={{ "--g-accent": accent, "--g-on-accent": onAccent(accent), "--g-top": `${top}px` } as CSSProperties}
     >
       <Helmet>
-        {style.font && <link rel="stylesheet" href={`https://fonts.googleapis.com/css2?family=${style.font}&display=swap`} />}
+        {style.font && <link rel="stylesheet" href={fontHref(style.font)} />}
         {style.dark && !preview && <meta name="theme-color" content="#0f0e0d" />}
       </Helmet>
       {back && <div className="g-back">{back}</div>}

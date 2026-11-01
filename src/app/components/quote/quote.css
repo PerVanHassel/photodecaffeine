@@ -354,3 +354,10 @@
   .pq-grain { display: none; }
   .pq-main { max-width: none; }
 }
+
+/* The ticks at the client's yes: each its own, none ticked beforehand. */
+.pq-consents { display: flex; flex-direction: column; gap: 14px; margin: 18px 0; }
+.pq-check { display: flex; gap: 10px; align-items: flex-start; color: var(--pq-ink); font-size: 14.5px; line-height: 1.5; cursor: pointer; }
+.pq-check input { flex-shrink: 0; width: 18px; height: 18px; margin-top: 2px; accent-color: var(--pq-roast); }
+.pq-fieldset { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 14px 0 0; border: 0; border-top: 1px solid var(--pq-line); }
+.pq-fieldset legend { padding: 0 0 6px; color: var(--pq-quiet); font-size: 13px; font-weight: 600; }

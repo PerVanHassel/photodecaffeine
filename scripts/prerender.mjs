@@ -42,9 +42,17 @@ const PAGES = [
   { route: "/services/videografie", data: [] },
   { route: "/services/website", data: [] },
   { route: "/services/social-media", data: [] },
-  { route: "/privacybeleid", data: [] },
+  { route: "/onze-belofte", data: [] },
   { route: "/algemene-voorwaarden", data: [] },
+  { route: "/gebruiksrechten", data: [] },
+  { route: "/annuleren-en-terugbetaling", data: [] },
+  { route: "/oplevering-en-revisies", data: [] },
+  { route: "/voorwaarden-websites", data: [] },
+  { route: "/privacybeleid", data: [] },
   { route: "/cookiebeleid", data: [] },
+  { route: "/contact-en-klachten", data: [] },
+  { route: "/websitevoorwaarden", data: [] },
+  { route: "/herroepen", data: [] },
   // Not in the sitemap and noindex; prerendered so Vercel serves it instead of the 404.
   { route: "/bedankt", data: [] },
 ];

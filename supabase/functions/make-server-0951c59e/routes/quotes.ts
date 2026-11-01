@@ -1,11 +1,13 @@
 import { Hono, type MiddlewareHandler } from "npm:hono";
 import { hasPermission } from "../lib/auth.ts";
 import { business } from "../lib/business.ts";
-import { EMAIL_ADMIN_NOTIFY, EMAIL_RE, SITE_URL } from "../lib/config.ts";
+import { EMAIL_ADMIN_NOTIFY, EMAIL_RE, SITE_URL, TERMS_VERSION } from "../lib/config.ts";
 import { db, found, must, nextDocumentNumber } from "../lib/db.ts";
 import { emailWrap, escapeHtml, sendEmail } from "../lib/email.ts";
 import { type Env, fail, nameOf, requireAdmin } from "../lib/http.ts";
+import { bookingConfirmedEmail } from "../lib/legalEmails.ts";
 import { notify } from "../lib/notify.ts";
+import { todayAmsterdam } from "../lib/util.ts";
 
 const r = new Hono<Env>();
 export default r;
@@ -112,10 +114,22 @@ export function quoteDetails(raw: any): Record<string, any> {
   return d;
 }
 
-/** What the client may see of the details: the internal open points stay behind. */
+/** What the client may see of the details: the internal open points and the kept copy stay behind. */
 export function publicDetails(d: any): Record<string, any> {
   const { openPoints: _open, ...rest } = d && typeof d === "object" ? d : {};
+  if (rest.accepted) {
+    const { snapshot: _copy, ...accepted } = rest.accepted;
+    rest.accepted = accepted;
+  }
   return rest;
+}
+
+/** How long an invoice runs, in words. Older quotes count calendar days. */
+export function paymentTerm(details: any): string {
+  const workdays = Number(details?.payment?.termWorkdays);
+  if (workdays > 0) return `${workdays} werkdagen`;
+  const days = Number(details?.payment?.termDays);
+  return days > 0 ? `${days} dagen` : "";
 }
 
 export function quoteTexts(raw: any): string[] {
@@ -400,7 +414,7 @@ export function quoteEmailRows(quote: any, message: string): string {
     }
     ${
       steps.length > 0
-        ? `<tr><td style="padding:10px 36px 0;"><span style="color:${muted};font-size:13px;line-height:1.7;"><strong style="color:#fffbe0;">Betaling:</strong> ${escapeHtml(steps.map((s) => `${s.percent}% ${s.moment || s.label}`.trim()).join(", "))}.</span></td></tr>`
+        ? `<tr><td style="padding:10px 36px 0;"><span style="color:${muted};font-size:13px;line-height:1.7;"><strong style="color:#fffbe0;">Betaling:</strong> ${escapeHtml(steps.map((s) => `${s.percent}% ${s.moment || s.label}`.trim()).join(", "))}.${paymentTerm(quote.details) ? ` Elke factuur betaal je binnen ${escapeHtml(paymentTerm(quote.details))}.` : ""}</span></td></tr>`
         : ""
     }
     ${includedBlock}
@@ -415,6 +429,7 @@ export function quoteEmailRows(quote: any, message: string): string {
         ? `<tr><td style="padding:14px 36px 0;"><span style="color:${faint};font-size:12px;">Deze prijsopgave is geldig tot ${escapeHtml(quoteDate(quote.validUntil))}.</span></td></tr>`
         : ""
     }
+    <tr><td style="padding:14px 36px 0;"><span style="color:${muted};font-size:12px;line-height:1.7;">Bij deze prijsopgave horen onze <a href="${SITE_URL}/algemene-voorwaarden" style="color:#fffbe0;">voorwaarden</a>, versie ${TERMS_VERSION}.</span></td></tr>
     <tr>
       <td style="padding:26px 36px 40px;">
         <a href="${link}" style="display:inline-block;background-color:#c8905a;color:#0d0703;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 30px;">Bekijk en reageer</a>
@@ -630,7 +645,9 @@ async function onAccepted(quote: ReturnType<typeof rowToQuote>) {
   }
   must(await db.from("tasks").insert({
     title: `${quote.type === "web" ? "Start het project" : "Plan de shoot"}: ${quote.title}`,
-    notes: `Prijsopgave ${quote.number} is geaccepteerd.`,
+    notes: quote.details?.audience === "consumer" && quote.details?.accepted?.at && !quote.details.accepted.earlyStart
+      ? `Prijsopgave ${quote.number} is geaccepteerd door een particulier die niet vroeg wil beginnen: begin pas na de 14 dagen bedenktijd.`
+      : `Prijsopgave ${quote.number} is geaccepteerd.`,
     kind: "quote",
     project_id: projectId || null,
     client_id: quote.clientId || null,
@@ -669,6 +686,7 @@ r.post("/make-server-0951c59e/quote/:id/respond", async (c) => {
   if (!token || token !== quote.token) fail(403, "Deze link klopt niet.");
   if (quote.status === "draft") fail(404, "Deze prijsopgave is nog niet verstuurd.");
   if (quote.status === "replaced") fail(409, "Deze prijsopgave is vervangen door een nieuwere. Kijk in je mail of je portaal voor de nieuwe.");
+  if (quote.status === "accepted") fail(409, "Je hebt deze prijsopgave al geaccepteerd. Wil je iets veranderen? Mail ons gerust.");
 
   const body = await c.req.json().catch(() => ({}));
   const answer = body.answer === "accepted" ? "accepted" : body.answer === "declined" ? "declined" : "";
@@ -678,8 +696,26 @@ r.post("/make-server-0951c59e/quote/:id/respond", async (c) => {
   // Options the client ticked, kept only when they point at an optional line.
   const picked = Array.isArray(body.options) ? body.options.filter((o: unknown) => typeof o === "string" && /^[om]\d{1,2}$/.test(o)) : [];
   const details = { ...quote.details };
+  const consumer = quote.details?.audience === "consumer";
+  const at = new Date().toISOString();
   if (answer === "accepted") {
-    details.accepted = { options: [...chosenOptions({ ...quote, details: { accepted: { options: picked } } })], at: new Date().toISOString() };
+    if (quote.validUntil && quote.validUntil < todayAmsterdam()) fail(409, "Deze prijsopgave is verlopen. Vraag ons gerust om een nieuwe.");
+    if (body.termsAccepted !== true) fail(400, "Vink eerst aan dat je akkoord gaat met de voorwaarden.");
+    const { accepted: _before, openPoints: _open, ...rest } = quote.details || {};
+    // The proof the terms promise: when, under which version, what was chosen, and
+    // a copy of the quote as it stood, because the admin can still edit the row.
+    details.accepted = {
+      options: [...chosenOptions({ ...quote, details: { accepted: { options: picked } } })],
+      at,
+      termsVersion: TERMS_VERSION,
+      earlyStart: consumer && body.earlyStart === true && body.earlyStartEnd === true,
+      portfolio: body.portfolio === true,
+      snapshot: {
+        number: quote.number, title: quote.title, subtitle: quote.subtitle, clientName: quote.clientName, clientEmail: quote.clientEmail, intro: quote.intro,
+        monthly: quote.monthly, oneTime: quote.oneTime, included: quote.included, terms: quote.terms, notes: quote.notes, validUntil: quote.validUntil,
+        vatBasis: quote.vatBasis, vatRate: quote.vatRate, details: rest,
+      },
+    };
   }
 
   const row = must(await db.from("quotes").update({ status: answer, response, responded_at: new Date().toISOString(), details }).eq("id", id).select("*").single());
@@ -690,6 +726,36 @@ r.post("/make-server-0951c59e/quote/:id/respond", async (c) => {
     ...quoteLines(updated.oneTime).filter((_, i) => chosen.has(`o${i}`)),
     ...quoteLines(updated.monthly).filter((_, i) => chosen.has(`m${i}`)),
   ].map((l) => l.label);
+
+  // The written confirmation that makes the booking binding (terms, article 3).
+  let confirmed = true;
+  if (answer === "accepted" && EMAIL_RE.test(quote.clientEmail || "")) {
+    const side = quote.vatBasis === "incl" ? "inclusief btw" : "exclusief btw";
+    const oneTime = quoteSum(linesThatCount(quoteLines(updated.oneTime), "o", chosen));
+    const monthly = quoteSum(linesThatCount(quoteLines(updated.monthly), "m", chosen));
+    const steps = paymentSteps(updated.details);
+    const amounts: [string, string][] = [
+      ["Opdracht", `${quote.number}, ${quote.title}`],
+      ...(oneTime ? [["Eenmalig", `${euro(oneTime)} ${side}`] as [string, string]] : []),
+      ...(monthly ? [["Per maand", `${euro(monthly)} ${side}`] as [string, string]] : []),
+      ...(optionNames.length ? [["Gekozen opties", optionNames.join(", ")] as [string, string]] : []),
+      ...(steps.length ? [["Betaling", steps.map((s) => `${s.percent}% ${s.moment || s.label}`.trim()).join(", ")] as [string, string]] : []),
+      ...(paymentTerm(updated.details) ? [["Betaaltermijn", paymentTerm(updated.details)] as [string, string]] : []),
+    ];
+    const sent = await sendEmail({
+      to: quote.clientEmail,
+      replyTo: EMAIL_ADMIN_NOTIFY,
+      subject: `Bevestiging van je boeking: ${quote.number}`,
+      html: bookingConfirmedEmail({
+        firstName: String(quote.clientName || "").split(" ")[0] || "daar",
+        number: quote.number, title: quote.title, at, amounts, quoteLink: quoteLink(quote), termsVersion: TERMS_VERSION,
+        consumer, withdrawLink: `${SITE_URL}/herroepen?offerte=${encodeURIComponent(quote.number)}&id=${quote.id}&t=${quote.token}`,
+        earlyStart: details.accepted.earlyStart, portfolio: details.accepted.portfolio,
+        web: quote.type === "web" || (updated.details?.services || []).includes("web"),
+      }),
+    });
+    confirmed = sent.ok;
+  }
 
     const who = escapeHtml(quote.clientName || quote.clientEmail || "De klant");
     const verdict = answer === "accepted" ? "gaat akkoord" : "gaat niet akkoord";
@@ -718,6 +784,11 @@ r.post("/make-server-0951c59e/quote/:id/respond", async (c) => {
         ${
           answer === "accepted" && optionNames.length > 0
             ? `<tr><td style="padding:16px 36px 0;"><span style="color:rgba(255,251,224,0.55);font-size:14px;font-weight:300;line-height:1.75;">Gekozen opties: ${escapeHtml(optionNames.join(", "))}</span></td></tr>`
+            : ""
+        }
+        ${
+          answer === "accepted"
+            ? `<tr><td style="padding:16px 36px 0;"><span style="color:rgba(255,251,224,0.55);font-size:14px;font-weight:300;line-height:1.75;">Voorwaarden: versie ${TERMS_VERSION}. Portfolio: ${details.accepted.portfolio ? "ja" : "nee"}.${consumer ? ` Particulier, 14 dagen bedenktijd. Vroeg beginnen: ${details.accepted.earlyStart ? "ja" : "nee"}.` : ""}${confirmed ? "" : " Let op: de bevestiging naar de klant kon niet verstuurd worden. Stuur hem zelf."}</span></td></tr>`
             : ""
         }
         <tr>

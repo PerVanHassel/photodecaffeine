@@ -16,17 +16,18 @@ export interface StyleDef {
   layout: GalleryLayout;
   accent: string;
   dark?: boolean;
-  /** Google Fonts family query for the titles, loaded only when this style is shown. */
+  /** The stylesheet in public/fonts for the titles, loaded only when this style is shown. */
   font?: string;
 }
 
 // One request for both looks that use Fraunces, so the two never load clashing copies.
-const FRAUNCES = "Fraunces:ital,opsz,wght,SOFT@0,9..144,300..600,0..100;1,9..144,300..600,0..100";
-const INSTRUMENT = "Instrument+Serif:ital@0;1";
+const FRAUNCES = "fraunces";
+const INSTRUMENT = "instrument-serif";
 // Condensed heavy italics only: Arena sets its titles and numbers in nothing else.
-const ARCHIVO = "Archivo:ital,wdth,wght@1,62..100,600..900";
+const ARCHIVO = "archivo";
 /** Every title font, for the admin's style thumbnails. */
 export const ALL_FONTS = [FRAUNCES, INSTRUMENT, ARCHIVO];
+export const fontHref = (font: string) => `/fonts/${font}.css`;
 
 export const STYLES: StyleDef[] = [
   { id: "atelier", name: "Atelier", fits: "Portretten, gezinnen, alles wat tijdloos moet zijn", layout: "rows", accent: "#b06a2c", font: FRAUNCES },

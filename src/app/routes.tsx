@@ -3,7 +3,7 @@ import { Navigate, useLocation, type RouteObject } from "react-router";
 import { Root } from "./Root";
 import { AppError } from "./components/AppError";
 import { appRoutes } from "./mobile/routes";
-import { ConsentForm, GuestGallery, portalRoutes, PublicInvoice, ReviewRedirect, studioRoutes } from "./studio/routes";
+import { ArticleConsent, ConsentForm, GuestGallery, portalRoutes, PublicInvoice, ReviewRedirect, studioRoutes } from "./studio/routes";
 import { Home } from "./pages/Home";
 
 /**
@@ -50,9 +50,17 @@ export const routes: RouteObject[] = [
           // this covers links followed inside the app. Ad links keep their ?ref=.
           { path: "services/automotive", Component: AutomotiveRedirect },
           { path: "services/social-media", lazy: chunk(() => import("./pages/SocialMediaPage"), (m) => m.SocialMediaPage) },
-          { path: "privacybeleid", lazy: chunk(() => import("./pages/LegalPage"), (m) => m.PrivacyPage) },
+          { path: "onze-belofte", lazy: chunk(() => import("./pages/LegalPage"), (m) => m.PromisePage) },
           { path: "algemene-voorwaarden", lazy: chunk(() => import("./pages/LegalPage"), (m) => m.TermsPage) },
+          { path: "gebruiksrechten", lazy: chunk(() => import("./pages/LegalPage"), (m) => m.RightsPage) },
+          { path: "annuleren-en-terugbetaling", lazy: chunk(() => import("./pages/LegalPage"), (m) => m.CancelPage) },
+          { path: "oplevering-en-revisies", lazy: chunk(() => import("./pages/LegalPage"), (m) => m.DeliveryPage) },
+          { path: "voorwaarden-websites", lazy: chunk(() => import("./pages/LegalPage"), (m) => m.WebsitesPage) },
+          { path: "privacybeleid", lazy: chunk(() => import("./pages/LegalPage"), (m) => m.PrivacyPage) },
           { path: "cookiebeleid", lazy: chunk(() => import("./pages/LegalPage"), (m) => m.CookiePage) },
+          { path: "contact-en-klachten", lazy: chunk(() => import("./pages/LegalPage"), (m) => m.ComplaintsPage) },
+          { path: "websitevoorwaarden", lazy: chunk(() => import("./pages/LegalPage"), (m) => m.SiteTermsPage) },
+          { path: "herroepen", lazy: chunk(() => import("./pages/WithdrawPage"), (m) => m.WithdrawPage) },
           { path: "bedankt", lazy: chunk(() => import("./pages/ThankYouPage"), (m) => m.ThankYouPage) },
         ],
       },
@@ -69,6 +77,8 @@ export const routes: RouteObject[] = [
       { path: "/galerij/:token", Component: GuestGallery },
       // Parents say per child what may be done at a shoot, by token as well.
       { path: "/toestemming/:token", Component: ConsentForm },
+      // Whoever is on a portfolio piece says where it may be shown, by token too.
+      { path: "/werk-toestemming/:token", Component: ArticleConsent },
       { path: "/review/:token", Component: ReviewRedirect },
       // The mobile admin app. Its whole subtree is lazily loaded (see
       // src/app/mobile/routes.tsx), so the public site never pays for it.

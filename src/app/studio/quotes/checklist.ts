@@ -1,3 +1,4 @@
+import { LEGAL_VERSION } from "../../lib/legalVersion";
 import {
   lineTotal, percentTotal, todayIso, workdaysBetween,
   type Business, type QuoteDoc, type QuoteLine,
@@ -6,8 +7,8 @@ import {
 /**
  * What has to be on a quote before it goes out, checked against the draft as
  * it is being built. The list follows PDC's own terms (Websitebeleid &
- * Gebruiksrechten, the parts approved so far: 10 working days valid, 40% on
- * booking, 14 days to pay, 3 revision rounds, 10 working days for feedback),
+ * Gebruiksrechten v1.2: 10 working days valid, 40% on booking, 10 working days
+ * to pay, 3 revision rounds, 10 working days for feedback),
  * Martine's advice of 21 October 2026, and what Dutch law asks of a price
  * given to a consumer or a business.
  *
@@ -166,11 +167,12 @@ export function quoteChecklist(q: QuoteDoc, business: Business | null | undefine
     state: steps.length === 0 ? "error" : Math.abs(pct - 100) > 0.01 ? "error" : "ok",
     hint: steps.length === 0 ? "Zet erop wanneer er betaald wordt, bijvoorbeeld 40% bij akkoord en 60% bij oplevering." : Math.abs(pct - 100) > 0.01 ? `Nu ${pct}%.` : undefined,
   });
-  const term = Number(d.payment?.termDays) || 0;
+  const term = Number(d.payment?.termWorkdays) || 0;
+  const oldTerm = Number(d.payment?.termDays) || 0;
   add({
-    id: "term", group: "Afspraken", section: "payment", label: "Betaaltermijn (14 dagen)",
-    state: term > 0 ? (term === 14 ? "ok" : "warn") : "error",
-    hint: term > 0 ? (term === 14 ? undefined : `${term} dagen, de voorwaarden zeggen 14.`) : "Zet de betaaltermijn erop.",
+    id: "term", group: "Afspraken", section: "payment", label: "Betaaltermijn (10 werkdagen)",
+    state: term > 0 ? (term === 10 ? "ok" : "warn") : oldTerm > 0 ? "warn" : "error",
+    hint: term === 10 ? undefined : term > 0 ? `${term} werkdagen, de voorwaarden zeggen 10.` : oldTerm > 0 ? `${oldTerm} dagen, de voorwaarden zeggen nu 10 werkdagen.` : "Zet de betaaltermijn erop.",
   });
   add({
     id: "planning", group: "Afspraken", section: "planning", label: "Planning: wanneer start en klaar",
@@ -252,9 +254,9 @@ export function quoteChecklist(q: QuoteDoc, business: Business | null | undefine
   const open = (d.openPoints || []).filter(filled);
   open.forEach((p, i) => add({ id: `open${i}`, group: "Versturen", section: "open", label: p, state: "todo", hint: "Intern open punt. De klant ziet dit niet." }));
   add({
-    id: "terms", group: "Versturen", section: "terms", label: "Algemene voorwaarden",
-    state: filled(d.termsVersion) ? "ok" : "warn",
-    hint: filled(d.termsVersion) ? undefined : "De voorwaarden staan nog niet op de site. Zet de belangrijke afspraken daarom in de offerte zelf, zoals hier.",
+    id: "terms", group: "Versturen", section: "terms", label: `Voorwaarden, versie ${LEGAL_VERSION}`,
+    state: "ok",
+    hint: "Staan automatisch op de offerte. De klant vinkt ze aan bij akkoord; de versie wordt bewaard.",
   });
   if (consumer) add({ id: "withdraw", group: "Versturen", section: "terms", label: "Bedenktijd voor particulieren staat erop", state: "ok" });
 
@@ -299,8 +301,8 @@ export function invoiceChecklist(inv: InvoiceCheckInput, business: Business | nu
   const dated = [inv.notes, ...inv.lines.map((l) => `${l.label} ${l.note}`)].some((s) => MONTHS.test(s || ""));
   add("Datum of periode van de levering", dated, "Zet erbij wanneer het werk is gedaan, bijvoorbeeld 'geleverd op 12 oktober' of 'aanbetaling'.", "warn");
   add("Btw-tarief en btw-bedrag", [0, 9, 21].includes(Number(inv.vatRate)), "Gebruik 21%, 9% of 0% met reden.", "warn");
-  const days = inv.issuedOn && inv.dueOn ? Math.round((new Date(inv.dueOn).getTime() - new Date(inv.issuedOn).getTime()) / 86400000) : -1;
-  add("Betaaltermijn 14 dagen", days === 14, days < 0 ? "Zet een vervaldatum." : `Nu ${days} dagen; de voorwaarden zeggen 14.`, days < 0 ? "error" : "warn");
+  const days = inv.issuedOn && inv.dueOn ? workdaysBetween(inv.issuedOn, inv.dueOn) : -1;
+  add("Betaaltermijn 10 werkdagen", days === 10, days < 0 ? "Zet een vervaldatum." : `Nu ${days} werkdagen; de voorwaarden zeggen 10.`, days < 0 ? "error" : "warn");
   add("IBAN om naar over te maken", filled(business?.iban), "Vul het in bij Instellingen.");
   return items;
 }

@@ -319,6 +319,20 @@ const RULES: Record<string, Rule> = {
   "POST /portal/project/:id/feedback": { area: "Reviews", action: "Feedback gegeven" },
 
   // Without a login
+  "POST /withdrawal": {
+    area: "Offertes",
+    action: "Overeenkomst herroepen",
+    who: (x) => ({ kind: "visitor", name: x.body?.name || "", email: x.body?.email || "" }),
+    detail: (x) => clip(x.body?.reference),
+  },
+  "POST /article-consent/:token": {
+    area: "Portfolio",
+    action: (x) => (x.body?.answer === "refused" ? "Geen toestemming voor portfolio" : "Toestemming voor portfolio gegeven"),
+    who: (x) => ({ kind: "visitor", name: x.body?.name || "", email: x.body?.email || "" }),
+  },
+  "PUT /admin/article-consents/:id": { area: "Portfolio", action: "Toestemming: wie gevraagd wordt aangepast", of: ARTICLE },
+  "POST /admin/article-consents/:id/send": { area: "Portfolio", action: "Toestemming gevraagd", of: ARTICLE, detail: (x) => clip(x.body?.email) },
+  "DELETE /admin/article-consents/:id/answers/:answerId": { area: "Portfolio", action: "Toestemming verwijderd", of: ARTICLE, param: "id" },
   "POST /contact": {
     area: "Aanvragen", action: "Aanvraag gestuurd via de site",
     skip: (x) => x.body?.name === AD_VISIT_MARKER,

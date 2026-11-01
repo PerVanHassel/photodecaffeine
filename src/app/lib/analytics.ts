@@ -6,10 +6,15 @@
  * passes it to the edge function) and into our own database. Nothing is sent
  * to a third party.
  *
- * A random id in localStorage recognises a second visit. No IP address and
- * nothing anyone types is kept. Left out: devices that opened the admin, the
- * admin's own page previews (an iframe), bots, and the dev server.
+ * That full picture only runs after a yes in the cookie banner (cookieChoice.ts).
+ * Without one this only counts: which page, where the visit came from and the
+ * kind of device, with nothing stored on the device and no way to tell two visits
+ * apart. With a yes, a random id in localStorage recognises a second visit. No IP
+ * address and nothing anyone types is kept. Left out: devices that opened the
+ * admin, the admin's own page previews (an iframe), bots, and the dev server.
  */
+
+import { analyticsAllowed, COOKIE_CHOICE_CHANGED } from "./cookieChoice";
 
 const ENDPOINT = "/api/v";
 const STORE = "pdc-visit";
@@ -77,6 +82,8 @@ let session: Session | null = null;
 let view: View | null = null;
 let queue: Event[] = [];
 let started = false;
+/** A yes in the cookie banner: everything below. Otherwise only pages are counted. */
+let full = false;
 let debug = false;
 let lastInput = 0;
 let lastTick = 0;
@@ -105,6 +112,7 @@ function read(): { visitor?: string; session?: Session } {
 }
 
 function save() {
+  if (!full) return;
   try {
     localStorage.setItem(STORE, JSON.stringify({ visitor, session }));
   } catch {
@@ -220,6 +228,9 @@ function deviceOf() {
     : /Mac OS X|Macintosh/.test(ua) ? "macOS"
     : /Linux/.test(ua) ? "Linux"
     : "Anders";
+  const device = tablet ? "tablet" : mobile ? "mobile" : "desktop";
+  // Only what the browser says with every request anyway, until there is a yes.
+  if (!full) return { device, browser, os, screen: "", language: "", timezone: "" };
   let timezone = "";
   try {
     timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
@@ -227,7 +238,7 @@ function deviceOf() {
     // Old browsers.
   }
   return {
-    device: tablet ? "tablet" : mobile ? "mobile" : "desktop",
+    device,
     browser,
     os,
     screen: `${screen.width}x${screen.height}`,
@@ -238,7 +249,7 @@ function deviceOf() {
 
 /** Continues the visit in this browser, or starts a new one: after half an hour, or on a new campaign link. */
 function resume(now: number, forceNew = false) {
-  const stored = read();
+  const stored = full ? read() : {};
   const known = Boolean(stored.visitor);
   visitor = stored.visitor || uuid();
   const params = new URLSearchParams(location.search);
@@ -271,7 +282,7 @@ function push(e: Omit<Event, "at">) {
 }
 
 function progress() {
-  if (!view) return;
+  if (!view || !full) return;
   const ms = Math.round(view.ms);
   const key = `${view.scroll}:${Math.round(ms / 1000)}`;
   if (key === view.sent) return;
@@ -479,38 +490,84 @@ function allowed(): boolean {
   return !navigator.webdriver && !BOTS.test(navigator.userAgent);
 }
 
+const WATCH = { capture: true, passive: true } as const;
+let ticking = 0;
+
+/** Scrolling, clicks and forms: only after a yes. */
+function watchClosely() {
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll, { passive: true });
+  document.addEventListener("click", onClick, WATCH);
+  document.addEventListener("focusin", onFocusIn, WATCH);
+  document.addEventListener("submit", onSubmit, WATCH);
+  document.addEventListener("keydown", onInput, WATCH);
+  document.addEventListener("pointermove", onInput, WATCH);
+  document.addEventListener("touchstart", onInput, WATCH);
+  ticking = window.setInterval(tick, 1000);
+}
+
+function stopWatching() {
+  window.removeEventListener("scroll", onScroll);
+  window.removeEventListener("resize", onScroll);
+  document.removeEventListener("click", onClick, WATCH);
+  document.removeEventListener("focusin", onFocusIn, WATCH);
+  document.removeEventListener("submit", onSubmit, WATCH);
+  document.removeEventListener("keydown", onInput, WATCH);
+  document.removeEventListener("pointermove", onInput, WATCH);
+  document.removeEventListener("touchstart", onInput, WATCH);
+  window.clearInterval(ticking);
+}
+
+function forgetVisitor() {
+  try {
+    localStorage.removeItem(STORE);
+  } catch {
+    // Nothing stored then either.
+  }
+}
+
+/** The cookie choice changed: carries on with the page being read, as the new kind of visit. */
+function onChoice() {
+  const next = analyticsAllowed();
+  if (next === full) return;
+  const path = view?.path || location.pathname;
+  if (next) {
+    // A quick yes replaces the count that had not gone out yet, so the page counts once.
+    queue = [];
+    view = null;
+    full = true;
+    resume(Date.now(), true);
+    watchClosely();
+  } else {
+    leaveView();
+    flush();
+    full = false;
+    stopWatching();
+    forgetVisitor();
+    resume(Date.now(), true);
+  }
+  startView(path);
+}
+
 /** Starts listening on the public site (Root). Returns the cleanup for React. */
 export function startAnalytics(): () => void {
   if (started || !allowed()) return () => {};
   started = true;
+  full = analyticsAllowed();
+  if (!full) forgetVisitor();
   resume(Date.now());
-  const opts = { capture: true, passive: true } as const;
-  window.addEventListener("scroll", onScroll, { passive: true });
-  window.addEventListener("resize", onScroll, { passive: true });
-  document.addEventListener("click", onClick, opts);
-  document.addEventListener("focusin", onFocusIn, opts);
-  document.addEventListener("submit", onSubmit, opts);
-  document.addEventListener("keydown", onInput, opts);
-  document.addEventListener("pointermove", onInput, opts);
-  document.addEventListener("touchstart", onInput, opts);
+  if (full) watchClosely();
   document.addEventListener("visibilitychange", onVisibility);
   window.addEventListener("pagehide", onPageHide);
   window.addEventListener("pageshow", onPageShow);
-  const ticking = window.setInterval(tick, 1000);
+  window.addEventListener(COOKIE_CHOICE_CHANGED, onChoice);
   const flushing = window.setInterval(flush, FLUSH_EVERY);
   return () => {
-    window.removeEventListener("scroll", onScroll);
-    window.removeEventListener("resize", onScroll);
-    document.removeEventListener("click", onClick, opts);
-    document.removeEventListener("focusin", onFocusIn, opts);
-    document.removeEventListener("submit", onSubmit, opts);
-    document.removeEventListener("keydown", onInput, opts);
-    document.removeEventListener("pointermove", onInput, opts);
-    document.removeEventListener("touchstart", onInput, opts);
+    if (full) stopWatching();
     document.removeEventListener("visibilitychange", onVisibility);
     window.removeEventListener("pagehide", onPageHide);
     window.removeEventListener("pageshow", onPageShow);
-    window.clearInterval(ticking);
+    window.removeEventListener(COOKIE_CHOICE_CHANGED, onChoice);
     window.clearInterval(flushing);
     leaveView();
     flush();
@@ -537,7 +594,8 @@ export function track(event: string, props?: Props) {
 
 /** The current visit, sent along with a form so the inquiry shows how its sender got there. */
 export function visitId(): string {
-  return started && session ? session.id : "";
+  // Linking an inquiry to a visit is part of the yes, not of counting pages.
+  return started && session && full ? session.id : "";
 }
 
 /** The campaign this visit came in on (?ref= or utm_campaign), if any. */

@@ -45,6 +45,8 @@ export type DocNote = {
   quote?: DocQuote | null;
   authorId: string;
   authorName: string;
+  /** The version of the document this note was worked into. */
+  processedIn?: string;
   createdAt: string;
   updatedAt: string;
 };

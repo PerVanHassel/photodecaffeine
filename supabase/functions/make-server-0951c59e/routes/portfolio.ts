@@ -2,6 +2,7 @@ import { Hono } from "npm:hono";
 import { requireAdmin, requirePermission } from "../lib/http.ts";
 import * as kv from "../kv_store.tsx";
 import { verifyAdmin } from "../lib/auth.ts";
+import { websiteBlocked } from "../lib/articleConsents.ts";
 import { loadArticles } from "../lib/portfolio.ts";
 
 
@@ -147,6 +148,10 @@ r.put("/make-server-0951c59e/admin/portfolio/:id", async (c) => {
     if (!articleStr) return c.json({ error: "Article not found" }, 404);
 
     const existing = JSON.parse(articleStr);
+    // Someone on it said no: that goes first, also after a mistake in the admin.
+    if (updates.published === true && !existing.published && await websiteBlocked(id)) {
+      return c.json({ error: "Iemand op dit werk wil het niet op de website. Kijk bij Toestemming." }, 409);
+    }
     const updated = {
       ...existing,
       ...updates,

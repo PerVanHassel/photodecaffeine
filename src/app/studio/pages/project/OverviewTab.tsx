@@ -5,7 +5,7 @@ import { Link } from "react-router";
 import { get, post, put } from "../../api";
 import { ago, euro, TYPE_LABEL } from "../../format";
 import { copyText } from "../../gallery/share";
-import { keys, useAction, useClients } from "../../queries";
+import { keys, useAction, useClients, useQuotes } from "../../queries";
 import type { Deliverable, Project, ProjectType } from "../../types";
 import { Button, Card, Field, Input, Pill, Select, SelectField, TextAreaField, TextField, undoToast, useConfirm } from "../../ui";
 import { useUnsavedChanges } from "../../unsaved";
@@ -14,6 +14,7 @@ export function OverviewTab({ project }: { project: Project }) {
   return (
     <div className="s-grid-2">
       <div className="s-stack lg">
+        <NoAgreementNote project={project} />
         <DetailsCard project={project} />
         <DeliverablesCard project={project} />
         {project.type === "web" && <DemosCard project={project} />}
@@ -23,6 +24,19 @@ export function OverviewTab({ project }: { project: Project }) {
         <EngagementCard project={project} />
       </div>
     </div>
+  );
+}
+
+/** Booked without an accepted quote: nobody said yes to the terms. */
+function NoAgreementNote({ project: p }: { project: Project }) {
+  const quotes = useQuotes();
+  if (!quotes.data || !["booked", "shoot", "editing", "delivered", "review"].includes(p.stage)) return null;
+  if (quotes.data.some((q) => q.projectId === p.id && q.status === "accepted")) return null;
+  return (
+    <Card title="Nog geen akkoord op de voorwaarden">
+      <p className="s-small s-muted">Dit project heeft geen geaccepteerde prijsopgave. Maak er een, ook bij een kleine shoot. Dan weet je zeker dat de klant akkoord is, en met welke versie.</p>
+      <Link className="s-btn sm" to={`/admin/quotes?new=1&projectId=${p.id}${p.clientIds[0] ? `&clientId=${p.clientIds[0]}` : ""}`} style={{ marginTop: 10 }}>Prijsopgave maken</Link>
+    </Card>
   );
 }
 

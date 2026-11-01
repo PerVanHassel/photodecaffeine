@@ -99,6 +99,7 @@ function guestProject(row: ProjectRow, sign: Signer, canDownload: boolean) {
     gallerySettings: { title: gs.title, subtitle: gs.subtitle, style: gs.style, accentColor: gs.accentColor, coverImageId: gs.coverImageId, coverUrl: gs.coverUrl },
     gallery: api.gallery.map((g: any) => ({ ...g, download: canDownload && g.download })),
     downloads: canDownload ? api.downloads : "none",
+    downloadsUntil: api.downloadsUntil,
     watermarked: api.downloads === "watermark",
     events: shoot ? [{ kind: "shoot", startsAt: shoot.starts_at }] : [],
   };
@@ -290,7 +291,7 @@ r.post(`${S}/child`, async (c) => {
 // --- downloads ---
 async function downloadRights(share: Share) {
   if (!share.downloads) fail(403, "Downloaden staat uit voor deze galerij.");
-  const project = found(await db.from("projects").select("stage, gallery_settings").eq("id", share.project_id).maybeSingle(), "Project niet gevonden") as any;
+  const project = found(await db.from("projects").select("stage, type, gallery_settings").eq("id", share.project_id).maybeSingle(), "Project niet gevonden") as any;
   return clientDownloads(project);
 }
 

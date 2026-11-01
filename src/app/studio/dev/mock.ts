@@ -557,6 +557,17 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     if (out === undefined) throw new ApiError(404, "Dit bezoek staat er niet (meer).");
     return out;
   }
+  if (p === "/admin/article-consents") {
+    return { summary: Object.fromEntries(portfolio.map((a: { id: string }, i: number) => [a.id, i % 3 === 0 ? { needed: null, people: 0, given: 0, refused: 0 } : i % 3 === 1 ? { needed: true, people: 2, given: 1, refused: 0 } : { needed: false, people: 0, given: 0, refused: 0 }])) };
+  }
+  if (p.startsWith("/admin/article-consents/")) {
+    if (method !== "GET") return { success: true, sentAt: new Date().toISOString() };
+    return {
+      needed: true, note: "", url: `${location.origin}/werk-toestemming/mock12345`,
+      people: [{ name: "Joris de Wit", email: "joris@garagedewit.nl", sentAt: iso(-2) }, { name: "Noor Bakker", email: "", sentAt: "" }],
+      answers: [{ id: id(801), answer: "given", places: ["website", "social"], nameUse: "first", limits: "Niet de foto bij de garagedeur.", name: "Joris de Wit", email: "joris@garagedewit.nl", guardianOf: "", statement: "", updatedAt: iso(-1) }],
+    };
+  }
 
   if (method === "GET") {
     if ((r = m(/^\/admin\/documents\/([^/]+)$/))) return structuredClone({ notes: docNotes, read: docRead[r[1]] || { done: [], at: null } });
@@ -963,7 +974,7 @@ export async function mockApi(path: string, method: string, body: Json): Promise
 }
 
 // --- Quotes: the builder, the client's page and the answer ---
-const QUOTE_BUSINESS = { name: "PhotoDeCaffeine Productions", address: "Middenstraat 47, 4702GB Roosendaal", kvk: "94948933", vatNumber: "NL823807071B01", iban: "NL91 RABO 0385 6448 09", email: "contact@photodecaffeine.com" };
+const QUOTE_BUSINESS = { name: "PhotoDeCaffeine Productions", address: "Dokter Lemmensstraat 32, 4701 LZ Roosendaal", kvk: "94948933", vatNumber: "NL823807071B01", iban: "NL91 RABO 0385 6448 09", email: "contact@photodecaffeine.com" };
 
 function quoteTotals(q: Json) {
   const chosen = new Set<string>(q.details?.accepted?.options || []);

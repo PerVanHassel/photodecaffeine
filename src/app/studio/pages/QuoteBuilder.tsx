@@ -6,7 +6,8 @@ import {
 import { useEffect, useId, useMemo, useRef, useState, type InputHTMLAttributes, type ReactNode } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { QuoteDocument, QuoteFonts } from "../../components/quote/QuoteDocument";
-import {
+import { LEGAL_VERSION } from "../../lib/legalVersion";
+import { paymentTermText,
   CHANNELS, addWorkdays, euroCents, lineTotal, percentTotal, sumLines, todayIso, vatSplit,
   type QuoteDetails, type QuoteDoc, type QuoteLicense, type QuoteLine, type Service,
 } from "../../components/quote/model";
@@ -491,7 +492,7 @@ function Builder({ quote, source, defaults, business, all }: {
                     <Button size="sm" variant="ghost" onClick={() => set("validUntil", addWorkdays(todayIso(), 10))}>10 werkdagen</Button>
                   </div>
                 </Field>
-                <Text label="Algemene voorwaarden" value={d.details.termsVersion || ""} onChange={(v) => setDetail("termsVersion", v)} placeholder="Bijv. versie 1.1" hint="Pas invullen als ze op de site staan." />
+                <p className="s-small s-muted">Bij elke offerte horen de voorwaarden op de site, nu versie {LEGAL_VERSION}. De klant vinkt ze aan bij akkoord.</p>
               </div>
               <PairList label="Overige afspraken" rows={d.terms.map((t) => ({ a: t.label, b: t.text }))} onChange={(rows) => set("terms", rows.map((r) => ({ label: r.a, text: r.b })))} aLabel="Kopje" bLabel="Afspraak" />
               <Area label="Slotzin" rows={2} value={d.notes} onChange={(v) => set("notes", v)} placeholder="Vragen, of wil je iets anders? Laat het weten." />
@@ -547,7 +548,7 @@ function priceSummary(d: QuoteDraft) {
 function paymentSummary(d: QuoteDraft) {
   const steps = d.details.payment?.steps || [];
   if (!steps.length) return "Nog geen betaalmomenten";
-  return `${steps.map((s) => `${s.percent}%`).join(" / ")} · ${d.details.payment?.termDays || "?"} dagen`;
+  return `${steps.map((s) => `${s.percent}%`).join(" / ")} · ${paymentTermText(d.details) || "geen termijn"}`;
 }
 
 function rightsSummary(d: QuoteDraft) {
@@ -802,7 +803,7 @@ const PRESETS: { label: string; steps: { label: string; percent: number; moment:
 ];
 
 function PaymentEditor({ d, onChange }: { d: QuoteDraft; onChange: (p: QuoteDetails["payment"]) => void }) {
-  const p = d.details.payment || { steps: [], termDays: 14 };
+  const p = d.details.payment || { steps: [], termWorkdays: 10 };
   const pct = percentTotal(p.steps);
   const total = sumLines(d.oneTime, "o");
   const steps = (s: typeof p.steps) => onChange({ ...p, steps: s });
@@ -826,7 +827,7 @@ function PaymentEditor({ d, onChange }: { d: QuoteDraft; onChange: (p: QuoteDeta
           <span className={`s-small s-mono ${Math.abs(pct - 100) < 0.01 ? "s-muted" : "qb-bad"}`}>Samen {pct}%</span>
         </div>
       </div>
-      <NumberField label="Betaaltermijn (dagen na factuurdatum)" value={p.termDays} onChange={(n) => onChange({ ...p, termDays: n })} />
+      <NumberField label="Betaaltermijn (werkdagen na factuurdatum)" value={p.termWorkdays ?? p.termDays ?? 10} onChange={(n) => onChange({ steps: p.steps, termWorkdays: n })} />
     </>
   );
 }

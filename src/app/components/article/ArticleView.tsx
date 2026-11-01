@@ -429,10 +429,19 @@ function FactsBlock({ block, editing }: { block: BlockOf<"facts">; editing: bool
 function EmbedBlock({ block, title }: { block: BlockOf<"embed">; title: string }) {
   const { t } = useLanguage();
   const src = embedSrc(block.url);
+  // YouTube and Vimeo hear about a visitor only after a click (see the Cookiebeleid).
+  const [loaded, setLoaded] = useState(false);
+  const provider = src?.includes("vimeo") ? "Vimeo" : "YouTube";
   return (
     <figure className="pa-figure pa-wrap">
       <div className="pa-embed">
-        {src && (
+        {src && !loaded && (
+          <button type="button" className="pa-embed-load" onClick={() => setLoaded(true)}>
+            <b>{t.portfolioDetail.videoLoad}</b>
+            <span>{t.portfolioDetail.videoNote(provider)}</span>
+          </button>
+        )}
+        {src && loaded && (
           <iframe
             src={src}
             title={block.caption.trim() || t.portfolioDetail.video(title)}

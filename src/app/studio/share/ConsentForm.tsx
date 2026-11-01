@@ -7,7 +7,7 @@ import { smallJpeg } from "../../lib/webPhoto";
 import { api, ApiError, errorMessage } from "../api";
 import { StudioFonts } from "../fonts";
 import "../gallery/gallery.css";
-import { accentOf, onAccent, styleOf } from "../gallery/styles";
+import { accentOf, fontHref, onAccent, styleOf } from "../gallery/styles";
 import { usePortalLanguage, useT, type PortalText } from "../portal/i18n";
 import { queryClient } from "../queries";
 import "../studio.css";
@@ -361,7 +361,7 @@ function Head({ t }: { t: PortalText }) {
     <Helmet>
       <title>{`${t.consentTitle} · PhotoDeCaffeine`}</title>
       <meta name="robots" content="noindex, nofollow" />
-      {font && <link rel="stylesheet" href={`https://fonts.googleapis.com/css2?family=${font}&display=swap`} />}
+      {font && <link rel="stylesheet" href={fontHref(font)} />}
     </Helmet>
   );
 }

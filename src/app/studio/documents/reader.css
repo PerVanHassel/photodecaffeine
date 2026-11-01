@@ -523,3 +523,5 @@
   .studio .rd-player-row { flex-wrap: wrap; }
   .studio .rd-player-info { order: 9; flex-basis: 100%; padding: 4px 6px 0; }
 }
+
+.rd-note-done { padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, currentColor 10%, transparent); font-size: 12px; white-space: nowrap; }

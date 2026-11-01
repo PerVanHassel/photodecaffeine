@@ -3,6 +3,7 @@ import { Helmet } from "react-helmet-async";
 import { Outlet, useLocation } from "react-router";
 import { Navigation } from "./components/Navigation";
 import { Footer } from "./components/Footer";
+import { CookieBanner } from "./components/CookieBanner";
 import { StickyCta } from "./components/StickyCta";
 import { useLanguage } from "./context/LanguageContext";
 import { usePageScroll } from "./lib/scroll";
@@ -42,6 +43,7 @@ export function Root() {
       </main>
       <Footer />
       <StickyCta />
+      <CookieBanner />
     </>
   );
 }

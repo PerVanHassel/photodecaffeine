@@ -13,7 +13,7 @@ import { ClientGallery } from "../gallery/ClientGallery";
 import { saveUrl, saveZip } from "../gallery/download";
 import { shareLink } from "../gallery/share";
 import { ShareDialog } from "../gallery/ShareDialog";
-import { accentOf, onAccent, styleOf } from "../gallery/styles";
+import { fontHref, accentOf, onAccent, styleOf } from "../gallery/styles";
 import { usePortalLanguage, useT, type PortalText } from "../portal/i18n";
 import { queryClient } from "../queries";
 import "../studio.css";
@@ -224,6 +224,7 @@ function Door({ path, gate, busy, onEnter, admin, onPreview, t, lang }: {
           </button>
         </form>
         <p className="g-small">{t.gatePrivacy} <a href="/privacybeleid" target="_blank" rel="noreferrer">{t.privacyPolicy}</a>.</p>
+        <p className="g-small">{t.gateRights} <a href="/gebruiksrechten" target="_blank" rel="noreferrer">{t.rightsLink}</a>.</p>
         {admin && (
           <div className="g-gate-admin"><span>{t.gateAdmin}</span><button type="button" onClick={onPreview}>{t.gatePreview}</button></div>
         )}
@@ -403,7 +404,7 @@ function Head({ title, font, dark }: { title: string; font?: string; dark?: bool
     <Helmet>
       <title>{`${title} · PhotoDeCaffeine`}</title>
       <meta name="robots" content="noindex, nofollow" />
-      {font && <link rel="stylesheet" href={`https://fonts.googleapis.com/css2?family=${font}&display=swap`} />}
+      {font && <link rel="stylesheet" href={fontHref(font)} />}
       {dark && <meta name="theme-color" content="#0f0e0d" />}
     </Helmet>
   );
