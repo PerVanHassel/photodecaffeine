@@ -37,6 +37,8 @@ type Inside = {
   /** This guest's own hearts. */
   mine: string[];
   guests: number;
+  /** The project's link to Google, once the photos are delivered. */
+  reviewUrl: string;
   /** At a shoot with a consent form: this guest's own children and the photos they pointed them out on. */
   kids: { names: string[]; tags: Record<string, string[]>; consentUrl: string } | null;
 };
@@ -297,6 +299,7 @@ function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, t, la
         } : undefined}
         guest={{ name: data.guest?.name || "", guests: data.guests }}
         actions={data.preview ? { share, sharePhoto } : { toggle, downloadOne, downloadAll, zip, share, sharePhoto }}
+        review={data.reviewUrl ? { url: data.reviewUrl, onOpen: () => { send("review", {}).catch(() => {}); } } : undefined}
         back={
           <>
             <div className="g-guest-top"><span className="g-brand">PhotoDeCaffeine</span><LangSwitch lang={lang} t={t} /></div>

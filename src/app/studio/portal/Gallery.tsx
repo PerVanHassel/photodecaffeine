@@ -1,4 +1,4 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Send } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Link, useParams } from "react-router";
@@ -19,6 +19,7 @@ export function PortalGallery() {
   const t = useT();
   const qc = useQueryClient();
   const data = usePortalProject(id);
+  const engagement = useQuery({ queryKey: ["portal", "engagement", id], queryFn: () => get<{ reviewLink: string; review: unknown }>(`/portal/project/${id}/engagement`) });
   const [submitting, setSubmitting] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [zip, setZip] = useState<{ done: number; total: number } | null>(null);
@@ -82,6 +83,7 @@ export function PortalGallery() {
         favs={favs}
         counts={p.groupHearts}
         actions={{ toggle, downloadOne, downloadAll, zip, submit: () => setSubmitting(true), ...(share && { share: () => setSharing(true), sharePhoto }) }}
+        review={engagement.data && !engagement.data.review ? { url: engagement.data.reviewLink } : undefined}
         back={<Link to={`/portal/project/${p.id}`}><ArrowLeft size={14} /> {p.title}</Link>}
       />
       <SubmitDialog project={p} open={submitting} onClose={() => setSubmitting(false)} count={favs.size} />

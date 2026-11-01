@@ -343,6 +343,10 @@ const RULES: Record<string, Rule> = {
     who: (x) => guestByKey(x.params.token, x.body?.key),
     detail: (x) => imageName(x.body?.imageId),
   },
+  "POST /share/:token/review": {
+    area: "Reviews", action: "Op de reviewknop in de galerij gedrukt", of: SHARE,
+    who: (x) => guestByKey(x.params.token, x.body?.key),
+  },
   "POST /share/:token/download": {
     area: "Galerij", action: "Foto gedownload", of: SHARE,
     who: (x) => guestByKey(x.params.token, x.body?.key),

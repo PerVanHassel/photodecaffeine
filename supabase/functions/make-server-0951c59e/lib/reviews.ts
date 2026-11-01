@@ -1,8 +1,10 @@
 import * as kv from "../kv_store.tsx";
+import { SITE_URL } from "./config.ts";
 import { db, must } from "./db.ts";
 import { fetchReviews, GOOGLE_MAPS_URL, GOOGLE_REVIEW_URL, googleConnection, originalText, saveConnection, starsOf } from "./google.ts";
 import { HttpError } from "./http.ts";
 import { notify } from "./notify.ts";
+import { randomToken } from "./util.ts";
 
 // ============================================================================
 // REVIEWS
@@ -123,6 +125,37 @@ async function settleRequest(projectId: string, reviewId: string | null, previou
 
 export const reviewsForProject = async (projectId: string) => (await loadReviews()).filter((r) => r.projectId === projectId);
 
+/**
+ * A project's one link to Google, which counts the click. The mail and the
+ * button in the gallery hand out the same one, also when nobody was asked yet.
+ */
+export async function reviewToken(projectId: string): Promise<string> {
+  const request = parse(await kv.get(`review:request:${projectId}`));
+  if (request?.token) return request.token;
+  const key = `review:tokenOf:${projectId}`;
+  const known = parse(await kv.get(key));
+  if (known) return known;
+  const token = randomToken();
+  await kv.set(`review:token:${token}`, JSON.stringify(projectId));
+  await kv.set(key, JSON.stringify(token));
+  return token;
+}
+
+export const reviewLink = async (projectId: string) => `${SITE_URL}/review/${await reviewToken(projectId)}`;
+
+/** Someone on the group link pressed the review button: their review can find this project by their name. */
+export async function noteGuestReviewer(projectId: string, name: string) {
+  const key = `review:guests:${projectId}`;
+  const names: string[] = parse(await kv.get(key))?.names || [];
+  await kv.set(key, JSON.stringify({ projectId, at: new Date().toISOString(), names: [...new Set([...names, name])].slice(-200) }));
+}
+
+/** The client's own review of a project: a project can also have reviews from guests of the group link. */
+export async function clientReview(projectId: string, reviews: Review[]): Promise<Review | undefined> {
+  const guests: string[] = parse(await kv.get(`review:guests:${projectId}`))?.names || [];
+  return reviews.find((r) => !guests.some((name) => sameName(name, r.clientName)));
+}
+
 // Google shows a name the way the reviewer set it up: "Thomas Rooijmans",
 // "thomas rooijmans", "Thomas R.". Compare on letters only.
 function nameParts(name: string): string[] {
@@ -147,15 +180,19 @@ function sameName(client: string, reviewer: string): boolean {
 }
 
 /**
- * New reviews from clients the studio asked: when exactly one open request
- * belongs to someone with the reviewer's name, the review joins that project.
+ * New reviews from clients the studio asked, and from guests who pressed the
+ * button in a gallery: when the reviewer's name leads to exactly one project,
+ * the review joins that project.
  */
 async function matchToProjects(fresh: Review[]) {
   const yearAgo = Date.now() - 365 * 86400_000;
   const requests = (await kv.getByPrefix("review:request:"))
     .map(parse)
     .filter((r: any) => r?.projectId && r.status !== "submitted" && Date.parse(r.requestedAt) > yearAgo);
-  if (!requests.length) return;
+  const pressed = (await kv.getByPrefix("review:guests:"))
+    .map(parse)
+    .filter((g: any) => g?.projectId && Date.parse(g.at) > yearAgo);
+  if (!requests.length && !pressed.length) return;
   const clientIds = [...new Set(requests.flatMap((r: any) => r.clientIds || [r.clientId]).filter(Boolean))];
   const clients = (must(await db.from("clients").select("id, name").in("id", clientIds)) || []) as { id: string; name: string }[];
   const nameOf = new Map(clients.map((c) => [c.id, c.name || ""]));
@@ -165,9 +202,11 @@ async function matchToProjects(fresh: Review[]) {
     const hits = requests.filter((req: any) =>
       req.status !== "submitted" && (req.clientIds || [req.clientId]).some((id: string) => sameName(nameOf.get(id) || "", review.clientName))
     );
-    if (hits.length !== 1) continue;
-    Object.assign(review, await linkProject(review, hits[0].projectId));
-    hits[0].status = "submitted";
+    const guests = pressed.filter((g: any) => g.names.some((name: string) => sameName(name, review.clientName)));
+    const projects = new Set<string>([...hits, ...guests].map((x: any) => x.projectId));
+    if (projects.size !== 1) continue;
+    Object.assign(review, await linkProject(review, [...projects][0]));
+    for (const hit of hits) hit.status = "submitted";
   }
 }
 

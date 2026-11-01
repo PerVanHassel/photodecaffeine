@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowRight, ArrowUp, Check, ChevronLeft, ChevronRight, Download, Flame, Grid3x3, Heart, Instagram, MegaphoneOff, Play, Plus, Rows2, Share2, Users, X } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUp, Check, ChevronLeft, ChevronRight, Download, Flame, Grid3x3, Heart, Instagram, MegaphoneOff, Play, Plus, Rows2, Share2, Star, Users, X } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { Helmet } from "react-helmet-async";
 import { useModalFocus } from "../../lib/dialog";
@@ -78,7 +78,7 @@ function tempo(ratios: number[], w: number) {
   return rowBoxes(rows, ratios, w, gap);
 }
 
-export function ClientGallery({ project: p, favs, favNames, counts, guest, kids, actions, back, after, openId, preview }: {
+export function ClientGallery({ project: p, favs, favNames, counts, guest, kids, actions, review, back, after, openId, preview }: {
   project: GalleryProject;
   favs: Set<string>;
   /** Preview: who picked each photo. */
@@ -89,6 +89,8 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
   guest?: { name: string; guests: number };
   kids?: GalleryKids;
   actions: GalleryActions;
+  /** The project's link to Google, once the photos are delivered. In a preview the button does nothing. */
+  review?: { url: string; onOpen?: () => void };
   back: ReactNode;
   /** Under the photos, above the footer. */
   after?: ReactNode;
@@ -184,6 +186,9 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
       {guest && guest.guests > 0 && <div><dt>{t.statGuests}</dt><dd>{guest.guests}</dd></div>}
     </dl>
   );
+  const toReview = review && delivered && p.gallery.length > 0
+    ? preview ? {} : { href: review.url, target: "_blank", rel: "noopener noreferrer", onClick: review.onOpen }
+    : null;
   const intro = (
     <>
       <p className="g-intro">
@@ -194,6 +199,7 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
       {actions.share && !guest && (
         <button type="button" className="g-share-cta" onClick={actions.share}><Users />{t.shareCta}</button>
       )}
+      {toReview && <a className="g-share-cta" {...toReview}><Star aria-hidden="true" />{t.writeGoogleReview}</a>}
     </>
   );
   const title = p.gallerySettings.title || p.title;
@@ -266,6 +272,19 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
           </>
         )}
       </section>
+
+      {toReview && (
+        <section className="g-cta" aria-labelledby="g-review-title">
+          <div className="g-cta-inner">
+            <div>
+              <p className="g-kicker">PhotoDeCaffeine</p>
+              <h2 id="g-review-title" className="g-title">{t.reviewCtaTitle}</h2>
+              <p className="g-intro">{t.reviewCtaBody}</p>
+            </div>
+            <a className="g-btn primary" {...toReview}><Star aria-hidden="true" />{t.writeGoogleReview}</a>
+          </div>
+        </section>
+      )}
 
       {after}
 

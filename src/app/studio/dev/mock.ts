@@ -158,6 +158,7 @@ function shareReply(token: string, key: string, preview: boolean) {
     mine: guest ? guestHearts.filter((h) => h.guestId === guest.id).map((h) => h.imageId) : [],
     kids: guest ? kidsOf(x.id, guest) : null,
     guests: guestList.filter((g) => g.projectId === x.id).length,
+    reviewUrl: guest && ["delivered", "review", "archived"].includes(x.stage) ? "https://www.photodecaffeine.com/review/0123456789abcdef0123456789abcdef" : "",
   };
 }
 
@@ -749,6 +750,10 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     }
     Object.assign(guest, { name: String(body.name).trim(), lastSeenAt: new Date().toISOString() });
     return { key: guest.key, name: guest.name };
+  }
+  if ((r = m(/^\/share\/([^/]+)\/review$/))) {
+    guestOf(r[1], body.key);
+    return { success: true };
   }
   if ((r = m(/^\/share\/([^/]+)\/heart$/))) {
     const { guest } = guestOf(r[1], body.key);

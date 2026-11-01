@@ -10,10 +10,9 @@ import { notify } from "../lib/notify.ts";
 import { clientIdsOf, gallerySigner, loadProject, projectToApi } from "../lib/projects.ts";
 import { db } from "../lib/db.ts";
 import {
-  googleLinks, linkProject, loadReview, loadReviews, removeReview, type Review, reviewsForProject, saveReviews, syncIfStale,
+  clientReview, googleLinks, linkProject, loadReview, loadReviews, removeReview, type Review, reviewLink, reviewsForProject, reviewToken, saveReviews, syncIfStale,
 } from "../lib/reviews.ts";
 import { imageKey, signPaths } from "../lib/storage.ts";
-import { randomToken } from "../lib/util.ts";
 
 declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
 
@@ -80,7 +79,7 @@ async function createRequest(kind: "review" | "feedback", projectId: string, adm
 
   // Asking again keeps the link from the first mail working.
   const previous = JSON.parse((await kv.get(`${kind}:request:${projectId}`)) || "null");
-  const token = isReview ? previous?.token || randomToken() : undefined;
+  const token = isReview ? await reviewToken(projectId) : undefined;
   const request = {
     projectId,
     clientId: project.clientId,
@@ -344,22 +343,21 @@ r.get("/make-server-0951c59e/portal/project/:id/engagement", async (c) => {
     const loaded = await loadProjectForClient(projectId, user);
     if (loaded.error) return c.json({ error: loaded.error }, loaded.status);
 
-    const [reviewReqStr, feedbackReqStr, reviews, feedbackIdsStr, links] = await Promise.all([
+    const [reviewReqStr, feedbackReqStr, reviews, feedbackIdsStr, link] = await Promise.all([
       kv.get(`review:request:${projectId}`),
       kv.get(`feedback:request:${projectId}`),
       reviewsForProject(projectId),
       kv.get(`feedback:byProject:${projectId}`),
-      googleLinks(),
+      reviewLink(projectId),
     ]);
 
     const feedbackIds: string[] = feedbackIdsStr ? JSON.parse(feedbackIdsStr) : [];
-    const request = reviewReqStr ? JSON.parse(reviewReqStr) : null;
-    const review = reviews[0];
+    const review = await clientReview(projectId, reviews);
 
     return c.json({
-      reviewRequested: !!request,
-      // Through the request's link when there is one, so the click is counted.
-      reviewLink: request?.token ? `${SITE_URL}/review/${request.token}` : links.reviewUrl,
+      reviewRequested: !!reviewReqStr,
+      // Through the project's own link, so the click is counted and the review can find the project.
+      reviewLink: link,
       review: review ? { rating: review.rating, text: review.text, source: review.source } : null,
       feedbackRequested: !!feedbackReqStr,
       feedbackCount: feedbackIds.length,
@@ -370,17 +368,22 @@ r.get("/make-server-0951c59e/portal/project/:id/engagement", async (c) => {
   }
 });
 
-// --- POST /review/open — the link in the review mail ---
+// --- POST /review/open — the link in the review mail and the gallery ---
 // Public: the token stands in for a login. Counts the click and says where
-// Google's review form is; an unknown token still gets the form.
+// Google's review form is; an unknown token still gets the form. Nobody asked
+// yet means it came from the gallery: the project now expects this review.
 r.post("/make-server-0951c59e/review/open", async (c) => {
   const { token } = await readBody(c, z.object({ token: z.string().regex(/^[a-f0-9]{32}$/, "Ongeldige link.") }));
   const links = await googleLinks();
   const projectId = JSON.parse((await kv.get(`review:token:${token}`)) || "null");
   const key = `review:request:${projectId}`;
-  const request = projectId ? JSON.parse((await kv.get(key)) || "null") : null;
+  const asked = projectId ? JSON.parse((await kv.get(key)) || "null") : null;
+  const row = projectId && !asked ? await loadProject(projectId).catch(() => null) : null;
+  const now = new Date().toISOString();
+  const request = row
+    ? { projectId, clientId: clientIdsOf(row)[0] || "", clientIds: clientIdsOf(row), kind: "review", requestedAt: now, requestedBy: "Knop in de galerij", token }
+    : asked;
   if (request?.token === token) {
-    const now = new Date().toISOString();
     await kv.set(key, JSON.stringify({
       ...request,
       status: request.status === "submitted" ? "submitted" : "clicked",

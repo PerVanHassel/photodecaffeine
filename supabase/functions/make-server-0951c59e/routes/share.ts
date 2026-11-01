@@ -8,6 +8,7 @@ import { type Env, fail, readBody, text, uuid, z } from "../lib/http.ts";
 import { notify } from "../lib/notify.ts";
 import { childTagEmail } from "../lib/projectEmails.ts";
 import { clientDownloads, downloadLink, gallerySigner, heldBack, loadProject, type ProjectRow, projectToApi, type Signer } from "../lib/projects.ts";
+import { noteGuestReviewer, reviewLink } from "../lib/reviews.ts";
 import { guestCount, guestHearts, VISIT_GAP_MS } from "../lib/shares.ts";
 import { signPaths } from "../lib/storage.ts";
 
@@ -162,6 +163,8 @@ r.get(S, async (c) => {
     mine: mine ? (must(mine) || []).map((h: any) => h.image_id) : [],
     kids,
     guests,
+    // Once the photos are delivered. The studio looking along should not count as a click.
+    reviewUrl: guest && ["delivered", "review", "archived"].includes(row.stage) ? await reviewLink(row.id) : "",
   });
 });
 
@@ -194,6 +197,16 @@ r.post(`${S}/heart`, async (c) => {
   const res = await db.from("gallery_guest_hearts").select("image_id", { count: "exact", head: true }).eq("image_id", b.imageId);
   must(res);
   return c.json({ count: res.count || 0 });
+});
+
+// --- the review button: the link itself counts the click, this says who it was ---
+r.post(`${S}/review`, async (c) => {
+  const share = await openShare(c.req.param("token"));
+  const { key } = await readBody(c, z.object({ key: z.string() }));
+  const guest = await mustGuest(share, key);
+  await noteGuestReviewer(share.project_id, guest.name);
+  await seen(guest);
+  return c.json({ success: true });
 });
 
 // --- "my child is on this photo" ---

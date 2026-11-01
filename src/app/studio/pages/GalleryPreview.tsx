@@ -23,7 +23,7 @@ export function GalleryPreviewPage() {
         <Link to={`/admin/project/${p.id}?tab=gallery`} className="s-back"><ArrowLeft size={14} /> Terug naar project</Link>
         <span className="s-small s-muted">Voorbeeld zoals de klant het ziet · stijl {styleOf(p).name}</span>
       </div>
-      <ClientGallery project={shown} favs={new Set(Object.keys(favs))} favNames={favs} actions={{}} back={null} preview />
+      <ClientGallery project={shown} favs={new Set(Object.keys(favs))} favNames={favs} actions={{}} review={{ url: "" }} back={null} preview />
     </div>
   );
 }
