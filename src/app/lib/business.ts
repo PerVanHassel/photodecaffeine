@@ -70,6 +70,6 @@ export const BUSINESS_JSON_LD = {
   sameAs: [
     "https://www.instagram.com/photodecaffeine",
     "https://www.linkedin.com/company/photodecaffeine/",
-    "https://www.tiktok.com/@photodecaffeiene",
+    "https://www.tiktok.com/@photodecaffeine",
   ],
 };

@@ -29,7 +29,7 @@ export function Footer() {
       icon: <Linkedin size={18} strokeWidth={1.5} />,
     },
     {
-      href: "https://www.tiktok.com/@photodecaffeiene",
+      href: "https://www.tiktok.com/@photodecaffeine",
       label: "TikTok",
       icon: <TikTokIcon className="w-[18px] h-[18px]" />,
     },
