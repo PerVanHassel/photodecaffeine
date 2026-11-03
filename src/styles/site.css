@@ -33,7 +33,13 @@
 @media (max-width: 767px) {
   .pdc-hero-bg img { opacity: 0.45; }
   .pdc-hero-shade { background: linear-gradient(to bottom, rgba(10,5,1,0.7) 0%, rgba(10,5,1,0.85) 60%, rgba(10,5,1,0.95) 100%); }
-  .pdc-hero-phone-photo { display: block; }
+  /* Fade the photo out. A solid end colour showed a hard line, because it
+     did not match the hero background under it. */
+  .pdc-hero-phone-photo {
+    display: block;
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 50%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 50%, transparent 100%);
+  }
   .pdc-hero-content { padding: 0 24px 60px; justify-content: flex-end; }
   .pdc-hero-grid { display: flex; flex-direction: column; gap: 0; align-items: stretch; }
   .pdc-hero-label { margin-bottom: 20px; }
