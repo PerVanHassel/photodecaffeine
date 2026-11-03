@@ -1,21 +1,22 @@
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
-import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
   ArrowDown, ArrowUp, Bold, Columns2, Copy, Film, GripVertical, Heading1, ImagePlus, Images, Italic, LayoutGrid,
-  LayoutTemplate, Link2, ListChecks, Plus, Quote, Trash2, Type, X,
+  LayoutTemplate, Link2, ListChecks, Plus, Quote, Shuffle, Trash2, Type, X,
 } from "lucide-react";
 import { useId, useRef, type ReactNode } from "react";
 import {
-  BLOCK_TYPES, embedSrc, heroCover, isVideoUrl, LAYOUTS, mediaItem, seriesRest,
-  type ArticlePage, type ArticleTheme, type Block, type BlockOf, type BlockType, type HeroStyle, type LetterCase, type MediaItem, type MediaLayout,
-  type TextLook, type TextStyle,
+  BLOCK_TYPES, blockShape, embedSrc, heroCover, isVideoUrl, LAYOUTS, mediaItem, pointOf, seriesRest, SHAPE_RATIO, shapesFor,
+  type ArticlePage, type ArticleTheme, type Block, type BlockOf, type BlockType, type HeroStyle, type LetterCase, type MediaGap, type MediaItem, type MediaLayout,
+  type MediaShape, type TextLook, type TextStyle,
 } from "../../../lib/articlePage";
 import { SEO_LIMITS, seoMeta } from "../../../lib/articlePage";
 import { fontDef, PAIRS, pageFaces, pairOf, type FontDef } from "../../../lib/typefaces";
 import { MediaGrid } from "../../components/MediaGrid";
 import { Button, Field, Input, Photo, Segmented, Textarea, TextField } from "../../ui";
 import type { PickRequest } from "./MediaPicker";
+import { FocusPicker } from "./focus";
 import { AdobeKitField, FontPicker, useFontDef, WeightPicker } from "./fonts";
 import { HeroSketch, LayoutSketch } from "./schematics";
 import { addPhotos, moveBlockTo, updateBlock, withPage, type Commit, type Draft } from "./state";
@@ -287,6 +288,37 @@ export function HeroFields({ draft, page, commit, pick, compact }: PanelProps & 
           </div>
         </Field>
       )}
+      {cover && page.hero !== "plain" && <CoverFields cover={cover} page={page} commit={commit} />}
+    </>
+  );
+}
+
+/**
+ * The cover's shape and what stays in view. Groot beeld fills the screen and
+ * so always crops; the other two show the cover whole unless a shape is chosen.
+ */
+function CoverFields({ cover, page, commit }: { cover: MediaItem; page: ArticlePage; commit: Commit }) {
+  const cinema = page.hero === "cinema";
+  const shape = page.heroShape && page.heroShape !== "grid" ? page.heroShape : "natural";
+  const frame = cinema ? 16 / 9 : shape === "natural" ? undefined : SHAPE_RATIO[shape];
+  return (
+    <>
+      {!cinema && (
+        <Field label="Vorm van de omslag" hint={shape === "natural" ? "In zijn eigen verhouding, er valt niets weg." : "Bijgesneden tot deze vorm."}>
+          <div className="s-chips" role="group" aria-label="Vorm van de omslag">
+            {(["natural", "3:2", "4:5", "1:1", "16:9"] as const).map((s) => (
+              <button key={s} type="button" className="s-chip" aria-pressed={shape === s}
+                onClick={() => commit(withPage((p) => ({ ...p, heroShape: s === "natural" ? undefined : s })))}>{SHAPE_LABELS[s]}</button>
+            ))}
+          </div>
+        </Field>
+      )}
+      {frame && (
+        <Field label="Wat blijft in beeld" hint={cinema ? "Groot beeld vult het scherm en snijdt de omslag bij. Het lichte deel is wat een computer toont." : "Klik op de foto. Het lichte deel komt op de pagina."}>
+          <FocusPicker src={cover.url} video={cover.kind === "video"} point={page.coverPoint ?? { x: 50, y: 50 }} frame={frame}
+            onChange={(coverPoint) => commit(withPage((p) => ({ ...p, coverPoint })), "coverPoint")} />
+        </Field>
+      )}
     </>
   );
 }
@@ -393,12 +425,34 @@ function HeadingForm({ block, set, pick, draft, faces }: { block: BlockOf<"headi
   );
 }
 
-const LAYOUT_ORDER: MediaLayout[] = ["full", "wide", "inset", "duo", "offset", "trio", "mosaic", "slices", "marquee"];
+const LAYOUT_ORDER: MediaLayout[] = ["full", "wide", "inset", "duo", "offset", "trio", "mosaic", "free", "slices", "marquee"];
+
+export const SHAPE_LABELS: Record<MediaShape, string> = { natural: "Origineel", "16:9": "16:9", "3:2": "3:2", "1:1": "Vierkant", "4:5": "4:5 staand", grid: "Strak raster" };
+
+const SHAPE_HINTS: Record<"natural" | "grid" | "fixed", string> = {
+  natural: "Elke foto in zijn eigen verhouding. Er valt niets weg.",
+  grid: "Een strak raster zonder gaten. Elke foto wordt bijgesneden; kies hieronder per foto wat in beeld blijft.",
+  fixed: "Alle foto's in deze vorm. Kies hieronder per foto wat in beeld blijft.",
+};
 
 function MediaForm({ block, set, pick }: { block: BlockOf<"media">; set: Setter; pick: PanelProps["pick"] }) {
   const { min, max } = LAYOUTS[block.layout];
-  const setItems = (fn: (items: MediaItem[]) => MediaItem[]) => set<BlockOf<"media">>((b) => ({ ...b, items: fn(b.items) }));
+  const setItems = (fn: (items: MediaItem[]) => MediaItem[], key?: string) => set<BlockOf<"media">>((b) => ({ ...b, items: fn(b.items) }), key);
   const count = min === max ? `${min} ${min === 1 ? "foto" : "foto's"}` : `${min} tot ${max} foto's`;
+  const shapes = shapesFor(block.layout);
+  const shape = blockShape(block);
+  // Whether a photo loses part of itself, and the frame it is cut to (the accordion's changes as it opens).
+  const crops = block.layout === "slices" || shape !== "natural";
+  const frame = shape === "natural" || shape === "grid" ? undefined : SHAPE_RATIO[shape];
+  const free = block.layout === "free";
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
+  const ids = block.items.map((i) => i.url);
+  function onDragEnd(e: DragEndEvent) {
+    if (!e.over || e.active.id === e.over.id) return;
+    const from = ids.indexOf(String(e.active.id));
+    const to = ids.indexOf(String(e.over.id));
+    if (from >= 0 && to >= 0) setItems((it) => arrayMove(it, from, to));
+  }
   return (
     <>
       <Field label="Opmaak">
@@ -411,50 +465,113 @@ function MediaForm({ block, set, pick }: { block: BlockOf<"media">; set: Setter;
           ))}
         </div>
       </Field>
-      <Field label={`Foto's (${block.items.length})`} hint={`Deze opmaak toont ${count}.${block.items.length > max ? ` De laatste ${block.items.length - max} staan er nu niet op.` : ""}`}>
-        <div className="pm-thumbs">
-          {block.items.map((item, i) => (
-            <div key={`${item.url}-${i}`} className={`pm-thumb${i >= max ? " off" : ""}`}>
-              <Photo src={item.url} video={item.kind === "video"} caption={String(i + 1)} />
-              <div className="pm-thumb-tools">
-                <button type="button" className="s-fav" aria-label="Naar voren" disabled={i === 0}
-                  onClick={() => setItems((it) => { const n = [...it]; [n[i - 1], n[i]] = [n[i], n[i - 1]]; return n; })}><ArrowUp style={{ transform: "rotate(-90deg)" }} /></button>
-                <button type="button" className="s-fav" aria-label="Uit dit blok halen" onClick={() => setItems((it) => it.filter((_, j) => j !== i))}><X /></button>
-              </div>
+      {shapes.length > 0 && (
+        <Field label="Vorm van de foto's" hint={SHAPE_HINTS[shape === "natural" || shape === "grid" ? shape : "fixed"]}>
+          <div className="s-chips" role="group" aria-label="Vorm van de foto's">
+            {shapes.map((s) => (
+              <button key={s} type="button" className="s-chip" aria-pressed={shape === s}
+                onClick={() => set<BlockOf<"media">>((b) => ({ ...b, shape: s === "natural" ? undefined : s }))}>{SHAPE_LABELS[s]}</button>
+            ))}
+          </div>
+        </Field>
+      )}
+      {block.layout === "slices" && (
+        <p className="s-small s-faint">De accordeon snijdt altijd bij: de stroken worden breder en smaller. Kies hieronder per foto wat in beeld blijft.</p>
+      )}
+      {max > 1 && (
+        <Field label="Ruimte tussen de foto's">
+          <Segmented<MediaGap | "auto"> label="Ruimte tussen de foto's" value={block.gap || "auto"}
+            onChange={(g) => set<BlockOf<"media">>((b) => ({ ...b, gap: g === "auto" ? undefined : g }))}
+            options={[{ value: "auto", label: "Standaard" }, { value: "none", label: "Geen" }, { value: "s", label: "Smal" }, { value: "l", label: "Ruim" }]} />
+        </Field>
+      )}
+      <Field label={`Foto's (${block.items.length})`}
+        hint={`Sleep om de volgorde te veranderen. Deze opmaak toont ${count}.${block.items.length > max ? ` De laatste ${block.items.length - max} staan er nu niet op.` : ""}`}>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+          <SortableContext items={ids} strategy={rectSortingStrategy}>
+            <div className="pm-thumbs">
+              {block.items.map((item, i) => (
+                <SortableThumb key={item.url} item={item} n={i + 1} off={i >= max} onRemove={() => setItems((it) => it.filter((_, j) => j !== i))} />
+              ))}
+              <button type="button" className="pm-thumb-add" onClick={() => pick({
+                title: "Foto's voor dit blok",
+                multiple: true,
+                accept: "any",
+                selected: block.items.map((i) => i.url),
+                // Keeps what was set per photo when it stays in the block.
+                onPick: (urls) => setItems((it) => urls.map((u) => it.find((x) => x.url === u) ?? mediaItem(u))),
+              })}>
+                <Plus />
+                <span>Kiezen</span>
+              </button>
             </div>
-          ))}
-          <button type="button" className="pm-thumb-add" onClick={() => pick({
-            title: "Foto's voor dit blok",
-            multiple: true,
-            accept: "any",
-            selected: block.items.map((i) => i.url),
-            // Keeps what was set per photo when it stays in the block.
-            onPick: (urls) => setItems((it) => urls.map((u) => it.find((x) => x.url === u) ?? mediaItem(u))),
-          })}>
-            <Plus />
-            <span>Kiezen</span>
-          </button>
-        </div>
+          </SortableContext>
+        </DndContext>
       </Field>
-      {block.items.slice(0, max).map((item, i) => <ItemSettings key={`${item.url}-${i}`} item={item} n={i + 1}
-        onChange={(patch) => setItems((it) => it.map((x, j) => (j === i ? { ...x, ...patch } : x)))} />)}
+      {free && block.items.some((i) => i.span || i.place || i.drop !== undefined) && (
+        <Button size="sm" variant="ghost" icon={<Shuffle />} style={{ alignSelf: "flex-start" }}
+          onClick={() => setItems((it) => it.map(({ span: _s, place: _p, drop: _d, ...x }) => x))}>Plekken weer automatisch</Button>
+      )}
+      {block.items.slice(0, max).map((item, i) => <ItemSettings key={`${item.url}-${i}`} item={item} n={i + 1} crops={crops} frame={frame} free={free}
+        onChange={(patch, key) => setItems((it) => it.map((x, j) => (j === i ? { ...x, ...patch } : x)), key && `${key}${i}`)} />)}
       <TextField label="Onderschrift" lang="nl" spellCheck value={block.caption} hint="Mag leeg blijven."
         onChange={(e) => set<BlockOf<"media">>((b) => ({ ...b, caption: e.target.value }), "caption")} />
     </>
   );
 }
 
-/** Per photo: what it shows, and which part stays in view when it is cropped. */
-function ItemSettings({ item, n, onChange }: { item: MediaItem; n: number; onChange: (patch: Partial<MediaItem>) => void }) {
+/** A photo in a block's list, to drag into another place. */
+function SortableThumb({ item, n, off, onRemove }: { item: MediaItem; n: number; off: boolean; onRemove: () => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.url });
+  return (
+    <div ref={setNodeRef} className={`pm-thumb pm-thumb--drag${off ? " off" : ""}${isDragging ? " is-dragging" : ""}`}
+      style={{ transform: CSS.Transform.toString(transform), transition }} {...attributes} {...listeners} aria-label={`Foto ${n}, sleep om te verplaatsen`}>
+      <Photo src={item.url} video={item.kind === "video"} caption={String(n)} />
+      <div className="pm-thumb-tools">
+        <button type="button" className="s-fav" aria-label={`Foto ${n} uit dit blok halen`} onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} onClick={onRemove}><X /></button>
+      </div>
+    </div>
+  );
+}
+
+const SPANS = [{ value: "auto", label: "Auto" }, { value: "4", label: "Klein" }, { value: "6", label: "Half" }, { value: "8", label: "Groot" }, { value: "12", label: "Heel" }];
+
+/** Per photo: what it shows, what stays in view when it is cropped, and in the free layout where it goes. */
+function ItemSettings({ item, n, crops, frame, free, onChange }: {
+  item: MediaItem; n: number; crops: boolean; frame?: number; free: boolean;
+  onChange: (patch: Partial<MediaItem>, key?: string) => void;
+}) {
+  const noAlt = item.kind === "image" && !item.alt?.trim();
+  const parts = [free && "plek", crops && "uitsnede", item.kind === "image" ? "beschrijving" : "geluid"].filter(Boolean).join(", ");
   return (
     // A photo without a description opens by itself, so the empty field is in view.
-    <details className="pm-item" open={item.kind === "image" && !item.alt?.trim() ? true : undefined}>
-      <summary>Foto {n}: beschrijving en uitsnede{item.kind === "image" && !item.alt?.trim() ? " (nog geen beschrijving)" : ""}</summary>
+    <details className="pm-item" open={noAlt || undefined}>
+      <summary>Foto {n}: {parts}{noAlt ? " (nog geen beschrijving)" : ""}</summary>
       <div className="s-stack" style={{ paddingTop: 10 }}>
-        <Field label="Wat blijft in beeld bij bijsnijden">
-          <Segmented<"top" | "center" | "bottom"> label="Uitsnede" value={item.focus || "center"} onChange={(focus) => onChange({ focus })}
-            options={[{ value: "top", label: "Boven" }, { value: "center", label: "Midden" }, { value: "bottom", label: "Onder" }]} />
-        </Field>
+        {free && (
+          <>
+            <Field label="Breedte">
+              <Segmented<string> label="Breedte" value={item.span ? String(item.span) : "auto"} options={SPANS}
+                onChange={(v) => onChange({ span: v === "auto" ? undefined : Number(v) })} />
+            </Field>
+            <Field label="Plek">
+              <Segmented<"auto" | "start" | "center" | "end"> label="Plek" value={item.place || "auto"}
+                onChange={(v) => onChange({ place: v === "auto" ? undefined : v })}
+                options={[{ value: "auto", label: "Auto" }, { value: "start", label: "Links" }, { value: "center", label: "Midden" }, { value: "end", label: "Rechts" }]} />
+            </Field>
+            <Field label="Hoogte" hint="Lager laat een foto verspringen ten opzichte van die ernaast.">
+              <Segmented<"auto" | "0" | "1" | "2"> label="Hoogte" value={item.drop === undefined ? "auto" : (String(item.drop) as "0" | "1" | "2")}
+                onChange={(v) => onChange({ drop: v === "auto" ? undefined : (Number(v) as 0 | 1 | 2) })}
+                options={[{ value: "auto", label: "Auto" }, { value: "0", label: "Bovenaan" }, { value: "1", label: "Iets lager" }, { value: "2", label: "Lager" }]} />
+            </Field>
+          </>
+        )}
+        {crops && (
+          <Field label="Wat blijft in beeld" hint={frame ? "Klik op de foto. Het lichte deel komt op de pagina." : "Klik op wat in beeld moet blijven."}>
+            <FocusPicker src={item.url} video={item.kind === "video"} point={pointOf(item)} frame={frame}
+              onChange={(point) => onChange({ point, focus: undefined }, "point")} />
+          </Field>
+        )}
         {item.kind === "image" ? (
           <TextField label="Wat staat erop" hint="Voor wie de foto niet kan zien. Mag leeg." lang="nl" spellCheck value={item.alt || ""} onChange={(e) => onChange({ alt: e.target.value })} />
         ) : (

@@ -137,7 +137,11 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
   const coverImage = p.gallery.find((g) => g.id === p.gallerySettings.coverImageId) || p.gallery.find((g) => !isVideo(g.fileName || g.url));
   const cover = p.gallerySettings.coverUrl || coverImage?.url || "";
   // Arena opens with the cover and the next few photos side by side, like a burst.
-  const strip = [cover, ...p.gallery.filter((g) => g !== coverImage && !isVideo(g.fileName || g.url)).slice(0, 3).map((g) => g.url)].filter(Boolean);
+  // The frames share the width by their shapes, so standing sport photos are not cut down to landscape.
+  const strip = [
+    ...(cover ? [{ url: cover, r: coverImage && cover === coverImage.url ? ratioOf(coverImage) : undefined }] : []),
+    ...p.gallery.filter((g) => g !== coverImage && !isVideo(g.fileName || g.url)).slice(0, 3).map((g) => ({ url: g.url, r: ratioOf(g) })),
+  ];
   const shoot = p.events?.find((e) => e.kind === "shoot");
   const kicker = p.gallerySettings.subtitle || (shoot ? fmt(shoot.startsAt, "d MMMM yyyy") : "");
 
@@ -335,7 +339,7 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
 // ---------------------------------------------------------------------------
 
 function Hero({ style, title, kicker, cover, strip, intro, facts, third, count, favCount, onScroll, t }: {
-  style: StyleDef; title: string; kicker: string; cover: string; strip: string[]; intro: ReactNode; facts: ReactNode;
+  style: StyleDef; title: string; kicker: string; cover: string; strip: { url: string; r?: number }[]; intro: ReactNode; facts: ReactNode;
   /** Catalogus's third figure, as [label, value]. */
   third: [string, string];
   count: number; favCount: number; onScroll: () => void; t: T;
@@ -387,7 +391,7 @@ function Hero({ style, title, kicker, cover, strip, intro, facts, third, count, 
           <h1 className="g-title">{title}</h1>
           {strip.length > 0 && (
             <div className="g-burst">
-              {strip.map((src, k) => <figure key={k} style={{ "--i": k } as CSSProperties}><img src={src} alt="" /></figure>)}
+              {strip.map((s, k) => <figure key={k} style={{ "--i": k, "--r": s.r } as CSSProperties}><img src={s.url} alt="" /></figure>)}
             </div>
           )}
           <div className="g-head">{intro}</div>

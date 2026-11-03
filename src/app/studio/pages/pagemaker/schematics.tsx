@@ -17,10 +17,11 @@ export function LayoutSketch({ layout }: { layout: MediaLayout }) {
     case "full": return <Box>{r(0, 6, 64, 28, P, 0)}</Box>;
     case "wide": return <Box>{r(6, 6, 52, 28)}</Box>;
     case "inset": return <Box>{r(16, 6, 32, 28)}</Box>;
-    case "duo": return <Box>{r(6, 5, 25, 30)}{r(33, 5, 25, 30)}</Box>;
+    case "duo": return <Box>{r(6, 9, 16.5, 22)}{r(24.5, 9, 33.5, 22)}</Box>;
     case "offset": return <Box>{r(6, 4, 30, 22)}{r(41, 14, 17, 22)}</Box>;
-    case "trio": return <Box>{r(6, 7, 16, 26)}{r(24, 7, 16, 26)}{r(42, 7, 16, 26)}</Box>;
-    case "mosaic": return <Box>{r(6, 5, 33, 30)}{r(41, 5, 17, 14)}{r(41, 21, 17, 14)}</Box>;
+    case "trio": return <Box>{r(6, 12, 12, 16)}{r(20, 12, 24, 16)}{r(46, 12, 12, 16)}</Box>;
+    case "mosaic": return <Box>{r(6, 4, 28, 17)}{r(36, 4, 22, 17)}{r(6, 23, 11, 14)}{r(19, 23, 25, 14)}{r(46, 23, 12, 14)}</Box>;
+    case "free": return <Box>{r(6, 3, 30, 19)}{r(42, 11, 16, 22)}{r(14, 26, 22, 12)}</Box>;
     case "slices": return <Box>{r(6, 5, 24, 30)}{r(32, 5, 8, 30)}{r(42, 5, 7, 30)}{r(51, 5, 7, 30)}</Box>;
     case "marquee": return <Box>{r(-6, 9, 18, 22)}{r(14, 9, 14, 22)}{r(30, 9, 20, 22)}{r(52, 9, 18, 22)}</Box>;
   }
@@ -40,6 +41,7 @@ export function TemplateSketch({ id }: { id: TemplateId }) {
   const text = (y: number) => <>{r(18, y, 30, 2, T)}{r(18, y + 4, 26, 2, T)}</>;
   switch (id) {
     case "verhaal": return <Box h={72}>{r(0, 0, 64, 20, P, 0)}{text(25)}{r(0, 34, 64, 14, P, 0)}{text(53)}{r(6, 62, 25, 10)}{r(33, 62, 25, 10)}</Box>;
+    case "tijdschrift": return <Box h={72}>{r(6, 4, 40, 6, T)}{r(30, 11, 28, 16)}{text(31)}{r(6, 40, 28, 17)}{r(40, 46, 18, 22)}{r(6, 62, 24, 2, T)}{r(6, 66, 18, 2, T)}</Box>;
     case "fotoserie": return <Box h={72}>{r(6, 4, 38, 5, T)}{r(30, 11, 28, 14)}{r(6, 30, 52, 14)}{r(6, 48, 28, 12)}{r(38, 54, 20, 14)}</Box>;
     case "case": return <Box h={72}>{r(6, 6, 22, 4, T)}{r(6, 12, 16, 4, T)}{r(34, 3, 24, 22)}{r(6, 30, 52, 0.8, T)}{r(6, 33, 10, 2, T)}{r(20, 33, 10, 2, T)}{r(34, 33, 10, 2, T)}{r(6, 40, 28, 18)}{r(40, 44, 18, 2, T)}{r(40, 48, 14, 2, T)}{r(6, 62, 33, 10)}{r(41, 62, 17, 10)}</Box>;
     case "film": return <Box h={72}>{r(6, 4, 40, 6, T)}{r(6, 14, 52, 26, "#17130f")}<path d="M29 22l8 5-8 5z" fill="#fff" />{text(45)}{r(6, 56, 25, 14)}{r(33, 56, 25, 14)}</Box>;

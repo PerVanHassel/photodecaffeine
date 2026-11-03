@@ -13,13 +13,37 @@ export interface MediaItem {
   kind: MediaKind;
   /** What the photo shows, for screen readers. Empty: the article title and a number. */
   alt?: string;
-  /** Which part stays in view when the layout crops the photo. */
+  /** Older pages: which part stays in view when the photo is cropped. `point` replaces it. */
   focus?: "top" | "center" | "bottom";
+  /** The point that stays in view when the photo is cropped. */
+  point?: FocusPoint;
   /** Videos: play with sound and controls instead of looping silently. */
   sound?: boolean;
+  /** The free layout: width in twelfths, where in the row, and how far it drops below the row's top. Empty: chosen from the photo's shape. */
+  span?: number;
+  place?: "start" | "center" | "end";
+  drop?: 0 | 1 | 2;
 }
 
-export type MediaLayout = "full" | "wide" | "inset" | "duo" | "offset" | "trio" | "mosaic" | "slices" | "marquee";
+/** A point in a photo, in percent from the left and from the top. */
+export interface FocusPoint {
+  x: number;
+  y: number;
+}
+
+export type MediaLayout = "full" | "wide" | "inset" | "duo" | "offset" | "trio" | "mosaic" | "slices" | "marquee" | "free";
+
+/**
+ * The shape a media block gives its photos: each its own ("natural", the
+ * default) or one shape for all, cropped around each photo's point. "grid" is
+ * the mosaic's tight grid, which crops to fit.
+ */
+export type MediaShape = "natural" | "16:9" | "3:2" | "1:1" | "4:5" | "grid";
+
+export const SHAPE_RATIO: Record<Exclude<MediaShape, "natural" | "grid">, number> = { "16:9": 16 / 9, "3:2": 3 / 2, "1:1": 1, "4:5": 4 / 5 };
+
+/** Room between the photos of a block. Empty: the layout's own. */
+export type MediaGap = "none" | "s" | "m" | "l";
 
 export type TextStyle = "body" | "lead" | "statement";
 
@@ -43,7 +67,7 @@ export interface TextLook {
 export type Block =
   | { id: string; type: "text"; style: TextStyle; text: string; look?: TextLook }
   | { id: string; type: "heading"; text: string; inline: MediaItem | null; after: number; look?: TextLook }
-  | { id: string; type: "media"; layout: MediaLayout; items: MediaItem[]; caption: string }
+  | { id: string; type: "media"; layout: MediaLayout; items: MediaItem[]; caption: string; shape?: MediaShape; gap?: MediaGap }
   | { id: string; type: "split"; media: MediaItem | null; heading: string; text: string; side: "left" | "right"; look?: TextLook }
   | { id: string; type: "quote"; text: string; name: string; role: string; look?: TextLook }
   | { id: string; type: "facts"; items: Fact[] }
@@ -60,7 +84,7 @@ export interface Fact {
 
 export type HeroStyle = "cinema" | "offset" | "split" | "plain";
 export type ArticleTheme = "dark" | "light";
-export type TemplateId = "verhaal" | "fotoserie" | "case" | "film" | "leeg";
+export type TemplateId = "verhaal" | "fotoserie" | "tijdschrift" | "case" | "film" | "leeg";
 export type TypeId = "huisstijl" | "premiere" | "galerie" | "magazine" | "atelier" | "affiche" | "elegant" | "panorama" | "vrolijk";
 
 export interface ArticlePage {
@@ -78,6 +102,9 @@ export interface ArticlePage {
   titleLook?: TextLook;
   /** A line under the title. */
   subtitle: string;
+  /** The header photo's shape (offset and split; cinema always fills the screen) and the point that stays in view. */
+  heroShape?: MediaShape;
+  coverPoint?: FocusPoint;
   blocks: Block[];
 }
 
@@ -107,6 +134,8 @@ export interface ArticleSource {
   /** What Google shows; empty: made from the title and the first paragraph. */
   seoTitle?: string;
   seoDescription?: string;
+  /** Each photo's shape (width / height) by URL, measured in the page maker. */
+  shapes?: Record<string, number>;
 }
 
 // ---------------------------------------------------------------------------
@@ -124,6 +153,7 @@ export const LAYOUTS: Record<MediaLayout, { label: string; min: number; max: num
   mosaic: { label: "Mozaïek", min: 3, max: 6 },
   slices: { label: "Accordeon", min: 3, max: 6 },
   marquee: { label: "Loopband", min: 4, max: 12 },
+  free: { label: "Vrij", min: 1, max: 8 },
 };
 
 export const isVideoUrl = (url: string) => /\.(mp4|mov|m4v|webm)$/i.test(url.split("?")[0]);
@@ -139,6 +169,65 @@ export function effectiveLayout(block: BlockOf<"media">): MediaLayout {
 
 /** The items a media block actually shows. */
 export const shownItems = (block: BlockOf<"media">) => block.items.slice(0, LAYOUTS[effectiveLayout(block)].max);
+
+/**
+ * The shapes a layout can give its photos. The accordion always crops (its
+ * slices change width as they open) and the running row always shows them
+ * whole, so those two have no choice.
+ */
+export function shapesFor(layout: MediaLayout): MediaShape[] {
+  if (layout === "slices" || layout === "marquee") return [];
+  const all: MediaShape[] = ["natural", "16:9", "3:2", "1:1", "4:5"];
+  return layout === "mosaic" ? [...all, "grid"] : all;
+}
+
+/** The shape a block's photos get: its own choice when the layout has it, else each photo's own. */
+export function blockShape(block: BlockOf<"media">): MediaShape {
+  const shape = block.shape ?? "natural";
+  return shapesFor(effectiveLayout(block)).includes(shape) ? shape : "natural";
+}
+
+/** The point that stays in view when a photo is cropped. Older pages chose top, middle or bottom. */
+export function pointOf(item: { point?: FocusPoint; focus?: MediaItem["focus"] }): FocusPoint {
+  if (item.point) return item.point;
+  return { x: 50, y: item.focus === "top" ? 18 : item.focus === "bottom" ? 82 : 50 };
+}
+
+/** A shape as landscape, square or portrait; unknown shapes count as anything. */
+export const isLandscape = (r?: number) => r === undefined || r >= 1.2;
+export const isPortrait = (r?: number) => r === undefined || r < 0.9;
+
+export interface FreePlace {
+  span: number;
+  place: "start" | "center" | "end";
+  /** The first of its twelve columns. */
+  column: number;
+  drop: 0 | 1 | 2;
+}
+
+/**
+ * Where each photo goes in the free layout: what the studio chose, and for the
+ * rest a magazine rhythm. Photos go in pairs, the first to one side and the
+ * second to the other, lower; the next pair mirrors it. Landscapes get more
+ * columns than portraits, and a photo left alone in the last pair is centred.
+ */
+export function freePlaces(items: MediaItem[], ratioOf: (url: string) => number | undefined): FreePlace[] {
+  const autoSpan = (r = 1.5) => (r >= 1.6 ? 8 : r >= 1.2 ? 7 : 5);
+  const spans = items.map((item) => Math.max(3, Math.min(12, Math.round(item.span ?? autoSpan(ratioOf(item.url))))));
+  return items.map((item, i) => {
+    const span = spans[i];
+    const pair = Math.floor(i / 2);
+    const second = i % 2 === 1;
+    const alone = !second && i === items.length - 1;
+    const mirrored = pair % 2 === 1;
+    const place = item.place ?? (alone ? "center" : second !== mirrored ? "end" : "start");
+    // The second of a pair only drops when it shares the row with the first.
+    const fits = second && spans[i - 1] + span <= 12;
+    const drop = item.drop ?? (fits ? 2 : 0);
+    const column = place === "start" ? 1 : place === "end" ? 13 - span : Math.floor((12 - span) / 2) + 1;
+    return { span, place, column, drop };
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Text
@@ -334,9 +423,17 @@ const RECIPES: Record<Exclude<TemplateId, "leeg">, Recipe> = {
     hero: "offset",
     theme: "dark",
     type: "galerie",
-    beats: [{ layout: "wide", count: 1 }, { layout: "offset", count: 2 }, { layout: "slices", count: 4 }, { layout: "full", count: 1 }, { layout: "trio", count: 3 }, { layout: "mosaic", count: 4 }, { layout: "marquee", count: 6 }],
+    beats: [{ layout: "wide", count: 1 }, { layout: "offset", count: 2 }, { layout: "slices", count: 4 }, { layout: "full", count: 1 }, { layout: "trio", count: 3 }, { layout: "mosaic", count: 5 }, { layout: "free", count: 3 }, { layout: "marquee", count: 6 }],
     textPerBeat: 2,
     trailing: 7,
+  },
+  tijdschrift: {
+    hero: "offset",
+    theme: "light",
+    type: "magazine",
+    beats: [{ layout: "free", count: 2 }, { layout: "wide", count: 1 }, "split", { layout: "free", count: 3 }, { layout: "duo", count: 2 }, { layout: "free", count: 2 }, { layout: "mosaic", count: 4 }],
+    textPerBeat: 1,
+    trailing: 3,
   },
   case: {
     hero: "split",
@@ -376,6 +473,7 @@ const RECIPES: Record<Exclude<TemplateId, "leeg">, Recipe> = {
 export const TEMPLATES: { id: TemplateId; name: string; about: string }[] = [
   { id: "verhaal", name: "Verhaal", about: "Tekst en foto's om en om, met een grote foto als opening." },
   { id: "fotoserie", name: "Fotoserie", about: "De foto's voorop, weinig tekst. Voor een serie die voor zich spreekt." },
+  { id: "tijdschrift", name: "Tijdschrift", about: "Licht papier, foto's verspringend over de pagina zoals in een magazine." },
   { id: "case", name: "Klantcase", about: "Feiten bovenaan, dan het verhaal van de opdracht. Lichte pagina." },
   { id: "film", name: "Film", about: "Begint met een video, daarna stills en tekst." },
   { id: "leeg", name: "Leeg", about: "Alleen de kop en de tekst. Je bouwt de rest zelf op." },
@@ -410,12 +508,32 @@ export function buildPage(source: ArticleSource, template: TemplateId): ArticleP
   }
 
   const recipe = RECIPES[template];
-  const cover = recipe.hero === "plain" ? null : heroCover(source)?.url;
+  const ratioOf = (u: string) => source.shapes?.[u];
+  const coverItem = heroCover(source);
+  const coverRatio = coverItem ? ratioOf(coverItem.url) : undefined;
+  // A standing cover would lose most of itself in a full-screen header; beside the title it shows whole.
+  const hero: HeroStyle = recipe.hero === "cinema" && coverRatio !== undefined && coverRatio < 1 ? "split" : recipe.hero;
+  const cover = hero === "plain" ? null : coverItem?.url;
   const intro = recipe.intro?.(source, next) ?? [];
   const taken = new Set([cover, ...intro.flatMap(blockUrls)]);
   const photos = source.galleryUrls.filter((u) => !taken.has(u));
   const blocks: Block[] = [...intro];
   let beat = 0;
+
+  /**
+   * Takes `n` of the next few photos, those that fit `want` first, so a
+   * layout gets the shapes it shows best. Photos of unknown shape fit
+   * anything, which keeps the gallery order.
+   */
+  function take(n: number, want: (r?: number) => boolean = () => true): string[] {
+    const near = photos.slice(0, n + 3);
+    const chosen = near.filter((u) => want(ratioOf(u))).slice(0, n);
+    for (const u of near) if (chosen.length < n && !chosen.includes(u)) chosen.push(u);
+    for (const u of chosen) photos.splice(photos.indexOf(u), 1);
+    return chosen;
+  }
+  const nearCount = (n: number, want: (r?: number) => boolean) => photos.slice(0, n + 3).filter((u) => want(ratioOf(u))).length;
+  const media = (layout: MediaLayout, urls: string[]): Block => ({ id: next(), type: "media", layout, items: urls.map(mediaItem), caption: "" });
 
   /** The next media moment there are photos for, or null when none fits. */
   function takeBeat(para?: string): Block | null {
@@ -424,12 +542,32 @@ export function buildPage(source: ArticleSource, template: TemplateId): ArticleP
       beat++;
       if (b === "split") {
         if (!para || !photos.length) continue;
-        return { id: next(), type: "split", media: mediaItem(photos.shift()!), heading: "", text: para, side: beat % 2 ? "right" : "left" };
+        // A standing photo sits best beside a column of text.
+        return { id: next(), type: "split", media: mediaItem(take(1, isPortrait)[0]), heading: "", text: para, side: beat % 2 ? "right" : "left" };
       }
       const { min, max } = LAYOUTS[b.layout];
       if (photos.length < min) continue;
-      const items = photos.splice(0, Math.min(b.count, max, photos.length)).map(mediaItem);
-      return { id: next(), type: "media", layout: b.layout, items, caption: "" };
+      const n = Math.min(b.count, max, photos.length);
+      switch (b.layout) {
+        case "full":
+        case "wide":
+          // Across the page wants a landscape; with only portraits near, two side by side or one narrow.
+          if (nearCount(1, isLandscape)) return media(b.layout, take(1, isLandscape));
+          return photos.length >= 2 ? media("duo", take(2, isPortrait)) : media("inset", take(1));
+        case "duo":
+        case "trio":
+          // Portraits side by side, or landscapes; a mixed row still lines up, at one height.
+          return media(b.layout, take(n, nearCount(n, isPortrait) >= n ? isPortrait : isLandscape));
+        case "offset":
+          // A large landscape, a smaller portrait beside it.
+          return media("offset", [...take(1, isLandscape), ...take(1, isPortrait)]);
+        case "slices":
+          // The accordion shows tall slices: only with enough portraits.
+          if (nearCount(n, isPortrait) < n) continue;
+          return media("slices", take(n, isPortrait));
+        default:
+          return media(b.layout, take(n));
+      }
     }
     return null;
   }
@@ -471,7 +609,7 @@ export function buildPage(source: ArticleSource, template: TemplateId): ArticleP
   }
   blocks.push({ id: next(), type: "series" });
 
-  return { template, hero: recipe.hero, theme: recipe.theme, type: recipe.type, subtitle, blocks };
+  return { template, hero, theme: recipe.theme, type: recipe.type, subtitle, blocks };
 }
 
 /** The page an article shows: its saved page, or the automatic one. */

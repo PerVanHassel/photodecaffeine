@@ -1,8 +1,8 @@
-import { Children, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Children, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ImgHTMLAttributes, type ReactNode } from "react";
 import { Helmet } from "react-helmet-async";
 import {
-  altFromFile, blockHasContent, effectiveLayout, embedSrc, heroCover, lookAttrs, pagePhotos, plainText, seriesRest, shownItems,
-  type ArticlePage, type ArticleSource, type Block, type BlockOf, type MediaItem, type MediaLayout, type TextLook,
+  altFromFile, blockHasContent, blockShape, effectiveLayout, embedSrc, freePlaces, heroCover, lookAttrs, pagePhotos, plainText, pointOf, seriesRest, SHAPE_RATIO, shownItems,
+  type ArticlePage, type ArticleSource, type Block, type BlockOf, type FocusPoint, type MediaItem, type MediaLayout, type MediaShape, type TextLook,
 } from "../../lib/articlePage";
 import { lookVars, pageFontLinks, pageVars, type LookRole } from "../../lib/typefaces";
 import { HIGH_PRIORITY, webSrcSet } from "../../lib/images";
@@ -29,6 +29,15 @@ interface Ctx {
   alt: (item: MediaItem) => string;
   open?: (url: string) => void;
   editing: boolean;
+  /** A photo's shape (width / height), when it is known. */
+  ratio: (url: string) => number | undefined;
+  /** Reports a shape measured in the browser, for photos the article has none for yet. */
+  measure: (url: string, w: number, h: number) => void;
+}
+
+/** The frame a photo gets in a shape: its own shape for "natural", else the chosen one. */
+function frameRatio(shape: MediaShape, own: number | undefined) {
+  return shape === "natural" || shape === "grid" ? own : SHAPE_RATIO[shape];
 }
 
 export function ArticleView({ source, page, onOpen, editor, back, children }: {
@@ -45,11 +54,21 @@ export function ArticleView({ source, page, onOpen, editor, back, children }: {
   const { t } = useLanguage();
   const root = useRef<HTMLElement>(null);
   const photos = useMemo(() => pagePhotos(source, page), [source, page]);
+  // Shapes the article does not have yet are measured as the photos load; the layout follows.
+  const [measured, setMeasured] = useState<Record<string, number>>({});
+  const shapes = source.shapes;
+  const measure = useCallback((url: string, w: number, h: number) => {
+    if (!w || !h || shapes?.[url]) return;
+    const r = Math.round((w / h) * 1e4) / 1e4;
+    setMeasured((m) => (m[url] === r ? m : { ...m, [url]: r }));
+  }, [shapes]);
   const ctx: Ctx = {
     title: source.title,
     alt: (item) => item.alt?.trim() || altFromFile(item.url, t.servicePages.photoAlts) || t.portfolioDetail.photoAlt(source.title, photos.indexOf(item.url) + 1),
     open: editor ? undefined : onOpen,
     editing: !!editor,
+    ratio: (url) => shapes?.[url] ?? measured[url],
+    measure,
   };
   useArticleMotion(root, !editor, page);
 
@@ -60,7 +79,7 @@ export function ArticleView({ source, page, onOpen, editor, back, children }: {
     <article ref={root} className={`pa${editor ? " pa--editing" : ""}`} data-theme={page.theme} style={pageVars(page) as CSSProperties}>
       {fontLinks.length > 0 && <Helmet>{fontLinks.map((href) => <link key={href} rel="stylesheet" href={href} />)}</Helmet>}
       <Selectable id="hero" editor={editor} className="pa-hero-slot">
-        <Hero source={source} page={page} back={back} />
+        <Hero source={source} page={page} back={back} ctx={ctx} />
       </Selectable>
       <div className="pa-flow">
         {shown.map((block, i) => (
@@ -129,9 +148,11 @@ function Selectable({ id, editor, className, children }: { id: string; editor?: 
 /**
  * The header in one of four styles: cinema (title centred over a full-width
  * photo), offset (huge title with the photo tucked under its last line),
- * split (title left, photo right) and plain (title only).
+ * split (title left, photo right) and plain (title only). Cinema fills the
+ * screen and so crops around the cover's point; offset and split show the
+ * cover in its own shape unless the page chose one.
  */
-function Hero({ source, page, back }: { source: ArticleSource; page: ArticlePage; back?: ReactNode }) {
+function Hero({ source, page, back, ctx }: { source: ArticleSource; page: ArticlePage; back?: ReactNode; ctx: Ctx }) {
   const cover = page.hero === "plain" ? null : heroCover(source);
   const style = cover ? page.hero : "plain";
   const head = (
@@ -141,11 +162,14 @@ function Hero({ source, page, back }: { source: ArticleSource; page: ArticlePage
     </div>
   );
   const sub = page.subtitle.trim() ? <p className="pa-sub">{page.subtitle}</p> : null;
+  const r = cover && style !== "cinema" ? frameRatio(page.heroShape ?? "natural", ctx.ratio(cover.url)) : undefined;
+  const onSize = cover ? (w: number, h: number) => ctx.measure(cover.url, w, h) : undefined;
   const media = cover && (
-    <div className="pa-hero-media" data-m="drift" aria-hidden="true">
+    <div className={`pa-hero-media${r ? " pa-hero-media--fixed" : ""}`} data-m={style === "cinema" ? "drift" : undefined} aria-hidden="true"
+      style={pointVars(page.coverPoint ?? { x: 50, y: 50 }, r)}>
       {cover.kind === "video"
-        ? <AmbientVideo src={cover.url} />
-        : <img src={cover.url} srcSet={webSrcSet(cover.url)} sizes={style === "cinema" ? "100vw" : "(max-width: 767px) 100vw, 60vw"} alt="" {...HIGH_PRIORITY} />}
+        ? <AmbientVideo src={cover.url} onSize={onSize} />
+        : <MeasuredImg src={cover.url} srcSet={webSrcSet(cover.url)} sizes={style === "cinema" ? "100vw" : "(max-width: 767px) 100vw, 60vw"} alt="" onSize={onSize} {...HIGH_PRIORITY} />}
     </div>
   );
   return (
@@ -250,21 +274,32 @@ const SIZES: Record<MediaLayout, string> = {
   mosaic: "(max-width: 767px) 50vw, 34vw",
   slices: "(max-width: 767px) 80vw, 40vw",
   marquee: "(max-width: 767px) 60vw, 30vw",
+  free: "(max-width: 767px) 100vw, 60vw",
 };
 
+/**
+ * A media block. Every layout shows each photo in its own shape unless the
+ * block chose one shape for all; then each is cropped around its point.
+ * Photos side by side line up at one height (a justified row), so a portrait
+ * and a landscape can share a row without either losing anything. Only the
+ * accordion and the tight mosaic grid crop by design.
+ */
 function MediaBlock({ block, ctx }: { block: BlockOf<"media">; ctx: Ctx }) {
   const layout = effectiveLayout(block);
   const items = shownItems(block);
+  const shape = blockShape(block);
   const caption = block.caption.trim() && <figcaption className="pa-caption">{block.caption}</figcaption>;
-  const shot = (item: MediaItem, i: number, sizes = SIZES[layout]) => (
-    <Shot key={`${item.url}-${i}`} item={item} ctx={ctx} sizes={i === 0 && layout === "mosaic" ? "(max-width: 767px) 100vw, 60vw" : sizes} />
+  const ratioOf = (item: MediaItem) => frameRatio(shape, ctx.ratio(item.url));
+  const shot = (item: MediaItem, i: number, r?: number, sizes = SIZES[layout]) => (
+    <Shot key={`${item.url}-${i}`} item={item} ctx={ctx} r={r} sizes={sizes} />
   );
+  const gap = block.gap ? { "data-gap": block.gap } : {};
 
   if (layout === "marquee") {
     // The row twice over, so it can run on without a seam. The copy is hidden from screen readers.
     return (
       <figure className="pa-figure">
-        <div className="pa-marquee">
+        <div className="pa-marquee" {...gap}>
           <div className="pa-marquee-track">
             {items.map((item, i) => shot(item, i))}
             <div className="pa-marquee-copy" aria-hidden="true">{items.map((item, i) => <Shot key={`c${i}`} item={item} ctx={{ ...ctx, open: undefined }} sizes={SIZES.marquee} decorative />)}</div>
@@ -278,17 +313,52 @@ function MediaBlock({ block, ctx }: { block: BlockOf<"media">; ctx: Ctx }) {
   if (layout === "slices") {
     return (
       <figure className="pa-figure pa-wrap">
-        <Slices count={items.length} nudge={!ctx.editing}>{items.map((item, i) => shot(item, i))}</Slices>
+        <Slices count={items.length} nudge={!ctx.editing} gap={block.gap}>{items.map((item, i) => shot(item, i))}</Slices>
         {caption}
       </figure>
     );
   }
 
+  let body: ReactNode;
+  if (layout === "mosaic" && shape === "grid") {
+    // The tight grid: twelve columns filled without gaps, every photo cropped to its cell.
+    body = (
+      <div className={`pa-media pa-media--grid pa-mosaic--${items.length}`} data-m="grow" {...gap}>
+        {items.map((item, i) => shot(item, i, undefined, i === 0 ? "(max-width: 767px) 100vw, 60vw" : SIZES.mosaic))}
+      </div>
+    );
+  } else if (layout === "free") {
+    const places = freePlaces(items, ctx.ratio);
+    body = (
+      <div className="pa-media pa-media--free" {...gap}>
+        {items.map((item, i) => {
+          const p = places[i];
+          return (
+            <div key={`${item.url}-${i}`} className="pa-free-item" data-m="grow" data-place={p.place} data-small={p.span < 7 || undefined}
+              style={{ "--c": p.column, "--s": p.span, "--d": p.drop } as CSSProperties}>
+              {shot(item, i, ratioOf(item), `(max-width: 767px) 100vw, ${Math.round((p.span / 12) * 100)}vw`)}
+            </div>
+          );
+        })}
+      </div>
+    );
+  } else {
+    const ratios = items.map(ratioOf);
+    const known = ratios.every((r) => r !== undefined);
+    const sum = known ? ratios.reduce((s, r) => s + r!, 0) : undefined;
+    // Rows (two, three, the mosaic) know their total shape, so a row of tall photos never grows taller than the screen.
+    const vars = { "--n": items.length, ...(sum ? { "--sum": sum } : {}) } as CSSProperties;
+    const tall = layout === "full" && ratios[0] !== undefined && ratios[0] < 1.25;
+    body = (
+      <div className={`pa-media pa-media--${layout}${tall ? " is-tall" : ""}`} data-m={layout === "full" ? "cinema" : "grow"} style={vars} {...gap}>
+        {items.map((item, i) => shot(item, i, ratios[i]))}
+      </div>
+    );
+  }
+
   return (
     <figure className={`pa-figure${layout === "full" ? "" : " pa-wrap"}`}>
-      <div className={`pa-media pa-media--${layout}${layout === "mosaic" ? ` pa-mosaic--${items.length}` : ""}`} data-m={layout === "full" ? "cinema" : "grow"}>
-        {items.map((item, i) => shot(item, i))}
-      </div>
+      {body}
       {caption && (layout === "full" ? <div className="pa-wrap">{caption}</div> : caption)}
     </figure>
   );
@@ -302,7 +372,7 @@ function MediaBlock({ block, ctx }: { block: BlockOf<"media">; ctx: Ctx }) {
  * photo for a moment, so it is clear it moves. The bar and the hint only show
  * on phones (article.css).
  */
-function Slices({ count, nudge, children }: { count: number; nudge: boolean; children: ReactNode }) {
+function Slices({ count, nudge, gap, children }: { count: number; nudge: boolean; gap?: string; children: ReactNode }) {
   const strip = useRef<HTMLDivElement>(null);
   const touch = useRef<{ x: number; y: number } | null>(null);
   const [at, setAt] = useState(0);
@@ -339,6 +409,7 @@ function Slices({ count, nudge, children }: { count: number; nudge: boolean; chi
       <div
         ref={strip}
         className="pa-media pa-media--slices"
+        data-gap={gap}
         onTouchStart={(e) => { touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
         onTouchEnd={(e) => {
           const start = touch.current;
@@ -383,7 +454,7 @@ function SplitBlock({ block, ctx }: { block: BlockOf<"split">; ctx: Ctx }) {
   return (
     <div className={`pa-wrap pa-split pa-split--${block.side}`}>
       <div className="pa-split-media" data-m="grow">
-        {block.media && <Shot item={block.media} ctx={ctx} sizes="(max-width: 767px) 100vw, 58vw" />}
+        {block.media && <Shot item={block.media} ctx={ctx} r={ctx.ratio(block.media.url)} sizes="(max-width: 767px) 100vw, 58vw" />}
       </div>
       <div className="pa-split-text">
         {block.heading.trim() && <h2 className="pa-split-heading" {...lookProps(block.look, "display")}>{block.heading}</h2>}
@@ -465,7 +536,7 @@ function SeriesBlock({ urls, ctx }: { urls: string[]; ctx: Ctx }) {
       <div className={`pa-spread${urls.length === 1 ? " pa-spread--single" : ""}`}>
         {urls.map((url, i) => {
           const small = i % 4 === 1 || i % 4 === 2;
-          return <Shot key={url} item={{ url, kind: /\.(mp4|mov|m4v|webm)$/i.test(url.split("?")[0]) ? "video" : "image" }} ctx={ctx} natural
+          return <Shot key={url} item={{ url, kind: /\.(mp4|mov|m4v|webm)$/i.test(url.split("?")[0]) ? "video" : "image" }} ctx={ctx} natural r={ctx.ratio(url)}
             sizes={small && urls.length > 1 ? "(max-width: 767px) 100vw, 34vw" : "(max-width: 767px) 100vw, 60vw"} />;
         })}
       </div>
@@ -477,29 +548,53 @@ function SeriesBlock({ urls, ctx }: { urls: string[]; ctx: Ctx }) {
 // Photos, videos and text
 // ---------------------------------------------------------------------------
 
-function Shot({ item, ctx, sizes, decorative, natural }: { item: MediaItem; ctx: Ctx; sizes: string; decorative?: boolean; natural?: boolean }) {
-  const focus = item.focus && item.focus !== "center" ? ` pa-focus--${item.focus}` : "";
+/**
+ * One photo or video in its frame. With `r` the frame has that shape and the
+ * photo fills it around its point (with the photo's own shape nothing is cut
+ * off); without, the photo sets its own height.
+ */
+function Shot({ item, ctx, sizes, r, decorative, natural }: { item: MediaItem; ctx: Ctx; sizes: string; r?: number; decorative?: boolean; natural?: boolean }) {
+  const frame = `pa-frame${r ? " pa-frame--fixed" : ""}`;
+  const style = pointVars(pointOf(item), r);
+  const onSize = (w: number, h: number) => ctx.measure(item.url, w, h);
   if (item.kind === "video") {
     return (
-      <span className={`pa-frame${focus}`}>
+      <span className={frame} style={style}>
         {item.sound
-          ? <video src={item.url} controls playsInline preload="metadata" aria-label={decorative ? undefined : item.alt?.trim() || ctx.title} />
-          : <AmbientVideo src={item.url} />}
+          ? <video src={item.url} controls playsInline preload="metadata" aria-label={decorative ? undefined : item.alt?.trim() || ctx.title}
+              onLoadedMetadata={(e) => onSize(e.currentTarget.videoWidth, e.currentTarget.videoHeight)} />
+          : <AmbientVideo src={item.url} onSize={onSize} />}
       </span>
     );
   }
-  const img = <img src={item.url} srcSet={webSrcSet(item.url)} sizes={sizes} alt={decorative ? "" : ctx.alt(item)} loading="lazy" decoding="async" />;
-  if (!ctx.open || decorative) return <span className={`pa-frame${focus}`}>{img}</span>;
+  const img = <MeasuredImg src={item.url} srcSet={webSrcSet(item.url)} sizes={sizes} alt={decorative ? "" : ctx.alt(item)} loading="lazy" decoding="async" onSize={onSize} />;
+  if (!ctx.open || decorative) return <span className={frame} style={style}>{img}</span>;
   const open = ctx.open;
   return (
-    <button type="button" className={`pa-frame pa-zoom${focus}${natural ? " pa-frame--natural" : ""}`} onClick={() => open(item.url)}>
+    <button type="button" className={`${frame} pa-zoom${natural ? " pa-frame--natural" : ""}`} style={style} onClick={() => open(item.url)}>
       {img}
     </button>
   );
 }
 
+/** The point that stays in view and the frame's shape, as custom properties for article.css. */
+function pointVars(p: FocusPoint, r?: number): CSSProperties {
+  return { "--px": `${p.x}%`, "--py": `${p.y}%`, ...(r ? { "--r": r } : {}) } as CSSProperties;
+}
+
+/** A photo that reports its pixel size once loaded, also when it was already loaded before the page came alive. */
+function MeasuredImg({ onSize, ...props }: ImgHTMLAttributes<HTMLImageElement> & { onSize?: (w: number, h: number) => void }) {
+  return (
+    <img
+      {...props}
+      ref={(el) => { if (el && onSize && el.complete && el.naturalWidth) onSize(el.naturalWidth, el.naturalHeight); }}
+      onLoad={onSize && ((e) => onSize(e.currentTarget.naturalWidth, e.currentTarget.naturalHeight))}
+    />
+  );
+}
+
 /** A silent looping clip; still for visitors who ask for less motion. */
-function AmbientVideo({ src }: { src: string }) {
+function AmbientVideo({ src, onSize }: { src: string; onSize?: (w: number, h: number) => void }) {
   const ref = useRef<HTMLVideoElement>(null);
   useEffect(() => {
     const video = ref.current;
@@ -507,7 +602,10 @@ function AmbientVideo({ src }: { src: string }) {
     video.pause();
     video.removeAttribute("autoplay");
   }, []);
-  return <video ref={ref} src={src} autoPlay loop muted playsInline preload="metadata" aria-hidden="true" />;
+  return (
+    <video ref={ref} src={src} autoPlay loop muted playsInline preload="metadata" aria-hidden="true"
+      onLoadedMetadata={onSize && ((e) => onSize(e.currentTarget.videoWidth, e.currentTarget.videoHeight))} />
+  );
 }
 
 /**

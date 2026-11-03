@@ -124,6 +124,11 @@
 .studio .pm-thumb-tools { position: absolute; top: 4px; right: 4px; display: flex; gap: 3px; }
 .studio .pm-thumb-tools .s-fav { width: 24px; height: 24px; }
 .studio .pm-thumb-tools .s-fav:disabled { display: none; }
+/* A block's photos show whole on a quiet tile, so you see what you place; drag to change the order. */
+.studio .pm-thumb .s-ph img, .studio .pm-thumb .s-ph video { object-fit: contain; }
+.studio .pm-thumb--drag { cursor: grab; touch-action: none; border-radius: var(--r-sm); }
+.studio .pm-thumb--drag:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.studio .pm-thumb.is-dragging { z-index: 2; cursor: grabbing; box-shadow: var(--shadow); }
 .studio .pm-thumb-add {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; aspect-ratio: 1;
   border: 1.5px dashed var(--line-strong); border-radius: var(--r-sm); background: none; color: var(--muted); font-size: 12px; font-weight: 600;
@@ -194,3 +199,19 @@
 }
 .studio .pm-thumb-btn { padding: 0; border: 0; background: none; cursor: pointer; border-radius: var(--r-sm); }
 .studio .pm-thumb-btn:hover .s-ph { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* What stays in view: the whole photo, the part the page shows light, the point to drag. */
+.studio .pm-focus {
+  position: relative; width: fit-content; max-width: 100%; margin: 0 auto; border-radius: 8px; overflow: hidden;
+  background: var(--sunken); cursor: crosshair; touch-action: none; user-select: none;
+}
+.studio .pm-focus img, .studio .pm-focus video { display: block; max-width: 100%; max-height: 240px; pointer-events: none; }
+.studio .pm-focus:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.studio .pm-focus-view {
+  position: absolute; pointer-events: none; outline: 1.5px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 999px rgba(15, 10, 6, 0.55); transition: left 0.18s cubic-bezier(0.32, 0.72, 0, 1), top 0.18s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.studio .pm-focus-dot {
+  position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border: 2px solid #fff; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4); pointer-events: none;
+}

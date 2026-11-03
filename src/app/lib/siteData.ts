@@ -39,6 +39,8 @@ export interface PortfolioArticle {
   /** Title and description for Google; empty: made from the article. */
   seoTitle?: string;
   seoDescription?: string;
+  /** Each photo's shape (width / height) by URL, so the page lays out before the photos load. */
+  shapes?: Record<string, number>;
 }
 
 export interface PublicReview {

@@ -490,6 +490,13 @@ const portfolio: Json[] = [
   },
   { id: id(402), title: "Studio Veldhuis team", category: "Portret", coverUrl: PHOTOS[6], coverType: "image", description: "", galleryUrls: PHOTOS.slice(6, 12), published: true, featured: false, createdAt: iso(-30), updatedAt: iso(-10) },
   { id: id(403), title: "Café Maas zomer", category: "Horeca", coverUrl: PHOTOS[9], coverType: "image", description: "", galleryUrls: [], published: false, featured: false, createdAt: iso(-5), updatedAt: iso(-1) },
+  // Sport is shot mostly upright: a series of portraits with a few landscapes between them.
+  {
+    id: id(405), title: "Hockey finale", category: "Sport", coverUrl: WEDDING[1].url, coverType: "image",
+    description: "De finale van het seizoen, van warming-up tot de beker\n\nWe stonden langs de lijn vanaf de eerste bal. Het licht viel laat in de middag schuin over het veld, precies goed voor de snelheid van het spel.\n\nNa de laatste fluit kwam het team samen bij de goal. Daar zit het verhaal: de spanning valt weg en je ziet wat het ze waard was.",
+    galleryUrls: [WEDDING[1], WEDDING[8], WEDDING[13], WEDDING[0], WEDDING[15], WEDDING[21], WEDDING[2], WEDDING[10], WEDDING[9], WEDDING[23], WEDDING[19]].map((p) => p.url),
+    published: true, featured: false, createdAt: iso(-8), updatedAt: iso(-2),
+  },
   { id: id(404), title: "__automotive_gallery__", category: "_automotive-gallery", coverUrl: PHOTOS[1], coverType: "image", description: "", galleryUrls: PHOTOS.slice(0, 6), published: true, featured: false, createdAt: iso(-90), updatedAt: iso(-2) },
 ];
 

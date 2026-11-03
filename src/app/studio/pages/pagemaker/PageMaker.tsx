@@ -17,6 +17,7 @@ import { LanguagePanel } from "./LanguagePanel";
 import { MediaPicker, type PickRequest } from "./MediaPicker";
 import { BlockPanel, blockName, HeroPanel, InsertPanel, PagePanel } from "./Panels";
 import { TemplateSketch } from "./schematics";
+import { forSaving, useShapes } from "./shapes";
 import { addPhotos, draftOf, duplicateBlock, insertBlock, moveBlock, removeBlock, shownPage, useHistory, type Draft } from "./state";
 import "./pagemaker.css";
 
@@ -25,6 +26,9 @@ import "./pagemaker.css";
 // reaches the site before Opslaan.
 
 const WIDTH = { desktop: 1280, phone: 390 } as const;
+
+/** The draft as compared for unsaved changes: measured photo shapes do not count. */
+const asSaved = (d: Draft) => JSON.stringify({ ...d, shapes: undefined });
 
 export function PageMakerPage() {
   const { id } = useParams<{ id: string }>();
@@ -43,10 +47,12 @@ export function PageMakerPage() {
     loadedFor.current = article.id;
     const d = draftOf(article);
     history.reset(d);
-    setSaved(JSON.stringify(d));
+    setSaved(asSaved(d));
   }, [article]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Photo shapes are measured here and go along with the next save; on their own they change nothing to save.
+  useShapes(draft, history.patch);
 
-  const dirty = !!draft && JSON.stringify(draft) !== saved;
+  const dirty = !!draft && asSaved(draft) !== saved;
   useUnsavedChanges(dirty);
 
   const [selected, setSelected] = useState<string | null>(null);
@@ -63,10 +69,13 @@ export function PageMakerPage() {
 
   const save = useAction({
     // Adobe faces need their project on the site; the page takes it along.
-    fn: (d: Draft) => put(`/admin/portfolio/${id}`, d.page && usesAdobe(d.page) && kit.current && d.page.kit !== kit.current ? { ...d, page: { ...d.page, kit: kit.current } } : d),
+    fn: (draft: Draft) => {
+      const d = forSaving(draft);
+      return put(`/admin/portfolio/${id}`, d.page && usesAdobe(d.page) && kit.current && d.page.kit !== kit.current ? { ...d, page: { ...d.page, kit: kit.current } } : d);
+    },
     invalidate: () => [portfolioKey],
     success: "Opgeslagen",
-    onSuccess: (_r, d) => setSaved(JSON.stringify(d)),
+    onSuccess: (_r, d) => setSaved(asSaved(d)),
   });
   const remove = useAction({
     fn: () => del(`/admin/portfolio/${id}`),

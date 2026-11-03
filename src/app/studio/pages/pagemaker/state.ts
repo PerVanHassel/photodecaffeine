@@ -6,7 +6,7 @@ import {
 import type { Article } from "./data";
 
 /** What the page maker edits: the article's own fields and its page. */
-export type Draft = Pick<Article, "title" | "category" | "description" | "coverUrl" | "coverType" | "galleryUrls" | "published" | "featured" | "seoTitle" | "seoDescription"> & {
+export type Draft = Pick<Article, "title" | "category" | "description" | "coverUrl" | "coverType" | "galleryUrls" | "published" | "featured" | "seoTitle" | "seoDescription" | "shapes"> & {
   /** Null: the site lays the page out by itself. */
   page: ArticlePage | null;
 };
@@ -22,6 +22,7 @@ export const draftOf = (a: Article): Draft => ({
   seoTitle: a.seoTitle || "",
   seoDescription: a.seoDescription || "",
   featured: a.featured,
+  shapes: a.shapes || {},
   page: a.page && Array.isArray(a.page.blocks) ? a.page : null,
 });
 
@@ -69,7 +70,12 @@ export function useHistory<T>() {
     setH((s) => (s.future.length && s.present !== null ? { past: [...s.past, s.present], present: s.future[0], future: s.future.slice(1) } : s));
   }, []);
 
-  return { value: h.present, commit, reset, undo, redo, canUndo: h.past.length > 0, canRedo: h.future.length > 0 };
+  /** A change that is no step of its own (measured photo shapes): applied to every state, so undo keeps it. */
+  const patch = useCallback((fn: (prev: T) => T) => {
+    setH((s) => (s.present === null ? s : { past: s.past.map(fn), present: fn(s.present), future: s.future.map(fn) }));
+  }, []);
+
+  return { value: h.present, commit, reset, undo, redo, patch, canUndo: h.past.length > 0, canRedo: h.future.length > 0 };
 }
 
 // ---------------------------------------------------------------------------

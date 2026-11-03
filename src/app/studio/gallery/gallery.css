@@ -246,14 +246,16 @@
 /* Clipped, so the frames sliding in don't widen a phone's page while they arrive. */
 .g-burst { --slant: clamp(14px, 2.6vw, 44px); --burst-gap: 6px; display: flex; height: clamp(190px, 30vw, 460px); margin-top: 6px; overflow: hidden; }
 .g-burst figure {
-  flex: 1 1 0; min-width: 0; margin: 0 0 0 calc(var(--burst-gap) - var(--slant)); overflow: hidden; background: var(--g-tile);
+  flex: var(--r, 1) 1 0; min-width: 0; margin: 0 0 0 calc(var(--burst-gap) - var(--slant)); overflow: hidden; background: var(--g-tile);
   clip-path: polygon(var(--slant) 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
   animation: g-burst-in 0.7s var(--g-ease) both; animation-delay: calc(var(--i, 0) * 90ms);
 }
-.g-burst figure:first-child { flex-grow: 2.4; margin-left: 0; clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%); }
+/* Each frame takes the width its photo needs; the first a little more. */
+.g-burst figure:first-child { flex-grow: calc(var(--r, 1.5) * 1.6); margin-left: 0; clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%); }
 .g-burst figure:last-child { clip-path: polygon(var(--slant) 0, 100% 0, 100% 100%, 0 100%); }
 .g-burst figure:only-child { clip-path: none; }
-.g-burst img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* What the slant still crops comes off the bottom rather than the top, where faces and the action usually are. */
+.g-burst img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; }
 @keyframes g-burst-in { from { opacity: 0; transform: translateX(48px); } }
 .g-hero--arena .g-head { grid-column: 1; padding-top: 6px; }
 .g-hero--arena .g-facts { grid-column: 2; gap: 0; }

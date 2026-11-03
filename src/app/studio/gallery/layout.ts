@@ -87,12 +87,11 @@ export function rowBoxes(rows: Row[], ratios: number[], width: number, gap: numb
   return { boxes, height: Math.max(0, top - gap) };
 }
 
-/** Columns filled shortest-first, so the bottom edge stays even. Order still reads left to right, top to bottom. */
+/** Columns filled shortest-first, so the bottom edge stays even. Order still reads left to right, top to bottom. Every photo keeps its own shape. */
 export function masonry(ratios: number[], width: number, cols: number, gap: number): { boxes: Box[]; height: number } {
   const colW = (width - gap * (cols - 1)) / cols;
   const heights = new Array(cols).fill(0);
-  const boxes = ratios.map((ratio) => {
-    const r = Math.min(2.2, Math.max(0.5, ratio));
+  const boxes = ratios.map((r) => {
     let c = 0;
     for (let k = 1; k < cols; k++) if (heights[k] < heights[c] - 1) c = k;
     const box = { left: c * (colW + gap), top: heights[c], width: colW, height: colW / r };

@@ -22,6 +22,8 @@ export type Article = {
   /** Title and description for Google; empty: made from the article. */
   seoTitle?: string;
   seoDescription?: string;
+  /** Each photo's shape (width / height) by URL, measured in the page maker. */
+  shapes?: Record<string, number>;
 };
 
 export const AUTOMOTIVE_TITLE = "__automotive_gallery__";
