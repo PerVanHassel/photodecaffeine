@@ -44,4 +44,5 @@ jobs:
       - name: Deploy make-server-0951c59e
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        run: supabase functions deploy make-server-0951c59e --project-ref uunwhesmymkwmkgqkmxy
+        # --yes: newer CLIs ask for confirmation, which a run without a terminal cannot give.
+        run: supabase functions deploy make-server-0951c59e --project-ref uunwhesmymkwmkgqkmxy --yes
