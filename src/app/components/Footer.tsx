@@ -29,14 +29,14 @@ export function Footer() {
       icon: <Linkedin size={18} strokeWidth={1.5} />,
     },
     {
-      href: "https://www.tiktok.com/@photodecaffeiene",
+      href: "https://www.tiktok.com/@photodecaffeine",
       label: "TikTok",
       icon: <TikTokIcon className="w-[18px] h-[18px]" />,
     },
   ];
 
   const navLinks = [
-    { to: "/", label: t.nav.work },
+    { to: "/#work", label: t.nav.work },
     { to: "/portfolio", label: t.nav.portfolio },
     { to: "/about", label: t.nav.about },
     { to: "/#contact", label: t.nav.contact },
@@ -47,9 +47,9 @@ export function Footer() {
       <footer className="bg-[#3e250a] text-[#fffbe0]" style={{ fontFamily: "'Inter', sans-serif" }}>
         <div className="max-w-7xl mx-auto px-6 md:px-12">
           {/* Main grid */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 py-16 md:py-20">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-12 py-16 md:py-20">
             {/* Brand column */}
-            <div className="md:col-span-5 space-y-5">
+            <div className="space-y-5">
               <div>
                 <PdcLogo
                   artboard
@@ -89,7 +89,7 @@ export function Footer() {
             </div>
 
             {/* Nav column */}
-            <div className="md:col-span-3 space-y-4">
+            <div className="space-y-4">
               <p className="text-[10px] tracking-[0.25em] uppercase text-[#fffbe0]/60">
                 {t.footer.nav}
               </p>
@@ -112,8 +112,26 @@ export function Footer() {
               </nav>
             </div>
 
+            {/* Services column */}
+            <div className="space-y-4">
+              <p className="text-[10px] tracking-[0.25em] uppercase text-[#fffbe0]/60">
+                {t.footer.services}
+              </p>
+              <nav className="flex flex-col gap-2.5" aria-label={t.footer.services}>
+                {t.footer.serviceLinks.map(({ to, label }) => (
+                  <Link
+                    key={to}
+                    to={to}
+                    className="text-[10px] tracking-[0.2em] uppercase text-[#fffbe0]/60 hover:text-[#fffbe0] transition-colors duration-200"
+                  >
+                    {label}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+
             {/* Social column */}
-            <div className="md:col-span-4 space-y-4">
+            <div className="space-y-4">
               <p className="text-[10px] tracking-[0.25em] uppercase text-[#fffbe0]/60">
                 {t.footer.followUs}
               </p>

@@ -4,7 +4,11 @@ export const translations = {
   nl: {
     home: {
       seoStart: "PhotoDeCaffeine is een jong creatief merk uit Roosendaal voor",
-      seoStrong: "fotografie, videografie en websites op maat",
+      seoLinks: [
+        { text: "fotografie", to: "/services/fotografie" },
+        { text: "videografie", to: "/services/videografie" },
+        { text: "websites op maat", to: "/services/website" },
+      ],
       seoEnd: ". We werken door heel Nederland voor ondernemers, makers en particulieren: lokale bedrijven, autoliefhebbers, sporters, artiesten en evenementen. Foto, video en website kun je bij ons in één hand leggen, zodat alles één verhaal vertelt.",
     },
     whatWeDo: {
@@ -54,8 +58,18 @@ export const translations = {
       workLink: "Bekijk het hele portfolio →",
       workPrevious: "Vorige foto's",
       workNext: "Volgende foto's",
-      photoAlt: (title: string) => `Foto uit ${title}`,
-      galleryAlt: (category: string, n: number) => `${category} fotografie, foto ${n}`,
+      photoAlt: (title: string) => `Foto uit de serie ${title}`,
+      galleryAlt: (category: string, n: number) => `Foto ${n} van ${category.toLowerCase()} fotografie door PhotoDeCaffeine`,
+      // The automotive strip has no per-photo text in the portfolio. These
+      // describe the photos that are there now; a new file falls back to galleryAlt.
+      photoAlts: [
+        { file: "dsc0853", alt: "Grijze BMW voor een bakstenen gevel, met de koplampen aan" },
+        { file: "dsc0155", alt: "Zwart-wit detail van de motorkap en grille van een BMW" },
+        { file: "dsc0748", alt: "Achterkant van een grijze BMW bij een glazen gebouw, met de remlichten aan" },
+        { file: "dsc0176", alt: "Zwarte BMW stationwagen op een bospad" },
+        { file: "dsc0724", alt: "Grijze BMW laag voor een hoog glazen gebouw" },
+        { file: "dsc1632", alt: "Hardloper in een blauw hesje, van opzij, tegen een zwarte achtergrond" },
+      ],
       // Fixed packages on the photography page, one set per category, and per
       // category one set per kind of client. Middel is the decoy: it costs
       // nearly as much as Groot and gives far less, so Groot reads as the
@@ -460,7 +474,7 @@ export const translations = {
       label: "Hoofdmenu",
     },
     hero: {
-      frameAlt: "Recente shoot van PhotoDeCaffeine",
+      frameAlt: "Vrouw in een lange roze jurk op een stenen muur aan zee, met een man in donkere kleren eronder",
       label: "Foto · video · web · sinds 2026",
       headline1: "Waar",
       headline2: "jouw",
@@ -550,10 +564,12 @@ export const translations = {
       whatsIncluded: "Inbegrepen",
       idealFor: "Ideaal voor",
       bookPackage: "Boek dit pakket",
+      viewPackages: "Bekijk pakketten",
       bottomNote: "Alle prijzen zijn exclusief btw. Minimale samenwerking: 3 maanden. Campagnes op maat zijn op aanvraag mogelijk.",
       packages: [
         {
           id: "espresso",
+          to: "/services/social-media",
           name: "Espresso",
           label: "Single Origin",
           price: "€399,-",
@@ -575,6 +591,7 @@ export const translations = {
         },
         {
           id: "reserve",
+          to: "/services/social-media",
           name: "Reserve",
           label: "Studio Signature",
           price: "€749,-",
@@ -599,6 +616,7 @@ export const translations = {
         },
         {
           id: "blend",
+          to: "/services/social-media",
           name: "Blend",
           label: "Doorlopende retainer",
           price: "€1.399,-",
@@ -682,6 +700,15 @@ export const translations = {
     footer: {
       tagline: "Gemaakt als koffie, geschoten als cinema.",
       nav: "Navigatie",
+      services: "Diensten",
+      serviceLinks: [
+        { to: "/services/fotografie", label: "Fotografie" },
+        { to: "/services/videografie", label: "Videografie" },
+        { to: "/services/website", label: "Websites" },
+        { to: "/services/social-media", label: "Social media" },
+        { to: "/services/fotografie/automotive", label: "Automotive" },
+        { to: "/services/fotografie/sport", label: "Sport" },
+      ],
       followUs: "Volg het werk",
       address: "Roosendaal · shoots door heel Nederland",
       email: "contact@photodecaffeine.com",
@@ -751,7 +778,7 @@ export const translations = {
       close: "Sluiten",
       previous: "Vorige foto",
       next: "Volgende foto",
-      photoAlt: (title: string, n: number) => `${title}, foto ${n}`,
+      photoAlt: (title: string, n: number) => `Foto ${n} uit de serie ${title}`,
       photoOf: (n: number, total: number) => `Foto ${n} van ${total}`,
       reviewLabel: "Wat de klant zegt",
       label: "Portfolio",
@@ -942,6 +969,7 @@ export const translations = {
       ctaTitle3: "maken.",
       ctaButton: "Start een project →",
       ctaPortfolio: "Bekijk het portfolio",
+      darkroomAlt: "Publiek met de handen in de lucht tijdens een avond, in rood en blauw licht",
       darkroomProcess: "Het proces",
       darkroomQuote: "\"Elk frame begint in ons hoofd,\nlang voordat de sluiter klikt.\"",
     },

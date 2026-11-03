@@ -5,6 +5,10 @@
  */
 export const HIGH_PRIORITY = { fetchpriority: "high" } as {};
 
+/** The opposite hint: a photo that is on screen but barely visible, so it
+ *  waits until the one people actually see has started. */
+export const LOW_PRIORITY = { fetchpriority: "low" } as {};
+
 // Site photos are stored as "<name>-2560.jpg", at most 2560 px wide, with the
 // same photo 1280 px wide beside it as "<name>-1280.jpg". Uploads through the
 // admin (webPhoto.ts) and publish_web_images.py both store that pair. Other

@@ -235,6 +235,27 @@ export function heroCover(source: ArticleSource): MediaItem | null {
   return first ? mediaItem(first) : null;
 }
 
+/** The description saved on a photo in the page maker, by its URL. */
+export function altByUrl(page: ArticlePage): Map<string, string> {
+  const map = new Map<string, string>();
+  const put = (item: MediaItem | null | undefined) => {
+    const alt = item?.alt?.trim();
+    if (item?.url && alt) map.set(item.url, alt);
+  };
+  for (const block of page.blocks) {
+    if (block.type === "media") block.items.forEach(put);
+    else if (block.type === "split") put(block.media);
+    else if (block.type === "heading") put(block.inline);
+  }
+  return map;
+}
+
+/** A hand-written description for a photo we know, matched on the file name. */
+export function altFromFile(url: string, known: readonly { file: string; alt: string }[]) {
+  const file = url.split("?")[0].split("/").pop() ?? "";
+  return known.find((item) => file.includes(item.file))?.alt ?? "";
+}
+
 /** Photos in the order the page shows them, for the full-screen viewer. Videos are left out. */
 export function pagePhotos(source: ArticleSource, page: ArticlePage): string[] {
   const urls: string[] = [];

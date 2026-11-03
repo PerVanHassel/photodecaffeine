@@ -733,7 +733,7 @@ export function AboutPage() {
       >
         <ImageWithFallback
           src={DARKROOM}
-          alt=""
+          alt={ta.darkroomAlt}
           loading="lazy"
           decoding="async"
           style={{

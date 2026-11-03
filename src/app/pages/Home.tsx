@@ -1,4 +1,6 @@
+import { Fragment } from "react";
 import { Helmet } from "react-helmet-async";
+import { Link } from "react-router";
 import { BUSINESS_JSON_LD } from "../lib/business";
 import { WorkProcess } from "../components/WorkProcess";
 import { Portfolio } from "../components/Portfolio";
@@ -78,7 +80,12 @@ export function Home() {
           }}
         >
           {t.home.seoStart}{" "}
-          <strong style={{ color: "rgba(255,251,224,0.75)" }}>{t.home.seoStrong}</strong>
+          {t.home.seoLinks.map((link, i, all) => (
+            <Fragment key={link.to}>
+              {i > 0 ? (i === all.length - 1 ? " en " : ", ") : null}
+              <Link to={link.to} className="pdc-seo-link">{link.text}</Link>
+            </Fragment>
+          ))}
           {t.home.seoEnd}
         </p>
       </section>

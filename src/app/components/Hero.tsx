@@ -3,7 +3,8 @@ import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { Link } from "react-router";
 import { useLanguage } from "../context/LanguageContext";
 import { useSiteSettings } from "../lib/siteData";
-import { HIGH_PRIORITY, webSrcSet } from "../lib/images";
+import { altFromFile } from "../lib/articlePage";
+import { HIGH_PRIORITY, LOW_PRIORITY, webSrcSet } from "../lib/images";
 
 const DEFAULT_HERO_BG =
   "https://images.unsplash.com/photo-1613158556069-e7d8eae76214?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkYXJrJTIwY2luZW1hdGljJTIwZXNwcmVzc28lMjBjb2ZmZWUlMjBzdHVkaW8lMjBtb29keXxlbnwxfHx8fDE3NzY1OTY2NTB8MA&ixlib=rb-4.1.0&q=80&w=1080";
@@ -23,13 +24,14 @@ export function Hero() {
   const heroImageUrl = settings?.heroImageUrl || DEFAULT_HERO_BG;
   const heroImageMobileUrl = settings?.heroImageMobileUrl || heroImageUrl;
   const frameImageUrl = settings?.frameImageUrl || image__MAJ2869_1_;
+  const frameAlt = altFromFile(frameImageUrl, t.servicePages.photoAlts) || t.hero.frameAlt;
 
   return (
     <section
       id="hero"
+      className="pdc-hero"
       style={{
         position: "relative",
-        minHeight: "100vh",
         width: "100%",
         overflow: "hidden",
         fontFamily: "'Inter', sans-serif",
@@ -45,7 +47,7 @@ export function Hero() {
             srcSet={webSrcSet(heroImageUrl)}
             sizes="100vw"
             alt=""
-            {...HIGH_PRIORITY}
+            {...LOW_PRIORITY}
             style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
           />
         </picture>
@@ -60,17 +62,18 @@ export function Hero() {
       }} />
 
       {/* Phone: the frame photo fills the top of the hero */}
-      <div className="pdc-hero-phone-photo" style={{ position: "absolute", top: 0, left: 0, right: 0, height: "55vh", zIndex: 1, overflow: "hidden" }}>
+      <div className="pdc-hero-phone-photo" style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 1, overflow: "hidden" }}>
         <ImageWithFallback
           src={frameImageUrl}
           srcSet={webSrcSet(frameImageUrl)}
           sizes={FRAME_SIZES}
-          alt=""
+          alt={frameAlt}
+          {...HIGH_PRIORITY}
           style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 20%" }}
         />
         <div style={{
           position: "absolute", inset: 0,
-          background: "linear-gradient(to bottom, rgba(8,4,1,0.15) 0%, rgba(8,4,1,0) 30%, rgba(8,4,1,0.85) 80%, rgba(8,4,1,1) 100%)"
+          background: "linear-gradient(to bottom, rgba(8,4,1,0.15) 0%, transparent 45%)"
         }} />
       </div>
 
@@ -78,7 +81,6 @@ export function Hero() {
       <div className="pdc-hero-content" style={{
         position: "relative", zIndex: 2,
         maxWidth: "1400px", margin: "0 auto",
-        height: "100vh",
         display: "flex", flexDirection: "column",
       }}>
 
@@ -163,8 +165,7 @@ export function Hero() {
                 src={frameImageUrl}
                 srcSet={webSrcSet(frameImageUrl)}
                 sizes={FRAME_SIZES}
-                alt={t.hero.frameAlt}
-                loading="lazy"
+                alt={frameAlt}
                 style={{
                   width: "360px",
                   height: "480px",
