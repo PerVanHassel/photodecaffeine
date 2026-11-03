@@ -6,7 +6,7 @@ import { FormPrivacyNote } from "../components/form/FormPrivacyNote";
 import { ChoiceChips } from "../components/form/ChoiceChips";
 import { Faq, type FaqItem } from "../components/Faq";
 import { PhotoReel } from "../components/PhotoReel";
-import { PhotoPackages, euro, packageName, type PickedPackage } from "../components/PhotoPackages";
+import { PhotoPackages, packageName, packagePrice, type PickedPackage } from "../components/PhotoPackages";
 import { EMAIL_INPUT, PHONE_INPUT, PublicInput, PublicTextarea } from "../components/form/PublicField";
 import { track, visitCampaign, visitId } from "../lib/analytics";
 import { altByUrl, altFromFile } from "../lib/articlePage";
@@ -120,7 +120,7 @@ function ServicePage({
     setError(null);
     const extra = choices.filter((c) => c !== picked?.category);
     const chosen = picked
-      ? `${page.name}: ${packageName(picked)} (${euro(picked.price)})${extra.length ? `, ${extra.join(", ")}` : ""}`
+      ? `${page.name}: ${packageName(picked)} (${packagePrice(picked)})${extra.length ? `, ${extra.join(", ")}` : ""}`
       : choices.length
         ? `${page.name}: ${choices.join(", ")}`
         : page.name;
@@ -416,7 +416,7 @@ function ServicePage({
               <div ref={pickedBox} tabIndex={-1} className="pdc-pkg-picked">
                 <span className="pdc-field-label">{tp.pickedLabel}</span>
                 <p className="pdc-pkg-picked-name">
-                  {packageName(picked)} <span>{euro(picked.price)}</span>
+                  {packageName(picked)} <span>{packagePrice(picked)}</span>
                 </p>
                 <div className="pdc-pkg-picked-actions">
                   <button
@@ -503,7 +503,7 @@ function ServicePage({
               {loading
                 ? ts.submitting
                 : tp && picked
-                  ? tp.submit(picked.name, picked.priceUnit ? `${euro(picked.price)} ${picked.priceUnit}` : euro(picked.price))
+                  ? tp.submit(picked.name, packagePrice(picked))
                   : ts.submitButton}
             </button>
             <FormPrivacyNote />

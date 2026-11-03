@@ -525,8 +525,8 @@
 }
 .pdc-reel-item:hover .pdc-reel-name, .pdc-reel-item:focus-visible .pdc-reel-name { color: #fffbe0; }
 
-/* Photography page: fixed packages per category (PhotoPackages). The last
-   one is the one to pick, so it carries the copper. */
+/* Photography page: fixed packages per category (PhotoPackages). The one
+   with the most value carries the copper. */
 .pdc-pkgs { scroll-margin-top: 72px; }
 .pdc-pkgs-head { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 20px; margin-bottom: 40px; }
 .pdc-pkgs-label {
@@ -541,7 +541,7 @@
 .pdc-pkgs-body { max-width: 320px; margin: 0; color: rgba(255,251,224,0.55); font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 300; line-height: 1.7; }
 .pdc-pkgs-tabs { display: flex; overflow-x: auto; margin-bottom: 32px; border-bottom: 1px solid rgba(255,251,224,0.08); scrollbar-width: none; }
 .pdc-pkgs-tabs .pdc-filter { font-size: 11px; }
-/* Who it is for: Particulier/Bedrijf, Sporter/Team/Per speler. */
+/* Who it is for: Particulier/Zakelijk, Sporter/Teamgalerij/Eigen set per speler. */
 .pdc-pkgs-groups { display: flex; align-items: center; flex-wrap: wrap; gap: 16px 32px; margin-bottom: 56px; font-family: 'Inter', sans-serif; }
 .pdc-pkgs-switch { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .pdc-pkgs-switch-label {
@@ -556,8 +556,12 @@
 .pdc-pkgs-switch-btn:hover { border-color: rgba(255,251,224,0.4); color: #fffbe0; }
 .pdc-pkgs-switch-btn[aria-pressed="true"] { border-color: #c8905a; background-color: rgba(200,144,90,0.14); color: #fffbe0; }
 .pdc-pkgs-switch-btn:focus-visible { outline: 2px solid #c8905a; outline-offset: 2px; }
+.pdc-pkgs-switch-vat { color: rgba(255,251,224,0.5); font-size: 11px; font-weight: 400; letter-spacing: 0.02em; }
+.pdc-pkgs-switch-btn[aria-pressed="true"] .pdc-pkgs-switch-vat { color: rgba(255,251,224,0.72); }
 .pdc-pkgs-intro { margin: 0; color: rgba(255,251,224,0.6); font-size: 14px; font-weight: 300; line-height: 1.6; }
 .pdc-pkg-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; align-items: stretch; }
+/* Two packages keep the width of two of three, instead of stretching. */
+.pdc-pkg-grid--pair { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 940px; }
 .pdc-pkg {
   position: relative; display: flex; flex-direction: column; padding: 48px 40px 40px;
   background-color: #0d0703; border: 1px solid rgba(255,251,224,0.06); font-family: 'Inter', sans-serif;
@@ -571,6 +575,9 @@
 .pdc-pkg-pitch { margin: 0 0 32px; color: rgba(255,251,224,0.55); font-size: 13px; font-weight: 300; line-height: 1.7; }
 .pdc-pkg-price { margin: 0; color: #fffbe0; font-size: 64px; font-weight: 900; line-height: 1; letter-spacing: -0.04em; }
 .pdc-pkg-price span { display: inline-block; margin-left: 10px; color: rgba(255,251,224,0.5); font-size: 12px; font-weight: 400; line-height: 1.4; letter-spacing: 0.04em; }
+/* A business price with btw, and a plan's minimum term, small under the price. */
+.pdc-pkg-vat { margin: 10px 0 0; color: rgba(255,251,224,0.55); font-size: 12px; font-weight: 300; line-height: 1.5; letter-spacing: 0.02em; }
+.pdc-pkg-vat + .pdc-pkg-vat { margin-top: 4px; }
 .pdc-pkg-upsell { margin: 12px 0 0; color: #c8905a; font-size: 13px; font-weight: 600; line-height: 1.5; letter-spacing: 0.02em; }
 .pdc-pkg-photos {
   display: flex; flex-direction: column; gap: 4px; margin: 24px 0 28px; padding: 18px 0;
@@ -578,6 +585,7 @@
 }
 .pdc-pkg-photos strong { color: #fffbe0; font-size: 16px; font-weight: 700; letter-spacing: 0.01em; }
 .pdc-pkg-photos span { color: rgba(255,251,224,0.55); font-size: 12px; font-weight: 300; }
+.pdc-pkg-detail { flex: 1; display: flex; flex-direction: column; }
 .pdc-pkg-list { flex: 1; display: flex; flex-direction: column; gap: 12px; margin: 0 0 40px; padding: 0; list-style: none; }
 .pdc-pkg-list li { display: flex; align-items: flex-start; gap: 12px; color: rgba(255,251,224,0.72); font-size: 13px; font-weight: 300; line-height: 1.6; }
 .pdc-pkg-list svg { flex-shrink: 0; margin-top: 4px; color: #c8905a; }
@@ -585,7 +593,13 @@
 .pdc-pkg-list .pdc-pkg-off svg { color: rgba(255,251,224,0.25); }
 .pdc-pkg-btn { display: block; width: 100%; padding: 16px; font-size: 10px; font-weight: 700; letter-spacing: 0.2em; }
 .pdc-pkg-btn:focus-visible { outline: 2px solid #c8905a; outline-offset: 2px; }
-.pdc-pkgs-note { margin: 32px 0 0; color: rgba(255,251,224,0.5); font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 300; letter-spacing: 0.05em; text-align: center; }
+/* A monthly plan, under the one-off packages it sits next to: the price on the
+   left, what is in it on the right. */
+.pdc-pkg--plan { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); column-gap: 72px; margin-top: 2px; }
+.pdc-pkg--plan .pdc-pkg-photos { margin-bottom: 0; }
+.pdc-pkg--plan .pdc-pkg-list { display: block; columns: 2; column-gap: 32px; }
+.pdc-pkg--plan .pdc-pkg-list li { margin-bottom: 12px; break-inside: avoid; }
+.pdc-pkgs-note { margin: 32px 0 0; color: rgba(255,251,224,0.55); font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 300; line-height: 1.6; letter-spacing: 0.04em; text-align: center; }
 /* The picked package at the top of the request form. */
 .pdc-pkg-picked { padding: 20px 24px; border: 1px solid rgba(200,144,90,0.6); background-color: rgba(200,144,90,0.08); outline: none; }
 .pdc-pkg-picked:focus-visible { outline: 2px solid #c8905a; outline-offset: 2px; }
@@ -593,7 +607,7 @@
   margin: 0 0 12px; color: #fffbe0; font-family: 'Inter', sans-serif; font-size: 20px; font-weight: 900;
   line-height: 1.2; letter-spacing: -0.01em; text-transform: uppercase;
 }
-.pdc-pkg-picked-name span { margin-left: 8px; color: #c8905a; }
+.pdc-pkg-picked-name span { margin-left: 8px; color: #c8905a; text-transform: none; }
 .pdc-pkg-picked-actions { display: flex; flex-wrap: wrap; gap: 8px 24px; }
 .pdc-link-btn { min-height: 24px; padding: 0; background: none; border: 0; cursor: pointer; }
 
@@ -603,12 +617,17 @@
 @media (max-width: 1023px) {
   .pdc-pkg-grid { grid-template-columns: minmax(0, 1fr); gap: 3px; }
   .pdc-pkg--best { margin-top: 16px; }
+  .pdc-pkg--plan { display: flex; margin-top: 3px; }
+  .pdc-pkg--plan .pdc-pkg-photos { margin-bottom: 28px; }
+  .pdc-pkg--plan .pdc-pkg-list { display: flex; columns: auto; }
+  .pdc-pkg--plan .pdc-pkg-list li { margin-bottom: 0; }
 }
 @media (max-width: 767px) {
   .pdc-pkgs-tabs { margin-bottom: 32px; }
   .pdc-pkgs-groups { margin-bottom: 48px; }
   .pdc-pkg { padding: 40px 24px 28px; }
   .pdc-pkg-name { font-size: 34px; }
+  .pdc-pkg--plan .pdc-pkg-name { font-size: clamp(24px, 7.4vw, 34px); }
   .pdc-pkg-price { font-size: 56px; }
 }
 
