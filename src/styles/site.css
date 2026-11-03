@@ -13,11 +13,16 @@
 
 /* ── Hero ─────────────────────────────────────────────────────────────── */
 
+/* 100vh on a phone is the tall viewport, so the hero (and the buttons at the
+   bottom) slide under the address bar. svh is the short fallback, dvh follows
+   the bar as it shows and hides. The phone photo uses the same units so it
+   stays the top half. */
+.pdc-hero { min-height: 100vh; min-height: 100svh; min-height: 100dvh; }
 .pdc-hero-bg picture { display: block; width: 100%; height: 100%; }
 .pdc-hero-bg img { opacity: 0.35; }
 .pdc-hero-shade { background: linear-gradient(135deg, rgba(10,5,1,0.92) 0%, rgba(30,15,5,0.78) 50%, rgba(10,5,1,0.85) 100%); }
-.pdc-hero-phone-photo { display: none; }
-.pdc-hero-content { padding: 0 40px; justify-content: center; }
+.pdc-hero-phone-photo { display: none; height: 55vh; height: 55svh; height: 55dvh; }
+.pdc-hero-content { height: 100vh; height: 100svh; height: 100dvh; padding: 0 40px; justify-content: center; }
 .pdc-hero-grid { display: grid; grid-template-columns: 1fr auto; gap: 60px; align-items: center; }
 .pdc-hero-label { margin-bottom: 28px; }
 .pdc-hero-title { font-size: clamp(48px, 7vw, 96px); margin: 0 0 24px; }
