@@ -67,7 +67,7 @@ function ServicePage({
   const others = ts.pages.filter((p) => p.id !== id);
   const hero = HERO[id];
   // Only photography has fixed packages so far. A photography category with
-  // packages (Automotive, Sport) gets its own page with its own texts.
+  // packages (Automotive, Sport, Portret) gets its own page with its own texts.
   const tp = id === "fotografie" ? ts.packages : null;
   const sub = tp?.categories.find((c) => c.id === category);
   const text = sub ?? page;
@@ -584,7 +584,7 @@ function ServicePage({
 /**
  * Photography leads with the niche picked in the admin (Instellingen →
  * Fotografie). Without one, the grid shows recent work from the whole portfolio.
- * A category page (Automotive, Sport) leads with that category instead.
+ * A category page (Automotive, Sport, Portret) leads with that category instead.
  */
 function Photography({ category }: { category?: string }) {
   const { t } = useLanguage();
@@ -610,5 +610,6 @@ function Photography({ category }: { category?: string }) {
 export const PhotographyPage = () => <Photography />;
 export const AutomotivePhotographyPage = () => <Photography category="automotive" />;
 export const SportPhotographyPage = () => <Photography category="sport" />;
+export const PortraitPhotographyPage = () => <Photography category="portret" />;
 export const VideographyPage = () => <ServicePage id="videografie" />;
 export const WebsitePage = () => <ServicePage id="website" />;

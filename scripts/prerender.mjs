@@ -39,6 +39,7 @@ const PAGES = [
   { route: "/services/fotografie", data: ["settings", "articles"] },
   { route: "/services/fotografie/automotive", data: ["settings", "articles"] },
   { route: "/services/fotografie/sport", data: ["settings", "articles"] },
+  { route: "/services/fotografie/portret", data: ["settings", "articles"] },
   { route: "/services/videografie", data: [] },
   { route: "/services/website", data: [] },
   { route: "/services/social-media", data: [] },

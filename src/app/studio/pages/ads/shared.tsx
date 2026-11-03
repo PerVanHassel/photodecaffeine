@@ -135,6 +135,7 @@ export type Device = "all" | "mobile" | "desktop" | "tablet";
 export const LANDING_PAGES = [
   { path: "/services/fotografie/automotive", label: "Automotive" },
   { path: "/services/fotografie/sport", label: "Sport" },
+  { path: "/services/fotografie/portret", label: "Portret" },
   { path: "/services/fotografie", label: "Fotografie" },
   { path: "/", label: "Home" },
   { path: "/services/social-media", label: "Social media" },
@@ -148,6 +149,7 @@ const PAGE_NAMES: Record<string, string> = {
   "/services/fotografie": "Fotografie",
   "/services/fotografie/automotive": "Automotive",
   "/services/fotografie/sport": "Sport",
+  "/services/fotografie/portret": "Portret",
   "/services/videografie": "Videografie",
   "/services/website": "Websites",
   "/services/social-media": "Social media",

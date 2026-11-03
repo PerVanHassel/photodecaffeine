@@ -44,6 +44,7 @@ export const routes: RouteObject[] = [
           { path: "services/fotografie", lazy: chunk(() => import("./pages/ServicePage"), (m) => m.PhotographyPage) },
           { path: "services/fotografie/automotive", lazy: chunk(() => import("./pages/ServicePage"), (m) => m.AutomotivePhotographyPage) },
           { path: "services/fotografie/sport", lazy: chunk(() => import("./pages/ServicePage"), (m) => m.SportPhotographyPage) },
+          { path: "services/fotografie/portret", lazy: chunk(() => import("./pages/ServicePage"), (m) => m.PortraitPhotographyPage) },
           { path: "services/videografie", lazy: chunk(() => import("./pages/ServicePage"), (m) => m.VideographyPage) },
           { path: "services/website", lazy: chunk(() => import("./pages/ServicePage"), (m) => m.WebsitePage) },
           // Moved under photography. Vercel redirects it too (vercel.json);

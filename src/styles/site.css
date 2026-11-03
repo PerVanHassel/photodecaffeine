@@ -600,6 +600,7 @@
 .pdc-pkg--plan .pdc-pkg-list { display: block; columns: 2; column-gap: 32px; }
 .pdc-pkg--plan .pdc-pkg-list li { margin-bottom: 12px; break-inside: avoid; }
 .pdc-pkgs-note { margin: 32px 0 0; color: rgba(255,251,224,0.55); font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 300; line-height: 1.6; letter-spacing: 0.04em; text-align: center; }
+.pdc-pkg-grid--pair + .pdc-pkgs-note { max-width: 940px; }
 /* The picked package at the top of the request form. */
 .pdc-pkg-picked { padding: 20px 24px; border: 1px solid rgba(200,144,90,0.6); background-color: rgba(200,144,90,0.08); outline: none; }
 .pdc-pkg-picked:focus-visible { outline: 2px solid #c8905a; outline-offset: 2px; }
@@ -627,7 +628,7 @@
   .pdc-pkgs-groups { margin-bottom: 48px; }
   .pdc-pkg { padding: 40px 24px 28px; }
   .pdc-pkg-name { font-size: 34px; }
-  .pdc-pkg--plan .pdc-pkg-name { font-size: clamp(24px, 7.4vw, 34px); }
+  .pdc-pkg--plan .pdc-pkg-name { font-size: clamp(18px, 5.9vw, 34px); }
   .pdc-pkg-price { font-size: 56px; }
 }
 
