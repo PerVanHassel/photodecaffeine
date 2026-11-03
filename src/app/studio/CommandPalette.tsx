@@ -1,7 +1,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { Command } from "cmdk";
 import {
-  BookOpen, CalendarDays, CheckSquare, Euro, FileText, FolderUp, Inbox, Kanban, MapPin, PiggyBank, Plus, Sun, UserPlus, Users, Image as ImageIcon,
+  BookOpen, CalendarDays, CheckSquare, Euro, FileText, FolderTree, Inbox, Kanban, MapPin, PiggyBank, Plus, Sun, UserPlus, Users, Image as ImageIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
@@ -33,7 +33,7 @@ const PAGES: Item[] = [
   { id: "p-portfolio", label: "Portfolio", icon: <ImageIcon />, to: "/admin/portfolio" },
   { id: "p-investments", label: "Investeringen", icon: <PiggyBank />, to: "/admin/investments", keywords: "aanschaf kopen wensen apparatuur camera" },
   { id: "p-documents", label: "Documenten", icon: <BookOpen />, to: "/admin/documents", keywords: "voorwaarden lezen notities copyright" },
-  { id: "p-files", label: "Bestanden", icon: <FolderUp />, to: "/admin/files", keywords: "pool sturen oversturen delen uploaden downloaden" },
+  { id: "p-files", label: "Bestanden", icon: <FolderTree />, to: "/admin/files", keywords: "bijlagen mappen opslag fotos structuur downloaden" },
 ];
 
 function matches(item: Item, q: string) {

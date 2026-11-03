@@ -75,7 +75,6 @@ const REVIEW = stored("review:", (r) => r.clientName || r.googleName || "Review"
 const INVESTMENT = stored("investments:item:", (r) => join(r.title, euro(r.price)), () => "/admin/investments");
 const DECLARATION = stored("declarations:declaration:", (r) => join(r.description || r.category, euro(r.amount)), () => "/admin/declarations");
 const ROLE = stored("roles:role:", (r) => r.name, () => "/admin/team");
-const TEAM_FILE = table("team_files", (r) => r.name, () => "/admin/files");
 const SETTINGS: Source = { load: async () => parse(await kv.get("site:settings")), label: () => "", link: () => "/admin/settings" };
 const WORKER: Source = {
   load: async (id) => (await db.auth.admin.getUserById(id)).data?.user ?? null,
@@ -144,8 +143,6 @@ const QUIET = [
   "POST /admin/investments/photo",
   "POST /admin/investments/link",
   "POST /admin/storage/ensure-bucket",
-  "POST /admin/files/start",
-  "POST /admin/files/announce",
   "POST /admin/google/start",
   "POST /review/open",
   // A batch of visitor statistics from the site, many per visit.
@@ -293,12 +290,6 @@ const RULES: Record<string, Rule> = {
   "POST /admin/documents/:doc/notes": { area: "Documenten", action: "Notitie geplaatst", of: DOCUMENT, param: "doc", detail: (x) => clip(x.body?.text) },
   "PUT /admin/documents/:doc/notes/:id": { area: "Documenten", action: "Notitie aangepast", of: DOCUMENT, param: "doc", detail: (x) => clip(x.body?.text) },
   "DELETE /admin/documents/:doc/notes/:id": { area: "Documenten", action: "Notitie verwijderd", of: DOCUMENT, param: "doc" },
-  "POST /admin/files": {
-    area: "Bestanden", action: "Bestand in de pool gezet", of: TEAM_FILE, created: true,
-    detail: (x) => `voor ${x.row?.to_name || "iedereen"}`,
-  },
-  "POST /admin/files/:id/download": { area: "Bestanden", action: "Bestand uit de pool gedownload", of: TEAM_FILE },
-  "DELETE /admin/files/:id": { area: "Bestanden", action: "Bestand uit de pool verwijderd", of: TEAM_FILE },
 
   // Clients in the portal
   "POST /portal/signup": {

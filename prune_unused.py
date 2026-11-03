@@ -124,7 +124,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     # The private bucket stores bare paths that the reference scan cannot
     # match, so everything in it would look unused. It is cleaned by the
     # edge function when a gallery image or project is deleted, never here.
-    # The same goes for the team's file pool, where people delete what they sent.
+    # The same goes for the bucket of the old team file pool.
     if args.bucket.startswith(("studio-private", "team-files")):
         print("De privé-bucket wordt niet door dit script opgeruimd.", file=sys.stderr)
         return 2

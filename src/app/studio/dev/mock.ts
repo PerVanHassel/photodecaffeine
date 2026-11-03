@@ -536,12 +536,25 @@ const investments: Json[] = [
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-const teamPeople = [{ id: id(999), name: "Per van Hassel" }, { id: id(998), name: "Majd" }, { id: id(997), name: "Sanne" }];
-const teamFiles: Json[] = [
-  { id: id(451), name: "logo-martine-definitief.zip", size: 18_400_000, type: "application/zip", note: "De logo's voor Martine, alle formaten.", createdAt: iso(-1), from: teamPeople[1], to: teamPeople[0], viewUrl: "", canDelete: true },
-  { id: id(452), name: "Voorwaarden v1.2.pdf", size: 412_000, type: "application/pdf", note: "", createdAt: iso(-3), from: teamPeople[0], to: null, viewUrl: PHOTOS[0], canDelete: true },
-  { id: id(453), name: "IMG_4021.jpg", size: 6_800_000, type: "image/jpeg", note: "", createdAt: iso(-6), from: teamPeople[2], to: teamPeople[1], viewUrl: PHOTOS[1], canDelete: false },
+// Bestanden: a little of every folder, placed the way the server places them.
+const stored = (bucket: string, path: string, folder: string, size: number, type: string, days: number, isPublic = false) =>
+  ({ bucket, path, folder, name: path.split("/").pop()!.replace(/^\d{10,}-([0-9a-f]{8}-)?/, ""), size, type, updatedAt: iso(days), public: isPublic });
+const storedFiles = [
+  stored("portfolio-images-0951c59e", "1761234567890-hero-automotive.jpg", "website", 9_400_000, "image/jpeg", -40, true),
+  ...Array.from({ length: 6 }, (_, i) => stored("portfolio-images-0951c59e", `web/17612345${i}0000-shoot-${i + 1}-1280.jpg`, "website/web", 380_000 + i * 9000, "image/jpeg", -i, true)),
+  ...Array.from({ length: 4 }, (_, i) => stored("studio-private-0951c59e", `galleries/${id(52)}/17612345${i}1111-a1b2c3d4-IMG_40${i}1.jpg`, `galerijen/${id(52)}`, 7_200_000, "image/jpeg", -2)),
+  stored("studio-private-0951c59e", `galleries/${id(52)}/wm/1761234562222-a1b2c3d4-IMG_4001.jpg`, `galerijen/${id(52)}/wm`, 640_000, "image/jpeg", -2),
+  stored("studio-private-0951c59e", `galleries/${id(53)}/1761234563333-a1b2c3d4-clip.mov`, `galerijen/${id(53)}`, 48_000_000, "video/quicktime", -9),
+  stored("studio-private-0951c59e", `consents/${id(52)}/1761234564444-a1b2c3d4-kind.jpg`, `toestemming/${id(52)}`, 700_000, "image/jpeg", -5),
+  stored("studio-private-0951c59e", `receipts/${id(999)}/1761234565555-a1b2c3d4-factuur-cameranu.pdf`, `bonnetjes/${id(999)}`, 240_000, "application/pdf", -10),
+  stored("studio-private-0951c59e", "investments/1761234566666-a1b2c3d4-sony-70-200.jpg", "investeringen", 420_000, "image/jpeg", -20),
+  stored("team-files-0951c59e", `${id(461)}/img_5187.mov`, "pool", 20_545_381, "video/quicktime", -1),
 ];
+const storedLabels = {
+  website: "Website", web: "Verkleind voor de site", galerijen: "Galerijen", wm: "Met watermerk", toestemming: "Toestemming",
+  bonnetjes: "Bonnetjes", investeringen: "Investeringen", pool: "Bestandenpool",
+  [id(52)]: "Teamfoto's 2026", [id(53)]: "Verwijderd (00000000)", [id(999)]: "Per van Hassel",
+};
 
 /** Mirrors the edge function's routes closely enough to drive every screen. */
 export async function mockApi(path: string, method: string, body: Json): Promise<Json> {
@@ -610,7 +623,8 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     if (p === "/admin/calendar-feed") return { url: "https://www.photodecaffeine.com/api/calendar/0123456789abcdef0123456789abcdef0123456789abcdef.ics" };
     if (p === "/admin/settings") return { settings: { ...siteSettings, heroImageUrl: PHOTOS[0], heroImageMobileUrl: "", frameImageUrl: PHOTOS[6], studioName: "PhotoDeCaffeine", contactEmail: "contact@photodecaffeine.com", sections: { workProcess: true, portfolio: true, about: true, services: true, socialProof: false, customCTA: true }, business: { name: "PhotoDeCaffeine Productions" } } };
     if (p === "/admin/notifications") return { notifications: [], unread: 0, readAt: "" };
-    if (p === "/admin/files") return { files: structuredClone(teamFiles), people: teamPeople, free: 151_000_000, maxFile: 50 * 1024 * 1024 };
+    if (p === "/admin/files") return { files: structuredClone(storedFiles), labels: storedLabels, used: 798_415_390, limit: 1024 ** 3 };
+    if (p === "/admin/files/link") return { url: url.searchParams.get("download") ? "#gedownload" : PHOTOS[1] };
     if (p === "/admin/me") return { id: id(999), email: "per@example.nl", name: "Per van Hassel", isOwner: true, roleName: "Eigenaar", permissions: Object.fromEntries(["manageClients", "manageQuotes", "manageInquiries", "managePortfolio", "manageAds", "manageSettings", "manageDeclarations", "viewAllDeclarations", "manageAdmins"].map((k) => [k, true])) };
     if (p === "/admin/portfolio") return { articles: structuredClone(portfolio) };
     if ((r = m(/^\/admin\/portfolio\/([^/]+)$/))) return { article: structuredClone(portfolio.find((a) => a.id === r![1])) };
@@ -680,18 +694,6 @@ export async function mockApi(path: string, method: string, body: Json): Promise
   }
 
   // Writes: apply the obvious change in memory and answer like the server.
-  if (p === "/admin/files/start") return { id: crypto.randomUUID(), url: "mock" };
-  if (p === "/admin/files/announce") return { mailed: true };
-  if (p === "/admin/files" && method === "POST") {
-    const file = { id: body.id, name: body.name, size: 2_400_000, type: "", note: body.note, createdAt: new Date().toISOString(), from: teamPeople[0], to: teamPeople.find((x) => x.id === body.toId) || null, viewUrl: "", canDelete: true };
-    teamFiles.unshift(file);
-    return { file };
-  }
-  if (/^\/admin\/files\/[^/]+\/download$/.test(p)) return { url: "#gedownload" };
-  if (p.startsWith("/admin/files/") && method === "DELETE") {
-    teamFiles.splice(teamFiles.findIndex((f) => f.id === p.split("/").pop()), 1);
-    return { success: true };
-  }
   if (p === "/admin/investments/link") {
     await delay(900);
     const shop = new URL(body.url).hostname.replace(/^www\./, "");

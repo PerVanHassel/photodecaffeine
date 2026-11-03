@@ -1,28 +1,34 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Download, File as FileIcon, FileArchive, FileText, Film, FolderUp, Image as ImageIcon, Loader2, Music, Plus, Send, Trash2, Upload, X } from "lucide-react";
-import { useEffect, useRef, useState, type DragEvent } from "react";
-import { toast } from "sonner";
-import { del, errorMessage, get, post, putFile } from "../api";
-import { ago, fileSize } from "../format";
-import { useAction, useMe } from "../queries";
-import { Button, Card, cx, Empty, ErrorState, PageHead, Pill, Modal, Segmented, SelectField, SkeletonList, TextAreaField, useConfirm } from "../ui";
-import { useUnsavedChanges } from "../unsaved";
+import { useQuery } from "@tanstack/react-query";
+import { ChevronRight, Download, ExternalLink, File as FileIcon, FileArchive, FileText, Film, Folder as FolderIcon, FolderOpen, FolderTree, Image as ImageIcon, Music, Search } from "lucide-react";
+import { useMemo, useState } from "react";
+import { get } from "../api";
+import { ago, fileSize, fmtDateTime } from "../format";
+import { useAction } from "../queries";
+import { Button, Card, cx, Empty, ErrorState, Input, Modal, PageHead, Skeleton, SkeletonList } from "../ui";
 import { useUrlState } from "../urlState";
 
-// The team's file pool: drop files here, say who they are for, and they get a
-// mail with a link back to this page. Only the team ever sees this.
+// Everything stored for the site, folder by folder. Only to look through: what
+// someone may see is decided per file on the server.
 
-type Person = { id: string; name: string };
-type TeamFile = {
-  id: string; name: string; size: number; type: string; note: string; createdAt: string;
-  from: Person; to: Person | null; viewUrl: string; canDelete: boolean;
+type Stored = { bucket: string; path: string; folder: string; name: string; size: number; type: string; updatedAt: string; public: boolean };
+type Listing = { files: Stored[]; labels: Record<string, string>; used: number; limit: number };
+type Folder = { path: string; part: string; folders: Folder[]; files: Stored[]; count: number; size: number };
+
+const SECTIONS = ["website", "galerijen", "toestemming", "locaties", "bonnetjes", "investeringen", "pool", "overig"];
+
+const HINTS: Record<string, string> = {
+  website: "De foto's van de site",
+  galerijen: "Foto's en video's van klanten, per project",
+  toestemming: "Foto's die ouders meestuurden om hun kind te herkennen",
+  locaties: "Foto's van locaties",
+  bonnetjes: "Bonnetjes en facturen van declaraties",
+  investeringen: "Foto's van aankopen en wensen",
+  pool: "Wat met de oude bestandenpool is gestuurd",
 };
-type Listing = { files: TeamFile[]; people: Person[]; free: number; maxFile: number };
 
-const FILTERS = ["alles", "voor-mij", "van-mij"] as const;
-type Filter = (typeof FILTERS)[number];
-
-const hasFiles = (e: DragEvent) => Array.from(e.dataTransfer.types).includes("Files");
+// Only what a browser shows safely on its own, in the preview. The rest opens in a tab or downloads.
+const SHOWS_AS_IMAGE = /^image\/(jpeg|png|webp|gif|avif)$/;
+const SHOWS_AS_VIDEO = /^video\/(mp4|quicktime|webm)$/;
 
 function iconFor(f: { type: string; name: string }) {
   if (f.type.startsWith("image/")) return <ImageIcon />;
@@ -33,258 +39,231 @@ function iconFor(f: { type: string; name: string }) {
   return <FileIcon />;
 }
 
-/** The files that can go, with a word about the ones that cannot. A dropped folder arrives as an empty file. */
-function usable(list: File[], maxFile: number): File[] {
-  return list.filter((f) => {
-    if (f.size === 0) toast.error(`${f.name} is leeg of een map. Pak een map eerst in als zip.`);
-    else if (f.size > maxFile) toast.error(`${f.name} is ${fileSize(f.size)}. Het maximum is ${fileSize(maxFile)} per bestand.`);
-    else return true;
-    return false;
-  });
+function buildTree(files: Stored[], labels: Record<string, string>) {
+  const empty = (path: string, part: string): Folder => ({ path, part, folders: [], files: [], count: 0, size: 0 });
+  const root = empty("", "");
+  const byPath = new Map([["", root]]);
+  for (const f of files) {
+    let node = root;
+    node.count++;
+    node.size += f.size;
+    for (const part of f.folder.split("/")) {
+      const path = node.path ? `${node.path}/${part}` : part;
+      let next = byPath.get(path);
+      if (!next) {
+        next = empty(path, part);
+        byPath.set(path, next);
+        node.folders.push(next);
+      }
+      next.count++;
+      next.size += f.size;
+      node = next;
+    }
+    node.files.push(f);
+  }
+  for (const node of byPath.values()) {
+    node.folders.sort((a, b) => (labels[a.part] ?? a.part).localeCompare(labels[b.part] ?? b.part, "nl"));
+    node.files.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  }
+  const place = (f: Folder) => { const i = SECTIONS.indexOf(f.part); return i < 0 ? SECTIONS.length : i; };
+  root.folders.sort((a, b) => place(a) - place(b));
+  return { root, byPath };
 }
 
+const countOf = (n: number) => `${n} ${n === 1 ? "bestand" : "bestanden"}`;
+
 export function FilesPage() {
-  const me = useMe();
-  const confirm = useConfirm();
-  const [filter, setFilter] = useUrlState<Filter>("filter", "alles", FILTERS);
-  const [picked, setPicked] = useState<File[] | null>(null);
-  const [dragging, setDragging] = useState(false);
-  const picker = useRef<HTMLInputElement>(null);
-  const depth = useRef(0);
-  const data = useQuery({ queryKey: ["team-files"], queryFn: ({ signal }) => get<Listing>("/admin/files", signal) });
-  const remove = useAction({ fn: (id: string) => del(`/admin/files/${id}`), invalidate: () => [["team-files"]], success: "Bestand verwijderd" });
-  // The link makes the browser save the file, so this page stays where it is.
-  const download = useAction({
-    fn: (id: string) => post<{ url: string }>(`/admin/files/${id}/download`),
-    onSuccess: ({ url }) => window.location.assign(url),
-  });
+  const [map, setMap] = useUrlState<string>("map", "");
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState<Stored | null>(null);
+  const data = useQuery({ queryKey: ["stored-files"], queryFn: ({ signal }) => get<Listing>("/admin/files", signal) });
+  const labels = data.data?.labels || {};
+  const { root, byPath } = useMemo(() => buildTree(data.data?.files || [], data.data?.labels || {}), [data.data]);
+  const label = (part: string) => labels[part] ?? part;
+  const pathOf = (folder: string) => folder.split("/").map(label).join(" / ");
 
-  const meId = me.data?.id || "";
-  const maxFile = data.data?.maxFile ?? 50 * 1024 * 1024;
-  const free = data.data?.free ?? 0;
-  const list = (data.data?.files || []).filter((f) => (filter === "voor-mij" ? f.to?.id === meId : filter === "van-mij" ? f.from.id === meId : true));
-
-  function pick(files: File[]) {
-    const good = usable(files, maxFile);
-    if (good.length) setPicked(good);
-  }
-
-  const send = <Button variant="primary" icon={<Upload />} onClick={() => picker.current?.click()}>Bestanden sturen</Button>;
+  // A folder that is no longer there, or an old link to one, starts over at the top.
+  const here = byPath.get(map) || root;
+  const crumbs = here.path ? here.path.split("/").map((part, i, all) => ({ part, path: all.slice(0, i + 1).join("/") })) : [];
+  const q = query.trim().toLowerCase();
+  const found = q ? (data.data?.files || []).filter((f) => f.name.toLowerCase().includes(q)).slice(0, 200) : null;
+  const go = (path: string) => { setQuery(""); setMap(path); };
+  const usedShare = data.data ? Math.min(1, data.data.used / data.data.limit) : 0;
 
   return (
-    <>
-      {/* Files dropped anywhere on the page start a send. */}
-      <div
-        className="s-view"
-        onDragEnter={(e) => { if (!hasFiles(e)) return; e.preventDefault(); depth.current++; setDragging(true); }}
-        onDragOver={(e) => { if (hasFiles(e)) e.preventDefault(); }}
-        onDragLeave={() => { if (--depth.current <= 0) { depth.current = 0; setDragging(false); } }}
-        onDrop={(e) => {
-          if (!hasFiles(e)) return;
-          e.preventDefault();
-          depth.current = 0;
-          setDragging(false);
-          pick(Array.from(e.dataTransfer.files));
-        }}
-      >
-        <PageHead title="Bestanden" sub="Stuur elkaar bestanden. Sleep ze hierheen of kies ze." actions={send} />
-        <input ref={picker} type="file" multiple hidden onChange={(e) => { const files = Array.from(e.target.files || []); e.target.value = ""; pick(files); }} />
-        <div className="s-row between">
-          <Segmented
-            label="Welke bestanden"
-            value={filter}
-            onChange={setFilter}
-            options={[{ value: "alles", label: "Alles" }, { value: "voor-mij", label: "Voor mij" }, { value: "van-mij", label: "Van mij" }]}
-          />
-          {data.data && (
-            free < maxFile
-              ? <Pill tone="warn">Nog {fileSize(free)} ruimte. Verwijder wat je niet meer nodig hebt.</Pill>
-              : <span className="s-small s-muted">Nog {fileSize(free)} ruimte · maximaal {fileSize(maxFile)} per bestand</span>
-          )}
+    <div className="s-view">
+      <PageHead title="Bestanden" sub="Alles wat er voor de site is opgeslagen, map voor map." />
+      <div className="s-row between">
+        <div className="s-files-search">
+          <Search aria-hidden="true" />
+          <Input type="search" aria-label="Zoek een bestand" placeholder="Zoek een bestand" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
-        {data.isError && <ErrorState error={data.error} retry={() => data.refetch()} />}
-        <Card bodyClass="none">
-          {data.isLoading ? <SkeletonList rows={4} /> : list.length === 0 ? (
-            <Empty
-              icon={<FolderUp />}
-              title={filter === "voor-mij" ? "Er staat niets voor jou klaar" : filter === "van-mij" ? "Je hebt nog niets gestuurd" : "De pool is leeg"}
-              action={filter === "voor-mij" ? undefined : send}
-            >
-              {filter === "voor-mij" ? "Zodra iemand je iets stuurt, krijg je een mail en staat het hier." : "Sleep een bestand hierheen om het te sturen."}
-            </Empty>
-          ) : (
-            <ul className="s-list">
-              {list.map((f) => (
-                <li key={f.id} className="s-item">
-                  <span className={cx("s-ico", f.to?.id === meId && "acc")}>{iconFor(f)}</span>
-                  <div style={{ minWidth: 0 }}>
-                    <div className="t s-truncate" title={f.name}>
-                      {f.viewUrl ? <a href={f.viewUrl} target="_blank" rel="noreferrer">{f.name}</a> : f.name}
-                    </div>
-                    <div className="s">
-                      {f.from.id === meId ? "Van jou" : `Van ${f.from.name}`} voor {f.to ? (f.to.id === meId ? "jou" : f.to.name) : "iedereen"} · {fileSize(f.size)} · {ago(f.createdAt)}
-                    </div>
-                    {f.note && <div className="s" style={{ marginTop: 4, overflowWrap: "anywhere" }}>{f.note}</div>}
-                  </div>
-                  <div className="s-row nowrap">
-                    <Button
-                      size="sm"
-                      iconOnly
-                      aria-label={`${f.name} downloaden`}
-                      title="Downloaden"
-                      icon={<Download />}
-                      loading={download.isPending && download.variables === f.id}
-                      onClick={() => download.mutate(f.id)}
-                    />
-                    {f.canDelete && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        iconOnly
-                        aria-label={`${f.name} verwijderen`}
-                        title="Verwijderen"
-                        icon={<Trash2 />}
-                        onClick={async () => {
-                          if (await confirm({ title: "Bestand verwijderen?", body: `${f.name} is daarna voor iedereen weg.`, danger: true, confirm: "Verwijderen" })) remove.mutate(f.id);
-                        }}
-                      />
-                    )}
-                  </div>
+        {data.data && (
+          <div className="s-stack sm s-files-used">
+            <span className="s-small s-muted">{fileSize(data.data.used)} van {fileSize(data.data.limit)} opslag gebruikt</span>
+            <div className="s-progress" role="progressbar" aria-label="Opslag gebruikt" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(usedShare * 100)}>
+              <i style={{ transform: `scaleX(${usedShare})`, background: usedShare > 0.9 ? "var(--bad)" : undefined }} />
+            </div>
+          </div>
+        )}
+      </div>
+      {data.isError && <ErrorState error={data.error} retry={() => data.refetch()} />}
+      <div className="s-files">
+        <Card className="s-tree" bodyClass="none">
+          <nav aria-label="Mappen">
+            {data.isLoading ? <SkeletonList rows={5} /> : (
+              <ul>
+                <li>
+                  <button type="button" aria-current={!here.path || undefined} onClick={() => go("")}>
+                    <FolderTree /> <span className="s-truncate">Alle mappen</span> <span className="n">{root.count}</span>
+                  </button>
                 </li>
-              ))}
-            </ul>
+                {root.folders.map((f) => <TreeNode key={f.path} folder={f} current={here.path} label={label} onOpen={go} />)}
+              </ul>
+            )}
+          </nav>
+        </Card>
+        <Card bodyClass="none">
+          {found ? (
+            <>
+              <div className="s-crumbs" role="status">{found.length === 200 ? "De eerste 200 resultaten" : countOf(found.length)} voor “{query.trim()}”</div>
+              {found.length === 0 ? <Empty icon={<Search />} title="Niets gevonden">Zoek op een deel van de naam.</Empty> : (
+                <ul className="s-list">{found.map((f) => <FileRow key={f.bucket + f.path} file={f} where={pathOf(f.folder)} onOpen={setOpen} />)}</ul>
+              )}
+            </>
+          ) : (
+            <>
+              <nav className="s-crumbs" aria-label="Waar je bent">
+                <button type="button" aria-current={!here.path ? "page" : undefined} onClick={() => go("")}>Alle mappen</button>
+                {crumbs.map((c, i) => (
+                  <span key={c.path} className="s-row nowrap" style={{ gap: 4, minWidth: 0 }}>
+                    <ChevronRight aria-hidden="true" />
+                    <button type="button" className="s-truncate" aria-current={i === crumbs.length - 1 ? "page" : undefined} onClick={() => go(c.path)}>{label(c.part)}</button>
+                  </span>
+                ))}
+              </nav>
+              {data.isLoading ? <SkeletonList rows={6} /> : here.count === 0 ? (
+                <Empty icon={<FolderTree />} title="Hier staan geen bestanden" />
+              ) : (
+                <ul className="s-list">
+                  {here.folders.map((f) => (
+                    <li key={f.path}>
+                      <button type="button" className="s-item" onClick={() => go(f.path)}>
+                        <span className="s-ico"><FolderIcon /></span>
+                        <div style={{ minWidth: 0 }}>
+                          <div className="t s-truncate">{label(f.part)}</div>
+                          <div className="s">{!here.path && HINTS[f.part] ? `${HINTS[f.part]} · ` : ""}{countOf(f.count)} · {fileSize(f.size)}</div>
+                        </div>
+                        <ChevronRight aria-hidden="true" size={16} className="s-faint" />
+                      </button>
+                    </li>
+                  ))}
+                  {here.files.map((f) => <FileRow key={f.bucket + f.path} file={f} onOpen={setOpen} />)}
+                </ul>
+              )}
+            </>
           )}
         </Card>
-        {dragging && <div className="s-dropveil" aria-hidden="true"><span><Upload size={18} /> Laat los om te sturen</span></div>}
       </div>
-      {/* Outside the drop area, so a file dropped on the dialog is handled there only. */}
-      <SendDialog files={picked} people={(data.data?.people || []).filter((p) => p.id !== meId)} free={free} maxFile={maxFile} onClose={() => setPicked(null)} />
-    </>
+      <FileDialog file={open} where={open ? pathOf(open.folder) : ""} onClose={() => setOpen(null)} />
+    </div>
   );
 }
 
-type Item = { key: string; file: File; state: "wait" | "busy" | "done" | "failed"; share: number; error?: string };
-
-const itemsOf = (files: File[]): Item[] => files.map((file) => ({ key: crypto.randomUUID(), file, state: "wait", share: 0 }));
-
-function SendDialog({ files, people, free, maxFile, onClose }: {
-  files: File[] | null; people: Person[]; free: number; maxFile: number; onClose: () => void;
+/** A folder in the tree; what is inside only unfolds along the way to where you are. */
+function TreeNode({ folder, current, label, onOpen, depth = 0 }: {
+  folder: Folder; current: string; label: (part: string) => string; onOpen: (path: string) => void; depth?: number;
 }) {
-  const qc = useQueryClient();
-  const [items, setItems] = useState<Item[]>([]);
-  const [to, setTo] = useState("");
-  const [note, setNote] = useState("");
-  const [busy, setBusy] = useState(false);
-  const stop = useRef<AbortController | null>(null);
-  const more = useRef<HTMLInputElement>(null);
-  useUnsavedChanges(busy);
+  const active = current === folder.path;
+  const unfolded = active || current.startsWith(`${folder.path}/`);
+  return (
+    <li>
+      <button type="button" aria-current={active || undefined} style={{ paddingLeft: 10 + depth * 14 }} onClick={() => onOpen(folder.path)}>
+        {unfolded ? <FolderOpen /> : <FolderIcon />} <span className="s-truncate">{label(folder.part)}</span> <span className="n">{folder.count}</span>
+      </button>
+      {unfolded && folder.folders.length > 0 && (
+        <ul>{folder.folders.map((f) => <TreeNode key={f.path} folder={f} current={current} label={label} onOpen={onOpen} depth={depth + 1} />)}</ul>
+      )}
+    </li>
+  );
+}
 
-  useEffect(() => {
-    if (!files) return;
-    setItems(itemsOf(files));
-    setTo("");
-    setNote("");
-  }, [files]);
+function FileRow({ file, where, onOpen }: { file: Stored; where?: string; onOpen: (f: Stored) => void }) {
+  return (
+    <li>
+      <button type="button" className="s-item" onClick={() => onOpen(file)}>
+        <span className="s-ico">{iconFor(file)}</span>
+        <div style={{ minWidth: 0 }}>
+          <div className="t s-truncate" title={file.name}>{file.name}</div>
+          <div className="s">{where ? `${where} · ` : ""}{file.public ? "Openbaar" : "Privé"} · {fileSize(file.size)} · {ago(file.updatedAt)}</div>
+        </div>
+        <ChevronRight aria-hidden="true" size={16} className="s-faint" />
+      </button>
+    </li>
+  );
+}
 
-  const change = (key: string, patch: Partial<Item>) => setItems((list) => list.map((it) => (it.key === key ? { ...it, ...patch } : it)));
-  const add = (list: File[]) => {
-    const good = usable(list, maxFile);
-    if (good.length) setItems((now) => [...now, ...itemsOf(good)]);
-  };
-
-  const open = items.filter((it) => it.state !== "done");
-  const total = open.reduce((sum, it) => sum + it.file.size, 0);
-  const failed = open.some((it) => it.state === "failed");
-  const person = people.find((p) => p.id === to);
-  const someDone = items.some((it) => it.state === "done");
-
-  async function send() {
-    const ctrl = new AbortController();
-    stop.current = ctrl;
-    setBusy(true);
-    const sent: string[] = [];
-    let problems = 0;
-    for (const it of open) {
-      if (ctrl.signal.aborted) break;
-      change(it.key, { state: "busy", share: 0, error: undefined });
-      try {
-        const { id, url } = await post<{ id: string; url: string }>("/admin/files/start", { name: it.file.name, size: it.file.size });
-        await putFile(url, it.file, (share) => change(it.key, { share }), ctrl.signal);
-        await post("/admin/files", { id, name: it.file.name, note: note.trim(), toId: to || null });
-        sent.push(id);
-        change(it.key, { state: "done", share: 1 });
-      } catch (err) {
-        if ((err as Error).name === "AbortError") {
-          change(it.key, { state: "wait", share: 0 });
-          break;
-        }
-        problems++;
-        change(it.key, { state: "failed", error: errorMessage(err) });
-      }
-    }
-    setBusy(false);
-    qc.invalidateQueries({ queryKey: ["team-files"] });
-
-    const count = sent.length === 1 ? "Bestand" : `${sent.length} bestanden`;
-    let mailed = true;
-    if (sent.length && person) mailed = await post<{ mailed: boolean }>("/admin/files/announce", { ids: sent }).then((r) => r.mailed, () => false);
-    if (sent.length) {
-      if (!mailed) toast.warning(`${count} staat in de pool, maar ${person?.name} kon niet worden gemaild. Laat het even zelf weten.`);
-      else toast.success(person ? `${count} verstuurd naar ${person.name}` : `${count} in de pool gezet`);
-    }
-    if (!problems && !ctrl.signal.aborted && sent.length) onClose();
-  }
+function FileDialog({ file, where, onClose }: { file: Stored | null; where: string; onClose: () => void }) {
+  const link = useQuery({
+    queryKey: ["stored-file-link", file?.bucket, file?.path],
+    queryFn: ({ signal }) => get<{ url: string }>(`/admin/files/link?${new URLSearchParams({ bucket: file!.bucket, path: file!.path })}`, signal),
+    enabled: !!file,
+    staleTime: 30 * 60_000,
+  });
+  // The link makes the browser save the file, so this page stays where it is.
+  const download = useAction({
+    fn: (f: Stored) => get<{ url: string }>(`/admin/files/link?${new URLSearchParams({ bucket: f.bucket, path: f.path, download: f.name })}`),
+    onSuccess: ({ url }) => window.location.assign(url),
+  });
+  const url = link.data?.url;
 
   return (
     <Modal
-      open={!!files}
-      onOpenChange={(o) => { if (!o && !busy) onClose(); }}
-      title="Bestanden sturen"
-      footer={busy
-        ? <Button icon={<X />} onClick={() => stop.current?.abort()}>Stoppen</Button>
-        : <>
-            <Button onClick={onClose}>{someDone ? "Sluiten" : "Annuleren"}</Button>
-            <Button variant="primary" icon={<Send />} disabled={!open.length} onClick={send}>{failed ? "Opnieuw proberen" : "Versturen"}</Button>
-          </>}
+      wide
+      open={!!file}
+      onOpenChange={(o) => { if (!o) onClose(); }}
+      title={file?.name || ""}
+      footer={file && (
+        <>
+          {url && <a className="s-btn" href={url} target="_blank" rel="noreferrer"><ExternalLink aria-hidden="true" /> Openen</a>}
+          <Button variant="primary" icon={<Download />} loading={download.isPending} onClick={() => download.mutate(file)}>Downloaden</Button>
+        </>
+      )}
     >
-      <ul className="s-list" style={{ margin: "-4px 0 0" }}>
-        {items.map((it) => (
-          <li key={it.key} className="s-row nowrap" style={{ padding: "10px 0", gap: 12 }}>
-            <span className={cx("s-ico", it.state === "done" && "ok", it.state === "failed" && "bad")}>
-              {it.state === "busy" ? <Loader2 className="spin" /> : it.state === "done" ? <Check /> : iconFor({ type: it.file.type, name: it.file.name })}
-            </span>
-            <div className="s-stack sm" style={{ flex: 1, minWidth: 0 }}>
-              <div className="s-row between nowrap">
-                <b className="s-small s-truncate">{it.file.name}</b>
-                <span className="s-small s-muted" style={{ flex: "none" }}>{fileSize(it.file.size)}</span>
-              </div>
-              {it.state === "busy" && (
-                <div className="s-progress" role="progressbar" aria-label={`${it.file.name} uploaden`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(it.share * 100)}>
-                  <i style={{ transform: `scaleX(${it.share})` }} />
-                </div>
-              )}
-              {it.error && <span className="s-small" role="alert" style={{ color: "var(--bad)" }}>{it.error}</span>}
-            </div>
-            {!busy && it.state !== "done" && (
-              <Button size="sm" variant="ghost" iconOnly aria-label={`${it.file.name} weghalen`} icon={<X />} onClick={() => setItems((list) => list.filter((x) => x.key !== it.key))} />
-            )}
-          </li>
-        ))}
-      </ul>
-      {!busy && <div><Button size="sm" icon={<Plus />} onClick={() => more.current?.click()}>Meer toevoegen</Button></div>}
-      <input ref={more} type="file" multiple hidden onChange={(e) => { const list = Array.from(e.target.files || []); e.target.value = ""; add(list); }} />
-      {total > free && <p className="s-small" role="alert" style={{ color: "var(--warn)" }}>Samen is dit {fileSize(total)} en er is nog {fileSize(free)} ruimte. Niet alles zal passen.</p>}
-      <SelectField
-        label="Voor wie"
-        value={to}
-        disabled={busy}
-        onChange={(e) => setTo(e.target.value)}
-        hint={person ? `${person.name} krijgt een mail.` : "Iedereen in het team kan het pakken. Er gaat geen mail uit."}
-      >
-        <option value="">Iedereen</option>
-        {people.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-      </SelectField>
-      <TextAreaField label="Bericht (hoeft niet)" rows={2} maxLength={500} value={note} disabled={busy} onChange={(e) => setNote(e.target.value)} placeholder="Bijv. de logo's voor Martine" />
+      {file && (
+        <>
+          <Preview key={file.bucket + file.path} file={file} url={url} failed={link.isError} />
+          <dl className="s-file-facts">
+            <dt>Map</dt><dd>{where}</dd>
+            <dt>Grootte</dt><dd>{fileSize(file.size)}</dd>
+            <dt>Gewijzigd</dt><dd>{fmtDateTime(file.updatedAt)}</dd>
+            <dt>Zichtbaar</dt><dd>{file.public ? "Openbaar: iedereen met de link kan dit zien" : "Privé: alleen via de admin of een tijdelijke link"}</dd>
+            <dt>Opslag</dt><dd className="s-mono s-small">{file.bucket}/{file.path}</dd>
+          </dl>
+        </>
+      )}
     </Modal>
+  );
+}
+
+function Preview({ file, url, failed }: { file: Stored; url?: string; failed: boolean }) {
+  const [broken, setBroken] = useState(false);
+  const image = SHOWS_AS_IMAGE.test(file.type);
+  const video = SHOWS_AS_VIDEO.test(file.type);
+  if (failed || broken || !(image || video)) {
+    return (
+      <div className={cx("s-file-preview", "none")}>
+        <span className="s-ico">{iconFor(file)}</span>
+        <span className="s-small s-muted">{failed ? "Dit bestand kon niet worden geopend." : "Hier is geen voorbeeld van. Open of download het bestand."}</span>
+      </div>
+    );
+  }
+  if (!url) return <Skeleton h={240} r={12} />;
+  return (
+    <div className="s-file-preview">
+      {image
+        ? <img src={url} alt={file.name} onError={() => setBroken(true)} />
+        : <video src={url} controls playsInline preload="metadata" onError={() => setBroken(true)} />}
+    </div>
   );
 }
