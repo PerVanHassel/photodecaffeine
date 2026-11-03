@@ -9,6 +9,7 @@ import { PhotoReel } from "../components/PhotoReel";
 import { PhotoPackages, euro, packageName, type PickedPackage } from "../components/PhotoPackages";
 import { EMAIL_INPUT, PHONE_INPUT, PublicInput, PublicTextarea } from "../components/form/PublicField";
 import { track, visitCampaign, visitId } from "../lib/analytics";
+import { altByUrl, altFromFile } from "../lib/articlePage";
 import { HIGH_PRIORITY, webSrcSet } from "../lib/images";
 import { focusFirst, focusPhotos } from "../lib/photoFocus";
 import { scrollBehavior } from "../lib/scroll";
@@ -259,7 +260,11 @@ function ServicePage({
             srcSet={webSrcSet(heroPhoto.url)}
             sizes="100vw"
             {...HIGH_PRIORITY}
-            alt={ts.photoAlt(heroPhoto.article.title)}
+            alt={
+              altFromFile(heroPhoto.url, ts.photoAlts)
+              || (heroPhoto.article.page && Array.isArray(heroPhoto.article.page.blocks) ? altByUrl(heroPhoto.article.page).get(heroPhoto.url) : "")
+              || ts.photoAlt(heroPhoto.article.title)
+            }
             style={{
               width: "100%",
               height: "100%",
@@ -514,7 +519,7 @@ function ServicePage({
                 src={src}
                 srcSet={webSrcSet(src)}
                 sizes="(max-width: 767px) 100vw, 34vw"
-                alt={ts.galleryAlt(sub?.name ?? page.name, i + 1)}
+                alt={altFromFile(src, ts.photoAlts) || ts.galleryAlt(sub?.name ?? page.name, i + 1)}
                 loading="lazy"
               />
             </div>

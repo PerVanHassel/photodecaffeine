@@ -1,7 +1,7 @@
 import { Children, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Helmet } from "react-helmet-async";
 import {
-  blockHasContent, effectiveLayout, embedSrc, heroCover, lookAttrs, pagePhotos, plainText, seriesRest, shownItems,
+  altFromFile, blockHasContent, effectiveLayout, embedSrc, heroCover, lookAttrs, pagePhotos, plainText, seriesRest, shownItems,
   type ArticlePage, type ArticleSource, type Block, type BlockOf, type MediaItem, type MediaLayout, type TextLook,
 } from "../../lib/articlePage";
 import { lookVars, pageFontLinks, pageVars, type LookRole } from "../../lib/typefaces";
@@ -47,7 +47,7 @@ export function ArticleView({ source, page, onOpen, editor, back, children }: {
   const photos = useMemo(() => pagePhotos(source, page), [source, page]);
   const ctx: Ctx = {
     title: source.title,
-    alt: (item) => item.alt?.trim() || t.portfolioDetail.photoAlt(source.title, photos.indexOf(item.url) + 1),
+    alt: (item) => item.alt?.trim() || altFromFile(item.url, t.servicePages.photoAlts) || t.portfolioDetail.photoAlt(source.title, photos.indexOf(item.url) + 1),
     open: editor ? undefined : onOpen,
     editing: !!editor,
   };

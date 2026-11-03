@@ -3,6 +3,7 @@ import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { Link } from "react-router";
 import { useLanguage } from "../context/LanguageContext";
 import { useSiteSettings } from "../lib/siteData";
+import { altFromFile } from "../lib/articlePage";
 import { HIGH_PRIORITY, LOW_PRIORITY, webSrcSet } from "../lib/images";
 
 const DEFAULT_HERO_BG =
@@ -23,6 +24,7 @@ export function Hero() {
   const heroImageUrl = settings?.heroImageUrl || DEFAULT_HERO_BG;
   const heroImageMobileUrl = settings?.heroImageMobileUrl || heroImageUrl;
   const frameImageUrl = settings?.frameImageUrl || image__MAJ2869_1_;
+  const frameAlt = altFromFile(frameImageUrl, t.servicePages.photoAlts) || t.hero.frameAlt;
 
   return (
     <section
@@ -65,7 +67,7 @@ export function Hero() {
           src={frameImageUrl}
           srcSet={webSrcSet(frameImageUrl)}
           sizes={FRAME_SIZES}
-          alt=""
+          alt={frameAlt}
           {...HIGH_PRIORITY}
           style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 20%" }}
         />
@@ -163,7 +165,7 @@ export function Hero() {
                 src={frameImageUrl}
                 srcSet={webSrcSet(frameImageUrl)}
                 sizes={FRAME_SIZES}
-                alt={t.hero.frameAlt}
+                alt={frameAlt}
                 style={{
                   width: "360px",
                   height: "480px",

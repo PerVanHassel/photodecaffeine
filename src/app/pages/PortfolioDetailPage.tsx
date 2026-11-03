@@ -6,7 +6,7 @@ import { ArticleView } from "../components/article/ArticleView";
 import { GoogleG } from "../components/GoogleG";
 import { Lightbox } from "../components/Lightbox";
 import { useLanguage } from "../context/LanguageContext";
-import { heroCover, pageOf, pagePhotos, pageSummary, seoMeta } from "../lib/articlePage";
+import { altByUrl, altFromFile, heroCover, pageOf, pagePhotos, pageSummary, seoMeta } from "../lib/articlePage";
 import { usePortfolio, useReviews, type PublicReview } from "../lib/siteData";
 
 export function PortfolioDetailPage() {
@@ -23,6 +23,7 @@ export function PortfolioDetailPage() {
   // The page maker's layout, or one built from the text and photos.
   const page = useMemo(() => (article ? pageOf(article) : null), [article]);
   const photos = useMemo(() => (article && page ? pagePhotos(article, page) : []), [article, page]);
+  const savedAlts = useMemo(() => (page ? altByUrl(page) : new Map<string, string>()), [page]);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   if (loading) {
@@ -163,7 +164,10 @@ export function PortfolioDetailPage() {
             close: td.close,
             previous: td.previous,
             next: td.next,
-            alt: (n) => td.photoAlt(article.title, n),
+            alt: (n) => {
+              const url = photos[n - 1] || "";
+              return savedAlts.get(url) || altFromFile(url, t.servicePages.photoAlts) || td.photoAlt(article.title, n);
+            },
             position: td.photoOf,
           }}
         />
