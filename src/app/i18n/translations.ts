@@ -951,7 +951,7 @@ export const translations = {
       ctaLabel: "Ook een losse shoot nodig?",
       ctaTitle: "Bekijk onze",
       ctaTitleDim: "automotive fotografie",
-      ctaBody: "Losse shoots voor auto's en motoren, vanaf €50 per voertuig.",
+      ctaBody: "Losse shoots voor auto's en motoren. Voor je eigen auto vanaf €69, voor bedrijven vanaf €149 excl. btw.",
       ctaButton: "Naar automotive fotografie →",
     },
     portfolioDetail: {
@@ -995,7 +995,7 @@ export const translations = {
       automotive: [
         {
           q: "Wat kost een shoot?",
-          a: "Voor je eigen auto of motor vanaf €50, voor bedrijven vanaf €129 exclusief btw. Bij de pakketten zie je precies wat erin zit. Past het niet in een pakket? Dan maken we een prijs op maat.",
+          a: "Voor je eigen auto of motor vanaf €69, voor bedrijven vanaf €149 exclusief btw. Elke maand nieuwe auto's? Dan is er een maandabonnement van €349 per maand exclusief btw, voor minimaal 6 maanden. Bij de pakketten zie je precies wat erin zit. Past het niet in een pakket? Dan maken we een prijs op maat.",
         },
         {
           q: "Rekenen jullie reiskosten?",
@@ -1007,11 +1007,11 @@ export const translations = {
         },
         {
           q: "Wanneer krijg ik de foto's?",
-          a: "Binnen 5 werkdagen na de shoot, bij een groot pakket binnen 3. In hoge resolutie, in een online galerij in je klantportaal.",
+          a: "Binnen 5 werkdagen na de shoot, bij Groot en het maandabonnement binnen 3. In hoge resolutie, in een online galerij in je klantportaal.",
         },
         {
           q: "Mag ik de foto's overal gebruiken?",
-          a: "Dat staat in je licentie. Particulier: voor jezelf, je familie en je eigen social media, en een verkoopadvertentie voor je eigen voertuig. Zakelijk: je eigen website, social media, mail, drukwerk en verkoopadvertenties. Betaalde reclame spreken we apart af. Alles staat in onze gebruiksrechten.",
+          a: "Dat staat in je licentie. Particulier: voor jezelf, je familie en je eigen social media, en een verkoopadvertentie voor je eigen voertuig. Zakelijk: je eigen website, social media, mail, drukwerk en verkoopadvertenties. Betaalde advertenties en gebooste berichten spreken we apart af. Alles staat in onze gebruiksrechten.",
         },
         {
           q: "Wat gebeurt er bij slecht weer?",
