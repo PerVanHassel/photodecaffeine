@@ -4,7 +4,11 @@ export const translations = {
   nl: {
     home: {
       seoStart: "PhotoDeCaffeine is een jong creatief merk uit Roosendaal voor",
-      seoStrong: "fotografie, videografie en websites op maat",
+      seoLinks: [
+        { text: "fotografie", to: "/services/fotografie" },
+        { text: "videografie", to: "/services/videografie" },
+        { text: "websites op maat", to: "/services/website" },
+      ],
       seoEnd: ". We werken door heel Nederland voor ondernemers, makers en particulieren: lokale bedrijven, autoliefhebbers, sporters, artiesten en evenementen. Foto, video en website kun je bij ons in één hand leggen, zodat alles één verhaal vertelt.",
     },
     whatWeDo: {
@@ -560,10 +564,12 @@ export const translations = {
       whatsIncluded: "Inbegrepen",
       idealFor: "Ideaal voor",
       bookPackage: "Boek dit pakket",
+      viewPackages: "Bekijk pakketten",
       bottomNote: "Alle prijzen zijn exclusief btw. Minimale samenwerking: 3 maanden. Campagnes op maat zijn op aanvraag mogelijk.",
       packages: [
         {
           id: "espresso",
+          to: "/services/social-media",
           name: "Espresso",
           label: "Single Origin",
           price: "€399,-",
@@ -585,6 +591,7 @@ export const translations = {
         },
         {
           id: "reserve",
+          to: "/services/social-media",
           name: "Reserve",
           label: "Studio Signature",
           price: "€749,-",
@@ -609,6 +616,7 @@ export const translations = {
         },
         {
           id: "blend",
+          to: "/services/social-media",
           name: "Blend",
           label: "Doorlopende retainer",
           price: "€1.399,-",
@@ -692,6 +700,15 @@ export const translations = {
     footer: {
       tagline: "Gemaakt als koffie, geschoten als cinema.",
       nav: "Navigatie",
+      services: "Diensten",
+      serviceLinks: [
+        { to: "/services/fotografie", label: "Fotografie" },
+        { to: "/services/videografie", label: "Videografie" },
+        { to: "/services/website", label: "Websites" },
+        { to: "/services/social-media", label: "Social media" },
+        { to: "/services/fotografie/automotive", label: "Automotive" },
+        { to: "/services/fotografie/sport", label: "Sport" },
+      ],
       followUs: "Volg het werk",
       address: "Roosendaal · shoots door heel Nederland",
       email: "contact@photodecaffeine.com",

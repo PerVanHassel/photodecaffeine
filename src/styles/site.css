@@ -659,6 +659,14 @@
   .pdc-cover-photo { animation: none; }
 }
 
+/* The three service words in the homepage SEO line. */
+.pdc-seo-link {
+  color: rgba(255,251,224,0.85); font-weight: 600;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.pdc-seo-link:hover { color: #fffbe0; }
+.pdc-seo-link:focus-visible { outline: 2px solid #c8905a; outline-offset: 3px; }
+
 /* Small uppercase text links ("Meer over ons →"). */
 .pdc-text-link {
   font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 500; line-height: 1.5;

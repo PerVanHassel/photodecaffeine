@@ -228,6 +228,9 @@ export function Services() {
               >
                 {ts.bookPackage}
               </Link>
+              <Link to={pkg.to} className="pdc-text-link" style={{ display: "block", marginTop: "14px", textAlign: "center" }}>
+                {ts.viewPackages}
+              </Link>
             </div>
           ))}
         </div>
