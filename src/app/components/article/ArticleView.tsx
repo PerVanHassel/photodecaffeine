@@ -60,7 +60,8 @@ export function ArticleView({ source, page, onOpen, editor, back, children }: {
   const measure = useCallback((url: string, w: number, h: number) => {
     if (!w || !h || shapes?.[url]) return;
     const r = Math.round((w / h) * 1e4) / 1e4;
-    setMeasured((m) => (m[url] === r ? m : { ...m, [url]: r }));
+    // The same photo can load at 1280 and 2560 px (the header and a block), a hair apart in shape; the first one counts.
+    setMeasured((m) => (m[url] && Math.abs(m[url] - r) < 0.01 ? m : { ...m, [url]: r }));
   }, [shapes]);
   const ctx: Ctx = {
     title: source.title,
@@ -584,13 +585,14 @@ function pointVars(p: FocusPoint, r?: number): CSSProperties {
 
 /** A photo that reports its pixel size once loaded, also when it was already loaded before the page came alive. */
 function MeasuredImg({ onSize, ...props }: ImgHTMLAttributes<HTMLImageElement> & { onSize?: (w: number, h: number) => void }) {
-  return (
-    <img
-      {...props}
-      ref={(el) => { if (el && onSize && el.complete && el.naturalWidth) onSize(el.naturalWidth, el.naturalHeight); }}
-      onLoad={onSize && ((e) => onSize(e.currentTarget.naturalWidth, e.currentTarget.naturalHeight))}
-    />
-  );
+  const ref = useRef<HTMLImageElement>(null);
+  const report = useRef(onSize);
+  report.current = onSize;
+  useEffect(() => {
+    const el = ref.current;
+    if (el?.complete && el.naturalWidth) report.current?.(el.naturalWidth, el.naturalHeight);
+  }, [props.src]);
+  return <img {...props} ref={ref} onLoad={(e) => report.current?.(e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)} />;
 }
 
 /** A silent looping clip; still for visitors who ask for less motion. */
