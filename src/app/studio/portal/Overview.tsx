@@ -44,7 +44,7 @@ export function PortalOverview() {
         <div className="s-stack lg">
           <Card bodyClass="none">
             {projects.isLoading ? <div className="s-card-body"><Skeleton h={60} /></div> : (
-              <ToDo projects={active} openQuotes={openQuotes.length} openInvoices={openInvoices.reduce((s, i) => s + i.totals.total, 0)} firstQuote={openQuotes[0]} />
+              <ToDo projects={active} openQuotes={openQuotes.length} openInvoices={openInvoices.reduce((s, i) => s + i.totals.total, 0)} firstQuote={openQuotes[0]} payInvoice={openInvoices.length === 1 && openInvoices[0].payable ? openInvoices[0] : undefined} canPay={openInvoices.some((i) => i.payable)} />
             )}
           </Card>
           {list.length > 0 && (
@@ -98,8 +98,11 @@ export function Journey({ project, compact }: { project: Project; compact?: bool
   );
 }
 
-function ToDo({ projects, openQuotes, openInvoices, firstQuote }: {
+function ToDo({ projects, openQuotes, openInvoices, firstQuote, payInvoice, canPay }: {
   projects: Project[]; openQuotes: number; openInvoices: number; firstQuote?: { id: string; token: string; title: string };
+  /** The one open invoice, when it can be paid online: the button goes straight to it. */
+  payInvoice?: { id: string; token: string };
+  canPay?: boolean;
 }) {
   const t = useT();
   const items: { key: string; icon: React.ReactNode; tone?: string; title: string; sub: string; to: string; cta: string; primary?: boolean }[] = [];
@@ -118,7 +121,14 @@ function ToDo({ projects, openQuotes, openInvoices, firstQuote }: {
   if (openQuotes && firstQuote) {
     items.push({ key: "quote", icon: <FileText />, tone: "warn", title: t.quoteWaiting(openQuotes), sub: firstQuote.title, to: `/offerte/${firstQuote.id}?t=${firstQuote.token}`, cta: t.view });
   }
-  if (openInvoices > 0) items.push({ key: "inv", icon: <Euro />, title: t.openInvoice, sub: euro(openInvoices), to: "/portal/documents", cta: t.view });
+  if (openInvoices > 0) {
+    items.push({
+      key: "inv", icon: <Euro />, title: t.openInvoice, sub: euro(openInvoices),
+      to: payInvoice ? `/factuur/${payInvoice.id}?t=${payInvoice.token}` : "/portal/documents",
+      cta: canPay ? t.pay : t.view,
+      primary: !!canPay,
+    });
+  }
 
   if (!items.length) return <Empty title={t.nothingToDo}>{t.nothingToDoHint}</Empty>;
   return (

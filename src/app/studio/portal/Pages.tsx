@@ -48,7 +48,10 @@ export function PortalDocuments() {
                   <a className="s-item" href={`/factuur/${i.id}?t=${i.token}`}>
                     <span className={`s-ico ${late ? "bad" : i.status === "paid" ? "ok" : ""}`}><Receipt /></span>
                     <div><div className="t">{i.number}</div><div className="s">{euro(i.totals.total)} · {i.status === "paid" ? t.paidOn(fmtDate(i.paidAt)) : t.payBefore(fmtDate(i.dueOn))}</div></div>
-                    <span className="s-row nowrap"><Pill tone={i.status === "paid" ? "ok" : late ? "bad" : "info"}>{t.invoiceStatus[i.status === "paid" ? "paid" : late ? "late" : i.status === "void" ? "void" : "open"]}</Pill><ChevronRight size={15} className="s-faint" /></span>
+                    <span className="s-row nowrap">
+                      <Pill tone={i.status === "paid" ? "ok" : late ? "bad" : "info"}>{t.invoiceStatus[i.status === "paid" ? "paid" : late ? "late" : i.status === "void" ? "void" : "open"]}</Pill>
+                      {i.payable ? <span className="s-btn primary sm">{t.pay}</span> : <ChevronRight size={15} className="s-faint" />}
+                    </span>
                   </a>
                 </li>
               );

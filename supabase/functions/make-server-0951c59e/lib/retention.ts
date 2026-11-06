@@ -2,8 +2,9 @@ import * as kv from "../kv_store.tsx";
 import { db } from "./db.ts";
 
 // What the privacy statement promises about keeping things (part 6, article 6).
-// Runs at most once a day, when someone opens the admin's overview. Photos, files
-// and invoices are not in here: those stay by hand or by law.
+// Runs at most once a day, when someone opens the admin's overview. Photos, files,
+// invoices and payments that went through are not in here: those stay by hand or
+// by law. Payment attempts that never went through go after a year.
 
 const LAST_RUN = "retention:lastRun";
 const DAY = 24 * 3600_000;
@@ -24,6 +25,7 @@ export async function purgeExpiredOncePerDay() {
       db.from("inquiries").delete().is("client_id", null).is("project_id", null).lt("created_at", monthsAgo(12)),
       db.from("gallery_guests").delete().lt("last_seen_at", monthsAgo(12)),
       db.from("activity_log").delete().lt("created_at", monthsAgo(12)),
+      db.from("payments").delete().neq("status", "paid").lt("created_at", monthsAgo(12)),
     ]);
   } catch (err) {
     // Cleaning up is never worth failing the admin's first page over; tomorrow it tries again.

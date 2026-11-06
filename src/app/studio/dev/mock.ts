@@ -413,6 +413,14 @@ const invoices: Json[] = [
   mkInvoice(13, "FA-2026-032", "Garage De Wit", "joris@garagedewit.nl", id(1), id(51), "draft", 300, dateOnly(0), dateOnly(14)),
 ];
 
+// Online payments (Mollie) per invoice: Studio Veldhuis paid with iDEAL.
+const payments: Record<string, Json[]> = {
+  [id(12)]: [{ id: id(901), mollieId: "tr_mock12", mode: "live", status: "paid", method: "ideal", methodLabel: "iDEAL", amount: 1427.8, amountRefunded: 0, amountChargedBack: 0, paidAt: iso(-10), createdAt: iso(-10) }],
+};
+const keptOnline = (invoiceId: string) =>
+  Math.round((payments[invoiceId] || []).filter((p) => p.status === "paid").reduce((s, p) => s + p.amount - p.amountRefunded - p.amountChargedBack, 0) * 100) / 100;
+const paidViaMock = (invoiceId: string) => ((payments[invoiceId] || []).find((p) => p.status === "paid")?.methodLabel as string) || "";
+
 function mkInvoice(n: number, number: string, clientName: string, clientEmail: string, clientId: string, projectId: string, status: string, amount: number, issuedOn: string, dueOn: string) {
   const net = amount;
   const vat = Math.round(net * 21) / 100;
@@ -616,7 +624,13 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     if (p === "/admin/tasks") return { tasks };
     if (p === "/admin/quotes") return { quotes, business: QUOTE_BUSINESS };
     if (p === "/admin/invoices") return { invoices };
-    if ((r = m(/^\/admin\/invoices\/([^/]+)$/))) return { invoice: invoices.find((x) => x.id === r![1]), business: { name: "PhotoDeCaffeine Productions", address: "Roosendaal", kvk: "12345678", vatNumber: "NL001234567B01", iban: "NL00 BANK 0123 4567 89", email: "contact@photodecaffeine.com" } };
+    if ((r = m(/^\/admin\/invoices\/([^/]+)$/))) {
+      const inv = invoices.find((x) => x.id === r![1]);
+      return {
+        invoice: inv && { ...inv, payments: payments[inv.id] || [], refundMax: keptOnline(inv.id), paidVia: paidViaMock(inv.id) },
+        business: { name: "PhotoDeCaffeine Productions", address: "Roosendaal", kvk: "12345678", vatNumber: "NL001234567B01", iban: "NL00 BANK 0123 4567 89", email: "contact@photodecaffeine.com" },
+      };
+    }
     if (p === "/admin/search") {
       const q = (url.searchParams.get("q") || "").toLowerCase();
       return {
@@ -687,7 +701,7 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     if ((r = m(/^\/portal\/project\/([^/]+)\/messages$/))) return { messages: messages.filter((x) => x.projectId === r![1]) };
     if (p === "/portal/events") return { events: eventsWithContext().filter((e) => e.startsAt > iso(-1)), locations: Object.fromEntries(locations.map((l) => [l.id, l])) };
     if (p === "/portal/quotes") return { quotes: quotes.filter((q) => q.status !== "draft").map((q) => ({ ...q, token: "abc" })) };
-    if (p === "/portal/invoices") return { invoices: invoices.filter((i) => i.status !== "draft").map((i) => ({ id: i.id, number: i.number, status: i.status, issuedOn: i.issuedOn, dueOn: i.dueOn, paidAt: i.paidAt, totals: i.totals, token: "abc" })) };
+    if (p === "/portal/invoices") return { invoices: invoices.filter((i) => i.status !== "draft").map((i) => ({ id: i.id, number: i.number, status: i.status, issuedOn: i.issuedOn, dueOn: i.dueOn, paidAt: i.paidAt, totals: i.totals, token: "abc", payable: i.status === "sent" })) };
     if (p === "/portal/me") return { client: clients[1] };
     if ((r = m(/^\/portal\/project\/([^/]+)\/engagement$/))) {
       const rv = reviews.find((x) => x.projectId === r![1]);
@@ -696,8 +710,33 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     if ((r = m(/^\/portal\/project\/([^/]+)\/download\/([^/]+)$/))) return { url: PHOTOS[0], fileName: "foto.jpg" };
     if ((r = m(/^\/invoice\/([^/]+)$/))) {
       const { quoteId: _q, projectId: _p, clientId: _c, link: _l, ...pub } = invoices.find((x) => x.id === r![1]) || invoices[0];
-      return { invoice: pub, business: { name: "PhotoDeCaffeine Productions", address: "Roosendaal", kvk: "12345678", vatNumber: "", iban: "NL00 BANK 0123 4567 89", email: "contact@photodecaffeine.com" } };
+      const test = url.searchParams.get("test") === "1";
+      return {
+        invoice: { ...pub, paidVia: paidViaMock(pub.id), payable: pub.status === "sent", onlineTest: test && pub.status === "sent" },
+        business: { name: "PhotoDeCaffeine Productions", address: "Roosendaal", kvk: "12345678", vatNumber: "", iban: "NL00 BANK 0123 4567 89", email: "contact@photodecaffeine.com" },
+      };
     }
+  }
+
+  // Paying online: no Mollie page in the mock, straight back as if paid. Set
+  // localStorage "pdc-mock-pay" to "failed" or "open" to see the other outcomes.
+  if ((r = m(/^\/invoice\/([^/]+)\/pay$/)) && method === "POST") {
+    return { id: r[1], checkoutUrl: `/factuur/${r[1]}?t=abc${body?.test ? "&test=1" : ""}&betaling=terug`, amount: 0, reused: false };
+  }
+  if ((r = m(/^\/invoice\/([^/]+)\/payment-check$/)) && method === "POST") {
+    const outcome = (typeof localStorage !== "undefined" && localStorage.getItem("pdc-mock-pay")) || "paid";
+    const inv = invoices.find((x) => x.id === r![1]);
+    if (inv && outcome === "paid" && inv.status === "sent") {
+      Object.assign(inv, { status: "paid", paidAt: new Date().toISOString(), overdue: false });
+      payments[inv.id] = [{ id: `pay-${inv.id}`, mollieId: "tr_mockpaid", mode: "live", status: "paid", method: "ideal", methodLabel: "iDEAL", amount: inv.totals.total, amountRefunded: 0, amountChargedBack: 0, paidAt: inv.paidAt, createdAt: inv.paidAt }, ...(payments[inv.id] || [])];
+    }
+    return { id: r[1], event: outcome === "paid" ? "paid" : "", status: outcome };
+  }
+  if ((r = m(/^\/admin\/invoices\/([^/]+)\/refund$/)) && method === "POST") {
+    const pay = (payments[r[1]] || []).find((x) => x.status === "paid" && x.amount - x.amountRefunded > 0);
+    if (!pay) throw new ApiError(409, "Op deze factuur is niets online betaald dat nog terug kan.");
+    pay.amountRefunded = Math.round((pay.amountRefunded + body.amount) * 100) / 100;
+    return { invoice: { id: r[1] }, credit: { id: "credit-mock", number: "FA-2026-033" }, amount: body.amount, mailed: true };
   }
 
   // Writes: apply the obvious change in memory and answer like the server.

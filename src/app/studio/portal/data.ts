@@ -19,6 +19,8 @@ export type PortalQuote = {
 export type PortalInvoice = {
   id: string; number: string; status: "sent" | "paid" | "void"; issuedOn: string; dueOn: string; paidAt: string | null;
   totals: { net: number; vat: number; total: number }; token: string;
+  /** Can be paid online now (Mollie). */
+  payable?: boolean;
 };
 
 export const usePortalProjects = () =>

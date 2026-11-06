@@ -129,6 +129,24 @@ async function imageName(id: unknown): Promise<string> {
   return (await db.from("gallery_images").select("file_name").eq("id", id).maybeSingle()).data?.file_name || "";
 }
 
+/** The client on an invoice, for the public invoice routes. */
+const invoiceClient = (x: Ctx): Partial<Actor> => ({ kind: "client", name: x.row?.client_name || "", email: x.row?.client_email || "" });
+
+// What routes/payments.ts found when it asked Mollie about a payment.
+const PAYMENT_EVENTS: Record<string, string> = {
+  paid: "Factuur online betaald",
+  double: "Factuur nog een keer online betaald",
+  mismatch: "Online betaald, maar het bedrag klopt niet",
+  unexpected: "Online betaald op een factuur die niet open stond",
+  chargeback: "Betaling teruggedraaid door de bank",
+};
+const PAYMENT_RESULT: Pick<Rule, "action" | "skip" | "who" | "detail"> = {
+  action: (x) => PAYMENT_EVENTS[x.json?.event] || "Online betaling bijgewerkt",
+  skip: (x) => !PAYMENT_EVENTS[x.json?.event],
+  who: (x) => (x.json?.event === "chargeback" ? { kind: "visitor", name: "Mollie" } : invoiceClient(x)),
+  detail: (x) => join(x.json?.methodLabel, euro(x.json?.amount)),
+};
+
 // Routes that change nothing worth reading back: read markers, counters, and
 // steps that belong to another logged change (a receipt before its declaration).
 const QUIET = [
@@ -242,6 +260,10 @@ const RULES: Record<string, Rule> = {
   "DELETE /admin/invoices/:id": { area: "Facturen", action: "Factuur verwijderd", of: INVOICE },
   "POST /admin/invoices/:id/send": { area: "Facturen", action: "Factuur verstuurd", of: INVOICE },
   "POST /admin/invoices/:id/remind": { area: "Facturen", action: "Herinnering voor factuur gestuurd", of: INVOICE },
+  "POST /admin/invoices/:id/refund": {
+    area: "Facturen", action: "Betaling teruggestort", of: INVOICE,
+    detail: (x) => join(euro(x.json?.amount), x.json?.credit?.number ? `creditfactuur ${x.json.credit.number}` : "", x.json?.mailed === false ? "klant niet gemaild" : ""),
+  },
   "POST /admin/declarations": { area: "Declaraties", action: "Declaratie ingediend", of: DECLARATION, created: true },
   "PUT /admin/declarations/:id": { area: "Declaraties", action: "Declaratie bijgewerkt", of: DECLARATION, diff: true },
   "DELETE /admin/declarations/:id": { area: "Declaraties", action: "Declaratie verwijderd", of: DECLARATION },
@@ -330,6 +352,17 @@ const RULES: Record<string, Rule> = {
     who: (x) => ({ kind: "visitor", name: x.body?.name || "", email: x.body?.email || x.body?.phone || "" }),
     detail: (x) => clip(x.body?.message),
   },
+  "POST /invoice/:id/pay": {
+    area: "Facturen", action: "Online betalen gestart", of: INVOICE,
+    // Clicking again within a few minutes reopens the same payment page.
+    skip: (x) => !!x.json?.reused,
+    who: invoiceClient,
+    detail: (x) => euro(x.json?.amount),
+  },
+  // The client back from Mollie, and Mollie's own message: the same check, and
+  // only logged when it found something new.
+  "POST /invoice/:id/payment-check": { area: "Facturen", of: INVOICE, ...PAYMENT_RESULT },
+  "POST /mollie/webhook": { area: "Facturen", of: INVOICE, created: true, ...PAYMENT_RESULT },
   "POST /quote/:id/respond": {
     area: "Offertes", of: QUOTE,
     action: (x) => (x.body?.answer === "accepted" ? "Offerte geaccepteerd" : "Offerte afgewezen"),

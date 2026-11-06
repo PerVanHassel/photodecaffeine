@@ -5,7 +5,7 @@ import { Link, useNavigate, useParams } from "react-router";
 import { del, post, put } from "../api";
 import { ago, euro, fmtDate } from "../format";
 import { keys, useAction, useClients, useInvoice, useInvoices, useProjects } from "../queries";
-import type { Business, Invoice, InvoiceLine } from "../types";
+import type { Business, Invoice, InvoiceLine, InvoicePayment } from "../types";
 import { Button, Card, Empty, ErrorState, Field, Input, Modal, PageHead, Pill, Segmented, SelectField, Skeleton, SkeletonList, TextAreaField, TextField, useConfirm } from "../ui";
 import { InvoiceDocument } from "../components/InvoiceDocument";
 import { copyText, INVOICE_STATUS } from "./Money";
@@ -153,6 +153,9 @@ function InvoiceView({ invoice: inv, business }: { invoice: Invoice; business: B
   });
   const remind = useAction({ fn: () => post(`/admin/invoices/${inv.id}/remind`, {}), invalidate, success: "Herinnering verstuurd" });
   const remove = useAction({ fn: () => del(`/admin/invoices/${inv.id}`), invalidate: () => [keys.invoices], success: "Concept verwijderd", onSuccess: () => navigate("/admin/invoices") });
+  // Money that came in online only goes back with Terugbetalen, never by changing
+  // the status; after a refund the credit note settles it (same rule as the server).
+  const paidOnline = (inv.payments || []).some((p) => keptOf(p) > 0 || p.amountRefunded > 0);
 
   return (
     <div className="s-view narrow" style={{ maxWidth: 960 }}>
@@ -160,7 +163,7 @@ function InvoiceView({ invoice: inv, business }: { invoice: Invoice; business: B
         back={<Link to="/admin/invoices" className="s-back"><ArrowLeft size={14} /> Facturen</Link>}
         eyebrow={inv.clientName || "Factuur"}
         title={<span className="s-row">{inv.number} <Pill tone={inv.overdue ? "bad" : INVOICE_STATUS[inv.status].tone}>{inv.overdue ? "Te laat" : INVOICE_STATUS[inv.status].label}</Pill></span>}
-        sub={inv.paidAt ? `Betaald ${fmtDate(inv.paidAt)}` : inv.sentAt ? `Verstuurd ${ago(inv.sentAt)}${inv.remindedAt ? `, herinnerd ${ago(inv.remindedAt)}` : ""}` : "Nog niet verstuurd"}
+        sub={inv.paidAt ? `Betaald ${fmtDate(inv.paidAt)}${inv.paidVia ? ` via ${inv.paidVia}` : ""}` : inv.sentAt ? `Verstuurd ${ago(inv.sentAt)}${inv.remindedAt ? `, herinnerd ${ago(inv.remindedAt)}` : ""}` : "Nog niet verstuurd"}
         actions={
           <>
             {draft && <Button variant="danger" icon={<Trash2 />} loading={remove.isPending} onClick={async () => { if (await confirm({ title: "Concept verwijderen?", danger: true, confirm: "Verwijderen" })) remove.mutate(); }}>Verwijderen</Button>}
@@ -168,13 +171,14 @@ function InvoiceView({ invoice: inv, business }: { invoice: Invoice; business: B
             {!draft && <a className="s-btn" href={`${new URL(inv.link).pathname}${new URL(inv.link).search}`} target="_blank" rel="noreferrer"><Eye size={15} />Bekijk</a>}
             {inv.status === "sent" && <Button icon={<Bell />} loading={remind.isPending} onClick={async () => { if (await confirm({ title: "Herinnering sturen?", body: `${inv.clientEmail} krijgt een vriendelijke herinnering.`, confirm: "Versturen" })) remind.mutate(); }}>Herinner</Button>}
             {inv.status === "sent" && <Button icon={<Check />} loading={status.isPending} onClick={() => status.mutate("paid")}>Betaald</Button>}
-            {inv.status === "paid" && <Button icon={<Undo2 />} onClick={() => status.mutate("sent")}>Toch niet betaald</Button>}
+            {inv.status === "paid" && !paidOnline && <Button icon={<Undo2 />} onClick={() => status.mutate("sent")}>Toch niet betaald</Button>}
             {inv.status === "sent" && <Button variant="ghost" onClick={async () => { if (await confirm({ title: "Terug naar concept?", body: "Dan kun je hem aanpassen en opnieuw versturen. De klant ziet de link tot die tijd niet.", confirm: "Terugzetten" })) status.mutate("draft"); }}>Aanpassen</Button>}
             {inv.status !== "void" && inv.status !== "paid" && <Button variant="primary" icon={<Send />} onClick={() => setSendOpen(true)}>{inv.sentAt ? "Opnieuw versturen" : "Versturen"}</Button>}
           </>
         }
       />
       {draft ? <InvoiceEditor invoice={inv} business={business} /> : <InvoiceDocument invoice={inv} business={business} />}
+      <OnlinePayments invoice={inv} />
       {!draft && inv.status !== "void" && inv.status !== "paid" && (
         <p className="s-small s-faint">
           Iets fout? <button type="button" className="s-btn ghost sm" onClick={async () => { if (await confirm({ title: "Factuur laten vervallen?", body: "Het nummer blijft bestaan zodat de nummering klopt; de factuur telt niet meer mee.", danger: true, confirm: "Laten vervallen" })) status.mutate("void"); }}>Laat vervallen</button>
@@ -282,6 +286,80 @@ function InvoiceCheck({ items }: { items: ReturnType<typeof invoiceChecklist> })
         ))}
       </ul>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Online payments (Mollie)
+// ---------------------------------------------------------------------------
+
+const PAYMENT_STATUS: Record<InvoicePayment["status"], { label: string; tone: "ok" | "warn" | "bad" | "info" }> = {
+  open: { label: "Gestart", tone: "info" },
+  pending: { label: "Bezig", tone: "warn" },
+  authorized: { label: "Bezig", tone: "warn" },
+  paid: { label: "Betaald", tone: "ok" },
+  canceled: { label: "Afgebroken", tone: "info" },
+  expired: { label: "Verlopen", tone: "info" },
+  failed: { label: "Mislukt", tone: "bad" },
+};
+
+/** What a payment still holds: paid, minus refunds and chargebacks. */
+const keptOf = (p: InvoicePayment) => (p.status === "paid" ? Math.round((p.amount - p.amountRefunded - p.amountChargedBack) * 100) / 100 : 0);
+
+function OnlinePayments({ invoice: inv }: { invoice: Invoice }) {
+  const [refundOpen, setRefundOpen] = useState(false);
+  const payments = inv.payments || [];
+  if (!payments.length) return null;
+  return (
+    <Card
+      title="Online betalingen"
+      action={(inv.refundMax || 0) > 0 ? <Button size="sm" icon={<Undo2 />} onClick={() => setRefundOpen(true)}>Terugbetalen</Button> : undefined}
+      bodyClass="none"
+    >
+      <div className="s-table-wrap">
+        <table className="s-table">
+          <thead><tr><th>Datum</th><th>Via</th><th className="right">Bedrag</th><th>Status</th></tr></thead>
+          <tbody>
+            {payments.map((p) => (
+              <tr key={p.id}>
+                <td className="s-muted">{fmtDate(p.paidAt || p.createdAt)}</td>
+                <td>{p.method ? p.methodLabel : "–"}{p.mode === "test" && <> <Pill tone="warn">Test</Pill></>}</td>
+                <td className="right s-mono">
+                  {euro(p.amount)}
+                  {p.amountRefunded > 0 && <div className="s-small s-faint">{euro(p.amountRefunded)} teruggestort</div>}
+                  {p.amountChargedBack > 0 && <div className="s-small" style={{ color: "var(--bad)" }}>{euro(p.amountChargedBack)} teruggedraaid door de bank</div>}
+                </td>
+                <td><Pill tone={PAYMENT_STATUS[p.status]?.tone || "info"}>{PAYMENT_STATUS[p.status]?.label || p.status}</Pill></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <RefundDialog invoice={inv} open={refundOpen} onClose={() => setRefundOpen(false)} />
+    </Card>
+  );
+}
+
+function RefundDialog({ invoice: inv, open, onClose }: { invoice: Invoice; open: boolean; onClose: () => void }) {
+  const max = inv.refundMax || 0;
+  const [amount, setAmount] = useState("");
+  const [reason, setReason] = useState("");
+  useEffect(() => { if (open) { setAmount(max.toFixed(2).replace(".", ",")); setReason(""); } }, [open, max]);
+  const value = Math.round(num(amount) * 100) / 100;
+  const valid = value > 0 && value <= max;
+  const refund = useAction({
+    fn: () => post<{ credit: { number: string }; mailed: boolean }>(`/admin/invoices/${inv.id}/refund`, { amount: value, reason }),
+    invalidate: () => [keys.invoice(inv.id), keys.invoices, keys.overview],
+    success: (r) => (r.mailed ? `Teruggestort. Creditfactuur ${r.credit.number} is naar de klant gemaild.` : `Teruggestort en creditfactuur ${r.credit.number} gemaakt. De klant is niet gemaild.`),
+    onSuccess: onClose,
+  });
+  return (
+    <Modal open={open} onOpenChange={(o) => !o && onClose()} title="Terugbetalen" description={`${inv.number} · er kan ${euro(max)} terug`}
+      footer={<><Button onClick={onClose}>Annuleren</Button><Button variant="primary" icon={<Undo2 />} loading={refund.isPending} disabled={!valid} onClick={() => refund.mutate()}>Terugstorten</Button></>}>
+      <TextField label="Bedrag (€)" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} error={amount && !valid ? `Kies een bedrag tot ${euro(max)}.` : undefined} />
+      <TextField label="Reden (optioneel, komt op de creditfactuur)" value={reason} maxLength={200} onChange={(e) => setReason(e.target.value)} />
+      <p className="s-small s-muted">Mollie stort het terug op de rekening of kaart waarmee de klant betaalde. Er komt meteen een creditfactuur bij. De klant krijgt die per mail.</p>
+    </Modal>
   );
 }
 

@@ -1,7 +1,9 @@
 import { euro, fmtDate } from "../format";
 import type { Business, Invoice } from "../types";
+import { isCredit, paymentNote } from "./InvoiceDocument";
 
-type Doc = Pick<Invoice, "number" | "clientName" | "clientAddress" | "clientEmail" | "issuedOn" | "dueOn" | "lines" | "totals" | "notes">;
+type Doc = Pick<Invoice, "number" | "clientName" | "clientAddress" | "clientEmail" | "issuedOn" | "dueOn" | "lines" | "totals" | "vatBasis" | "notes"> &
+  Partial<Pick<Invoice, "status" | "paidAt" | "paidVia">>;
 
 // jsPDF's built-in fonts only know WinAnsi; Intl puts (narrow) no-break spaces in amounts.
 const clean = (s: string) => String(s ?? "").replace(/[  ]/g, " ");
@@ -25,7 +27,8 @@ export async function downloadInvoicePdf(inv: Doc, business: Business): Promise<
   const rule = (y: number) => { doc.setDrawColor(...RULE); doc.setLineWidth(0.3); doc.line(L, y, R, y); };
 
   // Header: number left, business right.
-  font(8, true, FAINT); text("FACTUUR", L, 26);
+  const credit = isCredit(inv);
+  font(8, true, FAINT); text(credit ? "CREDITFACTUUR" : "FACTUUR", L, 26);
   font(22, true); text(inv.number, L, 36);
   let yr = 26;
   font(10, true); text(business.name, R, yr, "right"); yr += 5;
@@ -42,8 +45,8 @@ export async function downloadInvoicePdf(inv: Doc, business: Business): Promise<
   for (const s of lines(inv.clientName || inv.clientEmail, 100)) { text(s, L, yl); yl += 5; }
   font(9);
   for (const s of inv.clientAddress ? inv.clientAddress.split("\n").flatMap((p) => lines(p, 100)) : []) { text(s, L, yl); yl += 4.5; }
-  font(9, false, FAINT); text("Factuurdatum", R - 32, y + 6, "right"); text("Te betalen voor", R - 32, y + 11, "right");
-  font(9, true); text(fmtDate(inv.issuedOn), R, y + 6, "right"); text(fmtDate(inv.dueOn), R, y + 11, "right");
+  font(9, false, FAINT); text("Factuurdatum", R - 32, y + 6, "right"); if (!credit) text("Te betalen voor", R - 32, y + 11, "right");
+  font(9, true); text(fmtDate(inv.issuedOn), R, y + 6, "right"); if (!credit) text(fmtDate(inv.dueOn), R, y + 11, "right");
 
   // Lines.
   const COL = { qty: 130, price: 160, amount: R };
@@ -96,8 +99,10 @@ export async function downloadInvoicePdf(inv: Doc, business: Business): Promise<
     y += 3;
   };
   if (inv.notes) para(inv.notes, FAINT);
-  if (business.iban) para(`Graag overmaken naar ${business.iban} t.n.v. ${business.name}, onder vermelding van ${inv.number}.`);
+  const pay = paymentNote(inv, business);
+  if (pay) para(pay);
 
-  doc.setProperties({ title: `Factuur ${inv.number}`, author: business.name });
-  doc.save(`Factuur ${inv.number}.pdf`);
+  const kind = credit ? "Creditfactuur" : "Factuur";
+  doc.setProperties({ title: `${kind} ${inv.number}`, author: business.name });
+  doc.save(`${kind} ${inv.number}.pdf`);
 }

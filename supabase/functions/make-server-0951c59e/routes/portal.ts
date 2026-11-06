@@ -8,7 +8,7 @@ import { notify } from "../lib/notify.ts";
 import { clientDownloads, downloadLink, eventToApi, gallerySigner, loadProject, loadProjects, projectToApi } from "../lib/projects.ts";
 import { clientMessageToStudioEmail } from "../lib/projectEmails.ts";
 import { guestCount, guestHearts, shareFor, shareUrl } from "../lib/shares.ts";
-import { invoiceTotals } from "./invoices.ts";
+import { invoiceTotals, payableOnline } from "./invoices.ts";
 import { quoteLines, quoteSum } from "./quotes.ts";
 import { messageToApi } from "./projects.ts";
 
@@ -255,6 +255,7 @@ r.get(`${P}/invoices`, async (c) => {
       paidAt: i.paid_at,
       totals: invoiceTotals(i),
       token: i.token,
+      payable: payableOnline(i),
     })),
   });
 });

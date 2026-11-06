@@ -367,6 +367,30 @@ export interface Invoice {
   link: string;
   createdAt: string;
   updatedAt: string;
+  /** Online payments through Mollie; only on the admin's single invoice. */
+  payments?: InvoicePayment[];
+  /** How much one refund can give back through Mollie; 0 when nothing (admin). */
+  refundMax?: number;
+  /** "iDEAL" when paid online, "" when marked paid by hand. */
+  paidVia?: string;
+  /** The client's copy: the Betaal nu button shows. */
+  payable?: boolean;
+  /** The client's copy: payments still run on Mollie's test key. */
+  onlineTest?: boolean;
+}
+
+export interface InvoicePayment {
+  id: string;
+  mollieId: string;
+  mode: "test" | "live";
+  status: "open" | "pending" | "authorized" | "paid" | "canceled" | "expired" | "failed";
+  method: string;
+  methodLabel: string;
+  amount: number;
+  amountRefunded: number;
+  amountChargedBack: number;
+  paidAt: string | null;
+  createdAt: string;
 }
 
 export interface Business {

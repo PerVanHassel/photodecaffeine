@@ -30,7 +30,11 @@ const START: ReaderSection[] = [
     "blocks": [
       {
         "t": "note",
-        "text": "**Status op 2 november 2026:** versie 1.2. Alle notities van Per zijn verwerkt en de invulvelden zijn ingevuld. De klantteksten staan op de website en nieuwe offertes gaan met deze versie de deur uit. Een jurist heeft de teksten niet getoetst: dat moet nog, net als de andere punten onder H in de interne notities. De website is op 2 november 2026 met een browser gecontroleerd op cookies, lokale opslag en externe diensten. De uitkomst staat in het Cookiebeleid."
+        "text": "**Status op 6 november 2026:** versie 1.3. Alle notities van Per zijn verwerkt en de invulvelden zijn ingevuld. De klantteksten staan op de website en nieuwe offertes gaan met deze versie de deur uit. Een jurist heeft de teksten niet getoetst: dat moet nog, net als de andere punten onder H in de interne notities. De website is op 2 november 2026 met een browser gecontroleerd op cookies, lokale opslag en externe diensten. De uitkomst staat in het Cookiebeleid."
+      },
+      {
+        "t": "note",
+        "text": "**Wat is er veranderd in versie 1.3:** klanten kunnen een factuur online betalen via Mollie. Artikel 5 van de voorwaarden noemt de betaalmethoden en zegt dat online betalen niets extra kost. De privacyverklaring noemt Mollie bij de dienstverleners, zegt wat we van een betaling bewaren en hoe lang. Het cookiebeleid zegt dat de betaalpagina van Mollie zijn eigen regels heeft. Bij herroepen staat dat we een online betaling via Mollie terugstorten, met een creditfactuur."
       },
       {
         "t": "note",
@@ -56,8 +60,7 @@ const START: ReaderSection[] = [
         "t": "p",
         "text": "Vastgestelde werkafspraken: offertes zijn 10 werkdagen geldig; een voorschot van 40% bij boeking; een betaaltermijn van 10 werkdagen; drie revisierondes voor film-, ontwerp- en websitewerk; feedback bij voorkeur binnen 10 werkdagen; downloadlinks zijn een kwartaal beschikbaar voor foto en video, bij websites is er geen download; ruw productiemateriaal wordt 90 dagen na definitieve oplevering bewaard; definitieve masterbestanden worden 12 maanden bewaard; gebruik buiten de licentie door een zakelijke opdrachtgever kost twee keer het gewone licentietarief, met 100% extra als een verplichte naamsvermelding ontbreekt. Werkdagen zijn maandag tot en met vrijdag."
       }
-    ],
-    "changed": true
+    ]
   }
 ];
 
@@ -107,8 +110,7 @@ const NOTES: ReaderSection[] = [
         "t": "p",
         "text": "10. Gedaan: de oude tekst over intellectueel eigendom staat niet meer op de website."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "intern--b-maak-de-voorwaarden-onderdeel-van-de-b",
@@ -155,8 +157,7 @@ const NOTES: ReaderSection[] = [
         "t": "li",
         "text": "Regel onderaan de site: © (jaar) PhotoDeCaffeine Productions, handelend onder de namen PhotoDeCaffeine / PDC Productions. Alle rechten voorbehouden, met inachtneming van de wet."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "intern--c-specificatie-van-de-projectlicentie-vo",
@@ -451,8 +452,7 @@ const NOTES: ReaderSection[] = [
         "t": "li",
         "text": "Resend, Data Privacy Framework: https://www.resend.com/changelog/data-privacy-framework-certification"
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p7--tekst-voor-de-cookiebanner",
@@ -475,13 +475,12 @@ const NOTES: ReaderSection[] = [
         "t": "p",
         "text": "Voorkeurscategorieën: Noodzakelijk (altijd actief) · Analyse (uit). Marketing gebruiken we niet, dus die staat er niet bij."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "intern--h-wat-er-nog-moet-gebeuren",
     "part": "intern",
-    "title": "H. Wat er nog moet gebeuren (check van 2 november 2026)",
+    "title": "H. Wat er nog moet gebeuren (bijgewerkt op 6 november 2026)",
     "blocks": [
       {
         "t": "p",
@@ -497,7 +496,7 @@ const NOTES: ReaderSection[] = [
       },
       {
         "t": "li",
-        "text": "**KVK.** Controleer naam en adres en vul de rechtsvorm aan. Dokter Lemmensstraat 32 staat nu openbaar op de site. Is dat een woonadres, kijk dan of je dat zo wilt."
+        "text": "**KVK.** Controleer naam en adres en vul de rechtsvorm aan. Dokter Lemmensstraat 32 staat nu openbaar op de site. Is dat een woonadres, kijk dan of je dat zo wilt. Mollie wil op de site dezelfde naam en rechtsvorm zien als bij de KvK."
       },
       {
         "t": "li",
@@ -509,7 +508,23 @@ const NOTES: ReaderSection[] = [
       },
       {
         "t": "li",
-        "text": "**Verwerkersovereenkomsten.** Regel ze met Supabase, Vercel, Resend, Strato, Notion en Anthropic. En met elke websiteklant van wie contactformulieren via PDC lopen, zoals Aqua Spa Service en Suroh."
+        "text": "**Verwerkersovereenkomsten.** Regel ze met Supabase, Vercel, Resend, Strato, Notion en Anthropic. En met elke websiteklant van wie contactformulieren via PDC lopen, zoals Aqua Spa Service en Suroh. Mollie hoeft niet: die is zelf verantwoordelijk, net als Revolut."
+      },
+      {
+        "t": "li",
+        "text": "**Mollie.** Rond het account af: KvK-nummer, je ID en de eigenaren van het bedrijf. Geef je Revolut-IBAN op voor de uitbetalingen en doe de controlebetaling. Zet iDEAL | Wero, kaart, Bancontact en Apple Pay aan. Zet eerst de test-sleutel in Supabase (Edge Functions, Secrets, naam MOLLIE_API_KEY) en na de goedkeuring de live-sleutel. Pas met de live-sleutel zien klanten de knop Betaal nu."
+      },
+      {
+        "t": "li",
+        "text": "**Mollie-kosten.** Mollie houdt de kosten in op de uitbetaling en stuurt elke maand een factuur. Zet die bij de kosten in de boekhouding. Op je Revolut-rekening komt dus iets minder binnen dan het factuurbedrag."
+      },
+      {
+        "t": "li",
+        "text": "**Terugbetalen.** Doe het met de knop Terugbetalen bij de factuur in de admin, niet in Mollie zelf. Dan komt er meteen een creditfactuur bij en krijgt de klant een mail."
+      },
+      {
+        "t": "li",
+        "text": "**Betalingen bewaren.** Betaalde online betalingen blijven 7 jaar bij de factuur, zoals de fiscale bewaarplicht vraagt. Pogingen die niet zijn afgerond, gaan na 12 maanden vanzelf weg."
       },
       {
         "t": "li",
@@ -568,9 +583,9 @@ export const websitebeleid: ReaderDocument = {
   id: "websitebeleid",
   title: "PhotoDeCaffeine | PDC Productions",
   subtitle: "Websitebeleid & Gebruiksrechten",
-  meta: "Originele PDC-teksten • Nederlandse versie 1.2 • Opgesteld op 22 oktober 2026, bijgewerkt op 2 november 2026",
+  meta: "Originele PDC-teksten • Nederlandse versie 1.3 • Opgesteld op 22 oktober 2026, bijgewerkt op 6 november 2026",
   author: "Majd",
-  version: "1.2",
+  version: "1.3",
   parts: [...START_PARTS, ...LEGAL_PARTS, ...NOTE_PARTS],
   sections: [...START, ...LEGAL_SECTIONS, ...NOTES],
 };

@@ -1,13 +1,32 @@
 import { euro, fmtDate } from "../format";
 import type { Business, Invoice } from "../types";
 
+type Doc = Pick<Invoice, "number" | "clientName" | "clientAddress" | "clientEmail" | "issuedOn" | "dueOn" | "lines" | "totals" | "vatBasis" | "notes"> &
+  Partial<Pick<Invoice, "status" | "paidAt" | "paidVia">>;
+
+/** A refund's own invoice (routes/payments.ts): it totals below zero. */
+export const isCredit = (inv: Pick<Invoice, "totals">) => inv.totals.total < 0;
+
+/** "Betaald op 6 november 2026 via iDEAL.", or "" while it is open. */
+export function paidLine(inv: Doc): string {
+  return inv.status === "paid" && inv.paidAt ? `Betaald op ${fmtDate(inv.paidAt)}${inv.paidVia ? ` via ${inv.paidVia}` : ""}.` : "";
+}
+
+/** The line under the totals about paying, as plain text for the PDF. A credit note says in its notes where the money went. */
+export function paymentNote(inv: Doc, business: Business): string {
+  if (isCredit(inv)) return "";
+  return paidLine(inv) || (business.iban ? `Graag overmaken naar ${business.iban} t.n.v. ${business.name}, onder vermelding van ${inv.number}.` : "");
+}
+
 /** The invoice as the client sees it: shown in the admin, on the public page and when printed. */
-export function InvoiceDocument({ invoice: inv, business }: { invoice: Pick<Invoice, "number" | "clientName" | "clientAddress" | "clientEmail" | "issuedOn" | "dueOn" | "lines" | "totals" | "vatBasis" | "notes">; business: Business }) {
+export function InvoiceDocument({ invoice: inv, business }: { invoice: Doc; business: Business }) {
+  const credit = isCredit(inv);
+  const paid = paidLine(inv);
   return (
     <article className="s-doc">
       <div className="s-row between" style={{ alignItems: "flex-start" }}>
         <div className="s-stack sm">
-          <span className="s-eyebrow">Factuur</span>
+          <span className="s-eyebrow">{credit ? "Creditfactuur" : "Factuur"}</span>
           <h2 style={{ fontSize: 26 }} className="s-mono">{inv.number}</h2>
         </div>
         <div className="s-stack sm s-small" style={{ textAlign: "right" }}>
@@ -25,7 +44,7 @@ export function InvoiceDocument({ invoice: inv, business }: { invoice: Pick<Invo
         </div>
         <div className="s-stack sm s-small" style={{ textAlign: "right" }}>
           <span>Factuurdatum <b>{fmtDate(inv.issuedOn)}</b></span>
-          <span>Te betalen voor <b>{fmtDate(inv.dueOn)}</b></span>
+          {!credit && <span>Te betalen voor <b>{fmtDate(inv.dueOn)}</b></span>}
         </div>
       </div>
       <table className="s-doc-lines">
@@ -47,9 +66,9 @@ export function InvoiceDocument({ invoice: inv, business }: { invoice: Pick<Invo
         <div className="s-kv"><span>Totaal</span><span className="s-mono">{euro(inv.totals.total)}</span></div>
       </div>
       {inv.notes && <p className="s-small s-muted" style={{ whiteSpace: "pre-line" }}>{inv.notes}</p>}
-      {business.iban && (
+      {!credit && (paid ? <p className="s-small">{paid}</p> : business.iban && (
         <p className="s-small">Graag overmaken naar <b className="s-mono">{business.iban}</b> t.n.v. {business.name}, onder vermelding van <b className="s-mono">{inv.number}</b>.</p>
-      )}
+      ))}
     </article>
   );
 }

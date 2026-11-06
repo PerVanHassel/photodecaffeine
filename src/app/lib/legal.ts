@@ -12,7 +12,7 @@ export const LEGAL_PARTS: ReaderPart[] = [
     "number": 1,
     "meta": [
       "Op de site: /onze-belofte",
-      "Ingangsdatum: 2 november 2026 · Versie: 1.2"
+      "Ingangsdatum: 6 november 2026 · Versie: 1.3"
     ]
   },
   {
@@ -21,7 +21,7 @@ export const LEGAL_PARTS: ReaderPart[] = [
     "number": 2,
     "meta": [
       "Op de site: /algemene-voorwaarden",
-      "Ingangsdatum: 2 november 2026 · Versie: 1.2"
+      "Ingangsdatum: 6 november 2026 · Versie: 1.3"
     ]
   },
   {
@@ -30,7 +30,7 @@ export const LEGAL_PARTS: ReaderPart[] = [
     "number": 3,
     "meta": [
       "Op de site: /gebruiksrechten",
-      "Ingangsdatum: 2 november 2026 · Versie: 1.2"
+      "Ingangsdatum: 6 november 2026 · Versie: 1.3"
     ]
   },
   {
@@ -39,7 +39,7 @@ export const LEGAL_PARTS: ReaderPart[] = [
     "number": 4,
     "meta": [
       "Op de site: /annuleren-en-terugbetaling",
-      "Ingangsdatum: 2 november 2026 · Versie: 1.2"
+      "Ingangsdatum: 6 november 2026 · Versie: 1.3"
     ]
   },
   {
@@ -48,7 +48,7 @@ export const LEGAL_PARTS: ReaderPart[] = [
     "number": 5,
     "meta": [
       "Op de site: /oplevering-en-revisies",
-      "Ingangsdatum: 2 november 2026 · Versie: 1.2"
+      "Ingangsdatum: 6 november 2026 · Versie: 1.3"
     ]
   },
   {
@@ -57,7 +57,7 @@ export const LEGAL_PARTS: ReaderPart[] = [
     "number": 6,
     "meta": [
       "Op de site: /privacybeleid",
-      "Ingangsdatum: 2 november 2026 · Versie: 1.2"
+      "Ingangsdatum: 6 november 2026 · Versie: 1.3"
     ]
   },
   {
@@ -66,7 +66,7 @@ export const LEGAL_PARTS: ReaderPart[] = [
     "number": 7,
     "meta": [
       "Op de site: /cookiebeleid",
-      "Ingangsdatum: 2 november 2026 · Versie: 1.2"
+      "Ingangsdatum: 6 november 2026 · Versie: 1.3"
     ]
   },
   {
@@ -75,7 +75,7 @@ export const LEGAL_PARTS: ReaderPart[] = [
     "number": 8,
     "meta": [
       "Op de site: /contact-en-klachten",
-      "Ingangsdatum: 2 november 2026 · Versie: 1.2"
+      "Ingangsdatum: 6 november 2026 · Versie: 1.3"
     ]
   },
   {
@@ -84,7 +84,7 @@ export const LEGAL_PARTS: ReaderPart[] = [
     "number": 9,
     "meta": [
       "Op de site: /websitevoorwaarden",
-      "Ingangsdatum: 2 november 2026 · Versie: 1.2"
+      "Ingangsdatum: 6 november 2026 · Versie: 1.3"
     ]
   },
   {
@@ -93,7 +93,7 @@ export const LEGAL_PARTS: ReaderPart[] = [
     "number": 10,
     "meta": [
       "Op de site: /voorwaarden-websites",
-      "Ingangsdatum: 2 november 2026 · Versie: 1.2"
+      "Ingangsdatum: 6 november 2026 · Versie: 1.3"
     ]
   }
 ];
@@ -128,8 +128,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Vragen over je project of de gebruiksrechten? Neem contact op via contact@photodecaffeine.com."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p2--1-wie-wij-zijn",
@@ -148,8 +147,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Met “je” en “opdrachtgever” bedoelen we de persoon of organisatie die een overeenkomst met PDC sluit. Een consument is een natuurlijke persoon die de overeenkomst hoofdzakelijk sluit voor doeleinden buiten diens bedrijfs- of beroepsactiviteit."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p2--2-waarop-deze-voorwaarden-van-toepassing",
@@ -176,8 +174,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "We verstrekken de toepasselijke documenten vóór het sluiten van de overeenkomst op een manier waarop je ze kunt opslaan. Elke prijsopgave noemt de versie van deze voorwaarden die erbij hoort. Een nieuwe versie op de website wijzigt een bestaande boeking niet automatisch."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p2--3-offertes-en-boekingen",
@@ -200,8 +197,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Voor wezenlijke wijzigingen van een offerte is een nieuwe schriftelijke afspraak nodig. Kennelijke fouten corrigeren we vóór aanvaarding. Fouten die daarna worden ontdekt, behandelen we volgens het toepasselijke recht."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p2--4-opdracht-en-creatieve-richting",
@@ -242,6 +238,10 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
       {
         "t": "p",
         "text": "Facturen moeten binnen 10 werkdagen worden betaald, tenzij een andere rechtsgeldige betalingsregeling is afgesproken. Betaalmomenten, waaronder een eventueel restantbedrag vóór vrijgave van de definitieve bestanden, worden vóór de boeking vastgelegd. Voor vooruitbetaling bij consumentenkoop houden we ons aan de wettelijke grenzen."
+      },
+      {
+        "t": "p",
+        "text": "Je betaalt een factuur met een overboeking. Staat er op de factuur een knop Betaal nu, dan kan het ook online met iDEAL | Wero, je kaart of Bancontact. Dat loopt via onze betaaldienst Mollie B.V. en kost je niets extra."
       },
       {
         "t": "p",
@@ -325,8 +325,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Overwerk vereist akkoord en wordt uitsluitend berekend tegen het vooraf in de overeenkomst vermelde tarief. Werkuren, pauzes en eventuele maaltijden of overnachtingen voor de crew worden waar nodig afgesproken."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p2--9-crew-en-onderaannemers",
@@ -516,8 +515,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Alles wat de licentie wel toestaat, zoals persoonlijke afdrukken en delen op je eigen socialmedia-accounts, blijft gewoon mogelijk."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p3--3-wanneer-de-licentie-ingaat",
@@ -711,8 +709,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Berust publicatie op toestemming, dan kan die voor toekomstig gebruik worden ingetrokken. We stoppen het betreffende gebruik en verwijderen materiaal uit kanalen die wij beheren voor zover dit verplicht is. Intrekking maakt eerder rechtmatig gebruik niet onrechtmatig. We leggen eventuele beperkte praktische of juridische belemmeringen uit."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p3--13-gebruik-buiten-de-licentie-en-ongeoor",
@@ -735,8 +732,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "We beoordelen iedere situatie zorgvuldig en zoeken waar mogelijk eerst samen een oplossing, bijvoorbeeld een correctie, verwijdering of een alsnog afgesloten licentie."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p4--als-plannen-veranderen",
@@ -747,8 +743,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Laat het zo snel mogelijk weten als je een boeking wilt wijzigen of annuleren. Mail naar contact@photodecaffeine.com met je naam, projectnummer en gewenste wijziging. We bevestigen de ontvangst en leggen uit wat de financiële gevolgen zijn."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p4--1-wettelijk-herroepingsrecht-voor-consum",
@@ -765,7 +760,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
       },
       {
         "t": "p",
-        "text": "Bedragen waarop je recht hebt, betalen we uiterlijk 14 dagen na ontvangst van je herroepingsverklaring terug via hetzelfde betaalmiddel, tenzij anders afgesproken. We rekenen geen kosten voor deze terugbetaling."
+        "text": "Bedragen waarop je recht hebt, betalen we uiterlijk 14 dagen na ontvangst van je herroepingsverklaring terug via hetzelfde betaalmiddel, tenzij anders afgesproken. We rekenen geen kosten voor deze terugbetaling. Betaalde je online, dan storten we het via Mollie terug op dezelfde rekening of kaart. Je krijgt er een creditfactuur bij."
       },
       {
         "t": "p",
@@ -864,8 +859,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Een uitzondering op herroeping bij het veranderen van gedachten doet geen afbreuk aan rechten bij beschadigde, gebrekkige of verkeerd geleverde goederen of digitale inhoud."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p4--optioneel-herroepingsformulier",
@@ -908,8 +902,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Doorhalen of weglaten wat niet van toepassing is. Je mag ook op een andere duidelijke manier laten weten dat je wilt herroepen."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p5--1-oplevering",
@@ -970,8 +963,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Correcties die nodig zijn omdat we niet aan de overeenkomst voldoen, gaan niet ten koste van een betaalde revisieronde. Een nieuw concept, nieuwe opname, nieuw script of wijziging van eerder goedgekeurde keuzes kan een aanvullende offerte vereisen."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p5--4-goedkeuring-en-vrijgave",
@@ -1013,8 +1005,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Deze termijnen geven geen toestemming om bestanden te verwijderen die nog nodig zijn om de overeenkomst uit te voeren, een bekend gebrek te behandelen, aan de wet te voldoen of een naar behoren vastgelegde bewaarplicht voor een geschil na te leven."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p5--6-beveiliging-en-verlies",
@@ -1060,8 +1051,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Bij sommige opdrachten verwerkt PDC gegevens uitsluitend volgens gedocumenteerde instructies van een opdrachtgever. Als PDC daarbij verwerker is, sluiten we een passende verwerkersovereenkomst. Bouwen of beheren we een website voor je, dan verwerken we de gegevens die via jouw website binnenkomen alleen voor jou. De privacyrol hangt af van wat iedere partij daadwerkelijk doet, niet alleen van het etiket in een contract."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p6--2-welke-gegevens-we-verwerken-en-waarom",
@@ -1149,8 +1139,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "De uitvoering van een overeenkomst wordt niet automatisch gebruikt als grondslag voor iedere gast, medewerker of omstander alleen omdat iemand anders de productie heeft geboekt."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p6--3-gevoelige-gegevens-en-kinderen",
@@ -1169,8 +1158,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Bij een shoot met kinderen vragen we ouders per kind om toestemming, via een formulier. Mag een kind niet of beperkt in beeld, dan vragen we ook een foto of beschrijving, zodat we het kind kunnen herkennen. Alleen de studio ziet die foto, en we verwijderen hem zodra de foto’s zijn geleverd. Een ouder kan de keuze altijd wijzigen of intrekken via de link in de bevestigingsmail. In de galerij kan een ouder aanwijzen op welke foto’s het eigen kind staat. Dat zien alleen die ouder en de studio. Foto’s van kinderen zetten we niet op onze website zonder aparte toestemming. Bij projecten met kinderen zorgen we voor informatie die past bij hun leeftijd en voor de toestemmingen die de wet vereist. Bij promotionele publicatie op basis van toestemming stellen we vast wie die rechtsgeldig kan geven en houden we waar passend rekening met de eigen wensen van het kind."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p6--4-wie-gegevens-ontvangt",
@@ -1247,12 +1235,22 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
             "Onze zakelijke rekening en betalingen",
             "Zelfstandig verantwoordelijk",
             "Litouwen"
+          ],
+          [
+            "Mollie",
+            "Online betalen van facturen",
+            "Zelfstandig verantwoordelijk",
+            "Nederland"
           ]
         ]
       },
       {
         "t": "p",
         "text": "Met verwerkers maken we passende afspraken. Zelfstandige verwerkingsverantwoordelijken, zoals een betaalprovider die onder eigen wettelijke verplichtingen handelt, hebben eigen verantwoordelijkheden en privacyinformatie."
+      },
+      {
+        "t": "p",
+        "text": "Betaal je een factuur online, dan verwerkt Mollie je betaalgegevens. Mollie is een betaalinstelling en doet dat onder eigen verantwoordelijkheid, met een eigen privacyverklaring op mollie.com/privacy. Wij bewaren alleen of, hoe en wanneer je betaald hebt, en welk bedrag. Je kaartnummer en rekeningnummer bewaren we niet in onze eigen systemen."
       },
       {
         "t": "p",
@@ -1278,8 +1276,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "We nemen niet aan dat een opslaglocatie binnen de EU alle internationale toegang uitsluit."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p6--6-hoelang-we-gegevens-bewaren",
@@ -1318,8 +1315,12 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
             "Normaal 5 jaar na het einde van de overeenkomst, met beoordeling van toepasselijke verjaringstermijnen en doorlopende licenties"
           ],
           [
-            "Fiscale basisadministratie en factuurgegevens",
+            "Fiscale basisadministratie, factuurgegevens en betalingen",
             "7 jaar, of een andere termijn die voor de betreffende gegevens wettelijk vereist is"
+          ],
+          [
+            "Online betaalpogingen die niet zijn afgerond",
+            "12 maanden"
           ],
           [
             "Portfoliopublicaties en toestemmingsregistratie",
@@ -1363,8 +1364,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Geen systeem biedt absolute veiligheid. Bij een datalek beoordelen we de situatie en nemen we de wettelijk vereiste meldings- en herstelmaatregelen."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p6--8-jouw-rechten",
@@ -1391,8 +1391,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Je kunt een klacht indienen bij de Nederlandse Autoriteit Persoonsgegevens via https://www.autoriteitpersoonsgegevens.nl/ of bij de bevoegde toezichthouder in het land waar je woont of werkt. Je mag eerst contact met ons opnemen, maar dat is niet verplicht."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p6--9-verplichte-gegevens-en-geautomatiseerd",
@@ -1432,6 +1431,10 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
       {
         "t": "p",
         "text": "Hieronder beschrijven we de technieken die daadwerkelijk worden gebruikt. Waar toestemming nodig is, vragen we die voordat we de betreffende techniek activeren. Op 2 november 2026 hebben we de website hierop gecontroleerd. We plaatsen geen cookies van derden en geen advertentiepixels, en we gebruiken geen Google Analytics."
+      },
+      {
+        "t": "p",
+        "text": "Betaal je een factuur online, dan ga je naar de betaalpagina van Mollie. Daar gelden de cookies en privacyregels van Mollie. Onze eigen site plaatst voor betalen geen cookies."
       }
     ],
     "changed": true
@@ -1457,8 +1460,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "**Marketing:** gebruiken we niet."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p7--3-gebruikte-technieken",
@@ -1538,8 +1540,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "De overige lettertypen staan op onze eigen server, dus daarvoor gaat er niets naar Google of een andere aanbieder."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p7--4-jouw-keuzes",
@@ -1562,8 +1563,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Je kunt opgeslagen cookies ook via je browser verwijderen. Daarna moet je mogelijk opnieuw je voorkeuren instellen."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p7--5-meer-informatie",
@@ -1574,8 +1574,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Onze Privacyverklaring beschrijft de verantwoordelijke onderneming, doelen, grondslagen, ontvangers en jouw rechten. Voor vragen kun je mailen naar contact@photodecaffeine.com."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p8--samen-naar-een-oplossing",
@@ -1630,8 +1629,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "**Geschillenregeling:** PDC is niet aangesloten bij een geschillencommissie. Komen we er samen niet uit, dan kun je naar de bevoegde rechter."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p9--gebruik-van-deze-website",
@@ -1658,8 +1656,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Externe links verwijzen naar diensten van anderen. Voor die diensten gelden hun eigen voorwaarden en privacyinformatie."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p10--wat-hier-staat",
@@ -1670,8 +1667,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Bouwen we een website voor je, dan gelden naast de Algemene voorwaarden de afspraken op deze pagina. De prijsopgave noemt wat we precies maken, wat het kost en of je de website huurt of koopt. Wat in de prijsopgave staat, gaat voor."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p10--1-huren-of-kopen",
@@ -1686,8 +1682,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "**Kopen:** na de laatste betaling krijg je de broncode, het ontwerp en alle accounts op je naam. Je mag de website dan onbeperkt gebruiken, aanpassen en laten aanpassen. Onderdelen van anderen, zoals lettertypen, plug-ins of stockfoto’s, blijven onder hun eigen licentie vallen."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p10--2-wat-van-jou-blijft",
@@ -1698,8 +1693,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Je domeinnaam, je teksten, het materiaal dat je zelf aanlevert en de gegevens van de mensen die via je website contact opnemen. Die krijg je altijd mee. Foto’s en video’s die PDC voor je maakt, vallen onder de regeling Gebruiksrechten."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p10--3-hosting-en-domein",
@@ -1710,8 +1704,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "De prijsopgave zegt wie hosting en domein betaalt. Belasten wij die door, dan doen we dat zonder opslag. Accounts zetten we waar dat kan op jouw naam."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p10--4-onderhoud",
@@ -1726,8 +1719,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Onderhoud is per maand opzegbaar, tenzij de prijsopgave iets anders zegt. Stop je met huren en koop je de website niet, dan gaat hij offline aan het einde van de laatste betaalde maand."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p10--5-ontwerp-feedback-en-oplevering",
@@ -1742,8 +1734,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Bij websites is er geen downloadlink: de oplevering is dat de website live staat. Je zorgt zelf dat je het recht hebt om de teksten, logo’s en andere bestanden te gebruiken die je aanlevert."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p10--6-nazorg-en-meerwerk",
@@ -1754,8 +1745,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Werkt iets na de oplevering niet zoals afgesproken, dan herstellen we dat zonder kosten. De prijsopgave noemt hoe lang we daarnaast gratis helpen met vragen. Voor meerwerk vragen we eerst je akkoord, tegen het uurtarief uit de prijsopgave."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p10--7-bereikbaarheid",
@@ -1766,8 +1756,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "We doen ons best om je website bereikbaar en veilig te houden. Een website kan soms even niet werken, bijvoorbeeld door een storing bij een hostingbedrijf. We beloven daarom geen 100% bereikbaarheid. Je wettelijke rechten blijven gelden."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p10--8-persoonsgegevens-op-je-website",
@@ -1778,7 +1767,6 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Komen er via je website persoonsgegevens binnen, bijvoorbeeld via een contactformulier, dan ben jij daarvoor verantwoordelijk en verwerkt PDC ze alleen voor jou. We sluiten daarvoor een verwerkersovereenkomst. Je zorgt zelf voor de privacyverklaring en de cookietekst op je website. We helpen je daarbij als dat is afgesproken."
       }
-    ],
-    "changed": true
+    ]
   }
 ];

@@ -5,6 +5,8 @@ import { EMAIL_ADMIN_NOTIFY, EMAIL_INVOICE_BCC, EMAIL_RE, SITE_URL, PAYMENT_WORK
 import { db, found, must, nextDocumentNumber } from "../lib/db.ts";
 import { emailWrap, escapeHtml, sendEmail } from "../lib/email.ts";
 import { type Env, fail, isoDate, readBody, requireAdmin, text, uuid, z } from "../lib/http.ts";
+import { mollieMode } from "../lib/mollie.ts";
+import { kept, keptOf, methodLabel, paymentsOf, paymentToApi } from "../lib/payments.ts";
 import { addWorkdays } from "../lib/util.ts";
 import { chosenOptions, euro, linesThatCount, paymentSteps, quoteLines, rowToQuote } from "./quotes.ts";
 
@@ -54,8 +56,14 @@ function isOverdue(inv: any): boolean {
   return inv.status === "sent" && inv.due_on < todayIso();
 }
 
-function invoiceLink(inv: any): string {
+export function invoiceLink(inv: any): string {
   return `${SITE_URL}/factuur/${inv.id}?t=${inv.token}`;
+}
+
+/** Whether a client can pay this invoice online right now (routes/payments.ts). */
+export function payableOnline(inv: any, test = false): boolean {
+  const mode = mollieMode();
+  return inv.status === "sent" && invoiceTotals(inv).total > 0 && (mode === "live" || (mode === "test" && test));
 }
 
 function toApi(inv: any) {
@@ -142,8 +150,26 @@ r.get(A, async (c) => {
 
 r.get(`${A}/:id`, async (c) => {
   const row = found(await db.from("invoices").select("*").eq("id", c.req.param("id")).maybeSingle(), "Factuur niet gevonden");
-  return c.json({ invoice: toApi(row), business: await business() });
+  const payments = await paymentsOf((row as any).id);
+  // What one refund can give back: the newest payment that still holds money,
+  // made with the key that is set now (the one routes/payments.ts refunds).
+  const refundable = payments.find((p) => p.mode === mollieMode() && kept(p) > 0);
+  return c.json({
+    invoice: {
+      ...toApi(row),
+      payments: payments.map(paymentToApi),
+      refundMax: refundable ? kept(refundable) : 0,
+      paidVia: paidVia(payments),
+    },
+    business: await business(),
+  });
 });
+
+/** "iDEAL" when the invoice was paid online, "" when by hand. */
+function paidVia(payments: any[]): string {
+  const paid = payments.find((p) => p.status === "paid");
+  return paid ? methodLabel(paid.method) : "";
+}
 
 r.post(A, async (c) => {
   const b = await readBody(c, invoiceSchema);
@@ -231,6 +257,13 @@ r.post(`${A}/:id/status`, async (c) => {
   const id = c.req.param("id");
   const { status } = await readBody(c, z.object({ status: z.enum(["draft", "sent", "paid", "void"]) }));
   const existing = found(await db.from("invoices").select("*").eq("id", id).maybeSingle(), "Factuur niet gevonden") as any;
+  // Money that came in online only goes back through Mollie, with a credit note,
+  // and a refunded invoice stays paid: its credit note settles it. Only a
+  // chargeback (the bank took it back) leaves it free to change again.
+  const online = await paymentsOf(id);
+  if (status !== "paid" && (keptOf(online) > 0 || online.some((p) => Number(p.amount_refunded) > 0))) {
+    fail(409, "Op deze factuur is online betaald. Geld teruggeven gaat met Terugbetalen, met een creditfactuur erbij.");
+  }
   const patch: Record<string, unknown> = { status };
   if (status === "paid") patch.paid_at = existing.paid_at || new Date().toISOString();
   else patch.paid_at = null;
@@ -243,33 +276,61 @@ r.delete(`${A}/:id`, async (c) => {
   const id = c.req.param("id");
   const existing = found(await db.from("invoices").select("status").eq("id", id).maybeSingle(), "Factuur niet gevonden") as any;
   if (existing.status !== "draft") fail(409, "Alleen een concept kan weg. Zet een verstuurde factuur op 'vervallen'.");
+  // A payment that went through belongs to the administration; attempts that
+  // never did can go with the draft.
+  if ((await paymentsOf(id)).some((p) => p.status === "paid")) fail(409, "Op deze factuur is online betaald. Hij blijft bewaard voor de administratie.");
+  must(await db.from("payments").delete().eq("invoice_id", id));
   must(await db.from("invoices").delete().eq("id", id));
   return c.json({ success: true });
 });
 
+/**
+ * The dark invoice mail: a heading with the amount, a few lines of text and
+ * one button. `text` is HTML the caller has escaped. Also used for the payment
+ * and refund mails (routes/payments.ts).
+ */
+export function invoiceMail(o: { eyebrow: string; amount: number; sub: string; text: string; button: string; link: string }): string {
+  return emailWrap(`
+    <tr><td style="padding:32px 36px 0;">
+      <span style="color:#c8905a;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;">${escapeHtml(o.eyebrow)}</span>
+      <div style="height:10px;line-height:10px;font-size:0;">&nbsp;</div>
+      <span style="display:block;color:#fffbe0;font-size:28px;font-weight:800;letter-spacing:-0.02em;">${euro(o.amount)}</span>
+      <span style="display:block;color:rgba(255,251,224,0.4);font-size:12px;margin-top:4px;">${escapeHtml(o.sub)}</span>
+    </td></tr>
+    <tr><td style="padding:22px 36px 0;">
+      <span style="color:rgba(255,251,224,0.55);font-size:14px;font-weight:300;line-height:1.75;">${o.text}</span>
+    </td></tr>
+    <tr><td style="padding:26px 36px 40px;">
+      <a href="${o.link}" style="display:inline-block;background-color:#c8905a;color:#0d0703;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 30px;">${escapeHtml(o.button)}</a>
+    </td></tr>
+    <tr><td style="padding:18px 36px 28px;border-top:1px solid rgba(255,251,224,0.06);">
+      <span style="color:rgba(255,251,224,0.2);font-size:11px;">Werkt de knop niet? Open dan deze link: ${o.link}<br />Vragen over deze factuur? Antwoord gerust op deze mail.</span>
+    </td></tr>`);
+}
+
+/** "Hallo Sanne," from the name on the invoice. */
+export function greetingOf(inv: any): string {
+  return inv.client_name ? `Hallo ${escapeHtml(String(inv.client_name).split(" ")[0])},` : "Hallo,";
+}
+
 function invoiceEmail(inv: any, message: string, reminder: boolean): string {
   const t = invoiceTotals(inv);
   const due = new Date(inv.due_on).toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" });
-  const greeting = inv.client_name ? `Hallo ${escapeHtml(String(inv.client_name).split(" ")[0])},` : "Hallo,";
+  // Only once payments are live: a client must never land on Mollie's test page.
+  const online = mollieMode() === "live" && t.total > 0;
   const intro = reminder
-    ? `volgens onze administratie staat factuur ${escapeHtml(inv.number)} nog open. Zou je die willen voldoen? Heb je al betaald, dan kun je dit bericht negeren.`
+    ? `volgens onze administratie staat factuur ${escapeHtml(inv.number)} nog open. Zou je die willen voldoen?${online ? " Dat kan direct online via de knop hieronder." : ""} Heb je al betaald, dan kun je dit bericht negeren.`
+    : online
+    ? `hierbij ontvang je factuur ${escapeHtml(inv.number)}. Via de knop hieronder kun je hem bekijken, downloaden en direct betalen met iDEAL | Wero, je kaart of Bancontact.`
     : `hierbij ontvang je factuur ${escapeHtml(inv.number)}. Je kunt hem bekijken en downloaden via de knop hieronder.`;
-  return emailWrap(`
-    <tr><td style="padding:32px 36px 0;">
-      <span style="color:#c8905a;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;">${reminder ? "Herinnering" : "Factuur"} &middot; ${escapeHtml(inv.number)}</span>
-      <div style="height:10px;line-height:10px;font-size:0;">&nbsp;</div>
-      <span style="display:block;color:#fffbe0;font-size:28px;font-weight:800;letter-spacing:-0.02em;">${euro(t.total)}</span>
-      <span style="display:block;color:rgba(255,251,224,0.4);font-size:12px;margin-top:4px;">Te betalen voor ${escapeHtml(due)}</span>
-    </td></tr>
-    <tr><td style="padding:22px 36px 0;">
-      <span style="color:rgba(255,251,224,0.55);font-size:14px;font-weight:300;line-height:1.75;">${greeting} ${intro}${message ? ` ${escapeHtml(message)}` : ""}</span>
-    </td></tr>
-    <tr><td style="padding:26px 36px 40px;">
-      <a href="${invoiceLink(inv)}" style="display:inline-block;background-color:#c8905a;color:#0d0703;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 30px;">Bekijk factuur</a>
-    </td></tr>
-    <tr><td style="padding:18px 36px 28px;border-top:1px solid rgba(255,251,224,0.06);">
-      <span style="color:rgba(255,251,224,0.2);font-size:11px;">Werkt de knop niet? Open dan deze link: ${invoiceLink(inv)}<br />Vragen over deze factuur? Antwoord gerust op deze mail.</span>
-    </td></tr>`);
+  return invoiceMail({
+    eyebrow: `${reminder ? "Herinnering" : "Factuur"} · ${inv.number}`,
+    amount: t.total,
+    sub: `Te betalen voor ${due}`,
+    text: `${greetingOf(inv)} ${intro}${message ? ` ${escapeHtml(message)}` : ""}`,
+    button: online ? "Bekijk en betaal" : "Bekijk factuur",
+    link: invoiceLink(inv),
+  });
 }
 
 r.post(`${A}/:id/send`, async (c) => {
@@ -310,5 +371,12 @@ r.get("/make-server-0951c59e/invoice/:id", async (c) => {
   const token = c.req.query("t") || "";
   if (!row || !token || token !== row.token || row.status === "draft") fail(404, "Deze factuur bestaat niet (meer).");
   const { quoteId: _q, projectId: _p, clientId: _c, link: _l, ...pub } = toApi(row);
-  return c.json({ invoice: pub, business: await business() });
+  // While the key is a test key, the button only shows with ?test=1, so a
+  // client never ends up paying on Mollie's test page.
+  const test = c.req.query("test") === "1";
+  const payable = payableOnline(row, test);
+  return c.json({
+    invoice: { ...pub, paidVia: paidVia(await paymentsOf(row.id)), payable, onlineTest: payable && mollieMode() === "test" },
+    business: await business(),
+  });
 });
