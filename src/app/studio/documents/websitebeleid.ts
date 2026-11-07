@@ -528,10 +528,6 @@ const NOTES: ReaderSection[] = [
       },
       {
         "t": "li",
-        "text": "**Back-ups.** Supabase staat op het gratis abonnement en maakt dan geen automatische back-ups. Foto’s in de opslag zitten nooit in die back-ups. De offerte-sjablonen beloofden dagelijkse back-ups; dat is eruit gehaald. Neem het Pro-abonnement of maak zelf back-ups, en zet de belofte daarna terug. Het concept OF-2026-004 voor Suroh belooft nog back-ups: pas dat aan of regel ze voordat je het verstuurt."
-      },
-      {
-        "t": "li",
         "text": "**Licentietarieven.** Artikel 13 op pagina 3 rekent met je licentietarief, maar dat tarief staat nog nergens. Leg het per soort gebruik vast."
       },
       {

@@ -88,7 +88,7 @@ export function fromTemplate(id: TemplateId, defaults: { projectId?: string; cli
         "Beheeromgeving waarin je zelf teksten en pagina's aanpast",
         "Contactformulier dat binnenkomt op je eigen mail",
         "Basis voor Google: titels, sitemap en snelle laadtijd",
-        "Beveiligde verbinding (https)",
+        "Beveiligde verbinding (https) en dagelijkse back-ups",
       ],
       details: {
         ...base(["web"]),
