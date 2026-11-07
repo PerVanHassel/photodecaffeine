@@ -409,7 +409,7 @@ function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, prior
     setZip({ done: 0, total: list.length });
     try {
       const how = await saveZip(list, name, { watermarked: false, onProgress: (done) => setZip({ done, total: list.length }), text: { ready: t.toPhotosReady, save: t.toPhotosSave } });
-      send("downloaded", { count: list.length }).catch(() => {});
+      send("downloaded", { count: list.length, test }).catch(() => {});
       if (how === "zip") toast.success(t.downloadStarted);
     } catch (err) {
       failed(err);
@@ -474,7 +474,7 @@ function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, prior
 
   async function downloadOne(img: GalleryImage) {
     try {
-      const r = await send<{ url: string; fileName: string }>("download", { imageId: img.id });
+      const r = await send<{ url: string; fileName: string }>("download", { imageId: img.id, test });
       await savePhoto(r.url, r.fileName, { ready: t.toPhotosReady, save: t.toPhotosSave });
     } catch (err) {
       failed(err);
@@ -487,7 +487,7 @@ function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, prior
     setZip({ done: 0, total: list.length });
     try {
       const how = await saveZip(list, title, { watermarked: p.downloads === "watermark" && !list.every((g) => g.mine), onProgress: (done) => setZip({ done, total: list.length }), text: { ready: t.toPhotosReady, save: t.toPhotosSave } });
-      send("downloaded", { count: list.length }).catch(() => {});
+      send("downloaded", { count: list.length, test }).catch(() => {});
       if (how === "zip") toast.success(t.downloadStarted);
     } catch (err) {
       failed(err);

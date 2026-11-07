@@ -386,7 +386,7 @@ export function GalleryTab({ project: p }: { project: Project }) {
       )}
 
       <StylePicker project={p} />
-      <GallerySettings project={p} />
+      <GallerySettings project={p} selling={!!groupLink?.share?.sales} />
       <GroupLink project={p} />
     </div>
   );
@@ -483,7 +483,8 @@ function useSizeBackfill(p: Project) {
   };
 }
 
-function GallerySettings({ project: p }: { project: Project }) {
+/** `selling`: guests buy photos (GroupLink), so every photo needs its watermarked copy, also when the client sees originals. */
+function GallerySettings({ project: p, selling }: { project: Project; selling: boolean }) {
   const qc = useQueryClient();
   const [title, setTitle] = useState(p.gallerySettings.title || "");
   const [subtitle, setSubtitle] = useState(p.gallerySettings.subtitle || "");
@@ -551,7 +552,7 @@ function GallerySettings({ project: p }: { project: Project }) {
         </Field>
         <TextField label="Downloaden kan tot" type="date" value={p.gallerySettings.downloadsUntil || p.downloadsUntil || ""} onChange={(e) => saveUntil.mutate(e.target.value)}
           hint={p.type === "web" ? "Bij een website is er geen download. Zet een datum als je er toch foto's bij levert." : "Vanzelf een kwartaal na levering. Zet een andere datum als dat is afgesproken."} />
-        {early === "watermark" && missing.length > 0 && !marking && (
+        {(early === "watermark" || selling) && missing.length > 0 && !marking && (
           <div className="s-row" style={{ alignSelf: "end" }}>
             <span className="s-small s-muted">{missing.length} {missing.length === 1 ? "foto heeft" : "foto's hebben"} nog geen watermerk</span>
             <Button size="sm" onClick={() => makeWatermarks(missing)}>Watermerk maken</Button>

@@ -67,7 +67,7 @@ const projects: Json[] = [
       { id: id(62), kind: "meeting", title: "Intake", startsAt: iso(-5, 10), endsAt: iso(-5, 11), allDay: false, locationId: null, locationText: "Telefonisch", link: "", notes: "", clientVisible: true },
     ],
     gallery: PHOTOS.slice(0, 4), description: "Avondshoot aan de Maas met rollers op de brug.", deliverables: [{ name: "bewerkte foto's", count: 25, done: false }, { name: "reel van 30 s", count: 1, done: false }] }),
-  mkProject(52, "Teamfoto's 2026", "photo", "editing", [id(2)], { valueCents: 118000, dueDate: dateOnly(-2), gallery: PHOTOS.slice(4, 12), favorites: [0, 2, 3, 6], gallerySettings: { earlyDownloads: "watermark" } }),
+  mkProject(52, "Teamfoto's 2026", "photo", "editing", [id(2)], { valueCents: 118000, dueDate: dateOnly(-2), gallery: PHOTOS.slice(4, 12), favorites: [0, 2, 3, 6] }),
   mkProject(53, "Portret Noor Bakker", "photo", "quote", [id(3)], { valueCents: 45000 }),
   mkProject(54, "Najaarsmenu", "photo", "lead", [id(4)], { events: [{ id: id(63), kind: "shoot", title: "", startsAt: iso(4, 9, 30), endsAt: iso(4, 12), allDay: false, locationId: null, locationText: "Witte de Withstraat", link: "", notes: "", clientVisible: true }] }),
   mkProject(55, "Zomerterras", "photo", "delivered", [id(4)], { valueCents: 54000, gallery: PHOTOS.slice(8, 11) }),
@@ -81,8 +81,8 @@ const projects: Json[] = [
 // Group links: the run's link with downloads on, the wedding's with them off,
 // and the team's while it is being edited, with voorrang for sale.
 const shares: Json[] = [
-  { projectId: id(57), token: "k3F9xQ2mPz7Lw4Rb", active: true, downloads: true, priority: false, priorityPrice: 5, priorityDays: 2, sales: true, photoPrice: 2.99, photoPriceNormal: 7.5, createdAt: iso(-3) },
-  { projectId: id(56), token: "Wd8hT4nE2sYq9cVa", active: true, downloads: false, priority: false, priorityPrice: 5, priorityDays: 2, sales: true, photoPrice: 2.99, photoPriceNormal: 7.5, createdAt: iso(-6) },
+  { projectId: id(57), token: "k3F9xQ2mPz7Lw4Rb", active: true, downloads: true, priority: false, priorityPrice: 5, priorityDays: 2, sales: false, photoPrice: 2.99, photoPriceNormal: 7.5, createdAt: iso(-3) },
+  { projectId: id(56), token: "Wd8hT4nE2sYq9cVa", active: true, downloads: false, priority: false, priorityPrice: 5, priorityDays: 2, sales: false, photoPrice: 2.99, photoPriceNormal: 7.5, createdAt: iso(-6) },
   { projectId: id(52), token: "Jv6nP3rT8kYw2Qd5", active: true, downloads: false, priority: true, priorityPrice: 5, priorityDays: 2, sales: true, photoPrice: 2.99, photoPriceNormal: 7.5, createdAt: iso(-1) },
 ];
 const guestList: Json[] = [
@@ -230,7 +230,8 @@ function shareReply(token: string, key: string, preview: boolean) {
   const raw = new Map(x.gallery.map((g: Json) => [g.id, g]));
   const bought = guest ? mockOrders().filter((o) => o.guestId === guest.id && o.paid).flatMap((o) => o.images) : [];
   const own = new Set<string>([...priority.own, ...bought]);
-  const forSale = !!share.sales && client.downloads === "watermark";
+  // Selling puts the guests' view on watermark by itself (lib/orders.ts), whatever the client sees.
+  const forSale = !!share.sales;
   return {
     guest: guest ? { name: guest.name, email: guest.email, notifyPhotos: !!guest.notifyPhotos } : null,
     preview: !guest,

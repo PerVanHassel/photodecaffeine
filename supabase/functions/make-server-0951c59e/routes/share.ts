@@ -7,7 +7,7 @@ import { sendEmail } from "../lib/email.ts";
 import { type Env, fail, readBody, text, uuid, z } from "../lib/http.ts";
 import { createPayment, getPayment, mollieMode } from "../lib/mollie.ts";
 import { notify } from "../lib/notify.ts";
-import { boughtImageIds, orderStatement, payableNow, salesOpen } from "../lib/orders.ts";
+import { boughtImageIds, guestWindowOpen, orderStatement, payableNow, salesOpen } from "../lib/orders.ts";
 import {
   BOOKING_URL, deliveredImageIds, imagesOf, invoicesOf, MAX_OPEN_PER_GUEST, personLabel, priorityStatement, receivedMail, studioMail,
 } from "../lib/priority.ts";
@@ -77,14 +77,14 @@ async function mustGuest(share: Share, key: string): Promise<Guest> {
 }
 
 /** What shows at the door: enough to see whose photos these are. */
-async function gateOf(row: ProjectRow) {
+async function gateOf(row: ProjectRow, selling: boolean) {
   const gs = row.gallery_settings || {};
   const images = (row.gallery_images || []).filter((g: any) => !heldBack(g)).sort((a: any, b: any) => a.sort - b.sort);
   const isVideo = (g: any) => /\.(mp4|mov|m4v|webm)$/i.test(String(g.file_name || g.url).split("?")[0]);
   const videos = images.filter(isVideo).length;
   const cover = images.find((g: any) => g.id === gs.coverImageId) || images.find((g: any) => !isVideo(g));
-  // The same copy the gallery shows: watermarked while the project says so.
-  const path = cover && (clientDownloads(row) === "watermark" && cover.preview_path ? cover.preview_path : cover.storage_path);
+  // The same copy the gallery shows: watermarked while the project says so, or while photos are for sale.
+  const path = cover && ((selling || clientDownloads(row) === "watermark") && cover.preview_path ? cover.preview_path : cover.storage_path);
   const coverUrl = !cover ? "" : path ? (await signPaths([path])).get(path) || "" : cover.url;
   return {
     title: gs.title || row.title,
@@ -107,24 +107,32 @@ function shootOf(row: ProjectRow): any {
 /**
  * The photos and how they are shown; nothing about the client or the planning.
  * `own` are this guest's voorrang and bought photos: the original, to download
- * now. With `forSale`, every other watermarked photo can be bought.
+ * now. With `forSale` every other photo with a watermarked copy is shown as
+ * that copy and can be bought, whatever the client sees in the portal.
  */
 function guestProject(row: ProjectRow, sign: Signer, canDownload: boolean, own: Set<string> = new Set(), forSale = false) {
   const api = projectToApi(row, sign, { forClient: true });
   const gs = api.gallerySettings;
   const shoot = shootOf(row);
   const raw = new Map<string, any>((row.gallery_images || []).map((g: any) => [g.id, g]));
+  const gallery = api.gallery.map((g: any) => {
+    if (own.has(g.id)) return { ...g, url: sign(raw.get(g.id)) || g.url, download: true, mine: true };
+    // For sale: the watermarked copy, which is also what a free download gives.
+    if (forSale && raw.get(g.id)?.preview_path) return { ...g, url: sign(raw.get(g.id), true) || g.url, download: canDownload, buy: true };
+    // For sale but without a watermarked copy: to look at, never free as the original.
+    if (forSale) return { ...g, download: false };
+    return { ...g, download: canDownload && g.download };
+  });
+  const cover = gallery.find((g: any) => g.id === gs.coverImageId);
   return {
     id: row.id,
     title: row.title,
     stage: row.stage,
-    gallerySettings: { title: gs.title, subtitle: gs.subtitle, style: gs.style, accentColor: gs.accentColor, coverImageId: gs.coverImageId, coverUrl: gs.coverUrl },
-    gallery: api.gallery.map((g: any) => (own.has(g.id)
-      ? { ...g, url: sign(raw.get(g.id)) || g.url, download: true, mine: true }
-      : { ...g, download: canDownload && g.download, ...(forSale && raw.get(g.id)?.preview_path ? { buy: true } : {}) })),
-    downloads: canDownload ? api.downloads : "none",
+    gallerySettings: { title: gs.title, subtitle: gs.subtitle, style: gs.style, accentColor: gs.accentColor, coverImageId: gs.coverImageId, coverUrl: cover ? cover.url : gs.coverUrl },
+    gallery,
+    downloads: canDownload ? (forSale ? "watermark" : api.downloads) : "none",
     downloadsUntil: api.downloadsUntil,
-    watermarked: api.downloads === "watermark",
+    watermarked: forSale || api.downloads === "watermark",
     events: shoot ? [{ kind: "shoot", startsAt: shoot.starts_at }] : [],
   };
 }
@@ -158,7 +166,7 @@ async function seen(guest: Guest, patch: Record<string, unknown> = {}) {
 }
 
 /** Voorrang photos stay downloadable until downloading closes for the whole project. */
-const ownStillOpen = (row: ProjectRow) => !(DONE.includes(row.stage) && clientDownloads(row) === "none");
+const ownStillOpen = (row: ProjectRow) => guestWindowOpen(row);
 
 /**
  * Voorrang in this gallery: whether this guest can still ask (not once the
@@ -232,7 +240,8 @@ r.get(S, async (c) => {
   const row = await loadProject(share.project_id);
   const preview = c.req.query("preview") === "1" && Boolean(await verifyAdmin(c.req.header("Authorization") ?? null));
   const guest = preview ? null : await guestFor(share, c.req.query("key") || "");
-  if (!guest && !preview) return c.json({ gate: await gateOf(row) });
+  // Photos for sale: the door shows the cover with its watermark too.
+  if (!guest && !preview) return c.json({ gate: await gateOf(row, share.sales && salesOpen(row) && payableNow(c.req.query("test") === "1")) });
   if (guest && await owesConsent(share, guest)) {
     const form = found(await db.from("consent_forms").select("token").eq("project_id", row.id).maybeSingle(), "Deze link werkt niet (meer).") as any;
     return c.json({ consent: { token: form.token, ...formFields(row), answer: null }, guest: { name: guest.name, email: guest.email } });
@@ -534,20 +543,23 @@ r.post(`${S}/child`, async (c) => {
 });
 
 // --- downloads ---
-async function downloadRights(share: Share) {
+/** What a guest may download for free. While photos are for sale, that is the watermarked copy at most. */
+async function downloadRights(share: Share, test = false) {
   if (!share.downloads) fail(403, "Downloaden staat uit voor deze galerij.");
   const project = found(await db.from("projects").select("stage, type, gallery_settings").eq("id", share.project_id).maybeSingle(), "Project niet gevonden") as any;
-  return clientDownloads(project);
+  const rights = clientDownloads(project);
+  if (rights !== "none" && share.sales && salesOpen(project) && payableNow(test)) return "watermark";
+  return rights;
 }
 
 r.post(`${S}/download`, async (c) => {
   const share = await openShare(c.req.param("token"));
-  const b = await readBody(c, z.object({ key: z.string(), imageId: uuid }));
+  const b = await readBody(c, z.object({ key: z.string(), imageId: uuid, test: z.boolean().default(false) }));
   const guest = await mustGuest(share, b.key);
   // A voorrang photo is theirs to take as the original, also before delivery
   // and when downloading is off for everyone else.
   const own = (await ownPhotos(share, guest)).has(b.imageId);
-  const downloads = own ? "original" : await downloadRights(share);
+  const downloads = own ? "original" : await downloadRights(share, b.test);
   const img = found(
     await db.from("gallery_images").select("*").eq("id", b.imageId).eq("project_id", share.project_id).maybeSingle(),
     "Foto niet gevonden",
@@ -560,9 +572,9 @@ r.post(`${S}/download`, async (c) => {
 // A zip is made in the browser from the photos on the page; this only counts it.
 r.post(`${S}/downloaded`, async (c) => {
   const share = await openShare(c.req.param("token"));
-  const b = await readBody(c, z.object({ key: z.string(), count: z.number().int().min(1).max(5000) }));
+  const b = await readBody(c, z.object({ key: z.string(), count: z.number().int().min(1).max(5000), test: z.boolean().default(false) }));
   const guest = await mustGuest(share, b.key);
-  if ((await ownPhotos(share, guest)).size === 0 && (await downloadRights(share)) === "none") fail(403, "Downloaden kan zodra de foto's geleverd zijn.");
+  if ((await ownPhotos(share, guest)).size === 0 && (await downloadRights(share, b.test)) === "none") fail(403, "Downloaden kan zodra de foto's geleverd zijn.");
   await seen(guest, { downloads: guest.downloads + b.count });
   return c.json({ success: true });
 });

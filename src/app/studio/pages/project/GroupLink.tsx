@@ -7,7 +7,7 @@ import { copyText } from "../../gallery/share";
 import { saveFile } from "../../portal/data";
 import { keys, useAction } from "../../queries";
 import type { Project, ShareGuest, ShareState } from "../../types";
-import { Button, Card, Empty, ErrorState, Field, Input, Photo, Pill, Segmented, Skeleton, TextField, useConfirm } from "../../ui";
+import { Button, Card, Empty, ErrorState, Field, Input, isVideo, Photo, Pill, Segmented, Skeleton, TextField, useConfirm } from "../../ui";
 
 /** The project's group link and who came in with it; shared by the card and the gallery toolbar. */
 export const useGroupLink = (projectId: string) =>
@@ -66,6 +66,8 @@ export function GroupLink({ project: p }: { project: Project }) {
     const loved = p.gallery.filter((g) => s.hearts[g.id]).sort((a, b) => s.hearts[b.id] - s.hearts[a.id]).slice(0, 8);
     const guests = showAll ? s.guests : s.guests.slice(0, FIRST);
     const waiting = s.guests.filter((g) => g.notifyPhotos).length;
+    // Selling needs a watermarked copy of each photo; videos never have one.
+    const unmarked = p.gallery.filter((g) => !g.watermark && g.restriction !== "no_photo" && !isVideo(g.fileName || g.url)).length;
     body = (
       <div className="s-stack lg">
         <div className="s-row">
@@ -112,7 +114,7 @@ export function GroupLink({ project: p }: { project: Project }) {
           <PrioritySettings price={share.priorityPrice} days={share.priorityDays} onSave={(b) => update.mutate(b)} />
         )}
 
-        <Field label="Foto's verkopen" hint="Staat de galerij op 'Met watermerk', dan kopen gasten losse foto's. Na betaling downloaden ze het origineel, zonder watermerk.">
+        <Field label="Foto's verkopen" hint="Aan: gasten zien de foto's met watermerk en kopen losse foto's. Na betaling downloaden ze het origineel. De klant ziet zijn galerij zoals bij 'Zoals de klant het ziet'.">
           <div>
             <Segmented<"no" | "yes"> label="Foto's verkopen" value={share.sales ? "yes" : "no"}
               onChange={(v) => !busy && update.mutate({ sales: v === "yes" })}
@@ -122,11 +124,16 @@ export function GroupLink({ project: p }: { project: Project }) {
         {share.sales && (
           <div className="s-stack sm">
             <PhotoPriceSettings price={share.photoPrice} normal={share.photoPriceNormal} onSave={(b) => update.mutate(b)} />
-            {(p.gallerySettings.earlyDownloads !== "watermark" || ["delivered", "review", "archived"].includes(p.stage)) && (
-              <span className="s-small s-muted">Gasten zien dit pas als 'Downloaden vóór levering' op 'Met watermerk' staat, tot de levering.</span>
-            )}
             {!share.paymentsLive && (
-              <span className="s-small" style={{ color: "var(--warn)" }}>Online betalen staat nog niet live (Mollie). Gasten zien de knop zodra dat zo is. Testen kan met ?test=1 achter de link.</span>
+              <div className="s-card" style={{ background: "var(--warn-soft)", borderColor: "transparent" }}>
+                <div className="s-card-body s-stack sm">
+                  <span className="s-small">Mollie staat nog op testen. Gasten zien de prijzen pas als online betalen live staat.</span>
+                  <a className="s-small" href={`${new URL(share.url).pathname}?test=1`} target="_blank" rel="noreferrer" style={{ fontWeight: 600 }}>Zelf proberen met testbetalingen</a>
+                </div>
+              </div>
+            )}
+            {unmarked > 0 && (
+              <span className="s-small s-muted">{unmarked} {unmarked === 1 ? "foto heeft" : "foto's hebben"} nog geen watermerk. Die zijn niet te koop. Maak ze bij 'Zoals de klant het ziet'.</span>
             )}
             {s.totals.sold > 0 && <span className="s-small"><b>Verkocht:</b> {s.totals.sold} {s.totals.sold === 1 ? "foto" : "foto's"} · {euro(s.totals.revenue)}</span>}
           </div>

@@ -115,7 +115,7 @@ Verander je de inhoud, verhoog dan `LEGAL_VERSION` (`lib/legalVersion.ts`) en
 - Voorrang in de groepsgalerij: `lib/priority.ts`, gast in `routes/share.ts`, admin in `routes/priority.ts`.
   Betalen gaat via een gewone factuur; `routes/payments.ts` herkent hem met `priorityForInvoice`.
   Bij elke aanvraag bewaren we de tekst waarmee de gast akkoord ging (`statement`, `terms_version`).
-- Foto's kopen in een groepsgalerij met watermerk: `lib/orders.ts`. Eerst betalen bij Mollie, pas daarna
+- Foto's kopen in een groepsgalerij: `lib/orders.ts`. Aan per groepslink; gasten zien dan watermerken, de klant niet. Eerst betalen bij Mollie, pas daarna
   een (betaalde) factuur, zodat een mandje dat niet betaald wordt niets in de boeken zet. Gekocht = factuur betaald.
 
 ## Taal

@@ -3,19 +3,34 @@ import { db, must } from "./db.ts";
 import { escapeHtml } from "./email.ts";
 import { mollieMode } from "./mollie.ts";
 import { euro, mailCard } from "./priority.ts";
-import { clientDownloads } from "./projects.ts";
+import { downloadsUntil } from "./projects.ts";
+import { todayAmsterdam } from "./util.ts";
 
-// Buying photos in a group gallery that shows watermarked copies. A guest puts
-// photos in a basket and pays at Mollie's own page; once paid they download
-// those photos as originals. The invoice is made only then, as a receipt, so a
-// basket that is never paid leaves nothing behind in the books.
+// Buying photos in a group gallery. With selling on for a group link, its
+// guests see every photo that has a watermarked copy with that watermark, and
+// buy the ones they want: they put them in a basket and pay at Mollie's own
+// page, then download those photos as originals. What the client sees in the
+// portal stays as the studio set it. The invoice is made only once paid, as a
+// receipt, so a basket that is never paid leaves nothing behind in the books.
 //
 // The guest's side is in routes/share.ts, the payment in routes/payments.ts.
 
 type Lang = "nl" | "en";
 
-/** Photos are for sale while the group sees watermarked copies, which is before delivery. */
-export const salesOpen = (row: { stage?: string; type?: string; gallery_settings?: any }) => clientDownloads(row as any) === "watermark";
+const DONE = ["delivered", "review", "archived"];
+
+/**
+ * What a guest bought or got first stays theirs to download, and photos stay
+ * for sale, until downloading closes for the project: a quarter after
+ * delivery, or the date the studio set.
+ */
+export function guestWindowOpen(row: { stage?: string; gallery_settings?: any }): boolean {
+  if (!DONE.includes(String(row.stage))) return true;
+  const until = downloadsUntil(row);
+  return !until || until >= todayAmsterdam();
+}
+
+export const salesOpen = guestWindowOpen;
 
 /** Paying online works: always with a live key, with a test key only when the link says test=1. */
 export const payableNow = (test: boolean) => mollieMode() === "live" || (mollieMode() === "test" && test);
