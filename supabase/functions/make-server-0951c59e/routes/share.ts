@@ -5,7 +5,9 @@ import { childStatus, consentUrl, formFields } from "../lib/consents.ts";
 import { db, found, must } from "../lib/db.ts";
 import { sendEmail } from "../lib/email.ts";
 import { type Env, fail, readBody, text, uuid, z } from "../lib/http.ts";
+import { createPayment, getPayment, mollieMode } from "../lib/mollie.ts";
 import { notify } from "../lib/notify.ts";
+import { boughtImageIds, orderStatement, payableNow, salesOpen } from "../lib/orders.ts";
 import {
   BOOKING_URL, deliveredImageIds, imagesOf, invoicesOf, MAX_OPEN_PER_GUEST, personLabel, priorityStatement, receivedMail, studioMail,
 } from "../lib/priority.ts";
@@ -15,6 +17,7 @@ import { noteGuestReviewer, reviewLink } from "../lib/reviews.ts";
 import { guestCount, guestHearts, setPhotoMails, shareUrl, VISIT_GAP_MS, wantsPhotoMails } from "../lib/shares.ts";
 import { signPaths } from "../lib/storage.ts";
 import { invoiceLink } from "./invoices.ts";
+import { syncPayment } from "./payments.ts";
 
 const r = new Hono<Env>();
 export default r;
@@ -34,6 +37,8 @@ type Share = {
   project_id: string; downloads: boolean; consent_required: boolean;
   /** Voorrang: whether guests may ask, for how much, and how fast it comes (lib/priority.ts). */
   priority: boolean; priority_price: number | string; priority_days: number;
+  /** Photos for sale while the gallery is watermarked, at the start-up price and the normal one (lib/orders.ts). */
+  sales: boolean; photo_price: number | string; photo_price_normal: number | string;
 };
 type Guest = { id: string; name: string; email: string; visits: number; downloads: number; last_seen_at: string };
 
@@ -41,7 +46,9 @@ const DONE = ["delivered", "review", "archived"];
 
 async function openShare(token: string): Promise<Share> {
   const share = /^[A-Za-z0-9]{8,64}$/.test(token)
-    ? must(await db.from("gallery_shares").select("project_id, active, downloads, consent_required, priority, priority_price, priority_days").eq("token", token).maybeSingle()) as any
+    ? must(await db.from("gallery_shares")
+      .select("project_id, active, downloads, consent_required, priority, priority_price, priority_days, sales, photo_price, photo_price_normal")
+      .eq("token", token).maybeSingle()) as any
     : null;
   if (!share?.active) fail(404, "Deze link werkt niet (meer). Vraag degene die hem stuurde om een nieuwe.");
   return share;
@@ -99,13 +106,14 @@ function shootOf(row: ProjectRow): any {
 
 /**
  * The photos and how they are shown; nothing about the client or the planning.
- * `own` are this guest's voorrang photos: the original, to download now.
+ * `own` are this guest's voorrang and bought photos: the original, to download
+ * now. With `forSale`, every other watermarked photo can be bought.
  */
-function guestProject(row: ProjectRow, sign: Signer, canDownload: boolean, own: Set<string> = new Set()) {
+function guestProject(row: ProjectRow, sign: Signer, canDownload: boolean, own: Set<string> = new Set(), forSale = false) {
   const api = projectToApi(row, sign, { forClient: true });
   const gs = api.gallerySettings;
   const shoot = shootOf(row);
-  const raw = new Map((row.gallery_images || []).map((g: any) => [g.id, g]));
+  const raw = new Map<string, any>((row.gallery_images || []).map((g: any) => [g.id, g]));
   return {
     id: row.id,
     title: row.title,
@@ -113,7 +121,7 @@ function guestProject(row: ProjectRow, sign: Signer, canDownload: boolean, own: 
     gallerySettings: { title: gs.title, subtitle: gs.subtitle, style: gs.style, accentColor: gs.accentColor, coverImageId: gs.coverImageId, coverUrl: gs.coverUrl },
     gallery: api.gallery.map((g: any) => (own.has(g.id)
       ? { ...g, url: sign(raw.get(g.id)) || g.url, download: true, mine: true }
-      : { ...g, download: canDownload && g.download })),
+      : { ...g, download: canDownload && g.download, ...(forSale && raw.get(g.id)?.preview_path ? { buy: true } : {}) })),
     downloads: canDownload ? api.downloads : "none",
     downloadsUntil: api.downloadsUntil,
     watermarked: api.downloads === "watermark",
@@ -192,12 +200,30 @@ async function priorityOf(share: Share, row: ProjectRow, guest: Guest | null) {
   return { view: { offer, requests }, own };
 }
 
-/** The guest's voorrang photos, checked again on a download. */
+/** The guest's voorrang and bought photos, checked again on a download. */
 async function ownPhotos(share: Share, guest: Guest): Promise<Set<string>> {
-  const ids = await deliveredImageIds(guest.id);
+  const [delivered, bought] = await Promise.all([deliveredImageIds(guest.id), boughtImageIds(guest.id)]);
+  const ids = new Set([...delivered, ...bought]);
   if (ids.size === 0) return ids;
   const project = found(await db.from("projects").select("stage, type, gallery_settings").eq("id", share.project_id).maybeSingle(), "Project niet gevonden") as any;
   return ownStillOpen(project) ? ids : new Set();
+}
+
+/**
+ * Photos for sale (lib/orders.ts): while the group sees watermarked copies and
+ * paying online works. The studio's preview shows it, without a checkout.
+ */
+function salesView(share: Share, row: ProjectRow, test: boolean, preview: boolean) {
+  if (!share.sales || !salesOpen(row)) return null;
+  const payable = !preview && payableNow(test);
+  if (!payable && !preview) return null;
+  const price = Number(share.photo_price);
+  return {
+    price,
+    normalPrice: Number(share.photo_price_normal),
+    payable,
+    statement: { nl: orderStatement("nl", price), en: orderStatement("en", price) },
+  };
 }
 
 // --- the gallery, or the door ---
@@ -216,22 +242,27 @@ r.get(S, async (c) => {
     const away = Date.now() - new Date(guest.last_seen_at).getTime() >= VISIT_GAP_MS;
     await seen(guest, { visits: guest.visits === 0 || away ? guest.visits + 1 : guest.visits });
   }
-  const [sign, hearts, guests, mine, kids, priority] = await Promise.all([
+  const [sign, hearts, guests, mine, kids, priority, bought] = await Promise.all([
     gallerySigner([row]),
     guestHearts(row.id),
     guestCount(row.id),
     guest ? db.from("gallery_guest_hearts").select("image_id").eq("guest_id", guest.id) : null,
     guest ? kidsOf(row.id, guest) : null,
     priorityOf(share, row, guest),
+    guest ? boughtImageIds(guest.id) : new Set<string>(),
   ]);
+  // Bought photos stay theirs as long as downloading is open, like voorrang.
+  const own = new Set([...priority.own, ...(ownStillOpen(row) ? bought : [])]);
+  const sales = salesView(share, row, c.req.query("test") === "1", preview);
   return c.json({
     guest: guest ? { name: guest.name, email: guest.email, notifyPhotos: await wantsPhotoMails(row.id, guest.id) } : null,
     preview,
-    project: guestProject(row, sign, share.downloads && !preview, priority.own),
+    project: guestProject(row, sign, share.downloads && !preview, own, !!sales),
     hearts: hearts.images,
     mine: mine ? (must(mine) || []).map((h: any) => h.image_id) : [],
     kids,
     priority: priority.view,
+    sales,
     guests,
     // Once the photos are delivered. The studio looking along should not count as a click.
     reviewUrl: guest && ["delivered", "review", "archived"].includes(row.stage) ? await reviewLink(row.id) : "",
@@ -345,6 +376,83 @@ r.post(`${S}/priority/:priorityId/cancel`, async (c) => {
   must(await db.from("gallery_priority").delete().eq("id", row.id));
   await notify({ type: "priority", title: `Voorrang ingetrokken: ${personLabel(row)}`, body: `Door ${guest.name}`, link: `/admin/project/${share.project_id}?tab=gallery` });
   return c.json({ success: true, person: row.person, number: row.number });
+});
+
+// --- buying photos while the gallery is watermarked (lib/orders.ts) ---
+// The basket goes to Mollie's page as one payment. Its invoice is made once it
+// is paid (routes/payments.ts). The price is the studio's, never the browser's.
+r.post(`${S}/order`, async (c) => {
+  const token = c.req.param("token");
+  const share = await openShare(token);
+  const b = await readBody(c, z.object({
+    key: z.string(),
+    imageIds: z.array(uuid).min(1, "Kies eerst een foto.").max(500),
+    language: z.enum(["nl", "en"]).default("nl"),
+    agree: z.literal(true, { errorMap: () => ({ message: "Vink aan dat je akkoord gaat." }) }),
+    test: z.boolean().default(false),
+  }));
+  const guest = await mustGuest(share, b.key);
+  const project = found(await db.from("projects").select("id, stage, type, gallery_settings").eq("id", share.project_id).maybeSingle(), "Project niet gevonden") as any;
+  if (!share.sales || !salesOpen(project)) fail(409, "Foto's kopen kan niet (meer) bij deze galerij.");
+  if (!payableNow(b.test)) fail(409, "Online betalen staat nog niet aan. Probeer het later opnieuw.");
+
+  const ids = [...new Set(b.imageIds)];
+  const images: any[] = [];
+  for (let i = 0; i < ids.length; i += 200) {
+    images.push(...((must(await db.from("gallery_images").select("id, preview_path, restriction").eq("project_id", share.project_id).in("id", ids.slice(i, i + 200))) || []) as any[]));
+  }
+  // Only watermarked photos that may be shown, and none they already have.
+  const own = await ownPhotos(share, guest);
+  const buy = images.filter((g) => g.preview_path && !heldBack(g) && !own.has(g.id));
+  if (buy.length === 0) fail(400, "Deze foto's heb je al, of ze zijn niet te koop.");
+
+  const price = Number(share.photo_price);
+  const total = Math.round(price * buy.length * 100) / 100;
+  const order = must(await db.from("gallery_orders").insert({
+    project_id: share.project_id,
+    guest_id: guest.id,
+    price,
+    normal_price: Number(share.photo_price_normal),
+    language: b.language,
+    statement: orderStatement(b.language, price),
+    terms_version: TERMS_VERSION,
+  }).select("id").single()) as any;
+  try {
+    must(await db.from("gallery_order_images").insert(buy.map((g) => ({ order_id: order.id, image_id: g.id }))));
+    const back = `${shareUrl(token)}?bestelling=${order.id}${b.test ? "&test=1" : ""}`;
+    const mp = await createPayment({
+      amount: total,
+      // What the guest sees on their bank statement.
+      description: `${buy.length} ${buy.length === 1 ? "foto" : "foto's"} PhotoDeCaffeine`,
+      redirectUrl: back,
+      cancelUrl: `${back}&betaling=gestopt`,
+      webhookUrl: `${SITE_URL}/api/mollie`,
+      metadata: { order: order.id },
+    });
+    const checkoutUrl = mp._links?.checkout?.href || "";
+    if (!checkoutUrl) fail(502, "De betaaldienst gaf geen betaalpagina terug. Probeer het zo opnieuw.");
+    must(await db.from("payments").insert({ order_id: order.id, mollie_id: mp.id, mode: mp.mode, status: mp.status, amount: total, checkout_url: checkoutUrl }));
+    await seen(guest);
+    return c.json({ id: order.id, checkoutUrl, count: buy.length, amount: total });
+  } catch (err) {
+    // No basket without a way to pay for it.
+    await db.from("gallery_orders").delete().eq("id", order.id);
+    throw err;
+  }
+});
+
+// Back from Mollie: ask how it went instead of waiting for the webhook.
+r.post(`${S}/order/:orderId/check`, async (c) => {
+  const share = await openShare(c.req.param("token"));
+  const { key } = await readBody(c, z.object({ key: z.string() }));
+  const guest = await mustGuest(share, key);
+  const order = found(
+    await db.from("gallery_orders").select("id, invoice_id").eq("id", c.req.param("orderId")).eq("guest_id", guest.id).maybeSingle(),
+    "Bestelling niet gevonden",
+  ) as any;
+  const latest = ((must(await db.from("payments").select("mollie_id, mode, status").eq("order_id", order.id).order("created_at", { ascending: false }).limit(1)) || []) as any[])[0];
+  if (!latest || latest.mode !== mollieMode()) return c.json({ id: order.invoice_id || "", event: "", status: latest?.status || "" });
+  return c.json(await syncPayment(await getPayment(latest.mollie_id)));
 });
 
 // The link in such a mail. The key is enough, so it keeps working when the

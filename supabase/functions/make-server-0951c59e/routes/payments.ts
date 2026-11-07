@@ -7,7 +7,9 @@ import { type Env, fail, readBody, requireAdmin, text, z } from "../lib/http.ts"
 import { amountOf, createPayment, createRefund, getPayment, type MolliePayment, mollieMode } from "../lib/mollie.ts";
 import { notify } from "../lib/notify.ts";
 import { kept, keptOf, methodLabel, paymentsOf } from "../lib/payments.ts";
+import { orderPaidMail } from "../lib/orders.ts";
 import { paidMail, personLabel, priorityForInvoice } from "../lib/priority.ts";
+import { shareFor, shareUrl } from "../lib/shares.ts";
 import { greetingOf, invoiceLink, invoiceMail, invoiceTotals, payableOnline } from "./invoices.ts";
 import { euro } from "./quotes.ts";
 
@@ -114,7 +116,7 @@ type Sync = { id: string; event: string; status: string; method: string; methodL
  * webhook and the client's return can call this at the same moment: only the
  * call whose update actually changed the row goes on to mail anyone.
  */
-async function syncPayment(mp: MolliePayment): Promise<Sync> {
+export async function syncPayment(mp: MolliePayment): Promise<Sync> {
   const row = (await db.from("payments").select("*").eq("mollie_id", mp.id).maybeSingle()).data as any;
   const out: Sync = { id: row?.invoice_id || "", event: "", status: mp.status, method: mp.method || "", methodLabel: methodLabel(mp.method), amount: amountOf(mp.amount) };
   if (!row) return out;
@@ -132,6 +134,11 @@ async function syncPayment(mp: MolliePayment): Promise<Sync> {
     .eq("id", row.id).eq("status", row.status).eq("amount_charged_back", row.amount_charged_back).select("id")) || [];
   if (!won.length) return out;
 
+  // A basket of photos from a group gallery: its invoice is made once it is paid.
+  if (!row.invoice_id) {
+    if (row.order_id && row.status !== "paid" && mp.status === "paid") Object.assign(out, await onOrderPaid(row, mp));
+    return out;
+  }
   const inv = (await db.from("invoices").select("*").eq("id", row.invoice_id).maybeSingle()).data as any;
   if (!inv) return out;
   if (row.status !== "paid" && mp.status === "paid") out.event = await onPaid(inv, mp);
@@ -200,9 +207,77 @@ async function onChargeback(inv: any, amount: number): Promise<string> {
   return "chargeback";
 }
 
+/**
+ * A basket from a group gallery is paid (lib/orders.ts): now its invoice is
+ * made, already paid, as the receipt. The photos open up for the guest by
+ * themselves, since what they bought is read from paid invoices.
+ */
+async function onOrderPaid(row: any, mp: MolliePayment): Promise<{ event: string; id: string }> {
+  const amount = amountOf(mp.amount);
+  const via = methodLabel(mp.method);
+  const order = (await db.from("gallery_orders").select("*, gallery_guests ( name, email ), projects ( title, gallery_settings )").eq("id", row.order_id).maybeSingle()).data as any;
+  const where = { number: "Foto's", link: order ? `/admin/project/${order.project_id}?tab=gallery` : "/admin/invoices", button: "Open het project" };
+  if (!order) {
+    await alert(where, "Betaling voor foto's zonder bestelling", `Er is ${euro(amount)} betaald via ${via}, maar de bestelling staat er niet meer. Kijk het na in Mollie.`);
+    return { event: "unexpected", id: "" };
+  }
+  const images = (must(await db.from("gallery_order_images").select("image_id").eq("order_id", order.id)) || []) as any[];
+  const count = images.length;
+  const price = Number(order.price);
+  if (count === 0 || Math.abs(amount - round2(price * count)) >= 0.005) {
+    await alert(where, "Betaling voor foto's klopt niet", `Er is ${euro(amount)} betaald via ${via} voor ${count} foto's van ${euro(price)}. Kijk het na in Mollie.`);
+    return { event: "mismatch", id: "" };
+  }
+  if (order.invoice_id) {
+    await alert(where, "Foto's twee keer betaald", `Er kwam nog een betaling van ${euro(amount)} binnen via ${via} voor dezelfde foto's. Stort er één terug in Mollie.`);
+    return { event: "double", id: order.invoice_id };
+  }
+
+  const guest = order.gallery_guests || {};
+  const title = order.projects?.gallery_settings?.title || order.projects?.title || "";
+  const normal = Number(order.normal_price);
+  const now = new Date().toISOString();
+  const inv = must(await db.from("invoices").insert({
+    number: await nextDocumentNumber("FA"),
+    status: "paid",
+    project_id: order.project_id,
+    client_name: guest.name || "",
+    client_email: guest.email || "",
+    lines: [{
+      label: "Foto's zonder watermerk",
+      quantity: count,
+      amount: price,
+      note: [title, normal > price ? `Start-up korting: normaal ${euro(normal)} per foto` : ""].filter(Boolean).join(". "),
+    }],
+    vat_basis: "incl",
+    vat_rate: 21,
+    notes: "Je gaf toestemming om de foto's meteen te leveren. Daardoor is je herroepingsrecht vervallen.",
+    due_on: todayIso(),
+    sent_at: now,
+    paid_at: mp.paidAt || now,
+  }).select("*").single()) as any;
+  must(await db.from("payments").update({ invoice_id: inv.id }).eq("id", row.id));
+  must(await db.from("gallery_orders").update({ invoice_id: inv.id }).eq("id", order.id));
+
+  await notify({
+    type: "invoice", title: `${count} ${count === 1 ? "foto" : "foto's"} verkocht`,
+    body: `${euro(amount)} via ${via}, door ${guest.name || "een gast"} · ${order.projects?.title || ""}`, link: `/admin/invoice/${inv.id}`,
+  });
+  if (EMAIL_RE.test(guest.email || "")) {
+    const share = await shareFor(order.project_id);
+    const mail = orderPaidMail(order.language, {
+      guestName: guest.name || "", count, amount, via, invoiceNumber: inv.number, invoiceLink: invoiceLink(inv),
+      galleryLink: share ? `${shareUrl(share.token)}?bestelling=${order.id}` : SITE_URL,
+    });
+    await sendEmail({ to: guest.email, subject: mail.subject, html: mail.html, replyTo: EMAIL_ADMIN_NOTIFY, bcc: EMAIL_INVOICE_BCC });
+  }
+  return { event: "order", id: inv.id };
+}
+
 /** Something about a payment the owner has to look at: a melding and a mail. */
-async function alert(inv: any, title: string, body: string) {
-  await notify({ type: "invoice", title, body, link: `/admin/invoice/${inv.id}` });
+async function alert(inv: { id?: string; number: string; link?: string; button?: string }, title: string, body: string) {
+  const link = inv.link || `/admin/invoice/${inv.id}`;
+  await notify({ type: "invoice", title, body, link });
   await sendEmail({
     to: EMAIL_ADMIN_NOTIFY,
     bcc: EMAIL_INVOICE_BCC,
@@ -217,7 +292,7 @@ async function alert(inv: any, title: string, body: string) {
       <span style="color:rgba(255,251,224,0.55);font-size:14px;font-weight:300;line-height:1.75;">${escapeHtml(body)}</span>
     </td></tr>
     <tr><td style="padding:26px 36px 40px;">
-      <a href="${SITE_URL}/admin/invoice/${inv.id}" style="display:inline-block;background-color:#c8905a;color:#0d0703;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 30px;">Open de factuur</a>
+      <a href="${SITE_URL}${link}" style="display:inline-block;background-color:#c8905a;color:#0d0703;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 30px;">${escapeHtml(inv.button || "Open de factuur")}</a>
     </td></tr>`),
   });
 }

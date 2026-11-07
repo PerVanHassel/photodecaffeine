@@ -26,6 +26,8 @@ export async function purgeExpiredOncePerDay() {
       db.from("gallery_guests").delete().lt("last_seen_at", monthsAgo(12)),
       db.from("activity_log").delete().lt("created_at", monthsAgo(12)),
       db.from("payments").delete().neq("status", "paid").lt("created_at", monthsAgo(12)),
+      // Baskets of photos that were never paid (lib/orders.ts).
+      db.from("gallery_orders").delete().is("invoice_id", null).lt("created_at", monthsAgo(12)),
     ]);
   } catch (err) {
     // Cleaning up is never worth failing the admin's first page over; tomorrow it tries again.

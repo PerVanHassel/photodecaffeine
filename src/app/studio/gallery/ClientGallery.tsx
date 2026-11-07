@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowRight, ArrowUp, Bell, BellRing, Check, ChevronLeft, ChevronRight, Download, Flame, Grid3x3, Heart, Instagram, MegaphoneOff, Play, Plus, Rows2, Share2, Star, Users, X } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUp, Bell, BellRing, Check, ChevronLeft, ChevronRight, Download, Flame, Grid3x3, Heart, Instagram, MegaphoneOff, Play, Plus, Rows2, Share2, ShoppingBag, Star, Users, X } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { Helmet } from "react-helmet-async";
 import { useModalFocus } from "../../lib/dialog";
@@ -38,6 +38,14 @@ export interface GalleryKids {
 }
 
 const firstName = (name: string) => name.trim().split(/\s+/)[0];
+
+/** Group link, watermarked gallery: photos marked `buy` go in a basket one tap at a time. */
+export interface GalleryBasket {
+  /** The price per photo, written out ("€2,99"). */
+  price: string;
+  has: (img: GalleryImage) => boolean;
+  toggle: (img: GalleryImage) => void;
+}
 
 export interface GalleryActions {
   toggle?: (img: GalleryImage) => void;
@@ -80,7 +88,7 @@ function tempo(ratios: number[], w: number) {
   return rowBoxes(rows, ratios, w, gap);
 }
 
-export function ClientGallery({ project: p, favs, favNames, counts, guest, kids, actions, review, back, above, after, only, openId, preview }: {
+export function ClientGallery({ project: p, favs, favNames, counts, guest, kids, basket, actions, review, back, above, after, only, openId, preview }: {
   project: GalleryProject;
   favs: Set<string>;
   /** Preview: who picked each photo. */
@@ -90,6 +98,7 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
   /** Someone who came in with the group link: their texts, and the hearts counted in the heart. */
   guest?: { name: string; guests: number };
   kids?: GalleryKids;
+  basket?: GalleryBasket;
   actions: GalleryActions;
   /** The project's link to Google, once the photos are delivered. In a preview the button does nothing. */
   review?: { url: string; onOpen?: () => void };
@@ -166,6 +175,7 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
       onDownload={canDownload(g) ? () => actions.downloadOne!(g) : undefined}
       onSize={(w, h) => report(g, w, h)}
       kid={kids?.active ? { name: firstName(kids.active), on: hasKid(g), onTag: () => kids.onTag(g) } : undefined}
+      buy={basket && g.buy ? { price: basket.price, on: basket.has(g), toggle: () => basket.toggle(g) } : undefined}
       eager={opts.eager ?? i < 8}
       heart={opts.heart}
       t={t}
@@ -336,6 +346,7 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
         <Lightbox list={open.list} start={open.index} total={p.gallery.length} numberOf={numberOf} favs={favs} favNames={favNames}
           counts={counts} countAs={guest ? "heart" : "badge"}
           kid={kids?.active ? { name: firstName(kids.active), isOn: hasKid, onTag: kids.onTag } : undefined}
+          basket={basket}
           onToggle={actions.toggle} onDownload={actions.downloadOne} canDownload={canDownload} onShare={actions.sharePhoto}
           protect={downloads !== "original" && !preview} onClose={() => setOpen(null)} t={t} />
       )}
@@ -517,10 +528,12 @@ function SheetLayout({ images, ratios, tile, numberOf, favs, favNames, counts, o
 /** Photos already shown once this visit appear without fading in again. */
 const seen = new Set<string>();
 
-function Tile({ img, label, alt, fav, favBy, count, countAs, onOpen, onToggle, onDownload, onSize, kid, eager, heart = true, t }: {
+function Tile({ img, label, alt, fav, favBy, count, countAs, onOpen, onToggle, onDownload, onSize, kid, buy, eager, heart = true, t }: {
   img: GalleryImage; label: string; alt: string; fav: boolean; favBy?: string[]; count: number; countAs: CountAs; onOpen: () => void; onToggle?: () => void;
   onDownload?: () => void;
-  onSize: (w: number, h: number) => void; kid?: { name: string; on: boolean; onTag: () => void }; eager?: boolean; heart?: boolean; t: T;
+  onSize: (w: number, h: number) => void; kid?: { name: string; on: boolean; onTag: () => void };
+  buy?: { price: string; on: boolean; toggle: () => void };
+  eager?: boolean; heart?: boolean; t: T;
 }) {
   const video = isVideo(img.fileName || img.url);
   const [loaded, setLoaded] = useState(() => seen.has(img.url));
@@ -549,6 +562,12 @@ function Tile({ img, label, alt, fav, favBy, count, countAs, onOpen, onToggle, o
         </button>
       )}
       {img.restriction === "no_social" && <span className="g-nopost" title={t.noSocialHint}><MegaphoneOff aria-hidden="true" /><span>{t.noSocial}</span></span>}
+      {buy && (
+        <button type="button" className={cx("g-buy", buy.on && "on")} aria-pressed={buy.on} aria-label={buy.on ? `${t.saleChosen}: ${alt}` : `${t.saleAdd(buy.price)}: ${alt}`}
+          title={buy.on ? t.saleRemove : t.saleAdd(buy.price)} onClick={(e) => { e.stopPropagation(); buy.toggle(); }}>
+          {buy.on ? <Check aria-hidden="true" /> : <ShoppingBag aria-hidden="true" />}<span>{buy.on ? t.saleChosen : buy.price}</span>
+        </button>
+      )}
       {heart && <HeartButton on={fav} by={favBy} count={countAs === "heart" ? count : 0} onToggle={onToggle} t={t} />}
       {onDownload && (
         <button type="button" className="g-dl" aria-label={`${t.download}: ${alt}`} title={t.download} onClick={(e) => { e.stopPropagation(); onDownload(); }}>
@@ -626,9 +645,10 @@ function HeartButton({ on, by, count = 0, onToggle, t, inline }: { on: boolean; 
 // Lightbox
 // ---------------------------------------------------------------------------
 
-function Lightbox({ list, start, total, numberOf, favs, favNames, counts, countAs, kid, onToggle, onDownload, canDownload, onShare, protect, onClose, t }: {
+function Lightbox({ list, start, total, numberOf, favs, favNames, counts, countAs, kid, basket, onToggle, onDownload, canDownload, onShare, protect, onClose, t }: {
   list: GalleryImage[]; start: number; total: number; numberOf: Map<string, number>; favs: Set<string>; favNames?: Record<string, string[]>;
   counts?: Record<string, number>; countAs: CountAs; kid?: { name: string; isOn: (g: GalleryImage) => boolean; onTag: (g: GalleryImage) => void };
+  basket?: GalleryBasket;
   onToggle?: (g: GalleryImage) => void; onDownload?: (g: GalleryImage) => void; canDownload: (g: GalleryImage) => boolean; onShare?: (g: GalleryImage) => void;
   protect: boolean; onClose: () => void; t: T;
 }) {
@@ -693,6 +713,12 @@ function Lightbox({ list, start, total, numberOf, favs, favNames, counts, countA
             : countAs === "heart" && hearts > 0 && <span className="g-lb-fav"><Heart />{t.favoriteWithCount(hearts)}</span>}
           {onShare && (
             <button type="button" className="g-btn" onClick={() => onShare(img)} aria-label={t.sharePhoto}><Share2 /><span className="g-btn-label">{t.share}</span></button>
+          )}
+          {basket && img.buy && (
+            <button type="button" className={cx("g-btn", basket.has(img) ? "on" : "primary")} aria-pressed={basket.has(img)} onClick={() => basket.toggle(img)}
+              title={basket.has(img) ? t.saleRemove : t.saleAdd(basket.price)}>
+              {basket.has(img) ? <Check /> : <ShoppingBag />}<span>{basket.has(img) ? t.saleChosen : t.saleAdd(basket.price)}</span>
+            </button>
           )}
           {onDownload && canDownload(img) && (
             <button type="button" className="g-btn primary g-lb-dl" onClick={() => onDownload(img)} aria-label={t.download}><Download /><span className="g-btn-label">{t.download}</span></button>

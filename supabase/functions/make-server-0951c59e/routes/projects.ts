@@ -22,6 +22,8 @@ import {
   downloadsUntil,
 } from "../lib/projects.ts";
 import { consentMessageEmail, deliveredEmail, galleryGrewEmail, meetingEmail, studioMessageToClientEmail } from "../lib/projectEmails.ts";
+import { mollieMode } from "../lib/mollie.ts";
+import { salesOf } from "../lib/orders.ts";
 import { forgetPhotoMails, guestHearts, mailGuestsNewPhotos, photoMailGuests, setPhotoMails, shareFor, shareToken, shareUrl } from "../lib/shares.ts";
 import { removePrivate, uploadPrivate } from "../lib/storage.ts";
 import { demoSlugOf, projectDemos } from "../lib/util.ts";
@@ -462,11 +464,12 @@ r.post(`${P}/project/:id/gallery/notify`, async (c) => {
 
 async function shareState(id: string) {
   const share = await shareFor(id);
-  if (!share) return { share: null, guests: [], hearts: {}, totals: { guests: 0, visits: 0, hearts: 0, downloads: 0 } };
-  const [rows, hearts] = await Promise.all([
+  if (!share) return { share: null, guests: [], hearts: {}, totals: { guests: 0, visits: 0, hearts: 0, downloads: 0, sold: 0, revenue: 0 } };
+  const [rows, hearts, sold] = await Promise.all([
     db.from("gallery_guests").select("id, name, email, visits, downloads, first_seen_at, last_seen_at")
       .eq("project_id", id).order("last_seen_at", { ascending: false }),
     guestHearts(id),
+    salesOf(id),
   ]);
   const wanted = await photoMailGuests(id);
   const guests = (must(rows) || []).map((g: any) => ({
@@ -486,6 +489,9 @@ async function shareState(id: string) {
       url: shareUrl(share.token), active: share.active, downloads: share.downloads, consentRequired: share.consent_required, createdAt: share.created_at,
       // Voorrang (lib/priority.ts): guests may ask for their photos first, at this price and speed.
       priority: share.priority, priorityPrice: Number(share.priority_price), priorityDays: share.priority_days,
+      // Photos for sale while watermarked (lib/orders.ts), and whether paying online works yet.
+      sales: share.sales, photoPrice: Number(share.photo_price), photoPriceNormal: Number(share.photo_price_normal),
+      paymentsLive: mollieMode() === "live",
     },
     guests,
     hearts: hearts.images,
@@ -494,6 +500,8 @@ async function shareState(id: string) {
       visits: sum(guests.map((g) => g.visits)),
       hearts: sum(Object.values(hearts.images)),
       downloads: sum(guests.map((g) => g.downloads)),
+      sold: sold.photos,
+      revenue: sold.revenue,
     },
   };
 }
@@ -518,13 +526,18 @@ r.put(`${P}/project/:id/share`, async (c) => {
     priority: z.boolean().optional(),
     priorityPrice: z.number().min(1, "Minimaal €1.").max(500, "Maximaal €500.").optional(),
     priorityDays: z.number().int().min(1, "Minimaal 1 werkdag.").max(30, "Maximaal 30 werkdagen.").optional(),
+    sales: z.boolean().optional(),
+    photoPrice: z.number().min(0.5, "Minimaal €0,50.").max(500, "Maximaal €500.").optional(),
+    photoPriceNormal: z.number().min(0, "Niet onder €0.").max(1000, "Maximaal €1000.").optional(),
   }));
   const fields: [keyof typeof b, string][] = [
     ["active", "active"], ["downloads", "downloads"], ["consentRequired", "consent_required"],
     ["priority", "priority"], ["priorityPrice", "priority_price"], ["priorityDays", "priority_days"],
+    ["sales", "sales"], ["photoPrice", "photo_price"], ["photoPriceNormal", "photo_price_normal"],
   ];
+  const money = new Set(["priorityPrice", "photoPrice", "photoPriceNormal"]);
   const patch: Record<string, unknown> = {};
-  for (const [from, to] of fields) if (b[from] !== undefined) patch[to] = from === "priorityPrice" ? Math.round(Number(b[from]) * 100) / 100 : b[from];
+  for (const [from, to] of fields) if (b[from] !== undefined) patch[to] = money.has(from) ? Math.round(Number(b[from]) * 100) / 100 : b[from];
   // Asking for consent takes a form that is there and open.
   if (b.consentRequired) await openConsentForm(id);
   if (Object.keys(patch).length) {

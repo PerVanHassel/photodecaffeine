@@ -88,7 +88,7 @@ export async function priorityForInvoice(invoiceId: string): Promise<any | null>
 const BUTTON = "display:inline-block;background-color:#fffbe0;color:#1a0c04;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:13px 26px;";
 
 /** One card in the house style. Everything except `quote` and `button.link` is HTML the caller escaped. */
-function card(o: { eyebrow: string; title: string; sub?: string; text: string[]; quote?: string; button?: { label: string; link: string }; foot?: string }): string {
+export function mailCard(o: { eyebrow: string; title: string; sub?: string; text: string[]; quote?: string; button?: { label: string; link: string }; foot?: string }): string {
   const paragraphs = o.text.map((p) => `
               <tr>
                 <td style="padding:16px 36px 0;"><span style="color:rgba(255,251,224,0.75);font-size:14px;line-height:1.7;">${p}</span></td>
@@ -137,7 +137,7 @@ export function receivedMail(r: MailRow, o: { guestName: string; galleryTitle: s
   if (lang === "en") {
     return {
       subject: `Priority request: ${personLabel(r)}`,
-      html: card({
+      html: mailCard({
         eyebrow: "Priority requested",
         title: label,
         sub: escapeHtml(o.galleryTitle),
@@ -152,7 +152,7 @@ export function receivedMail(r: MailRow, o: { guestName: string; galleryTitle: s
   }
   return {
     subject: `Aanvraag voor voorrang: ${personLabel(r)}`,
-    html: card({
+    html: mailCard({
       eyebrow: "Voorrang aangevraagd",
       title: label,
       sub: escapeHtml(o.galleryTitle),
@@ -176,7 +176,7 @@ export function offerMail(r: MailRow, o: { guestName: string; galleryTitle: stri
   if (lang === "en") {
     return {
       subject: `There are enough photos of ${firstOf(r.person)}`,
-      html: card({
+      html: mailCard({
         eyebrow: `Priority · ${escapeHtml(personLabel(r))}`,
         title: n ? `${photoCount(lang, n)} of ${p}` : `Enough photos of ${p}`,
         sub: escapeHtml(o.galleryTitle),
@@ -189,7 +189,7 @@ export function offerMail(r: MailRow, o: { guestName: string; galleryTitle: stri
   }
   return {
     subject: `Er zijn genoeg foto's van ${firstOf(r.person)}`,
-    html: card({
+    html: mailCard({
       eyebrow: `Voorrang · ${escapeHtml(personLabel(r))}`,
       title: n ? `${photoCount(lang, n)} van ${p}` : `Genoeg foto's van ${p}`,
       sub: escapeHtml(o.galleryTitle),
@@ -209,7 +209,7 @@ export function bookingMail(r: MailRow, o: { guestName: string; galleryTitle: st
   if (lang === "en") {
     return {
       subject: `About your request for ${firstOf(r.person)}`,
-      html: card({
+      html: mailCard({
         eyebrow: `Priority · ${escapeHtml(personLabel(r))}`,
         title: `A shoot of their own for ${p}?`,
         sub: escapeHtml(o.galleryTitle),
@@ -225,7 +225,7 @@ export function bookingMail(r: MailRow, o: { guestName: string; galleryTitle: st
   }
   return {
     subject: `Over je aanvraag voor ${firstOf(r.person)}`,
-    html: card({
+    html: mailCard({
       eyebrow: `Voorrang · ${escapeHtml(personLabel(r))}`,
       title: `Een eigen shoot voor ${p}?`,
       sub: escapeHtml(o.galleryTitle),
@@ -249,7 +249,7 @@ export function deliveredMail(r: MailRow, o: { guestName: string; guestEmail: st
   if (lang === "en") {
     return {
       subject: `The photos of ${firstOf(r.person)} are ready`,
-      html: card({
+      html: mailCard({
         eyebrow: "Priority · ready",
         title: `${photoCount(lang, o.count)} of ${p}`,
         sub: escapeHtml(o.galleryTitle),
@@ -262,7 +262,7 @@ export function deliveredMail(r: MailRow, o: { guestName: string; guestEmail: st
   }
   return {
     subject: `De foto's van ${firstOf(r.person)} staan klaar`,
-    html: card({
+    html: mailCard({
       eyebrow: "Voorrang · klaar",
       title: `${photoCount(lang, o.count)} van ${p}`,
       sub: escapeHtml(o.galleryTitle),
@@ -283,7 +283,7 @@ export function paidMail(r: MailRow, o: { guestName: string; invoiceNumber: stri
   if (lang === "en") {
     return {
       subject: `Payment received: priority for ${firstOf(r.person)}`,
-      html: card({
+      html: mailCard({
         eyebrow: `Paid · ${escapeHtml(o.invoiceNumber)}`,
         title: price,
         sub: `Received via ${escapeHtml(o.via)}`,
@@ -295,7 +295,7 @@ export function paidMail(r: MailRow, o: { guestName: string; invoiceNumber: stri
   }
   return {
     subject: `Betaling ontvangen: voorrang voor ${firstOf(r.person)}`,
-    html: card({
+    html: mailCard({
       eyebrow: `Betaald · ${escapeHtml(o.invoiceNumber)}`,
       title: price,
       sub: `Ontvangen via ${escapeHtml(o.via)}`,
@@ -315,7 +315,7 @@ export function studioMail(r: MailRow & { note?: string }, o: { guestName: strin
   ].filter(Boolean).join("<br>");
   return {
     subject: `Voorrang gevraagd: ${personLabel(r)} · ${o.projectTitle}`,
-    html: card({
+    html: mailCard({
       eyebrow: "Voorrang gevraagd",
       title: escapeHtml(personLabel(r)),
       sub: escapeHtml(o.projectTitle),

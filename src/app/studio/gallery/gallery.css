@@ -416,6 +416,42 @@
 .g-prio-row .g-prio-note { flex: 1 1 240px; min-width: 0; }
 .g-prio-form .g-check a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
 
+/* Buying photos while the gallery is watermarked: the price above the photos, a tap on each photo, a basket below. */
+.g-sale { margin-bottom: 18px; padding: 18px; border: 1px solid var(--g-line); border-radius: max(var(--g-radius), 4px); background: color-mix(in srgb, var(--g-accent) 7%, var(--g-bg)); }
+.g-sale-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
+.g-sale h2 { margin: 0; color: var(--g-text); font-size: 17px; font-weight: 600; letter-spacing: 0; text-transform: none; font-style: normal; }
+.g-sale > p { margin: 4px 0 0; max-width: 62ch; color: var(--g-muted); font-size: 14px; line-height: 1.5; }
+.g-sale-price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin: 0; color: var(--g-text); font-size: 14px; font-variant-numeric: tabular-nums; }
+.g-sale-price s { color: var(--g-faint); }
+.g-sale-price b { font-size: 22px; font-weight: 700; line-height: 1; }
+.g-sale-price > span:not(.g-sale-badge) { color: var(--g-muted); }
+.g-sale-badge {
+  align-self: center; padding: 3px 9px; border-radius: 999px; background: var(--g-accent); color: var(--g-on-accent);
+  font-size: 11.5px; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap;
+}
+.g-page[data-style="arena"] .g-sale-badge { border-radius: 0; }
+.g-sale-mine { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--g-line); }
+.g-sale-mine p { margin: 0; color: var(--g-text); font-size: 14px; font-weight: 500; }
+
+.studio .g-buy {
+  position: absolute; z-index: 2; left: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 13px 0 11px;
+  border: 0; border-radius: 999px; background: rgba(255, 255, 255, 0.94); color: #16120e; font-size: 13px; font-weight: 700; white-space: nowrap;
+  font-variant-numeric: tabular-nums; box-shadow: 0 6px 16px -8px rgba(0, 0, 0, 0.55); transition: background 0.2s, color 0.2s, transform 0.2s var(--g-ease);
+}
+.g-buy svg { flex: none; width: 15px; height: 15px; }
+.studio .g-buy:hover { background: #fff; }
+.studio .g-buy.on { background: var(--g-accent); color: var(--g-on-accent); }
+.g-buy:active { transform: scale(0.95); }
+.g-page[data-style="arena"] .g-buy { border-radius: 0; }
+.studio .g-page[data-view="compact"] .g-buy { left: 6px; bottom: 6px; height: 30px; padding: 0 9px; gap: 4px; font-size: 12px; }
+
+.g-basket .g-dock-count svg { color: var(--g-accent); }
+.s-dialog .g-check { color: inherit; }
+.s-dialog .g-check a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.g-basket-strip { display: flex; flex-wrap: wrap; gap: 6px; }
+.g-basket-strip img { width: 56px; height: 56px; border-radius: 6px; object-fit: cover; }
+.g-basket-strip span { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 6px; background: var(--line, #eee); font-size: 13px; font-weight: 600; }
+
 /* Saving one photo: always in view, light on any photo, so nobody has to look for it. */
 .studio .g-dl {
   position: absolute; z-index: 2; right: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 13px 0 11px;

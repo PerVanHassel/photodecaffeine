@@ -136,6 +136,7 @@ const invoiceClient = (x: Ctx): Partial<Actor> => ({ kind: "client", name: x.row
 // What routes/payments.ts found when it asked Mollie about a payment.
 const PAYMENT_EVENTS: Record<string, string> = {
   paid: "Factuur online betaald",
+  order: "Foto's gekocht in de galerij",
   double: "Factuur nog een keer online betaald",
   mismatch: "Online betaald, maar het bedrag klopt niet",
   unexpected: "Online betaald op een factuur die niet open stond",
@@ -193,6 +194,9 @@ const RULES: Record<string, Rule> = {
       x.body?.priority === undefined ? "" : x.body.priority ? "voorrang aan" : "voorrang uit",
       x.body?.priorityPrice === undefined ? "" : `voorrang ${euro(x.body.priorityPrice)}`,
       x.body?.priorityDays === undefined ? "" : `binnen ${plural(x.body.priorityDays, "werkdag", "werkdagen")}`,
+      x.body?.sales === undefined ? "" : x.body.sales ? "foto's verkopen aan" : "foto's verkopen uit",
+      x.body?.photoPrice === undefined ? "" : `foto ${euro(x.body.photoPrice)}`,
+      x.body?.photoPriceNormal === undefined ? "" : `normaal ${euro(x.body.photoPriceNormal)}`,
     ),
   },
   // Voorrang (routes/priority.ts): the studio's answers to a guest who asked for their photos first.
@@ -424,6 +428,13 @@ const RULES: Record<string, Rule> = {
     who: (x) => guestByKey(x.params.token, x.body?.key),
     detail: (x) => (x.json?.number ? `${x.json?.person} #${x.json.number}` : x.json?.person || ""),
   },
+  "POST /share/:token/order": {
+    area: "Galerij", action: "Foto's afrekenen gestart", of: SHARE, param: "token",
+    who: (x) => guestByKey(x.params.token, x.body?.key),
+    detail: (x) => join(x.json?.count ? plural(x.json.count, "foto", "foto's") : "", euro(x.json?.amount)),
+  },
+  // Back from Mollie: only logged when the check found something new, like the webhook.
+  "POST /share/:token/order/:orderId/check": { area: "Facturen", of: INVOICE, created: true, ...PAYMENT_RESULT },
   "POST /guest-mails/off": {
     area: "Galerij", action: "Afgemeld via de mail over nieuwe foto's",
     who: async (x) => {

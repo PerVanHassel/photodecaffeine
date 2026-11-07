@@ -34,7 +34,7 @@ const START: ReaderSection[] = [
       },
       {
         "t": "note",
-        "text": "**Wat is er veranderd in versie 1.4:** gasten van een groepsgalerij kunnen voorrang vragen voor de foto’s van één persoon. De privacyverklaring noemt welke gegevens daarbij horen, waarvoor en hoe lang we ze bewaren. Bij kinderen staat dat een ouder ook voorrang kan vragen, en dat alleen die ouder en de studio dat zien. Bij elke aanvraag bewaren we de tekst waarmee de gast akkoord ging: de prijs, dat we na betaling meteen mogen beginnen en dat het herroepingsrecht vervalt zodra de foto’s geleverd zijn."
+        "text": "**Wat is er veranderd in versie 1.4:** gasten van een groepsgalerij kunnen voorrang vragen voor de foto’s van één persoon, en losse foto’s kopen zolang de galerij met watermerk staat. De privacyverklaring noemt welke gegevens daarbij horen, waarvoor en hoe lang we ze bewaren. Bij kinderen staat dat een ouder ook voorrang kan vragen, en dat alleen die ouder en de studio dat zien. Bij elke aanvraag bewaren we de tekst waarmee de gast akkoord ging: de prijs, dat we na betaling meteen mogen beginnen en dat het herroepingsrecht vervalt zodra de foto’s geleverd zijn. Bij gekochte foto’s geeft de gast toestemming om ze meteen te leveren; het herroepingsrecht vervalt zodra ze te downloaden zijn. De betaalmail bevestigt dat."
       },
       {
         "t": "note",

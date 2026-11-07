@@ -32,7 +32,8 @@ export const shareUrl = (token: string) => `${SITE_URL}/galerij/${token}`;
 
 export type ShareRow = {
   project_id: string; token: string; active: boolean; downloads: boolean; consent_required: boolean;
-  priority: boolean; priority_price: number | string; priority_days: number; created_at: string; updated_at: string;
+  priority: boolean; priority_price: number | string; priority_days: number;
+  sales: boolean; photo_price: number | string; photo_price_normal: number | string; created_at: string; updated_at: string;
 };
 
 export async function shareFor(projectId: string): Promise<ShareRow | null> {

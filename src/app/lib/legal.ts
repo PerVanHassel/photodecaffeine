@@ -1116,6 +1116,11 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
             "Uitvoering van de overeenkomst: kijken of er genoeg foto’s zijn, je mailen over je aanvraag en de foto’s leveren. De factuur bewaren we zo lang de wet dat vraagt"
           ],
           [
+            "Foto’s kopen in een groepsgalerij",
+            "Welke foto’s je koopt, je naam, e-mailadres en betaling",
+            "Uitvoering van de overeenkomst: de betaling verwerken, de foto’s voor je openzetten en je de factuur mailen. De factuur bewaren we zo lang de wet dat vraagt"
+          ],
+          [
             "Toestemming voor foto’s van kinderen",
             "Naam en eventueel rugnummer van het kind, de keuze, naam en e-mailadres van de ouder, en bij een beperking een foto of beschrijving om het kind te herkennen",
             "Toestemming van de ouder of voogd, en gerechtvaardigd belang bij het naleven van die keuze"
@@ -1340,7 +1345,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
             "12 maanden na hun laatste bezoek, of eerder als de studio de gast verwijdert"
           ],
           [
-            "Aanvragen voor voorrang in een groepsgalerij",
+            "Aanvragen voor voorrang en gekochte foto’s in een groepsgalerij",
             "Zolang de gast bewaard blijft: 12 maanden na het laatste bezoek, of eerder als de studio de gast verwijdert. Een factuur bewaren we 7 jaar"
           ],
           [

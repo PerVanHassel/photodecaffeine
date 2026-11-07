@@ -22,8 +22,10 @@ export interface GalleryImage {
   h?: number;
   /** A child on it who may not be posted, or (admin only) may not be shown at all. */
   restriction?: Restriction;
-  /** Group link: picked for this guest's voorrang, the original to download now. */
+  /** Group link: this guest's own (voorrang or bought), the original to download now. */
   mine?: boolean;
+  /** Group link, watermarked gallery: this guest can buy it. */
+  buy?: boolean;
 }
 
 export type Restriction = "no_social" | "no_photo";
@@ -130,11 +132,15 @@ export interface ShareState {
     url: string; active: boolean; downloads: boolean; consentRequired: boolean; createdAt: string;
     /** Voorrang: guests may ask for their photos first, at this price (incl. btw) and within so many working days. */
     priority: boolean; priorityPrice: number; priorityDays: number;
+    /** Photos for sale while the gallery is watermarked: the start-up price and the normal one (incl. btw). */
+    sales: boolean; photoPrice: number; photoPriceNormal: number;
+    /** Mollie runs on the live key, so guests can pay. */
+    paymentsLive: boolean;
   } | null;
   guests: ShareGuest[];
   /** Hearts per photo. */
   hearts: Record<string, number>;
-  totals: { guests: number; visits: number; hearts: number; downloads: number };
+  totals: { guests: number; visits: number; hearts: number; downloads: number; sold: number; revenue: number };
 }
 
 export interface ShareGuest {

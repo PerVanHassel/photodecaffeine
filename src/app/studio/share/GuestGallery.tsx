@@ -8,7 +8,7 @@ import { isAdmin } from "../../../lib/supabase";
 import { useAuth } from "../../context/AuthContext";
 import { api, ApiError, errorMessage } from "../api";
 import { StudioFonts } from "../fonts";
-import { fmt } from "../format";
+import { euro, fmt } from "../format";
 import { ClientGallery } from "../gallery/ClientGallery";
 import { savePhoto, saveZip } from "../gallery/download";
 import { shareLink } from "../gallery/share";
@@ -22,6 +22,7 @@ import { cx } from "../ui";
 import { ConsentStep, type ConsentFormData } from "./ConsentForm";
 import { LangSwitch } from "./LangSwitch";
 import { type GuestPriority, type GuestPriorityRequest, type PriorityAsk, PriorityPanel } from "./PriorityPanel";
+import { BasketDock, CheckoutDialog, type GuestSales, SalesPanel } from "./SalesPanel";
 
 // The page a group link opens, /galerij/<token>. No login: a name and an
 // e-mail address at the door get a key that this browser keeps, and with it
@@ -44,6 +45,8 @@ type Inside = {
   kids: { names: string[]; tags: Record<string, string[]>; consentUrl: string } | null;
   /** Voorrang: asking for the photos of one person first, and this guest's own requests. */
   priority: GuestPriority | null;
+  /** Watermarked gallery: photos for sale, one by one. */
+  sales: GuestSales | null;
 };
 /** The studio asks for consent first, and this guest has not given it yet. */
 type OwesConsent = { consent: ConsentFormData & { token: string }; guest: { name: string; email: string } };
@@ -67,6 +70,27 @@ function writeKey(token: string, key: string) {
     else localStorage.removeItem(stored(token));
   } catch {
     // Storage blocked: the key lasts for this visit only.
+  }
+}
+
+// The basket of photos to buy, kept in this browser so it survives a trip to Mollie and back.
+const basketKey = (token: string) => `pdc-mandje:${token}`;
+
+function readBasket(token: string): string[] {
+  try {
+    const list = JSON.parse(localStorage.getItem(basketKey(token)) || "[]");
+    return Array.isArray(list) ? list.filter((x) => typeof x === "string").slice(0, 500) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeBasket(token: string, ids: string[]) {
+  try {
+    if (ids.length) localStorage.setItem(basketKey(token), JSON.stringify(ids));
+    else localStorage.removeItem(basketKey(token));
+  } catch {
+    // Storage blocked: the basket lasts for this visit only.
   }
 }
 
@@ -128,14 +152,16 @@ function Entrance() {
     writeKey(token, next);
     setKeyState(next);
   };
-  const queryKey = ["share", token, preview ? "preview" : key];
+  // While payments run on Mollie's test key, buying only shows with ?test=1.
+  const test = params.get("test") === "1";
+  const queryKey = ["share", token, preview ? "preview" : key, test];
   const path = `/share/${encodeURIComponent(token)}`;
   const query = useQuery({
     queryKey,
     // An admin's preview goes with their session; guests never send one.
     queryFn: ({ signal }) => preview
       ? api<Reply>(`${path}?preview=1`, { signal })
-      : api<Reply>(key ? `${path}?key=${key}` : path, { signal, anonymous: true }),
+      : api<Reply>(key ? `${path}?key=${key}${test ? "&test=1" : ""}` : path, { signal, anonymous: true }),
     retry: false,
     placeholderData: keepPreviousData,
   });
@@ -158,7 +184,7 @@ function Entrance() {
   }
   return (
     <Gallery path={path} token={token} data={data} guestKey={key} queryKey={queryKey} onLeave={() => setKey("")}
-      openId={params.get("foto") || undefined} priorityId={params.get("voorrang") || ""} t={t} lang={lang} />
+      openId={params.get("foto") || undefined} priorityId={params.get("voorrang") || ""} test={test} t={t} lang={lang} />
   );
 }
 
@@ -240,13 +266,16 @@ function Door({ path, gate, busy, onEnter, admin, onPreview, t, lang }: {
 // Inside
 // ---------------------------------------------------------------------------
 
-function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, priorityId, t, lang }: {
+function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, priorityId, test, t, lang }: {
   path: string; token: string; data: Inside; guestKey: string; queryKey: unknown[]; onLeave: () => void; openId?: string;
   /** From the mail that the voorrang photos are there: open on those. */
   priorityId: string;
+  /** Payments on Mollie's test key: buying goes through test mode. */
+  test: boolean;
   t: PortalText; lang: Lang;
 }) {
   const qc = useQueryClient();
+  const [params, setParams] = useSearchParams();
   const [sharing, setSharing] = useState(false);
   const [zip, setZip] = useState<{ done: number; total: number } | null>(null);
   const [addedKids, setAddedKids] = useState<string[]>([]);
@@ -260,14 +289,93 @@ function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, prior
   const send = <R,>(route: string, body: Record<string, unknown>) => api<R>(`${path}/${route}`, { method: "POST", body: { key: guestKey, ...body }, anonymous: true });
   const language = lang.language === "en" ? "en" : "nl";
 
-  // Voorrang: the photos picked for one of this guest's requests can be shown alone.
+  // Voorrang: the photos picked for one of this guest's requests can be shown alone,
+  // and so can the photos they bought ("bought").
   const ready = (data.priority?.requests || []).filter((r) => r.status === "delivered" && r.images.length > 0);
+  const fromPriority = new Set((data.priority?.requests || []).flatMap((r) => r.images));
+  const bought = p.gallery.filter((g) => g.mine && !fromPriority.has(g.id));
   const [onlyId, setOnlyId] = useState(() => (ready.some((r) => r.id === priorityId) ? priorityId : ""));
   const onlyRequest = ready.find((r) => r.id === onlyId);
-  const only = onlyRequest ? new Set(onlyRequest.images) : null;
+  const only = onlyRequest ? new Set(onlyRequest.images) : onlyId === "bought" && bought.length ? new Set(bought.map((g) => g.id)) : null;
   // Arriving from the mail: straight to those photos.
   useEffect(() => {
     if (onlyRequest) document.getElementById("g-prio")?.scrollIntoView({ block: "start" });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Buying photos while the gallery is watermarked: a basket that this browser keeps.
+  const sales = data.sales;
+  const [basket, setBasketState] = useState<string[]>(() => readBasket(token));
+  const setBasket = (ids: string[]) => {
+    writeBasket(token, ids);
+    setBasketState(ids);
+  };
+  const chosen = p.gallery.filter((g) => g.buy && basket.includes(g.id));
+  const [checkout, setCheckout] = useState(false);
+  // Photos bought or no longer for sale leave the basket by themselves.
+  useEffect(() => {
+    if (!sales) return;
+    const keep = basket.filter((id) => p.gallery.some((g) => g.id === id && g.buy));
+    if (keep.length !== basket.length) setBasket(keep);
+  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
+  const basketActions = sales ? {
+    price: euro(sales.price),
+    has: (g: GalleryImage) => basket.includes(g.id),
+    toggle: (g: GalleryImage) => setBasket(basket.includes(g.id) ? basket.filter((x) => x !== g.id) : [...basket, g.id]),
+  } : undefined;
+
+  async function pay() {
+    try {
+      const r = await send<{ checkoutUrl: string }>("order", { imageIds: chosen.map((g) => g.id), language, agree: true, test });
+      window.location.assign(r.checkoutUrl);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) return onLeave();
+      throw err;
+    }
+  }
+
+  // Back from Mollie (or from the mail that the photos are there): ask how it went.
+  useEffect(() => {
+    const order = params.get("bestelling");
+    if (!order) return;
+    const stopped = params.get("betaling") === "gestopt";
+    const rest = new URLSearchParams(params);
+    rest.delete("bestelling");
+    rest.delete("betaling");
+    setParams(rest, { replace: true });
+    if (stopped) {
+      toast(t.saleStopped);
+      return;
+    }
+    let cancelled = false;
+    let tries = 0;
+    const note = toast.loading(t.saleChecking);
+    const ask = async () => {
+      try {
+        const r = await send<{ status: string }>(`order/${encodeURIComponent(order)}/check`, {});
+        if (cancelled) return;
+        if (r.status === "paid") {
+          toast.success(t.salePaid, { id: note });
+          await qc.invalidateQueries({ queryKey });
+          setOnlyId("bought");
+          // To the bought photos, with their download button.
+          requestAnimationFrame(() => document.getElementById("g-sale")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+          return;
+        }
+        if (r.status === "canceled" || r.status === "expired" || r.status === "failed") return void toast.error(t.saleFailed, { id: note });
+        // Still open a few seconds on: they came back without paying.
+        if (r.status === "open" && tries >= 2) return void toast(t.saleStopped, { id: note });
+      } catch {
+        // Asked again below.
+      }
+      if (cancelled) return;
+      if (++tries >= 10) return void toast(t.saleWaiting, { id: note });
+      setTimeout(ask, 3000);
+    };
+    ask();
+    return () => {
+      cancelled = true;
+      toast.dismiss(note);
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function askPriority(b: PriorityAsk) {
@@ -291,14 +399,16 @@ function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, prior
     }
   }
 
-  async function downloadPriority(r: GuestPriorityRequest) {
-    const list = p.gallery.filter((g) => r.images.includes(g.id) && g.download !== false);
+  const downloadPriority = (r: GuestPriorityRequest) => downloadOwn(p.gallery.filter((g) => r.images.includes(g.id)), `${title} ${r.person}`);
+
+  /** Their own photos (voorrang or bought) in one go: originals, also in a gallery that shows watermarked copies. */
+  async function downloadOwn(all: GalleryImage[], name: string) {
+    const list = all.filter((g) => g.download !== false);
     if (list.length === 1) return downloadOne(list[0]);
     if (!list.length) return;
     setZip({ done: 0, total: list.length });
     try {
-      // Theirs are the originals, also in a gallery that shows watermarked copies.
-      const how = await saveZip(list, `${title} ${r.person}`, { watermarked: false, onProgress: (done) => setZip({ done, total: list.length }), text: { ready: t.toPhotosReady, save: t.toPhotosSave } });
+      const how = await saveZip(list, name, { watermarked: false, onProgress: (done) => setZip({ done, total: list.length }), text: { ready: t.toPhotosReady, save: t.toPhotosSave } });
       send("downloaded", { count: list.length }).catch(() => {});
       if (how === "zip") toast.success(t.downloadStarted);
     } catch (err) {
@@ -411,14 +521,28 @@ function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, prior
             {data.preview && <p className="g-preview-note">{t.previewBanner}</p>}
           </>
         }
-        above={data.priority && (
-          <PriorityPanel priority={data.priority} language={language} preview={data.preview} names={kidNames} onlyId={onlyRequest ? onlyId : ""}
-            onOnly={setOnlyId} onAsk={askPriority} onWithdraw={withdrawPriority} onDownload={downloadPriority} zip={zip} t={t} />
+        above={(sales || bought.length > 0 || data.priority) && (
+          <>
+            {(sales || bought.length > 0) && (
+              <SalesPanel sales={sales} bought={bought} onlyMine={onlyId === "bought" && !!only} onOnly={(on) => setOnlyId(on ? "bought" : "")}
+                onDownload={(list) => downloadOwn(list, title)} zip={zip} preview={data.preview} t={t} />
+            )}
+            {data.priority && (
+              <PriorityPanel priority={data.priority} language={language} preview={data.preview} names={kidNames} onlyId={onlyRequest ? onlyId : ""}
+                onOnly={setOnlyId} onAsk={askPriority} onWithdraw={withdrawPriority} onDownload={downloadPriority} zip={zip} t={t} />
+            )}
+          </>
         )}
+        basket={basketActions}
         only={only}
         after={<Invite t={t} />}
         openId={openId}
       />
+      {sales && chosen.length > 0 && <BasketDock count={chosen.length} sales={sales} onCheckout={() => setCheckout(true)} t={t} />}
+      {sales && (
+        <CheckoutDialog open={checkout} onClose={() => setCheckout(false)} sales={sales} images={chosen} language={language}
+          onPay={pay} onClear={() => setBasket([])} t={t} />
+      )}
       <ShareDialog open={sharing} onClose={() => setSharing(false)} url={url} title={title} guests={data.guests} forGuest />
     </>
   );

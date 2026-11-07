@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Copy, Download, ExternalLink, Link2, RefreshCw, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { del, get, post, put } from "../../api";
-import { ago, fmt, fmtDateTime } from "../../format";
+import { ago, euro, fmt, fmtDateTime } from "../../format";
 import { copyText } from "../../gallery/share";
 import { saveFile } from "../../portal/data";
 import { keys, useAction } from "../../queries";
@@ -34,7 +34,10 @@ export function GroupLink({ project: p }: { project: Project }) {
 
   const create = useAction({ fn: () => post<ShareState>(base), onSuccess: store, success: "Groepslink gemaakt" });
   const update = useAction({
-    fn: (b: { active?: boolean; downloads?: boolean; consentRequired?: boolean; priority?: boolean; priorityPrice?: number; priorityDays?: number }) => put<ShareState>(base, b),
+    fn: (b: {
+      active?: boolean; downloads?: boolean; consentRequired?: boolean; priority?: boolean; priorityPrice?: number; priorityDays?: number;
+      sales?: boolean; photoPrice?: number; photoPriceNormal?: number;
+    }) => put<ShareState>(base, b),
     invalidate: () => [keys.consent(p.id)],
     onSuccess: store,
     success: (_s, b) => (b.active === false ? "Link staat uit" : b.active ? "Link staat weer aan" : "Opgeslagen"),
@@ -107,6 +110,26 @@ export function GroupLink({ project: p }: { project: Project }) {
         </Field>
         {share.priority && (
           <PrioritySettings price={share.priorityPrice} days={share.priorityDays} onSave={(b) => update.mutate(b)} />
+        )}
+
+        <Field label="Foto's verkopen" hint="Staat de galerij op 'Met watermerk', dan kopen gasten losse foto's. Na betaling downloaden ze het origineel, zonder watermerk.">
+          <div>
+            <Segmented<"no" | "yes"> label="Foto's verkopen" value={share.sales ? "yes" : "no"}
+              onChange={(v) => !busy && update.mutate({ sales: v === "yes" })}
+              options={[{ value: "no", label: "Uit" }, { value: "yes", label: "Aan" }]} />
+          </div>
+        </Field>
+        {share.sales && (
+          <div className="s-stack sm">
+            <PhotoPriceSettings price={share.photoPrice} normal={share.photoPriceNormal} onSave={(b) => update.mutate(b)} />
+            {(p.gallerySettings.earlyDownloads !== "watermark" || ["delivered", "review", "archived"].includes(p.stage)) && (
+              <span className="s-small s-muted">Gasten zien dit pas als 'Downloaden vóór levering' op 'Met watermerk' staat, tot de levering.</span>
+            )}
+            {!share.paymentsLive && (
+              <span className="s-small" style={{ color: "var(--warn)" }}>Online betalen staat nog niet live (Mollie). Gasten zien de knop zodra dat zo is. Testen kan met ?test=1 achter de link.</span>
+            )}
+            {s.totals.sold > 0 && <span className="s-small"><b>Verkocht:</b> {s.totals.sold} {s.totals.sold === 1 ? "foto" : "foto's"} · {euro(s.totals.revenue)}</span>}
+          </div>
         )}
 
         {loved.length > 0 && (
@@ -185,11 +208,14 @@ export function GroupLink({ project: p }: { project: Project }) {
   );
 }
 
+/** "5", "7,50": an amount as someone would type it. */
+const moneyText = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2).replace(".", ","));
+
 /** What voorrang costs and how fast it comes. Saved when a field is left. */
 function PrioritySettings({ price, days, onSave }: { price: number; days: number; onSave: (b: { priorityPrice?: number; priorityDays?: number }) => void }) {
-  const [priceText, setPriceText] = useState(String(price).replace(".", ","));
+  const [priceText, setPriceText] = useState(moneyText(price));
   const [daysText, setDaysText] = useState(String(days));
-  useEffect(() => setPriceText(String(price).replace(".", ",")), [price]);
+  useEffect(() => setPriceText(moneyText(price)), [price]);
   useEffect(() => setDaysText(String(days)), [days]);
   const newPrice = Number(priceText.replace(",", "."));
   const newDays = Number(daysText);
@@ -207,6 +233,34 @@ function PrioritySettings({ price, days, onSave }: { price: number; days: number
         error={priceError || undefined} hint={priceError ? undefined : "Dit betaalt de gast als er genoeg foto's zijn. Houd het laag, het is een extraatje."} />
       <TextField label="Levertijd na betaling (werkdagen)" inputMode="numeric" value={daysText} onChange={(e) => setDaysText(e.target.value)} onBlur={save}
         error={daysError || undefined} hint={daysError ? undefined : "Zo snel krijgt de gast de foto's. Staat in de mails."} />
+    </div>
+  );
+}
+
+/** The price per photo for guests: what they pay now, and the normal price it is reduced from. Saved when a field is left. */
+function PhotoPriceSettings({ price, normal, onSave }: { price: number; normal: number; onSave: (b: { photoPrice?: number; photoPriceNormal?: number }) => void }) {
+  const text = moneyText;
+  const [priceText, setPriceText] = useState(text(price));
+  const [normalText, setNormalText] = useState(text(normal));
+  useEffect(() => setPriceText(text(price)), [price]);
+  useEffect(() => setNormalText(text(normal)), [normal]);
+  const newPrice = Number(priceText.replace(",", "."));
+  const newNormal = Number(normalText.replace(",", "."));
+  const priceError = Number.isFinite(newPrice) && newPrice >= 0.5 && newPrice <= 500 ? "" : "Tussen €0,50 en €500.";
+  const normalError = Number.isFinite(newNormal) && newNormal >= 0 && newNormal <= 1000 ? "" : "Tussen €0 en €1000.";
+  const off = !priceError && !normalError && newNormal > newPrice ? Math.round((1 - newPrice / newNormal) * 100) : 0;
+  function save() {
+    const b: { photoPrice?: number; photoPriceNormal?: number } = {};
+    if (!priceError && Math.round(newPrice * 100) !== Math.round(price * 100)) b.photoPrice = Math.round(newPrice * 100) / 100;
+    if (!normalError && Math.round(newNormal * 100) !== Math.round(normal * 100)) b.photoPriceNormal = Math.round(newNormal * 100) / 100;
+    if (b.photoPrice !== undefined || b.photoPriceNormal !== undefined) onSave(b);
+  }
+  return (
+    <div className="s-form-grid">
+      <TextField label="Normale prijs per foto, incl. btw (€)" inputMode="decimal" value={normalText} onChange={(e) => setNormalText(e.target.value)} onBlur={save}
+        error={normalError || undefined} hint={normalError ? undefined : "Doorgestreept te zien. Laat hem gelijk aan de prijs als er geen korting is."} />
+      <TextField label="Prijs met start-up korting (€)" inputMode="decimal" value={priceText} onChange={(e) => setPriceText(e.target.value)} onBlur={save}
+        error={priceError || undefined} hint={priceError ? undefined : off > 0 ? `Dit betaalt de gast: ${off}% korting.` : "Dit betaalt de gast."} />
     </div>
   );
 }

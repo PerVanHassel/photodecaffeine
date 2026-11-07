@@ -67,7 +67,7 @@ const projects: Json[] = [
       { id: id(62), kind: "meeting", title: "Intake", startsAt: iso(-5, 10), endsAt: iso(-5, 11), allDay: false, locationId: null, locationText: "Telefonisch", link: "", notes: "", clientVisible: true },
     ],
     gallery: PHOTOS.slice(0, 4), description: "Avondshoot aan de Maas met rollers op de brug.", deliverables: [{ name: "bewerkte foto's", count: 25, done: false }, { name: "reel van 30 s", count: 1, done: false }] }),
-  mkProject(52, "Teamfoto's 2026", "photo", "editing", [id(2)], { valueCents: 118000, dueDate: dateOnly(-2), gallery: PHOTOS.slice(4, 12), favorites: [0, 2, 3, 6] }),
+  mkProject(52, "Teamfoto's 2026", "photo", "editing", [id(2)], { valueCents: 118000, dueDate: dateOnly(-2), gallery: PHOTOS.slice(4, 12), favorites: [0, 2, 3, 6], gallerySettings: { earlyDownloads: "watermark" } }),
   mkProject(53, "Portret Noor Bakker", "photo", "quote", [id(3)], { valueCents: 45000 }),
   mkProject(54, "Najaarsmenu", "photo", "lead", [id(4)], { events: [{ id: id(63), kind: "shoot", title: "", startsAt: iso(4, 9, 30), endsAt: iso(4, 12), allDay: false, locationId: null, locationText: "Witte de Withstraat", link: "", notes: "", clientVisible: true }] }),
   mkProject(55, "Zomerterras", "photo", "delivered", [id(4)], { valueCents: 54000, gallery: PHOTOS.slice(8, 11) }),
@@ -81,9 +81,9 @@ const projects: Json[] = [
 // Group links: the run's link with downloads on, the wedding's with them off,
 // and the team's while it is being edited, with voorrang for sale.
 const shares: Json[] = [
-  { projectId: id(57), token: "k3F9xQ2mPz7Lw4Rb", active: true, downloads: true, priority: false, priorityPrice: 5, priorityDays: 2, createdAt: iso(-3) },
-  { projectId: id(56), token: "Wd8hT4nE2sYq9cVa", active: true, downloads: false, priority: false, priorityPrice: 5, priorityDays: 2, createdAt: iso(-6) },
-  { projectId: id(52), token: "Jv6nP3rT8kYw2Qd5", active: true, downloads: false, priority: true, priorityPrice: 5, priorityDays: 2, createdAt: iso(-1) },
+  { projectId: id(57), token: "k3F9xQ2mPz7Lw4Rb", active: true, downloads: true, priority: false, priorityPrice: 5, priorityDays: 2, sales: true, photoPrice: 2.99, photoPriceNormal: 7.5, createdAt: iso(-3) },
+  { projectId: id(56), token: "Wd8hT4nE2sYq9cVa", active: true, downloads: false, priority: false, priorityPrice: 5, priorityDays: 2, sales: true, photoPrice: 2.99, photoPriceNormal: 7.5, createdAt: iso(-6) },
+  { projectId: id(52), token: "Jv6nP3rT8kYw2Qd5", active: true, downloads: false, priority: true, priorityPrice: 5, priorityDays: 2, sales: true, photoPrice: 2.99, photoPriceNormal: 7.5, createdAt: iso(-1) },
 ];
 const guestList: Json[] = [
   ["Ruben Smit", "ruben@example.nl", 4, 12, -3, 0],
@@ -182,12 +182,29 @@ function shareState(projectId: string) {
     share: {
       url: `https://www.photodecaffeine.com/galerij/${share.token}`, active: share.active, downloads: share.downloads, consentRequired: !!share.consentRequired, createdAt: share.createdAt,
       priority: !!share.priority, priorityPrice: share.priorityPrice ?? 5, priorityDays: share.priorityDays ?? 2,
+      sales: !!share.sales, photoPrice: share.photoPrice ?? 2.99, photoPriceNormal: share.photoPriceNormal ?? 7.5, paymentsLive: false,
     },
     guests: list.map(({ projectId: _p, key: _k, ...g }) => g),
     hearts,
-    totals: { guests: list.length, visits: sum(list.map((g) => g.visits)), hearts: sum(Object.values(hearts)), downloads: sum(list.map((g) => g.downloads)) },
+    totals: {
+      guests: list.length, visits: sum(list.map((g) => g.visits)), hearts: sum(Object.values(hearts)), downloads: sum(list.map((g) => g.downloads)),
+      sold: sum(mockOrders().filter((o) => o.projectId === projectId && o.paid).map((o) => o.images.length)),
+      revenue: sum(mockOrders().filter((o) => o.projectId === projectId && o.paid).map((o) => o.images.length * o.price)),
+    },
   };
 }
+
+// Bought photos (lib/orders.ts). Kept in this browser: paying leaves the page for "Mollie" and comes back.
+const ORDERS = "pdc-mock-orders";
+function mockOrders(): Json[] {
+  try { return JSON.parse(localStorage.getItem(ORDERS) || "[]"); } catch { return []; }
+}
+function saveOrders(list: Json[]) {
+  try { localStorage.setItem(ORDERS, JSON.stringify(list)); } catch { /* the order lasts for this page only */ }
+}
+const orderStatementOf = (language: string, price: number) => language === "en"
+  ? `I agree to the terms and conditions and pay ${euroText(price)} per photo. I want the photos right away, so my right of withdrawal ends as soon as I can download them.`
+  : `Ik ga akkoord met de algemene voorwaarden en betaal ${euroText(price)} per foto. Ik wil de foto's meteen krijgen. Daardoor vervalt mijn herroepingsrecht zodra ik ze kan downloaden.`;
 
 /** Mirrors routes/share.ts: the door without a key, the photos with one. */
 function shareReply(token: string, key: string, preview: boolean) {
@@ -211,15 +228,22 @@ function shareReply(token: string, key: string, preview: boolean) {
   const canDownload = share.downloads && !preview;
   const priority = guestPriority(share, x, guest || null);
   const raw = new Map(x.gallery.map((g: Json) => [g.id, g]));
+  const bought = guest ? mockOrders().filter((o) => o.guestId === guest.id && o.paid).flatMap((o) => o.images) : [];
+  const own = new Set<string>([...priority.own, ...bought]);
+  const forSale = !!share.sales && client.downloads === "watermark";
   return {
     guest: guest ? { name: guest.name, email: guest.email, notifyPhotos: !!guest.notifyPhotos } : null,
     preview: !guest,
     priority: priority.view,
+    sales: forSale ? {
+      price: share.photoPrice, normalPrice: share.photoPriceNormal, payable: !!guest,
+      statement: { nl: orderStatementOf("nl", share.photoPrice), en: orderStatementOf("en", share.photoPrice) },
+    } : null,
     project: {
       id: x.id, title: x.title, stage: x.stage, gallerySettings: x.gallerySettings,
-      gallery: client.gallery.map((g: Json) => (priority.own.has(g.id)
+      gallery: client.gallery.map((g: Json) => (own.has(g.id)
         ? { ...g, url: (raw.get(g.id) as Json)?.url || g.url, download: true, mine: true }
-        : { ...g, download: canDownload && g.download })),
+        : { ...g, download: canDownload && g.download, ...(forSale ? { buy: true } : {}) })),
       downloads: canDownload ? client.downloads : "none", watermarked: client.downloads === "watermark",
       events: shoot ? [{ kind: "shoot", startsAt: shoot.startsAt }] : [],
     },
@@ -846,6 +870,28 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     childTags.splice(childTags.findIndex((t) => t.id === r![2]), 1);
     return childTagState(r[1]);
   }
+  // Buying photos: "Mollie" sends the guest straight back, the check says paid
+  // (or what localStorage "pdc-mock-pay" says: "failed", "open").
+  if ((r = m(/^\/share\/([^/]+)\/order$/))) {
+    const { share, guest } = guestOf(r[1], body.key);
+    if (!body.agree) throw new ApiError(400, "Vink aan dat je akkoord gaat.");
+    const order = { id: crypto.randomUUID(), projectId: share.projectId, guestId: guest.id, images: body.imageIds, price: share.photoPrice, paid: false };
+    saveOrders([...mockOrders(), order]);
+    return { id: order.id, checkoutUrl: `/galerij/${r[1]}?bestelling=${order.id}`, count: order.images.length, amount: order.images.length * order.price };
+  }
+  if ((r = m(/^\/share\/([^/]+)\/order\/([^/]+)\/check$/))) {
+    const { guest } = guestOf(r[1], body.key);
+    const list = mockOrders();
+    const order = list.find((o) => o.id === r![2] && o.guestId === guest.id);
+    if (!order) throw new ApiError(404, "Bestelling niet gevonden");
+    const outcome = (typeof localStorage !== "undefined" && localStorage.getItem("pdc-mock-pay")) || "paid";
+    if (outcome === "paid" && !order.paid) {
+      order.paid = true;
+      saveOrders(list);
+      return { id: "", event: "order", status: "paid" };
+    }
+    return { id: "", event: "", status: order.paid ? "paid" : outcome };
+  }
   // Voorrang: the guest asks or withdraws, the studio answers.
   if ((r = m(/^\/share\/([^/]+)\/priority$/))) {
     const { share, guest } = guestOf(r[1], body.key);
@@ -984,7 +1030,7 @@ export async function mockApi(path: string, method: string, body: Json): Promise
   }
   if ((r = m(/^\/share\/([^/]+)\/download(ed)?$/))) {
     const { share, guest } = guestOf(r[1], body.key);
-    const own = priorityRequests.filter((x) => x.guestId === guest.id && x.status === "delivered").flatMap((x) => x.images);
+    const own = [...priorityRequests.filter((x) => x.guestId === guest.id && x.status === "delivered").flatMap((x) => x.images), ...mockOrders().filter((o) => o.guestId === guest.id && o.paid).flatMap((o) => o.images)];
     if (!share.downloads && !(r[2] ? own.length : own.includes(body.imageId))) throw new ApiError(403, "Downloaden staat uit voor deze galerij.");
     guest.downloads += body.count || 1;
     const img = projects.find((x) => x.id === share.projectId).gallery.find((g: Json) => g.id === body.imageId);
