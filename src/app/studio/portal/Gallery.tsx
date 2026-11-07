@@ -5,7 +5,7 @@ import { Link, useParams } from "react-router";
 import { toast } from "sonner";
 import { errorMessage, get, post } from "../api";
 import { ClientGallery } from "../gallery/ClientGallery";
-import { saveUrl, saveZip } from "../gallery/download";
+import { savePhoto, saveZip } from "../gallery/download";
 import { shareLink } from "../gallery/share";
 import { ShareDialog } from "../gallery/ShareDialog";
 import { useAction } from "../queries";
@@ -45,7 +45,7 @@ export function PortalGallery() {
   async function downloadOne(img: GalleryImage) {
     try {
       const r = await get<{ url: string; fileName: string }>(`/portal/project/${id}/download/${img.id}`);
-      saveUrl(r.url, r.fileName);
+      await savePhoto(r.url, r.fileName, { ready: t.toPhotosReady, save: t.toPhotosSave });
     } catch (err) {
       toast.error(errorMessage(err));
     }
@@ -56,8 +56,8 @@ export function PortalGallery() {
     if (!p || !list.length) return;
     setZip({ done: 0, total: list.length });
     try {
-      await saveZip(list, p.gallerySettings.title || p.title, { watermarked: downloads === "watermark", onProgress: (done) => setZip({ done, total: list.length }) });
-      toast.success(t.downloadStarted);
+      const how = await saveZip(list, p.gallerySettings.title || p.title, { watermarked: downloads === "watermark", onProgress: (done) => setZip({ done, total: list.length }), text: { ready: t.toPhotosReady, save: t.toPhotosSave } });
+      if (how === "zip") toast.success(t.downloadStarted);
     } catch (err) {
       toast.error(errorMessage(err));
     } finally {

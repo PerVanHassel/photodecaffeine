@@ -10,7 +10,7 @@ import { api, ApiError, errorMessage } from "../api";
 import { StudioFonts } from "../fonts";
 import { fmt } from "../format";
 import { ClientGallery } from "../gallery/ClientGallery";
-import { saveUrl, saveZip } from "../gallery/download";
+import { savePhoto, saveZip } from "../gallery/download";
 import { shareLink } from "../gallery/share";
 import { ShareDialog } from "../gallery/ShareDialog";
 import { fontHref, accentOf, onAccent, styleOf } from "../gallery/styles";
@@ -310,7 +310,7 @@ function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, t, la
   async function downloadOne(img: GalleryImage) {
     try {
       const r = await send<{ url: string; fileName: string }>("download", { imageId: img.id });
-      saveUrl(r.url, r.fileName);
+      await savePhoto(r.url, r.fileName, { ready: t.toPhotosReady, save: t.toPhotosSave });
     } catch (err) {
       failed(err);
     }
@@ -321,9 +321,9 @@ function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, t, la
     if (!list.length) return;
     setZip({ done: 0, total: list.length });
     try {
-      await saveZip(list, title, { watermarked: p.downloads === "watermark", onProgress: (done) => setZip({ done, total: list.length }) });
+      const how = await saveZip(list, title, { watermarked: p.downloads === "watermark", onProgress: (done) => setZip({ done, total: list.length }), text: { ready: t.toPhotosReady, save: t.toPhotosSave } });
       send("downloaded", { count: list.length }).catch(() => {});
-      toast.success(t.downloadStarted);
+      if (how === "zip") toast.success(t.downloadStarted);
     } catch (err) {
       failed(err);
     } finally {

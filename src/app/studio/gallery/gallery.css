@@ -398,6 +398,35 @@
 .g-kids-add .g-field { flex: 1 1 240px; min-width: 0; }
 .g-kids-add .g-btn { height: 48px; padding: 0 20px; }
 
+/* Saving one photo: always in view, light on any photo, so nobody has to look for it. */
+.studio .g-dl {
+  position: absolute; z-index: 2; right: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 13px 0 11px;
+  border: 0; border-radius: 999px; background: rgba(255, 255, 255, 0.94); color: #16120e; font-size: 13px; font-weight: 600; white-space: nowrap;
+  box-shadow: 0 6px 16px -8px rgba(0, 0, 0, 0.55); transition: background 0.2s, transform 0.2s var(--g-ease);
+}
+.g-dl svg { flex: none; width: 15px; height: 15px; }
+.studio .g-dl:hover { background: #fff; }
+.g-dl:active { transform: scale(0.95); }
+.g-page[data-style="arena"] .g-dl { border-radius: 0; }
+.g-page[data-view="compact"] .g-dl { right: 6px; bottom: 6px; width: 30px; height: 30px; padding: 0; justify-content: center; }
+.g-page[data-view="compact"] .g-dl span { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); }
+/* With a download button bottom right, a parent's child button moves to the left, and a video's play mark to the middle. */
+.studio .g-tile:has(.g-dl) .g-kid { right: auto; left: 10px; max-width: calc(100% - 130px); }
+.studio .g-page[data-view="compact"] .g-tile:has(.g-dl) .g-kid { left: 6px; max-width: none; }
+.g-tile:has(.g-dl):has(.g-kid) .g-play { left: 50%; bottom: 50%; transform: translate(-50%, 50%); }
+/* A narrow photo (pairs on a phone) gets the round icon; the word comes back once there is room for it. */
+.g-tile:has(.g-dl) { container: g-tile / inline-size; }
+@container g-tile (max-width: 169px) {
+  .studio .g-dl { width: 34px; padding: 0; justify-content: center; }
+  .g-dl span { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); }
+  .studio .g-tile .g-kid { max-width: calc(100% - 64px); }
+}
+@container g-tile (min-width: 170px) and (max-width: 259px) {
+  .studio .g-tile:has(.g-kid) .g-dl { width: 34px; padding: 0; justify-content: center; }
+  .g-tile:has(.g-kid) .g-dl span { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); }
+  .studio .g-tile:has(.g-dl) .g-kid { max-width: calc(100% - 64px); }
+}
+
 /* A photo with a child on it who may not appear on social media. */
 .g-nopost {
   position: absolute; z-index: 2; top: 10px; left: 10px; display: inline-flex; align-items: center; gap: 5px; height: 28px; max-width: calc(100% - 66px); padding: 0 10px;
@@ -670,6 +699,9 @@
   .g-btn-label { display: none; }
   .g-bar .g-btn, .g-lb-actions .g-btn { width: 36px; padding: 0; }
   .g-lb-actions .g-btn:has(.g-btn-n) { width: auto; padding: 0 11px; }
+  /* Download keeps its word in the large view, unless a child button needs the room. */
+  .g-lb-actions:not(:has(.g-lb-kid)) .g-btn.g-lb-dl { width: auto; padding: 0 13px; }
+  .g-lb-actions:not(:has(.g-lb-kid)) .g-lb-dl .g-btn-label { display: inline; }
   /* Three tabs and the tools share one row: tabs with an icon drop their word, and the row scrolls if it still doesn't fit. */
   .g-tabs { overflow-x: auto; scrollbar-width: none; }
   .g-tabs::-webkit-scrollbar { display: none; }

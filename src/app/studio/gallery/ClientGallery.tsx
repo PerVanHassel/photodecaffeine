@@ -125,6 +125,7 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
   const onlyKidOn = onlyKid && kidCount > 0;
   const shown = onlyKidOn ? listed.filter(hasKid) : listed;
   const countAs: CountAs = guest ? "heart" : filter === "popular" ? "badge" : "none";
+  const canDownload = (g: GalleryImage) => !!actions.downloadOne && downloads !== "none" && g.download !== false;
   const ratios = shown.map(ratioOf);
   const videos = p.gallery.filter((g) => isVideo(g.fileName || g.url)).length;
 
@@ -156,6 +157,7 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
       countAs={countAs}
       onOpen={() => setOpen({ list: shown, index: i })}
       onToggle={actions.toggle && (() => actions.toggle!(g))}
+      onDownload={canDownload(g) ? () => actions.downloadOne!(g) : undefined}
       onSize={(w, h) => report(g, w, h)}
       kid={kids?.active ? { name: firstName(kids.active), on: hasKid(g), onTag: () => kids.onTag(g) } : undefined}
       eager={opts.eager ?? i < 8}
@@ -508,8 +510,9 @@ function SheetLayout({ images, ratios, tile, numberOf, favs, favNames, counts, o
 /** Photos already shown once this visit appear without fading in again. */
 const seen = new Set<string>();
 
-function Tile({ img, label, alt, fav, favBy, count, countAs, onOpen, onToggle, onSize, kid, eager, heart = true, t }: {
+function Tile({ img, label, alt, fav, favBy, count, countAs, onOpen, onToggle, onDownload, onSize, kid, eager, heart = true, t }: {
   img: GalleryImage; label: string; alt: string; fav: boolean; favBy?: string[]; count: number; countAs: CountAs; onOpen: () => void; onToggle?: () => void;
+  onDownload?: () => void;
   onSize: (w: number, h: number) => void; kid?: { name: string; on: boolean; onTag: () => void }; eager?: boolean; heart?: boolean; t: T;
 }) {
   const video = isVideo(img.fileName || img.url);
@@ -540,6 +543,11 @@ function Tile({ img, label, alt, fav, favBy, count, countAs, onOpen, onToggle, o
       )}
       {img.restriction === "no_social" && <span className="g-nopost" title={t.noSocialHint}><MegaphoneOff aria-hidden="true" /><span>{t.noSocial}</span></span>}
       {heart && <HeartButton on={fav} by={favBy} count={countAs === "heart" ? count : 0} onToggle={onToggle} t={t} />}
+      {onDownload && (
+        <button type="button" className="g-dl" aria-label={`${t.download}: ${alt}`} title={t.download} onClick={(e) => { e.stopPropagation(); onDownload(); }}>
+          <Download aria-hidden="true" /><span>{t.download}</span>
+        </button>
+      )}
       {countAs === "badge" && count > 0 && (
         <span className="g-group" title={t.groupLikes(count)}>
           <Users aria-hidden="true" /><span aria-hidden="true">{count}</span><span className="s-sr">{t.groupLikes(count)}</span>
@@ -680,7 +688,7 @@ function Lightbox({ list, start, total, numberOf, favs, favNames, counts, countA
             <button type="button" className="g-btn" onClick={() => onShare(img)} aria-label={t.sharePhoto}><Share2 /><span className="g-btn-label">{t.share}</span></button>
           )}
           {onDownload && img.download !== false && (
-            <button type="button" className="g-btn" onClick={() => onDownload(img)} aria-label={t.download}><Download /><span className="g-btn-label">{t.download}</span></button>
+            <button type="button" className="g-btn primary g-lb-dl" onClick={() => onDownload(img)} aria-label={t.download}><Download /><span className="g-btn-label">{t.download}</span></button>
           )}
           <button ref={closeButton} type="button" className="g-btn icon" onClick={onClose} aria-label={t.close}><X /></button>
         </div>
