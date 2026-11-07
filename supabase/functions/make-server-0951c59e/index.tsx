@@ -25,6 +25,7 @@ import overview from "./routes/overview.ts";
 import payments from "./routes/payments.ts";
 import portal from "./routes/portal.ts";
 import portfolio from "./routes/portfolio.ts";
+import priority from "./routes/priority.ts";
 import projects from "./routes/projects.ts";
 import quotes from "./routes/quotes.ts";
 import settings from "./routes/settings.ts";
@@ -57,7 +58,7 @@ app.use("*", activityLog);
 
 const modules: Hono<any>[] = [
   clients, portal, projects, quotes, invoices, payments, inquiries, tasks, locations, events, overview,
-  engagement, google, portfolio, team, declarations, investments, documents, files, settings, notifications, storage, share, consent, articleConsent, withdrawal, activity, analytics,
+  engagement, google, portfolio, team, declarations, investments, documents, files, settings, notifications, storage, share, priority, consent, articleConsent, withdrawal, activity, analytics,
 ];
 for (const module of modules) app.route("/", module);
 

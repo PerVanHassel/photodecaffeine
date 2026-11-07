@@ -7,7 +7,7 @@ export const SITE_URL = "https://www.photodecaffeine.com";
 
 // The version of the terms on the site; same as src/app/lib/legalVersion.ts, change
 // both together. A quote keeps which version someone agreed to.
-export const TERMS_VERSION = "1.3";
+export const TERMS_VERSION = "1.4";
 // How long an invoice runs, unless the quote says otherwise (terms, article 5).
 export const PAYMENT_WORKDAYS = 10;
 

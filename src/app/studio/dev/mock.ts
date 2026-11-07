@@ -78,10 +78,12 @@ const projects: Json[] = [
     gallerySettings: { style: "arena", subtitle: "12 oktober, Markt Roosendaal" } }),
 ];
 
-// Group links: the run's link with downloads on, the wedding's with them off.
+// Group links: the run's link with downloads on, the wedding's with them off,
+// and the team's while it is being edited, with voorrang for sale.
 const shares: Json[] = [
-  { projectId: id(57), token: "k3F9xQ2mPz7Lw4Rb", active: true, downloads: true, createdAt: iso(-3) },
-  { projectId: id(56), token: "Wd8hT4nE2sYq9cVa", active: true, downloads: false, createdAt: iso(-6) },
+  { projectId: id(57), token: "k3F9xQ2mPz7Lw4Rb", active: true, downloads: true, priority: false, priorityPrice: 5, priorityDays: 2, createdAt: iso(-3) },
+  { projectId: id(56), token: "Wd8hT4nE2sYq9cVa", active: true, downloads: false, priority: false, priorityPrice: 5, priorityDays: 2, createdAt: iso(-6) },
+  { projectId: id(52), token: "Jv6nP3rT8kYw2Qd5", active: true, downloads: false, priority: true, priorityPrice: 5, priorityDays: 2, createdAt: iso(-1) },
 ];
 const guestList: Json[] = [
   ["Ruben Smit", "ruben@example.nl", 4, 12, -3, 0],
@@ -98,6 +100,65 @@ const guestList: Json[] = [
   id: id(1000 + i), projectId: id(57), key: String(i).padStart(32, "a"), name, email, visits, downloads, notifyPhotos: i < 2,
   firstSeenAt: iso(first as number, 20, i), lastSeenAt: iso(last as number, 9 + i, 5 * i),
 }));
+// The team's parents. Emma's key opens the gallery with a request of every kind she can have.
+guestList.push(...[
+  ["Emma de Vries", "emma@example.nl"], ["Mark Peters", "mark.peters@example.nl"], ["Lisa Bakker", "lisa@example.nl"], ["Anouk Peeters", "anouk@example.nl"],
+].map(([name, email], i) => ({
+  id: id(1050 + i), projectId: id(52), key: String(i).padStart(32, "p"), name, email, visits: 2, downloads: 0, notifyPhotos: false,
+  firstSeenAt: iso(-1, 19, i), lastSeenAt: iso(0, 8, 10 * i),
+})));
+
+// Voorrang: mirrors routes/priority.ts (the studio) and priorityOf in routes/share.ts (the guest).
+const priorityRequests: Json[] = [
+  { id: id(2300), projectId: id(52), guestId: id(1050), person: "Sem de Vries", number: "4", note: "Speelt links voor, blauwe schoenen", status: "new", photos: null, invoice: null, images: [], createdAt: iso(0, 7, 40) },
+  { id: id(2301), projectId: id(52), guestId: id(1050), person: "Lotte de Vries", number: "", note: "", status: "delivered", photos: 4, invoice: { id: id(2310), number: "FA-2026-031", status: "paid" }, paidAt: iso(-1, 12), images: [id(5200), id(5202), id(5203), id(5205)], createdAt: iso(-1, 9), deliveredAt: iso(0, 9) },
+  { id: id(2302), projectId: id(52), guestId: id(1051), person: "Jesse Peters", number: "10", note: "Keeper", status: "offered", photos: 12, invoice: { id: id(2311), number: "FA-2026-032", status: "paid" }, paidAt: iso(0, 8), images: [id(5201)], createdAt: iso(-1, 20) },
+  { id: id(2303), projectId: id(52), guestId: id(1052), person: "Fenna Bakker", number: "7", note: "", status: "offered", photos: 9, invoice: { id: id(2312), number: "FA-2026-033", status: "sent" }, images: [], createdAt: iso(-1, 21) },
+  { id: id(2304), projectId: id(52), guestId: id(1053), person: "Daan", number: "12", note: "Zat vooral op de bank", status: "booking", photos: null, invoice: null, images: [], createdAt: iso(-1, 21, 30) },
+].map((x) => ({ price: 5, days: 2, language: "nl", answeredAt: x.status === "new" ? null : iso(-1, 22), deliveredAt: null, ...x }));
+
+const addWorkdays = (from: string, n: number) => {
+  const d = new Date(from);
+  for (let left = n; left > 0;) { d.setDate(d.getDate() + 1); if (d.getDay() !== 0 && d.getDay() !== 6) left--; }
+  return d.toISOString().slice(0, 10);
+};
+
+function priorityApi(x: Json) {
+  const g = guestList.find((y) => y.id === x.guestId);
+  const paid = x.invoice?.status === "paid";
+  return {
+    id: x.id, projectId: x.projectId, person: x.person, number: x.number, note: x.note, language: x.language, status: x.status, price: x.price, days: x.days, photos: x.photos,
+    guest: { id: x.guestId, name: g?.name || "", email: g?.email || "" }, invoice: x.invoice, paid, dueBy: paid && x.paidAt ? addWorkdays(x.paidAt, x.days) : "",
+    images: x.images, createdAt: x.createdAt, answeredAt: x.answeredAt, deliveredAt: x.deliveredAt,
+  };
+}
+const priorityList = (projectId: string) => priorityRequests.filter((x) => x.projectId === projectId).map(priorityApi);
+const euroText = (n: number) => `€ ${Number.isInteger(n) ? n : n.toFixed(2).replace(".", ",")}`;
+const statementOf = (language: string, price: number) => language === "en"
+  ? `I agree to the terms and conditions. If there are enough photos, I pay ${euroText(price)} and you may start right away. Once the photos are delivered, my right of withdrawal ends.`
+  : `Ik ga akkoord met de algemene voorwaarden. Zijn er genoeg foto's, dan betaal ik ${euroText(price)} en mogen jullie meteen beginnen. Zijn de foto's geleverd, dan vervalt mijn herroepingsrecht.`;
+
+function guestPriority(share: Json, x: Json, guest: Json | null) {
+  const offer = share.priority && !["delivered", "review", "archived"].includes(x.stage)
+    ? { price: share.priorityPrice, days: share.priorityDays, statement: { nl: statementOf("nl", share.priorityPrice), en: statementOf("en", share.priorityPrice) } }
+    : null;
+  if (!guest) return { view: offer ? { offer, requests: [] } : null, own: new Set<string>() };
+  const rows = priorityRequests.filter((r) => r.guestId === guest.id && r.status !== "closed");
+  if (!offer && rows.length === 0) return { view: null, own: new Set<string>() };
+  const own = new Set<string>(rows.filter((r) => r.status === "delivered").flatMap((r) => r.images));
+  return {
+    own,
+    view: {
+      offer,
+      requests: rows.map((r) => ({
+        id: r.id, person: r.person, number: r.number, status: r.status, price: r.price, days: r.days, photos: r.photos, paid: r.invoice?.status === "paid",
+        payUrl: r.status === "offered" && r.invoice?.status === "sent" ? `/factuur/${r.invoice.id}?t=mock` : "",
+        bookingUrl: r.status === "booking" ? "/services/fotografie/sport?utm_source=galerij&utm_campaign=voorrang#pakketten" : "",
+        images: r.status === "delivered" ? r.images : [],
+      })),
+    },
+  };
+}
 // Who hearted which photo of the run, by photo index and guest index.
 const guestHearts: { imageId: string; guestId: string }[] = [
   [0, [0, 1, 2, 3, 5, 7]], [3, [0, 3, 5, 7, 9]], [5, [1, 2, 4]], [8, [0, 5, 7]], [2, [6]], [11, [3, 9]], [14, [7]],
@@ -118,7 +179,10 @@ function shareState(projectId: string) {
   const hearts = heartCounts(projectId);
   const sum = (ns: number[]) => ns.reduce((s, n) => s + n, 0);
   return {
-    share: { url: `https://www.photodecaffeine.com/galerij/${share.token}`, active: share.active, downloads: share.downloads, consentRequired: !!share.consentRequired, createdAt: share.createdAt },
+    share: {
+      url: `https://www.photodecaffeine.com/galerij/${share.token}`, active: share.active, downloads: share.downloads, consentRequired: !!share.consentRequired, createdAt: share.createdAt,
+      priority: !!share.priority, priorityPrice: share.priorityPrice ?? 5, priorityDays: share.priorityDays ?? 2,
+    },
     guests: list.map(({ projectId: _p, key: _k, ...g }) => g),
     hearts,
     totals: { guests: list.length, visits: sum(list.map((g) => g.visits)), hearts: sum(Object.values(hearts)), downloads: sum(list.map((g) => g.downloads)) },
@@ -145,12 +209,17 @@ function shareReply(token: string, key: string, preview: boolean) {
   }
   const client = forClient(x);
   const canDownload = share.downloads && !preview;
+  const priority = guestPriority(share, x, guest || null);
+  const raw = new Map(x.gallery.map((g: Json) => [g.id, g]));
   return {
     guest: guest ? { name: guest.name, email: guest.email, notifyPhotos: !!guest.notifyPhotos } : null,
     preview: !guest,
+    priority: priority.view,
     project: {
       id: x.id, title: x.title, stage: x.stage, gallerySettings: x.gallerySettings,
-      gallery: client.gallery.map((g: Json) => ({ ...g, download: canDownload && g.download })),
+      gallery: client.gallery.map((g: Json) => (priority.own.has(g.id)
+        ? { ...g, url: (raw.get(g.id) as Json)?.url || g.url, download: true, mine: true }
+        : { ...g, download: canDownload && g.download })),
       downloads: canDownload ? client.downloads : "none", watermarked: client.downloads === "watermark",
       events: shoot ? [{ kind: "shoot", startsAt: shoot.startsAt }] : [],
     },
@@ -606,6 +675,7 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     if ((r = m(/^\/admin\/project\/([^/]+)\/shots$/))) return { shots: shots.filter((x) => x.projectId === r![1]).sort((a, b) => a.sort - b.sort) };
     if ((r = m(/^\/admin\/project\/([^/]+)\/engagement$/))) return { reviewRequest: reviewRequests[r[1]] || null, feedbackRequest: null, review: structuredClone(reviews.find((x) => x.projectId === r![1]) || null), feedback: [] };
     if ((r = m(/^\/admin\/project\/([^/]+)\/share$/))) return shareState(r[1]);
+    if ((r = m(/^\/admin\/priority\/project\/([^/]+)$/))) return { requests: priorityList(r[1]) };
     if ((r = m(/^\/admin\/project\/([^/]+)\/consent$/))) return consentState(r[1]);
     if ((r = m(/^\/admin\/project\/([^/]+)\/child-tags$/))) return childTagState(r[1]);
     if ((r = m(/^\/consent\/([^/]+)$/))) return consentForm(r[1], url.searchParams.get("key") || "");
@@ -776,6 +846,65 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     childTags.splice(childTags.findIndex((t) => t.id === r![2]), 1);
     return childTagState(r[1]);
   }
+  // Voorrang: the guest asks or withdraws, the studio answers.
+  if ((r = m(/^\/share\/([^/]+)\/priority$/))) {
+    const { share, guest } = guestOf(r[1], body.key);
+    if (!share.priority) throw new ApiError(409, "Voorrang kan niet (meer) bij deze galerij.");
+    if (!body.agree) throw new ApiError(400, "Vink aan dat je akkoord gaat.");
+    const same = (s: string) => s.trim().toLowerCase();
+    if (priorityRequests.some((x) => x.guestId === guest.id && x.status !== "closed" && same(x.person) === same(body.person))) {
+      throw new ApiError(409, `Je hebt al voorrang gevraagd voor ${body.person}.`);
+    }
+    const row = {
+      id: crypto.randomUUID(), projectId: share.projectId, guestId: guest.id, person: body.person, number: body.number || "", note: body.note || "",
+      status: "new", photos: null, invoice: null, images: [], price: share.priorityPrice, days: share.priorityDays, language: body.language || "nl",
+      answeredAt: null, deliveredAt: null, createdAt: new Date().toISOString(),
+    };
+    priorityRequests.push(row);
+    return { id: row.id, person: row.person, number: row.number };
+  }
+  if ((r = m(/^\/share\/([^/]+)\/priority\/([^/]+)\/cancel$/))) {
+    const { guest } = guestOf(r[1], body.key);
+    const at = priorityRequests.findIndex((x) => x.id === r![2] && x.guestId === guest.id);
+    if (at < 0) throw new ApiError(404, "Aanvraag niet gevonden");
+    if (priorityRequests[at].status !== "new") throw new ApiError(409, "We hebben je aanvraag al bekeken. Wil je toch stoppen? Beantwoord dan onze mail.");
+    const [gone] = priorityRequests.splice(at, 1);
+    return { success: true, person: gone.person, number: gone.number };
+  }
+  if ((r = m(/^\/admin\/priority\/([^/]+)\/(offer|booking|deliver|close|images)$/))) {
+    const x = priorityRequests.find((y) => y.id === r![1]);
+    if (!x) throw new ApiError(404, "Aanvraag niet gevonden");
+    const now = new Date().toISOString();
+    const extra: Json = { mailed: true };
+    if (r[2] === "offer") {
+      if (!["new", "booking"].includes(x.status)) throw new ApiError(409, "Op deze aanvraag is al een betaallink gestuurd.");
+      Object.assign(x, { status: "offered", photos: body.photos ?? null, answeredAt: now, invoice: x.invoice?.status === "sent" ? x.invoice : { id: crypto.randomUUID(), number: "FA-2026-034", status: "sent" } });
+      extra.invoice = { id: x.invoice.id, number: x.invoice.number };
+    } else if (r[2] === "booking") {
+      if (x.invoice?.status === "paid") throw new ApiError(409, "Deze aanvraag is al betaald.");
+      if (x.invoice) x.invoice = { ...x.invoice, status: "void" };
+      Object.assign(x, { status: "booking", answeredAt: now });
+    } else if (r[2] === "images") {
+      const visible = new Set(projects.find((y) => y.id === x.projectId).gallery.filter((g: Json) => g.restriction !== "no_photo").map((g: Json) => g.id));
+      const ids: string[] = body.ids;
+      if (body.on) {
+        const ok = ids.filter((i) => visible.has(i));
+        x.images = [...new Set([...x.images, ...ok])];
+        extra.skipped = ids.length - ok.length;
+      } else x.images = x.images.filter((i: string) => !ids.includes(i));
+      delete extra.mailed;
+    } else if (r[2] === "deliver") {
+      if (!x.images.length) throw new ApiError(400, "Kies eerst de foto's. Vink ze aan in de galerij en kies 'Voor voorrang'.");
+      Object.assign(x, { status: "delivered", deliveredAt: now });
+      extra.count = x.images.length;
+    } else {
+      if (x.invoice?.status === "paid") throw new ApiError(409, "Deze aanvraag is betaald. Lever de foto's, of geef eerst het geld terug bij de factuur.");
+      if (x.invoice?.status === "sent") x.invoice = { ...x.invoice, status: "void" };
+      x.status = "closed";
+      delete extra.mailed;
+    }
+    return { request: priorityApi(x), requests: priorityList(x.projectId), ...extra };
+  }
   if ((r = m(/^\/share\/([^/]+)\/child$/))) {
     const { share, guest } = guestOf(r[1], body.key);
     const at = childTags.findIndex((t) => t.imageId === body.imageId && t.guestId === guest.id && t.child === body.child);
@@ -855,7 +984,8 @@ export async function mockApi(path: string, method: string, body: Json): Promise
   }
   if ((r = m(/^\/share\/([^/]+)\/download(ed)?$/))) {
     const { share, guest } = guestOf(r[1], body.key);
-    if (!share.downloads) throw new ApiError(403, "Downloaden staat uit voor deze galerij.");
+    const own = priorityRequests.filter((x) => x.guestId === guest.id && x.status === "delivered").flatMap((x) => x.images);
+    if (!share.downloads && !(r[2] ? own.length : own.includes(body.imageId))) throw new ApiError(403, "Downloaden staat uit voor deze galerij.");
     guest.downloads += body.count || 1;
     const img = projects.find((x) => x.id === share.projectId).gallery.find((g: Json) => g.id === body.imageId);
     return r[2] ? { success: true } : { url: img.url, fileName: img.fileName };

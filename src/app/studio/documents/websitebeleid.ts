@@ -30,7 +30,11 @@ const START: ReaderSection[] = [
     "blocks": [
       {
         "t": "note",
-        "text": "**Status op 6 november 2026:** versie 1.3. Alle notities van Per zijn verwerkt en de invulvelden zijn ingevuld. De klantteksten staan op de website en nieuwe offertes gaan met deze versie de deur uit. Een jurist heeft de teksten niet getoetst: dat moet nog, net als de andere punten onder H in de interne notities. De website is op 2 november 2026 met een browser gecontroleerd op cookies, lokale opslag en externe diensten. De uitkomst staat in het Cookiebeleid."
+        "text": "**Status op 7 november 2026:** versie 1.4. Alle notities van Per zijn verwerkt en de invulvelden zijn ingevuld. De klantteksten staan op de website en nieuwe offertes gaan met deze versie de deur uit. Een jurist heeft de teksten niet getoetst: dat moet nog, net als de andere punten onder H in de interne notities. De website is op 2 november 2026 met een browser gecontroleerd op cookies, lokale opslag en externe diensten. De uitkomst staat in het Cookiebeleid."
+      },
+      {
+        "t": "note",
+        "text": "**Wat is er veranderd in versie 1.4:** gasten van een groepsgalerij kunnen voorrang vragen voor de foto’s van één persoon. De privacyverklaring noemt welke gegevens daarbij horen, waarvoor en hoe lang we ze bewaren. Bij kinderen staat dat een ouder ook voorrang kan vragen, en dat alleen die ouder en de studio dat zien. Bij elke aanvraag bewaren we de tekst waarmee de gast akkoord ging: de prijs, dat we na betaling meteen mogen beginnen en dat het herroepingsrecht vervalt zodra de foto’s geleverd zijn."
       },
       {
         "t": "note",
@@ -579,9 +583,9 @@ export const websitebeleid: ReaderDocument = {
   id: "websitebeleid",
   title: "PhotoDeCaffeine | PDC Productions",
   subtitle: "Websitebeleid & Gebruiksrechten",
-  meta: "Originele PDC-teksten • Nederlandse versie 1.3 • Opgesteld op 22 oktober 2026, bijgewerkt op 6 november 2026",
+  meta: "Originele PDC-teksten • Nederlandse versie 1.4 • Opgesteld op 22 oktober 2026, bijgewerkt op 7 november 2026",
   author: "Majd",
-  version: "1.3",
+  version: "1.4",
   parts: [...START_PARTS, ...LEGAL_PARTS, ...NOTE_PARTS],
   sections: [...START, ...LEGAL_SECTIONS, ...NOTES],
 };

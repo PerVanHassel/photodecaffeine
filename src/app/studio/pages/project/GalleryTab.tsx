@@ -6,14 +6,15 @@ import { Check, EyeOff, Heart, ImagePlus, Mail, MegaphoneOff, Star, Trash2, Uplo
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { api, del, errorMessage, post, put } from "../../api";
-import { keys, useAction, useChildTags } from "../../queries";
-import type { ChildTag, EarlyDownloads, GalleryImage, Project, Restriction } from "../../types";
-import { Button, Card, cx, Empty, Field, isVideo, Photo, Pill, Segmented, TextField, useConfirm } from "../../ui";
+import { keys, useAction, useChildTags, usePriority } from "../../queries";
+import type { ChildTag, EarlyDownloads, GalleryImage, PriorityRequest, Project, Restriction } from "../../types";
+import { Button, Card, cx, Empty, Field, isVideo, Photo, Pill, Segmented, Select, TextField, useConfirm } from "../../ui";
 import { useUnsavedChanges } from "../../unsaved";
 import { StylePicker } from "../../gallery/StylePicker";
 import { prepareUpload, watermark } from "../../watermark";
 import { ANSWER_LABEL, ConsentReminder } from "./ConsentTab";
 import { GroupLink, useGroupLink } from "./GroupLink";
+import { pickable, PriorityCard, priorityLabel } from "./PriorityCard";
 
 const BATCH = 8;
 
@@ -45,7 +46,7 @@ export function GalleryTab({ project: p }: { project: Project }) {
   const [over, setOver] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [addedThisVisit, setAddedThisVisit] = useState(0);
-  const [filter, setFilter] = useState<"all" | "favorites" | "attention" | Restriction | `kid:${string}`>("all");
+  const [filter, setFilter] = useState<"all" | "favorites" | "attention" | Restriction | `kid:${string}` | `prio:${string}`>("all");
   const [picked, setPicked] = useState<Set<string>>(() => new Set());
   const lastPicked = useRef<string | null>(null);
   const favorites = p.favorites || {};
@@ -53,6 +54,24 @@ export function GalleryTab({ project: p }: { project: Project }) {
   const coverId = p.gallerySettings.coverImageId;
   const reportSize = useSizeBackfill(p);
   const groupLink = useGroupLink(p.id).data;
+  // Voorrang: the photos picked per request, and the requests a photo can still go to.
+  const priority = usePriority(p.id).data || [];
+  const forPriority = priority.filter(pickable);
+  const priorityOf: Record<string, PriorityRequest[]> = {};
+  for (const r of forPriority) for (const id of r.images) (priorityOf[id] ||= []).push(r);
+  const shownPriority = filter.startsWith("prio:") ? forPriority.find((r) => `prio:${r.id}` === filter) : undefined;
+  const assign = useAction({
+    fn: (v: { r: PriorityRequest; ids: string[]; on: boolean }) => put<{ requests: PriorityRequest[]; skipped: number }>(`/admin/priority/${v.r.id}/images`, { ids: v.ids, on: v.on }),
+    success: (res, v) => {
+      const n = v.ids.length - (res.skipped || 0);
+      const what = `${n} ${n === 1 ? "foto" : "foto's"}`;
+      return v.on ? `${what} voor ${priorityLabel(v.r)}${res.skipped ? `. ${res.skipped} niet: niet in beeld` : ""}` : `${what} weg bij ${priorityLabel(v.r)}`;
+    },
+    onSuccess: (res, v) => {
+      qc.setQueryData(keys.priority(p.id), res.requests);
+      if (v.on) setPicked(new Set());
+    },
+  });
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
@@ -127,8 +146,9 @@ export function GalleryTab({ project: p }: { project: Project }) {
   const kids = byChild(allTags).sort((a, b) => CHILD_ORDER[a[0].answer] - CHILD_ORDER[b[0].answer] || a[0].name.localeCompare(b[0].name, "nl"));
   // Once nothing points to a child any more, there is nothing left to filter on.
   const kid = filter.startsWith("kid:") && kids.some(([t]) => `kid:${t.name}` === filter) ? filter.slice(4) : "";
-  const shown = filter === "all" || (filter.startsWith("kid:") && !kid) ? p.gallery
+  const shown = filter === "all" || (filter.startsWith("kid:") && !kid) || (filter.startsWith("prio:") && !shownPriority) ? p.gallery
     : kid ? p.gallery.filter((g) => tagsOf[g.id]?.some((t) => t.name === kid))
+    : shownPriority ? p.gallery.filter((g) => shownPriority.images.includes(g.id))
     : filter === "favorites" ? p.gallery.filter((g) => favorites[g.id])
     : filter === "attention" ? p.gallery.filter((g) => attention.has(g.id))
     : p.gallery.filter((g) => g.restriction === filter);
@@ -240,6 +260,8 @@ export function GalleryTab({ project: p }: { project: Project }) {
 
       <ConsentReminder project={p} />
 
+      <PriorityCard project={p} shownId={shownPriority?.id || ""} onShow={(id) => setFilter(id ? `prio:${id}` : "all")} />
+
       {kids.length > 0 && (
         <Card title={`Aangewezen door ouders: ${kids.length} ${kids.length === 1 ? "kind" : "kinderen"}`}>
           <div className="s-stack">
@@ -311,6 +333,12 @@ export function GalleryTab({ project: p }: { project: Project }) {
                   tags={tagsOf[g.id]}
                   focusKid={kid}
                   onRemoveTag={askRemoveTag}
+                  priority={priorityOf[g.id]}
+                  onRemovePriority={async (r) => {
+                    if (await confirm({ title: `Weg bij ${priorityLabel(r)}?`, body: `${r.guest.name} krijgt deze foto dan niet bij voorrang. De foto blijft in de galerij.`, confirm: "Weghalen" })) {
+                      assign.mutate({ r, ids: [g.id], on: false });
+                    }
+                  }}
                   picked={picked.has(g.id)}
                   picking={picked.size > 0}
                   onPick={(range) => pick(g.id, range)}
@@ -333,6 +361,23 @@ export function GalleryTab({ project: p }: { project: Project }) {
           <Button size="sm" variant="danger" icon={<EyeOff />} loading={mark.isPending} title="De klant en de groepslink zien deze foto's niet" onClick={() => markPicked("no_photo")}>Niet in beeld</Button>
           <Button size="sm" icon={<MegaphoneOff />} disabled={mark.isPending} title="De foto's blijven in de galerij, met het label 'Niet posten'" onClick={() => markPicked("no_social")}>Niet posten</Button>
           <Button size="sm" variant="ghost" disabled={mark.isPending} onClick={() => markPicked("")}>Markering weg</Button>
+          {/* Voorrang: these photos go to that guest. While their photos are shown alone, they can go off again. */}
+          {shownPriority ? (
+            <Button size="sm" icon={<X />} loading={assign.isPending} onClick={() => assign.mutate({ r: shownPriority, ids: [...picked], on: false })}>
+              Weg bij {priorityLabel(shownPriority)}
+            </Button>
+          ) : forPriority.length <= 2 ? forPriority.map((r) => (
+            <Button key={r.id} size="sm" variant="primary" icon={<Star />} disabled={assign.isPending} title={`Deze foto's krijgt ${r.guest.name} bij voorrang`}
+              onClick={() => assign.mutate({ r, ids: [...picked], on: true })}>
+              Voor {priorityLabel(r)}
+            </Button>
+          )) : forPriority.length > 0 && (
+            <Select aria-label="Foto's voor voorrang" value="" disabled={assign.isPending} style={{ width: 200, height: 32 }}
+              onChange={(e) => { const r = forPriority.find((x) => x.id === e.target.value); if (r) assign.mutate({ r, ids: [...picked], on: true }); }}>
+              <option value="">Voor voorrang…</option>
+              {forPriority.map((r) => <option key={r.id} value={r.id}>{priorityLabel(r)}</option>)}
+            </Select>
+          )}
           <span className="s-selbar-end">
             <Button size="sm" variant="ghost" onClick={() => setPicked(new Set(shown.map((g) => g.id)))}>Alles</Button>
             <Button size="sm" variant="ghost" iconOnly icon={<X />} aria-label="Selectie wissen" title="Selectie wissen" onClick={() => setPicked(new Set())} />
@@ -347,8 +392,11 @@ export function GalleryTab({ project: p }: { project: Project }) {
   );
 }
 
-function SortablePhoto({ image, index, isCover, tags, focusKid, onRemoveTag, picked, picking, favoritedBy, onPick, onCover, onRemove, onSize }: {
-  image: GalleryImage; index: number; isCover: boolean; tags?: ChildTag[]; focusKid: string; onRemoveTag: (tags: ChildTag[]) => void; picked: boolean; picking: boolean; favoritedBy?: string[];
+function SortablePhoto({ image, index, isCover, tags, focusKid, onRemoveTag, priority, onRemovePriority, picked, picking, favoritedBy, onPick, onCover, onRemove, onSize }: {
+  image: GalleryImage; index: number; isCover: boolean; tags?: ChildTag[]; focusKid: string; onRemoveTag: (tags: ChildTag[]) => void;
+  /** The voorrang requests this photo goes to. */
+  priority?: PriorityRequest[]; onRemovePriority: (r: PriorityRequest) => void;
+  picked: boolean; picking: boolean; favoritedBy?: string[];
   onPick: (range: boolean) => void; onCover: () => void; onRemove: () => void;
   onSize: (w: number, h: number) => void;
 }) {
@@ -369,8 +417,14 @@ function SortablePhoto({ image, index, isCover, tags, focusKid, onRemoveTag, pic
         <button type="button" role="checkbox" aria-checked={picked} className={cx("s-pick", picked && "on")} title="Selecteren (met shift een reeks)" aria-label={`Foto ${number} selecteren`}
           onPointerDown={(e) => e.stopPropagation()} onClick={(e) => onPick(e.shiftKey)}><Check /></button>
         {image.restriction && <span className={`s-mark ${image.restriction}`}>{MARK_LABEL[image.restriction]}</span>}
-        {kids.length > 0 && (
+        {(kids.length > 0 || !!priority?.length) && (
           <div className="s-tagchips">
+            {priority?.map((r) => (
+              <button key={r.id} type="button" className="s-tagchip prio" title={`Voorrang voor ${priorityLabel(r)} (${r.guest.name}). Klik om weg te halen.`}
+                aria-label={`Voorrang voor ${priorityLabel(r)}. Weghalen`} onPointerDown={(e) => e.stopPropagation()} onClick={() => onRemovePriority(r)}>
+                <Star aria-hidden="true" />{r.person.trim().split(/\s+/)[0]}{r.number ? ` #${r.number}` : ""}
+              </button>
+            ))}
             {named.map((list) => {
               const t = list[0];
               return (

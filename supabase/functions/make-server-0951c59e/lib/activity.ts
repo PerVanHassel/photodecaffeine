@@ -70,6 +70,7 @@ const SHARE: Source = { ...table("gallery_shares", () => "", undefined, "token")
 const CONSENT_FORM: Source = { ...table("consent_forms", () => "", undefined, "token"), idOf: (r) => r.project_id };
 const CONSENT = table("consents", (r) => r.child_name);
 const CHILD_TAG = table("gallery_child_tags", (r) => r.child_name);
+const PRIORITY = table("gallery_priority", (r) => (r.number ? `${r.person} #${r.number}` : r.person));
 const ARTICLE = stored("portfolio:article:", (r) => r.title, (_r, id) => `/admin/portfolio/${id}`);
 const REVIEW = stored("review:", (r) => r.clientName || r.googleName || "Review", () => "/admin/reviews");
 const INVESTMENT = stored("investments:item:", (r) => join(r.title, euro(r.price)), () => "/admin/investments");
@@ -189,8 +190,24 @@ const RULES: Record<string, Rule> = {
       x.body?.active === undefined ? "" : x.body.active ? "aan" : "uit",
       x.body?.downloads === undefined ? "" : x.body.downloads ? "downloaden mag" : "downloaden mag niet",
       x.body?.consentRequired === undefined ? "" : x.body.consentRequired ? "eerst toestemming" : "geen toestemmingscheck",
+      x.body?.priority === undefined ? "" : x.body.priority ? "voorrang aan" : "voorrang uit",
+      x.body?.priorityPrice === undefined ? "" : `voorrang ${euro(x.body.priorityPrice)}`,
+      x.body?.priorityDays === undefined ? "" : `binnen ${plural(x.body.priorityDays, "werkdag", "werkdagen")}`,
     ),
   },
+  // Voorrang (routes/priority.ts): the studio's answers to a guest who asked for their photos first.
+  "POST /admin/priority/:id/offer": {
+    area: "Galerij", action: "Voorrang: genoeg foto's, betaallink gestuurd", of: PRIORITY,
+    detail: (x) => join(x.json?.invoice?.number, euro(x.json?.request?.price), x.json?.request?.photos ? plural(x.json.request.photos, "foto", "foto's") : ""),
+  },
+  "POST /admin/priority/:id/booking": { area: "Galerij", action: "Voorrang: te weinig foto's, eigen shoot aangeboden", of: PRIORITY },
+  "PUT /admin/priority/:id/images": {
+    area: "Galerij", of: PRIORITY,
+    action: (x) => (x.body?.on === false ? "Foto's weggehaald bij voorrang" : "Foto's gekozen voor voorrang"),
+    detail: (x) => plural(x.body?.ids?.length || 0, "foto", "foto's"),
+  },
+  "POST /admin/priority/:id/deliver": { area: "Galerij", action: "Voorrang geleverd", of: PRIORITY, detail: (x) => (x.json?.count ? plural(x.json.count, "foto", "foto's") : "") },
+  "POST /admin/priority/:id/close": { area: "Galerij", action: "Voorrang gesloten", of: PRIORITY },
   "POST /admin/project/:id/share/renew": { area: "Galerij", action: "Nieuwe deellink gemaakt, de oude werkt niet meer" },
   "DELETE /admin/project/:id/share/guests/:guestId": { area: "Galerij", action: "Gast van de deellink verwijderd", of: GUEST },
   "PUT /admin/project/:id/gallery/restriction": {
@@ -396,6 +413,16 @@ const RULES: Record<string, Rule> = {
     area: "Galerij", of: SHARE,
     action: (x) => (x.body?.on ? "Mail bij nieuwe foto's aangezet" : "Mail bij nieuwe foto's uitgezet"),
     who: (x) => guestByKey(x.params.token, x.body?.key),
+  },
+  "POST /share/:token/priority": {
+    area: "Galerij", action: "Voorrang gevraagd", of: SHARE,
+    who: (x) => guestByKey(x.params.token, x.body?.key),
+    detail: (x) => join(x.body?.number ? `${x.body?.person} #${x.body.number}` : x.body?.person, x.body?.note),
+  },
+  "POST /share/:token/priority/:priorityId/cancel": {
+    area: "Galerij", action: "Voorrang ingetrokken", of: SHARE, param: "token",
+    who: (x) => guestByKey(x.params.token, x.body?.key),
+    detail: (x) => (x.json?.number ? `${x.json?.person} #${x.json.number}` : x.json?.person || ""),
   },
   "POST /guest-mails/off": {
     area: "Galerij", action: "Afgemeld via de mail over nieuwe foto's",

@@ -22,6 +22,8 @@ export interface GalleryImage {
   h?: number;
   /** A child on it who may not be posted, or (admin only) may not be shown at all. */
   restriction?: Restriction;
+  /** Group link: picked for this guest's voorrang, the original to download now. */
+  mine?: boolean;
 }
 
 export type Restriction = "no_social" | "no_photo";
@@ -124,7 +126,11 @@ export type GalleryProject = Pick<Project, "title" | "stage" | "gallerySettings"
 
 /** Admin: a project's group link and everyone who came in with it. */
 export interface ShareState {
-  share: { url: string; active: boolean; downloads: boolean; consentRequired: boolean; createdAt: string } | null;
+  share: {
+    url: string; active: boolean; downloads: boolean; consentRequired: boolean; createdAt: string;
+    /** Voorrang: guests may ask for their photos first, at this price (incl. btw) and within so many working days. */
+    priority: boolean; priorityPrice: number; priorityDays: number;
+  } | null;
   guests: ShareGuest[];
   /** Hearts per photo. */
   hearts: Record<string, number>;
@@ -142,6 +148,37 @@ export interface ShareGuest {
   notifyPhotos: boolean;
   firstSeenAt: string;
   lastSeenAt: string;
+}
+
+/**
+ * Admin: a guest who asked for the photos of one person first. new: waiting for
+ * the studio. offered: payment link sent. delivered: photos sent. booking: too
+ * few photos, a shoot of their own offered. closed: stopped by the studio.
+ */
+export type PriorityStatus = "new" | "offered" | "delivered" | "booking" | "closed";
+
+export interface PriorityRequest {
+  id: string;
+  projectId: string;
+  person: string;
+  number: string;
+  note: string;
+  language: "nl" | "en";
+  status: PriorityStatus;
+  price: number;
+  days: number;
+  /** How many photos the studio said it found. */
+  photos: number | null;
+  guest: { id: string; name: string; email: string };
+  invoice: { id: string; number: string; status: Invoice["status"] } | null;
+  paid: boolean;
+  /** Once paid: the last working day for the photos. */
+  dueBy: string;
+  /** The photos picked for it. */
+  images: string[];
+  createdAt: string;
+  answeredAt: string | null;
+  deliveredAt: string | null;
 }
 
 /** What a parent says may be done with their child at a shoot. */

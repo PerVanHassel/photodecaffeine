@@ -1,13 +1,13 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Copy, Download, ExternalLink, Link2, RefreshCw, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { del, get, post, put } from "../../api";
 import { ago, fmt, fmtDateTime } from "../../format";
 import { copyText } from "../../gallery/share";
 import { saveFile } from "../../portal/data";
 import { keys, useAction } from "../../queries";
 import type { Project, ShareGuest, ShareState } from "../../types";
-import { Button, Card, Empty, ErrorState, Field, Input, Photo, Pill, Segmented, Skeleton, useConfirm } from "../../ui";
+import { Button, Card, Empty, ErrorState, Field, Input, Photo, Pill, Segmented, Skeleton, TextField, useConfirm } from "../../ui";
 
 /** The project's group link and who came in with it; shared by the card and the gallery toolbar. */
 export const useGroupLink = (projectId: string) =>
@@ -34,7 +34,7 @@ export function GroupLink({ project: p }: { project: Project }) {
 
   const create = useAction({ fn: () => post<ShareState>(base), onSuccess: store, success: "Groepslink gemaakt" });
   const update = useAction({
-    fn: (b: { active?: boolean; downloads?: boolean; consentRequired?: boolean }) => put<ShareState>(base, b),
+    fn: (b: { active?: boolean; downloads?: boolean; consentRequired?: boolean; priority?: boolean; priorityPrice?: number; priorityDays?: number }) => put<ShareState>(base, b),
     invalidate: () => [keys.consent(p.id)],
     onSuccess: store,
     success: (_s, b) => (b.active === false ? "Link staat uit" : b.active ? "Link staat weer aan" : "Opgeslagen"),
@@ -97,6 +97,17 @@ export function GroupLink({ project: p }: { project: Project }) {
               options={[{ value: "no", label: "Uit" }, { value: "yes", label: "Aan" }]} />
           </div>
         </Field>
+
+        <Field label="Voorrang verkopen" hint="Gasten vragen in de galerij om hun foto's eerst. Jij kijkt of er genoeg zijn. Dan stuur je een betaallink, of bij te weinig foto's een aanbod voor een eigen shoot.">
+          <div>
+            <Segmented<"no" | "yes"> label="Voorrang verkopen" value={share.priority ? "yes" : "no"}
+              onChange={(v) => !busy && update.mutate({ priority: v === "yes" })}
+              options={[{ value: "no", label: "Uit" }, { value: "yes", label: "Aan" }]} />
+          </div>
+        </Field>
+        {share.priority && (
+          <PrioritySettings price={share.priorityPrice} days={share.priorityDays} onSave={(b) => update.mutate(b)} />
+        )}
 
         {loved.length > 0 && (
           <div className="s-stack sm">
@@ -171,6 +182,32 @@ export function GroupLink({ project: p }: { project: Project }) {
     <Card title={<h2 id="groepslink">Groepslink</h2>} action={share && <Pill tone={share.active ? "ok" : undefined} plain={!share.active}>{share.active ? "Aan" : "Uit"}</Pill>}>
       {body}
     </Card>
+  );
+}
+
+/** What voorrang costs and how fast it comes. Saved when a field is left. */
+function PrioritySettings({ price, days, onSave }: { price: number; days: number; onSave: (b: { priorityPrice?: number; priorityDays?: number }) => void }) {
+  const [priceText, setPriceText] = useState(String(price).replace(".", ","));
+  const [daysText, setDaysText] = useState(String(days));
+  useEffect(() => setPriceText(String(price).replace(".", ",")), [price]);
+  useEffect(() => setDaysText(String(days)), [days]);
+  const newPrice = Number(priceText.replace(",", "."));
+  const newDays = Number(daysText);
+  const priceError = Number.isFinite(newPrice) && newPrice >= 1 && newPrice <= 500 ? "" : "Tussen €1 en €500.";
+  const daysError = Number.isInteger(newDays) && newDays >= 1 && newDays <= 30 ? "" : "Tussen 1 en 30 werkdagen.";
+  function save() {
+    const b: { priorityPrice?: number; priorityDays?: number } = {};
+    if (!priceError && Math.round(newPrice * 100) !== Math.round(price * 100)) b.priorityPrice = Math.round(newPrice * 100) / 100;
+    if (!daysError && newDays !== days) b.priorityDays = newDays;
+    if (b.priorityPrice !== undefined || b.priorityDays !== undefined) onSave(b);
+  }
+  return (
+    <div className="s-form-grid">
+      <TextField label="Prijs voor voorrang, incl. btw (€)" inputMode="decimal" value={priceText} onChange={(e) => setPriceText(e.target.value)} onBlur={save}
+        error={priceError || undefined} hint={priceError ? undefined : "Dit betaalt de gast als er genoeg foto's zijn. Houd het laag, het is een extraatje."} />
+      <TextField label="Levertijd na betaling (werkdagen)" inputMode="numeric" value={daysText} onChange={(e) => setDaysText(e.target.value)} onBlur={save}
+        error={daysError || undefined} hint={daysError ? undefined : "Zo snel krijgt de gast de foto's. Staat in de mails."} />
+    </div>
   );
 }
 

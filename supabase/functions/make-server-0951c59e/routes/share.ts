@@ -1,16 +1,20 @@
 import { Hono } from "npm:hono";
 import { verifyAdmin } from "../lib/auth.ts";
-import { EMAIL_ADMIN_NOTIFY, EMAIL_RE, SITE_URL } from "../lib/config.ts";
+import { EMAIL_ADMIN_NOTIFY, EMAIL_RE, SITE_URL, TERMS_VERSION } from "../lib/config.ts";
 import { childStatus, consentUrl, formFields } from "../lib/consents.ts";
 import { db, found, must } from "../lib/db.ts";
 import { sendEmail } from "../lib/email.ts";
 import { type Env, fail, readBody, text, uuid, z } from "../lib/http.ts";
 import { notify } from "../lib/notify.ts";
+import {
+  BOOKING_URL, deliveredImageIds, imagesOf, invoicesOf, MAX_OPEN_PER_GUEST, personLabel, priorityStatement, receivedMail, studioMail,
+} from "../lib/priority.ts";
 import { childTagEmail } from "../lib/projectEmails.ts";
 import { clientDownloads, downloadLink, gallerySigner, heldBack, loadProject, type ProjectRow, projectToApi, type Signer } from "../lib/projects.ts";
 import { noteGuestReviewer, reviewLink } from "../lib/reviews.ts";
-import { guestCount, guestHearts, setPhotoMails, VISIT_GAP_MS, wantsPhotoMails } from "../lib/shares.ts";
+import { guestCount, guestHearts, setPhotoMails, shareUrl, VISIT_GAP_MS, wantsPhotoMails } from "../lib/shares.ts";
 import { signPaths } from "../lib/storage.ts";
+import { invoiceLink } from "./invoices.ts";
 
 const r = new Hono<Env>();
 export default r;
@@ -26,12 +30,18 @@ export default r;
 
 const S = "/make-server-0951c59e/share/:token";
 
-type Share = { project_id: string; downloads: boolean; consent_required: boolean };
+type Share = {
+  project_id: string; downloads: boolean; consent_required: boolean;
+  /** Voorrang: whether guests may ask, for how much, and how fast it comes (lib/priority.ts). */
+  priority: boolean; priority_price: number | string; priority_days: number;
+};
 type Guest = { id: string; name: string; email: string; visits: number; downloads: number; last_seen_at: string };
+
+const DONE = ["delivered", "review", "archived"];
 
 async function openShare(token: string): Promise<Share> {
   const share = /^[A-Za-z0-9]{8,64}$/.test(token)
-    ? must(await db.from("gallery_shares").select("project_id, active, downloads, consent_required").eq("token", token).maybeSingle()) as any
+    ? must(await db.from("gallery_shares").select("project_id, active, downloads, consent_required, priority, priority_price, priority_days").eq("token", token).maybeSingle()) as any
     : null;
   if (!share?.active) fail(404, "Deze link werkt niet (meer). Vraag degene die hem stuurde om een nieuwe.");
   return share;
@@ -87,17 +97,23 @@ function shootOf(row: ProjectRow): any {
     .sort((a: any, b: any) => a.starts_at.localeCompare(b.starts_at))[0];
 }
 
-/** The photos and how they are shown; nothing about the client or the planning. */
-function guestProject(row: ProjectRow, sign: Signer, canDownload: boolean) {
+/**
+ * The photos and how they are shown; nothing about the client or the planning.
+ * `own` are this guest's voorrang photos: the original, to download now.
+ */
+function guestProject(row: ProjectRow, sign: Signer, canDownload: boolean, own: Set<string> = new Set()) {
   const api = projectToApi(row, sign, { forClient: true });
   const gs = api.gallerySettings;
   const shoot = shootOf(row);
+  const raw = new Map((row.gallery_images || []).map((g: any) => [g.id, g]));
   return {
     id: row.id,
     title: row.title,
     stage: row.stage,
     gallerySettings: { title: gs.title, subtitle: gs.subtitle, style: gs.style, accentColor: gs.accentColor, coverImageId: gs.coverImageId, coverUrl: gs.coverUrl },
-    gallery: api.gallery.map((g: any) => ({ ...g, download: canDownload && g.download })),
+    gallery: api.gallery.map((g: any) => (own.has(g.id)
+      ? { ...g, url: sign(raw.get(g.id)) || g.url, download: true, mine: true }
+      : { ...g, download: canDownload && g.download })),
     downloads: canDownload ? api.downloads : "none",
     downloadsUntil: api.downloadsUntil,
     watermarked: api.downloads === "watermark",
@@ -133,6 +149,57 @@ async function seen(guest: Guest, patch: Record<string, unknown> = {}) {
   must(await db.from("gallery_guests").update({ last_seen_at: new Date().toISOString(), ...patch }).eq("id", guest.id));
 }
 
+/** Voorrang photos stay downloadable until downloading closes for the whole project. */
+const ownStillOpen = (row: ProjectRow) => !(DONE.includes(row.stage) && clientDownloads(row) === "none");
+
+/**
+ * Voorrang in this gallery: whether this guest can still ask (not once the
+ * photos are delivered to everyone), and their own requests. `own` are the
+ * photos of their delivered requests, which they may download.
+ */
+async function priorityOf(share: Share, row: ProjectRow, guest: Guest | null) {
+  const price = Number(share.priority_price);
+  const days = share.priority_days;
+  const offer = share.priority && !DONE.includes(row.stage)
+    ? { price, days, statement: { nl: priorityStatement("nl", price, days), en: priorityStatement("en", price, days) } }
+    : null;
+  const own = new Set<string>();
+  if (!guest) return { view: offer ? { offer, requests: [] } : null, own };
+  const rows = (must(await db.from("gallery_priority").select("*").eq("guest_id", guest.id).neq("status", "closed").order("created_at")) || []) as any[];
+  if (!offer && rows.length === 0) return { view: null, own };
+  const [invoices, images] = await Promise.all([invoicesOf(rows), imagesOf(rows.map((x) => x.id))]);
+  // Never a photo that is held back for a child.
+  const visible = new Set((row.gallery_images || []).filter((g: any) => !heldBack(g)).map((g: any) => g.id));
+  const open = ownStillOpen(row);
+  const requests = rows.map((x) => {
+    const inv = invoices.get(x.invoice_id);
+    const photos = x.status === "delivered" ? (images.get(x.id) || []).filter((id) => visible.has(id)) : [];
+    if (open) photos.forEach((id) => own.add(id));
+    return {
+      id: x.id,
+      person: x.person,
+      number: x.number,
+      status: x.status,
+      price: Number(x.price),
+      days: x.days,
+      photos: x.photos,
+      paid: inv?.status === "paid",
+      payUrl: x.status === "offered" && inv?.status === "sent" ? invoiceLink(inv) : "",
+      bookingUrl: x.status === "booking" ? BOOKING_URL : "",
+      images: open ? photos : [],
+    };
+  });
+  return { view: { offer, requests }, own };
+}
+
+/** The guest's voorrang photos, checked again on a download. */
+async function ownPhotos(share: Share, guest: Guest): Promise<Set<string>> {
+  const ids = await deliveredImageIds(guest.id);
+  if (ids.size === 0) return ids;
+  const project = found(await db.from("projects").select("stage, type, gallery_settings").eq("id", share.project_id).maybeSingle(), "Project niet gevonden") as any;
+  return ownStillOpen(project) ? ids : new Set();
+}
+
 // --- the gallery, or the door ---
 r.get(S, async (c) => {
   const share = await openShare(c.req.param("token"));
@@ -149,20 +216,22 @@ r.get(S, async (c) => {
     const away = Date.now() - new Date(guest.last_seen_at).getTime() >= VISIT_GAP_MS;
     await seen(guest, { visits: guest.visits === 0 || away ? guest.visits + 1 : guest.visits });
   }
-  const [sign, hearts, guests, mine, kids] = await Promise.all([
+  const [sign, hearts, guests, mine, kids, priority] = await Promise.all([
     gallerySigner([row]),
     guestHearts(row.id),
     guestCount(row.id),
     guest ? db.from("gallery_guest_hearts").select("image_id").eq("guest_id", guest.id) : null,
     guest ? kidsOf(row.id, guest) : null,
+    priorityOf(share, row, guest),
   ]);
   return c.json({
     guest: guest ? { name: guest.name, email: guest.email, notifyPhotos: await wantsPhotoMails(row.id, guest.id) } : null,
     preview,
-    project: guestProject(row, sign, share.downloads && !preview),
+    project: guestProject(row, sign, share.downloads && !preview, priority.own),
     hearts: hearts.images,
     mine: mine ? (must(mine) || []).map((h: any) => h.image_id) : [],
     kids,
+    priority: priority.view,
     guests,
     // Once the photos are delivered. The studio looking along should not count as a click.
     reviewUrl: guest && ["delivered", "review", "archived"].includes(row.stage) ? await reviewLink(row.id) : "",
@@ -208,6 +277,74 @@ r.post(`${S}/notify`, async (c) => {
   await setPhotoMails(share.project_id, guest.id, b.on, b.language);
   await seen(guest);
   return c.json({ notifyPhotos: b.on });
+});
+
+// --- voorrang: the photos of one person first (lib/priority.ts) ---
+// Asking costs nothing yet: the studio first looks whether there are enough
+// photos. The price and the terms are those of this moment, kept word for word.
+r.post(`${S}/priority`, async (c) => {
+  const token = c.req.param("token");
+  const share = await openShare(token);
+  const b = await readBody(c, z.object({
+    key: z.string(),
+    person: text(120).min(1, "Vul in wie er op de foto's staat."),
+    number: text(8).default(""),
+    note: text(300).default(""),
+    language: z.enum(["nl", "en"]).default("nl"),
+    agree: z.literal(true, { errorMap: () => ({ message: "Vink aan dat je akkoord gaat." }) }),
+  }));
+  const guest = await mustGuest(share, b.key);
+  if (!share.priority) fail(409, "Voorrang kan niet (meer) bij deze galerij.");
+  const project = found(await db.from("projects").select("id, title, stage, gallery_settings").eq("id", share.project_id).maybeSingle(), "Project niet gevonden") as any;
+  if (DONE.includes(project.stage)) fail(409, "De foto's zijn al geleverd, dus voorrang is niet meer nodig.");
+
+  const theirs = (must(await db.from("gallery_priority").select("person, status").eq("guest_id", guest.id).neq("status", "closed")) || []) as any[];
+  const same = (s: string) => s.trim().toLocaleLowerCase("nl");
+  if (theirs.some((x) => same(x.person) === same(b.person))) fail(409, `Je hebt al voorrang gevraagd voor ${b.person}.`);
+  if (theirs.filter((x) => x.status === "new" || x.status === "offered").length >= MAX_OPEN_PER_GUEST) {
+    fail(400, "Je hebt al een paar aanvragen lopen. Neem contact op met de fotograaf.");
+  }
+
+  const price = Number(share.priority_price);
+  const days = share.priority_days;
+  const row = must(await db.from("gallery_priority").insert({
+    project_id: share.project_id,
+    guest_id: guest.id,
+    person: b.person,
+    number: b.number,
+    note: b.note,
+    language: b.language,
+    price,
+    days,
+    statement: priorityStatement(b.language, price, days),
+    terms_version: TERMS_VERSION,
+  }).select("*").single()) as any;
+  await seen(guest);
+
+  const title = project.gallery_settings?.title || project.title;
+  const toGuest = receivedMail(row, { guestName: guest.name, galleryTitle: title, galleryLink: shareUrl(token) });
+  const toStudio = studioMail(row, { guestName: guest.name, guestEmail: guest.email, projectTitle: project.title, link: `${SITE_URL}/admin/project/${project.id}?tab=gallery` });
+  await Promise.all([
+    sendEmail({ to: guest.email, replyTo: EMAIL_ADMIN_NOTIFY, ...toGuest }),
+    sendEmail({ to: EMAIL_ADMIN_NOTIFY, replyTo: guest.email, ...toStudio }),
+    notify({ type: "priority", title: `Voorrang gevraagd: ${personLabel(row)}`, body: `Door ${guest.name} · ${project.title}`, link: `/admin/project/${project.id}?tab=gallery` }),
+  ]);
+  return c.json({ id: row.id, person: row.person, number: row.number });
+});
+
+// Changed their mind before the studio looked: the request goes.
+r.post(`${S}/priority/:priorityId/cancel`, async (c) => {
+  const share = await openShare(c.req.param("token"));
+  const { key } = await readBody(c, z.object({ key: z.string() }));
+  const guest = await mustGuest(share, key);
+  const row = found(
+    await db.from("gallery_priority").select("id, status, person, number").eq("id", c.req.param("priorityId")).eq("guest_id", guest.id).maybeSingle(),
+    "Aanvraag niet gevonden",
+  ) as any;
+  if (row.status !== "new") fail(409, "We hebben je aanvraag al bekeken. Wil je toch stoppen? Beantwoord dan onze mail.");
+  must(await db.from("gallery_priority").delete().eq("id", row.id));
+  await notify({ type: "priority", title: `Voorrang ingetrokken: ${personLabel(row)}`, body: `Door ${guest.name}`, link: `/admin/project/${share.project_id}?tab=gallery` });
+  return c.json({ success: true, person: row.person, number: row.number });
 });
 
 // The link in such a mail. The key is enough, so it keeps working when the
@@ -299,7 +436,10 @@ r.post(`${S}/download`, async (c) => {
   const share = await openShare(c.req.param("token"));
   const b = await readBody(c, z.object({ key: z.string(), imageId: uuid }));
   const guest = await mustGuest(share, b.key);
-  const downloads = await downloadRights(share);
+  // A voorrang photo is theirs to take as the original, also before delivery
+  // and when downloading is off for everyone else.
+  const own = (await ownPhotos(share, guest)).has(b.imageId);
+  const downloads = own ? "original" : await downloadRights(share);
   const img = found(
     await db.from("gallery_images").select("*").eq("id", b.imageId).eq("project_id", share.project_id).maybeSingle(),
     "Foto niet gevonden",
@@ -314,7 +454,7 @@ r.post(`${S}/downloaded`, async (c) => {
   const share = await openShare(c.req.param("token"));
   const b = await readBody(c, z.object({ key: z.string(), count: z.number().int().min(1).max(5000) }));
   const guest = await mustGuest(share, b.key);
-  if ((await downloadRights(share)) === "none") fail(403, "Downloaden kan zodra de foto's geleverd zijn.");
+  if ((await ownPhotos(share, guest)).size === 0 && (await downloadRights(share)) === "none") fail(403, "Downloaden kan zodra de foto's geleverd zijn.");
   await seen(guest, { downloads: guest.downloads + b.count });
   return c.json({ success: true });
 });

@@ -482,7 +482,11 @@ async function shareState(id: string) {
   }));
   const sum = (list: number[]) => list.reduce((s, n) => s + n, 0);
   return {
-    share: { url: shareUrl(share.token), active: share.active, downloads: share.downloads, consentRequired: share.consent_required, createdAt: share.created_at },
+    share: {
+      url: shareUrl(share.token), active: share.active, downloads: share.downloads, consentRequired: share.consent_required, createdAt: share.created_at,
+      // Voorrang (lib/priority.ts): guests may ask for their photos first, at this price and speed.
+      priority: share.priority, priorityPrice: Number(share.priority_price), priorityDays: share.priority_days,
+    },
     guests,
     hearts: hearts.images,
     totals: {
@@ -507,10 +511,22 @@ r.post(`${P}/project/:id/share`, async (c) => {
 
 r.put(`${P}/project/:id/share`, async (c) => {
   const id = c.req.param("id");
-  const { consentRequired, ...b } = await readBody(c, z.object({ active: z.boolean().optional(), downloads: z.boolean().optional(), consentRequired: z.boolean().optional() }));
-  const patch = consentRequired === undefined ? b : { ...b, consent_required: consentRequired };
+  const b = await readBody(c, z.object({
+    active: z.boolean().optional(),
+    downloads: z.boolean().optional(),
+    consentRequired: z.boolean().optional(),
+    priority: z.boolean().optional(),
+    priorityPrice: z.number().min(1, "Minimaal €1.").max(500, "Maximaal €500.").optional(),
+    priorityDays: z.number().int().min(1, "Minimaal 1 werkdag.").max(30, "Maximaal 30 werkdagen.").optional(),
+  }));
+  const fields: [keyof typeof b, string][] = [
+    ["active", "active"], ["downloads", "downloads"], ["consentRequired", "consent_required"],
+    ["priority", "priority"], ["priorityPrice", "priority_price"], ["priorityDays", "priority_days"],
+  ];
+  const patch: Record<string, unknown> = {};
+  for (const [from, to] of fields) if (b[from] !== undefined) patch[to] = from === "priorityPrice" ? Math.round(Number(b[from]) * 100) / 100 : b[from];
   // Asking for consent takes a form that is there and open.
-  if (consentRequired) await openConsentForm(id);
+  if (b.consentRequired) await openConsentForm(id);
   if (Object.keys(patch).length) {
     found(await db.from("gallery_shares").update(patch).eq("project_id", id).select("project_id").maybeSingle(), "Deze galerij heeft nog geen groepslink.");
   }

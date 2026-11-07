@@ -7,6 +7,7 @@ import { type Env, fail, readBody, requireAdmin, text, z } from "../lib/http.ts"
 import { amountOf, createPayment, createRefund, getPayment, type MolliePayment, mollieMode } from "../lib/mollie.ts";
 import { notify } from "../lib/notify.ts";
 import { kept, keptOf, methodLabel, paymentsOf } from "../lib/payments.ts";
+import { paidMail, personLabel, priorityForInvoice } from "../lib/priority.ts";
 import { greetingOf, invoiceLink, invoiceMail, invoiceTotals, payableOnline } from "./invoices.ts";
 import { euro } from "./quotes.ts";
 
@@ -158,14 +159,25 @@ async function onPaid(inv: any, mp: MolliePayment): Promise<string> {
     return "unexpected";
   }
 
-  await notify({ type: "invoice", title: `${inv.number} is online betaald`, body: `${euro(amount)} via ${via}${inv.client_name ? `, door ${inv.client_name}` : ""}`, link: `/admin/invoice/${inv.id}` });
+  // Voorrang in a group gallery (lib/priority.ts): the studio hears whose photos
+  // to do first, and the guest when to expect them.
+  const priority = await priorityForInvoice(inv.id).catch(() => null);
+  if (priority) {
+    await notify({
+      type: "priority", title: `Voorrang betaald: ${personLabel(priority)}`,
+      body: `${euro(amount)} via ${via}, door ${inv.client_name} · ${priority.projects?.title || ""}`, link: `/admin/project/${priority.project_id}?tab=gallery`,
+    });
+  } else {
+    await notify({ type: "invoice", title: `${inv.number} is online betaald`, body: `${euro(amount)} via ${via}${inv.client_name ? `, door ${inv.client_name}` : ""}`, link: `/admin/invoice/${inv.id}` });
+  }
   if (EMAIL_RE.test(inv.client_email || "")) {
+    const mail = priority ? paidMail(priority, { guestName: inv.client_name, invoiceNumber: inv.number, via, invoiceLink: invoiceLink(inv) }) : null;
     await sendEmail({
       to: inv.client_email,
-      subject: `Betaling ontvangen: factuur ${inv.number}`,
+      subject: mail?.subject || `Betaling ontvangen: factuur ${inv.number}`,
       replyTo: EMAIL_ADMIN_NOTIFY,
       bcc: EMAIL_INVOICE_BCC,
-      html: invoiceMail({
+      html: mail?.html || invoiceMail({
         eyebrow: `Betaald · ${inv.number}`,
         amount,
         sub: `Ontvangen via ${via}`,

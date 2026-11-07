@@ -398,6 +398,24 @@
 .g-kids-add .g-field { flex: 1 1 240px; min-width: 0; }
 .g-kids-add .g-btn { height: 48px; padding: 0 20px; }
 
+/* Voorrang: a guest asks for the photos of one person first. Same card as the children's. */
+.g-prio { margin-bottom: 18px; padding: 18px; border: 1px solid var(--g-line); border-radius: max(var(--g-radius), 4px); background: color-mix(in srgb, var(--g-accent) 7%, var(--g-bg)); scroll-margin-top: calc(var(--g-top, 0px) + 12px); }
+.g-prio h2 { margin: 0; color: var(--g-text); font-size: 17px; font-weight: 600; letter-spacing: 0; text-transform: none; font-style: normal; }
+.g-prio > p { margin: 4px 0 0; max-width: 62ch; color: var(--g-muted); font-size: 14px; line-height: 1.5; }
+.g-prio-list { display: grid; gap: 10px; margin: 14px 0 0; padding: 0; list-style: none; }
+.g-prio-item { padding: 12px 14px; border: 1px solid var(--g-line); border-radius: max(var(--g-radius), 4px); background: var(--g-bg); }
+.g-prio-item p { margin: 0; color: var(--g-muted); font-size: 14px; line-height: 1.5; }
+.g-prio-item .g-prio-who { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; margin-bottom: 2px; color: var(--g-text); font-size: 15px; }
+.g-prio-who span { color: var(--g-faint); font-size: 13px; font-variant-numeric: tabular-nums; }
+.g-prio-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.g-prio-actions .g-btn { min-height: 42px; }
+.g-prio-form { display: grid; gap: 14px; margin-top: 14px; }
+.g-prio-form .g-kids-row { margin-top: 0; }
+.g-prio-row { display: flex; flex-wrap: wrap; gap: 14px; }
+.g-prio-row .g-field-number { flex: 0 0 120px; }
+.g-prio-row .g-prio-note { flex: 1 1 240px; min-width: 0; }
+.g-prio-form .g-check a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+
 /* Saving one photo: always in view, light on any photo, so nobody has to look for it. */
 .studio .g-dl {
   position: absolute; z-index: 2; right: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 13px 0 11px;

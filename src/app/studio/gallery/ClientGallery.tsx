@@ -80,7 +80,7 @@ function tempo(ratios: number[], w: number) {
   return rowBoxes(rows, ratios, w, gap);
 }
 
-export function ClientGallery({ project: p, favs, favNames, counts, guest, kids, actions, review, back, after, openId, preview }: {
+export function ClientGallery({ project: p, favs, favNames, counts, guest, kids, actions, review, back, above, after, only, openId, preview }: {
   project: GalleryProject;
   favs: Set<string>;
   /** Preview: who picked each photo. */
@@ -94,8 +94,12 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
   /** The project's link to Google, once the photos are delivered. In a preview the button does nothing. */
   review?: { url: string; onOpen?: () => void };
   back: ReactNode;
+  /** Above the photos, also while there are none yet (a guest's voorrang). */
+  above?: ReactNode;
   /** Under the photos, above the footer. */
   after?: ReactNode;
+  /** Only these photos, e.g. the ones the studio picked for a guest's voorrang. */
+  only?: Set<string> | null;
   /** A photo to open straight away (a link to one photo). */
   openId?: string;
   preview?: boolean;
@@ -123,9 +127,11 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
   const kidCount = p.gallery.filter(hasKid).length;
   // With no photo of this child left, the filter lets go by itself.
   const onlyKidOn = onlyKid && kidCount > 0;
-  const shown = onlyKidOn ? listed.filter(hasKid) : listed;
+  const kidShown = onlyKidOn ? listed.filter(hasKid) : listed;
+  const shown = only ? kidShown.filter((g) => only.has(g.id)) : kidShown;
   const countAs: CountAs = guest ? "heart" : filter === "popular" ? "badge" : "none";
-  const canDownload = (g: GalleryImage) => !!actions.downloadOne && downloads !== "none" && g.download !== false;
+  // A photo marked downloadable on its own (a guest's voorrang) can be, whatever the rest may.
+  const canDownload = (g: GalleryImage) => !!actions.downloadOne && !preview && g.download !== false && (downloads !== "none" || g.download === true);
   const ratios = shown.map(ratioOf);
   const videos = p.gallery.filter((g) => isVideo(g.fileName || g.url)).length;
 
@@ -243,6 +249,7 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
 
       <section ref={grid} className="g-wrap" aria-label={t.yourGallery} style={{ scrollMarginTop: top }}
         onContextMenu={downloads === "original" || preview ? undefined : (e) => e.preventDefault()}>
+        {above}
         {p.gallery.length === 0 ? (
           <div className="g-empty"><p className="g-title">{t.noPhotos}</p><p>{guest ? t.noPhotosGuest : t.noPhotosHint}</p></div>
         ) : (
@@ -329,7 +336,7 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
         <Lightbox list={open.list} start={open.index} total={p.gallery.length} numberOf={numberOf} favs={favs} favNames={favNames}
           counts={counts} countAs={guest ? "heart" : "badge"}
           kid={kids?.active ? { name: firstName(kids.active), isOn: hasKid, onTag: kids.onTag } : undefined}
-          onToggle={actions.toggle} onDownload={downloads === "none" ? undefined : actions.downloadOne} onShare={actions.sharePhoto}
+          onToggle={actions.toggle} onDownload={actions.downloadOne} canDownload={canDownload} onShare={actions.sharePhoto}
           protect={downloads !== "original" && !preview} onClose={() => setOpen(null)} t={t} />
       )}
     </main>
@@ -619,10 +626,10 @@ function HeartButton({ on, by, count = 0, onToggle, t, inline }: { on: boolean; 
 // Lightbox
 // ---------------------------------------------------------------------------
 
-function Lightbox({ list, start, total, numberOf, favs, favNames, counts, countAs, kid, onToggle, onDownload, onShare, protect, onClose, t }: {
+function Lightbox({ list, start, total, numberOf, favs, favNames, counts, countAs, kid, onToggle, onDownload, canDownload, onShare, protect, onClose, t }: {
   list: GalleryImage[]; start: number; total: number; numberOf: Map<string, number>; favs: Set<string>; favNames?: Record<string, string[]>;
   counts?: Record<string, number>; countAs: CountAs; kid?: { name: string; isOn: (g: GalleryImage) => boolean; onTag: (g: GalleryImage) => void };
-  onToggle?: (g: GalleryImage) => void; onDownload?: (g: GalleryImage) => void; onShare?: (g: GalleryImage) => void;
+  onToggle?: (g: GalleryImage) => void; onDownload?: (g: GalleryImage) => void; canDownload: (g: GalleryImage) => boolean; onShare?: (g: GalleryImage) => void;
   protect: boolean; onClose: () => void; t: T;
 }) {
   const [index, setIndex] = useState(start);
@@ -687,7 +694,7 @@ function Lightbox({ list, start, total, numberOf, favs, favNames, counts, countA
           {onShare && (
             <button type="button" className="g-btn" onClick={() => onShare(img)} aria-label={t.sharePhoto}><Share2 /><span className="g-btn-label">{t.share}</span></button>
           )}
-          {onDownload && img.download !== false && (
+          {onDownload && canDownload(img) && (
             <button type="button" className="g-btn primary g-lb-dl" onClick={() => onDownload(img)} aria-label={t.download}><Download /><span className="g-btn-label">{t.download}</span></button>
           )}
           <button ref={closeButton} type="button" className="g-btn icon" onClick={onClose} aria-label={t.close}><X /></button>

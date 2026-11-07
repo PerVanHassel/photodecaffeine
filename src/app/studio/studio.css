@@ -325,6 +325,16 @@ button.s-item { width: 100%; border: 0; background: none; text-align: left; }
 .studio .s-tagchip.no_photo { background: var(--bad); }
 .studio .s-tagchip.no_social { background: var(--warn); }
 .studio .s-tagchip.unknown { background: #fff; color: var(--bad); box-shadow: inset 0 0 0 1.5px var(--bad); }
+.studio .s-tagchip.prio { display: inline-flex; align-items: center; gap: 3px; background: var(--accent); color: #fff; }
+.s-tagchip.prio svg { width: 10px; height: 10px; flex: none; }
+
+/* Voorrang: guests who asked for their photos first (pages/project/PriorityCard.tsx). */
+.s-prio-list { display: grid; margin: 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: var(--r-sm); }
+.s-prio-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; padding: 12px 14px; }
+.s-prio-row + .s-prio-row { border-top: 1px solid var(--line); }
+.s-prio-row[data-status="closed"], .s-prio-row[data-status="booking"] { opacity: 0.7; }
+.s-prio-main { display: grid; gap: 3px; min-width: 0; flex: 1 1 320px; }
+.s-prio-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 /* Drawn inside the tile: the contact sheet's tiles clip what falls outside them. */
 .s-ph.picked::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; box-shadow: inset 0 0 0 3px var(--accent); pointer-events: none; }
 .s-ph.held img, .s-ph.held video { opacity: 0.45; filter: grayscale(0.7); }

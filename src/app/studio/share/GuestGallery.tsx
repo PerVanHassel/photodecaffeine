@@ -21,6 +21,7 @@ import type { GalleryImage, GalleryProject } from "../types";
 import { cx } from "../ui";
 import { ConsentStep, type ConsentFormData } from "./ConsentForm";
 import { LangSwitch } from "./LangSwitch";
+import { type GuestPriority, type GuestPriorityRequest, type PriorityAsk, PriorityPanel } from "./PriorityPanel";
 
 // The page a group link opens, /galerij/<token>. No login: a name and an
 // e-mail address at the door get a key that this browser keeps, and with it
@@ -41,6 +42,8 @@ type Inside = {
   reviewUrl: string;
   /** At a shoot with a consent form: this guest's own children and the photos they pointed them out on. */
   kids: { names: string[]; tags: Record<string, string[]>; consentUrl: string } | null;
+  /** Voorrang: asking for the photos of one person first, and this guest's own requests. */
+  priority: GuestPriority | null;
 };
 /** The studio asks for consent first, and this guest has not given it yet. */
 type OwesConsent = { consent: ConsentFormData & { token: string }; guest: { name: string; email: string } };
@@ -155,7 +158,7 @@ function Entrance() {
   }
   return (
     <Gallery path={path} token={token} data={data} guestKey={key} queryKey={queryKey} onLeave={() => setKey("")}
-      openId={params.get("foto") || undefined} t={t} lang={lang} />
+      openId={params.get("foto") || undefined} priorityId={params.get("voorrang") || ""} t={t} lang={lang} />
   );
 }
 
@@ -237,8 +240,11 @@ function Door({ path, gate, busy, onEnter, admin, onPreview, t, lang }: {
 // Inside
 // ---------------------------------------------------------------------------
 
-function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, t, lang }: {
-  path: string; token: string; data: Inside; guestKey: string; queryKey: unknown[]; onLeave: () => void; openId?: string; t: PortalText; lang: Lang;
+function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, priorityId, t, lang }: {
+  path: string; token: string; data: Inside; guestKey: string; queryKey: unknown[]; onLeave: () => void; openId?: string;
+  /** From the mail that the voorrang photos are there: open on those. */
+  priorityId: string;
+  t: PortalText; lang: Lang;
 }) {
   const qc = useQueryClient();
   const [sharing, setSharing] = useState(false);
@@ -252,6 +258,55 @@ function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, t, la
   const url = `${window.location.origin}/galerij/${token}`;
   const favs = new Set(data.mine);
   const send = <R,>(route: string, body: Record<string, unknown>) => api<R>(`${path}/${route}`, { method: "POST", body: { key: guestKey, ...body }, anonymous: true });
+  const language = lang.language === "en" ? "en" : "nl";
+
+  // Voorrang: the photos picked for one of this guest's requests can be shown alone.
+  const ready = (data.priority?.requests || []).filter((r) => r.status === "delivered" && r.images.length > 0);
+  const [onlyId, setOnlyId] = useState(() => (ready.some((r) => r.id === priorityId) ? priorityId : ""));
+  const onlyRequest = ready.find((r) => r.id === onlyId);
+  const only = onlyRequest ? new Set(onlyRequest.images) : null;
+  // Arriving from the mail: straight to those photos.
+  useEffect(() => {
+    if (onlyRequest) document.getElementById("g-prio")?.scrollIntoView({ block: "start" });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function askPriority(b: PriorityAsk) {
+    try {
+      await send("priority", { ...b, language, agree: true });
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) return onLeave();
+      throw err;
+    }
+    toast.success(t.prioStatusNew(b.person.split(" ")[0]));
+    await qc.invalidateQueries({ queryKey });
+  }
+
+  async function withdrawPriority(r: GuestPriorityRequest) {
+    try {
+      await send(`priority/${r.id}/cancel`, {});
+      toast.success(t.prioWithdrawn);
+      await qc.invalidateQueries({ queryKey });
+    } catch (err) {
+      failed(err);
+    }
+  }
+
+  async function downloadPriority(r: GuestPriorityRequest) {
+    const list = p.gallery.filter((g) => r.images.includes(g.id) && g.download !== false);
+    if (list.length === 1) return downloadOne(list[0]);
+    if (!list.length) return;
+    setZip({ done: 0, total: list.length });
+    try {
+      // Theirs are the originals, also in a gallery that shows watermarked copies.
+      const how = await saveZip(list, `${title} ${r.person}`, { watermarked: false, onProgress: (done) => setZip({ done, total: list.length }), text: { ready: t.toPhotosReady, save: t.toPhotosSave } });
+      send("downloaded", { count: list.length }).catch(() => {});
+      if (how === "zip") toast.success(t.downloadStarted);
+    } catch (err) {
+      failed(err);
+    } finally {
+      setZip(null);
+    }
+  }
 
   function failed(err: unknown) {
     // This guest is no longer known: back to the door.
@@ -321,7 +376,7 @@ function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, t, la
     if (!list.length) return;
     setZip({ done: 0, total: list.length });
     try {
-      const how = await saveZip(list, title, { watermarked: p.downloads === "watermark", onProgress: (done) => setZip({ done, total: list.length }), text: { ready: t.toPhotosReady, save: t.toPhotosSave } });
+      const how = await saveZip(list, title, { watermarked: p.downloads === "watermark" && !list.every((g) => g.mine), onProgress: (done) => setZip({ done, total: list.length }), text: { ready: t.toPhotosReady, save: t.toPhotosSave } });
       send("downloaded", { count: list.length }).catch(() => {});
       if (how === "zip") toast.success(t.downloadStarted);
     } catch (err) {
@@ -356,6 +411,11 @@ function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, t, la
             {data.preview && <p className="g-preview-note">{t.previewBanner}</p>}
           </>
         }
+        above={data.priority && (
+          <PriorityPanel priority={data.priority} language={language} preview={data.preview} names={kidNames} onlyId={onlyRequest ? onlyId : ""}
+            onOnly={setOnlyId} onAsk={askPriority} onWithdraw={withdrawPriority} onDownload={downloadPriority} zip={zip} t={t} />
+        )}
+        only={only}
         after={<Invite t={t} />}
         openId={openId}
       />

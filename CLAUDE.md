@@ -109,6 +109,9 @@ Verander je de inhoud, verhoog dan `LEGAL_VERSION` (`lib/legalVersion.ts`) en
 - Betaaltermijn is 10 werkdagen, downloads een kwartaal na levering, bij websites geen download.
 - Opruimen volgens de bewaartermijnen: `lib/retention.ts`, een keer per dag als iemand de admin opent.
 - Toestemming per werk staat in de kv-tabel (`lib/articleConsents.ts`), niet in een eigen tabel.
+- Voorrang in de groepsgalerij: `lib/priority.ts`, gast in `routes/share.ts`, admin in `routes/priority.ts`.
+  Betalen gaat via een gewone factuur; `routes/payments.ts` herkent hem met `priorityForInvoice`.
+  Bij elke aanvraag bewaren we de tekst waarmee de gast akkoord ging (`statement`, `terms_version`).
 
 ## Taal
 

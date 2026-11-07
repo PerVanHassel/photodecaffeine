@@ -1111,6 +1111,11 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
             "Gerechtvaardigd belang: bijhouden wie de foto’s bekijkt. Vraag je om een mail bij nieuwe foto’s, dan gebruiken we je e-mailadres ook daarvoor. In elke mail staat een link om je af te melden. Niet voor reclame"
           ],
           [
+            "Voorrang in een groepsgalerij",
+            "Naam, rugnummer en kenmerk van wie op de foto’s staat, als je die invult, en je naam, e-mailadres en betaling",
+            "Uitvoering van de overeenkomst: kijken of er genoeg foto’s zijn, je mailen over je aanvraag en de foto’s leveren. De factuur bewaren we zo lang de wet dat vraagt"
+          ],
+          [
             "Toestemming voor foto’s van kinderen",
             "Naam en eventueel rugnummer van het kind, de keuze, naam en e-mailadres van de ouder, en bij een beperking een foto of beschrijving om het kind te herkennen",
             "Toestemming van de ouder of voogd, en gerechtvaardigd belang bij het naleven van die keuze"
@@ -1156,7 +1161,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
       },
       {
         "t": "p",
-        "text": "Bij een shoot met kinderen vragen we ouders per kind om toestemming, via een formulier. Mag een kind niet of beperkt in beeld, dan vragen we ook een foto of beschrijving, zodat we het kind kunnen herkennen. Alleen de studio ziet die foto, en we verwijderen hem zodra de foto’s zijn geleverd. Een ouder kan de keuze altijd wijzigen of intrekken via de link in de bevestigingsmail. In de galerij kan een ouder aanwijzen op welke foto’s het eigen kind staat. Dat zien alleen die ouder en de studio. Foto’s van kinderen zetten we niet op onze website zonder aparte toestemming. Bij projecten met kinderen zorgen we voor informatie die past bij hun leeftijd en voor de toestemmingen die de wet vereist. Bij promotionele publicatie op basis van toestemming stellen we vast wie die rechtsgeldig kan geven en houden we waar passend rekening met de eigen wensen van het kind."
+        "text": "Bij een shoot met kinderen vragen we ouders per kind om toestemming, via een formulier. Mag een kind niet of beperkt in beeld, dan vragen we ook een foto of beschrijving, zodat we het kind kunnen herkennen. Alleen de studio ziet die foto, en we verwijderen hem zodra de foto’s zijn geleverd. Een ouder kan de keuze altijd wijzigen of intrekken via de link in de bevestigingsmail. In de galerij kan een ouder aanwijzen op welke foto’s het eigen kind staat, en voorrang vragen voor die foto’s. Dat zien alleen die ouder en de studio. Foto’s van kinderen zetten we niet op onze website zonder aparte toestemming. Bij projecten met kinderen zorgen we voor informatie die past bij hun leeftijd en voor de toestemmingen die de wet vereist. Bij promotionele publicatie op basis van toestemming stellen we vast wie die rechtsgeldig kan geven en houden we waar passend rekening met de eigen wensen van het kind."
       }
     ]
   },
@@ -1333,6 +1338,10 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
           [
             "Gasten van een groepsgalerij",
             "12 maanden na hun laatste bezoek, of eerder als de studio de gast verwijdert"
+          ],
+          [
+            "Aanvragen voor voorrang in een groepsgalerij",
+            "Zolang de gast bewaard blijft: 12 maanden na het laatste bezoek, of eerder als de studio de gast verwijdert. Een factuur bewaren we 7 jaar"
           ],
           [
             "Foto om een kind te herkennen",

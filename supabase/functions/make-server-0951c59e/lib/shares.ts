@@ -30,7 +30,10 @@ export function shareToken(length = 16): string {
 
 export const shareUrl = (token: string) => `${SITE_URL}/galerij/${token}`;
 
-export type ShareRow = { project_id: string; token: string; active: boolean; downloads: boolean; consent_required: boolean; created_at: string; updated_at: string };
+export type ShareRow = {
+  project_id: string; token: string; active: boolean; downloads: boolean; consent_required: boolean;
+  priority: boolean; priority_price: number | string; priority_days: number; created_at: string; updated_at: string;
+};
 
 export async function shareFor(projectId: string): Promise<ShareRow | null> {
   return must(await db.from("gallery_shares").select("*").eq("project_id", projectId).maybeSingle()) as ShareRow | null;
