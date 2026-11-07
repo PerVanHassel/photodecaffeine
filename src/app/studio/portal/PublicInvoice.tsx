@@ -60,6 +60,9 @@ function Inner() {
         if (stopped) return;
         if (r.status === "paid") { setBack("paid"); data.refetch(); return; }
         if (r.status === "canceled" || r.status === "expired" || r.status === "failed") { setBack("failed"); return; }
+        // Still open a few seconds on: the client came back without paying
+        // (Mollie's back button). Pending means the bank is still busy.
+        if (r.status === "open" && tries >= 2) { setBack("stopped"); return; }
       } catch {
         // Asked again below.
       }
