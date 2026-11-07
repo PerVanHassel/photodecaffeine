@@ -1,7 +1,7 @@
 import { Hono } from "npm:hono";
 import * as kv from "../kv_store.tsx";
 import { isAdminUser, verifyAdmin } from "../lib/auth.ts";
-import { clientToApi, type ClientRow } from "../lib/clients.ts";
+import { clientToApi, type ClientRow, setTestClient, testClientIds } from "../lib/clients.ts";
 import { EMAIL_ADMIN_NOTIFY, EMAIL_RE, INVITE_VALID_DAYS, SITE_URL } from "../lib/config.ts";
 import { removeConsentPhotos } from "../lib/consents.ts";
 import { db, found, must } from "../lib/db.ts";
@@ -323,15 +323,25 @@ async function lastSignIns(): Promise<Map<string, string>> {
 
 r.get(`${A}/clients`, async (c) => {
   const rows = must(await db.from("clients").select("*, project_clients ( project_id )").order("created_at", { ascending: false })) || [];
-  const signIns = await lastSignIns();
+  const [signIns, tests] = await Promise.all([lastSignIns(), testClientIds()]);
   return c.json({
     clients: rows.map((row: any) =>
       clientToApi(row, {
         projectCount: (row.project_clients || []).length,
         lastSignIn: row.user_id ? signIns.get(row.user_id) || null : null,
+        isTest: tests.has(row.id),
       })
     ),
   });
+});
+
+// A test client: the studio can try the whole portal out as them (lib/clients.ts).
+r.put(`${A}/client/:id/test`, async (c) => {
+  const id = c.req.param("id");
+  const { on } = await readBody(c, z.object({ on: z.boolean() }));
+  found(await db.from("clients").select("id").eq("id", id).maybeSingle(), "Klant niet gevonden");
+  await setTestClient(id, on);
+  return c.json({ success: true, isTest: on });
 });
 
 const clientSchema = z.object({
@@ -365,7 +375,7 @@ r.get(`${A}/client/:id`, async (c) => {
   ]);
   const signIns = row.user_id ? await lastSignIns() : new Map();
   return c.json({
-    client: clientToApi(row, { lastSignIn: row.user_id ? signIns.get(row.user_id) || null : null }),
+    client: clientToApi(row, { lastSignIn: row.user_id ? signIns.get(row.user_id) || null : null, isTest: (await testClientIds()).has(row.id) }),
     projects: projects.map((p) => projectToApi(p, sign)),
     quotes: must(quotes) || [],
     invoices: must(invoices) || [],
@@ -409,5 +419,6 @@ r.delete(`${A}/client/:id`, async (c) => {
     if (error) console.error("delete login failed:", error.message);
   }
   if (row.email) await kv.del(`portal:invite:${row.email.toLowerCase()}`);
+  await setTestClient(id, false);
   return c.json({ success: true });
 });

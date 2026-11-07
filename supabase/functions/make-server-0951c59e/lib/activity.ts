@@ -261,6 +261,10 @@ const RULES: Record<string, Rule> = {
   "POST /admin/client": { area: "Klanten", action: "Klant toegevoegd", of: CLIENT, created: true },
   "PUT /admin/client/:id": { area: "Klanten", action: "Klant bijgewerkt", of: CLIENT, diff: true },
   "DELETE /admin/client/:id": { area: "Klanten", action: "Klant verwijderd", of: CLIENT },
+  "PUT /admin/client/:id/test": {
+    area: "Klanten", of: CLIENT, param: "id",
+    action: (x) => (x.body?.on ? "Klant op testklant gezet" : "Klant is geen testklant meer"),
+  },
   "POST /admin/clients/invite": { area: "Klanten", action: "Uitnodiging voor het portaal gestuurd", detail: (x) => x.body?.email || "" },
   "PUT /admin/inquiry/:id": {
     area: "Aanvragen", of: INQUIRY, diff: true,

@@ -6,7 +6,7 @@ import { beaufort, lightFor, useWeather } from "../light";
 import { MiniMap } from "../map";
 import type { PortalLocation, Project, StudioEvent } from "../types";
 import { Card, Empty, ErrorState, Photo, Pill, Skeleton } from "../ui";
-import { icsFor, journeyIndex, saveFile, usePortalEvents, usePortalInvoices, usePortalProjects, usePortalQuotes } from "./data";
+import { icsFor, journeyIndex, saveFile, useMe, usePortalEvents, usePortalInvoices, usePortalProjects, usePortalQuotes } from "./data";
 import { useT, type PortalText } from "./i18n";
 
 export function PortalOverview() {
@@ -16,7 +16,9 @@ export function PortalOverview() {
   const events = usePortalEvents();
   const quotes = usePortalQuotes();
   const invoices = usePortalInvoices();
-  const first = String(user?.user_metadata?.name || "").split(" ")[0];
+  const me = useMe();
+  // The studio looking along greets the client, not itself.
+  const first = String((me.data?.viewAs ? me.data.name : user?.user_metadata?.name) || "").split(" ")[0];
 
   const list = projects.data?.projects || [];
   const active = list.filter((p) => p.stage !== "archived");

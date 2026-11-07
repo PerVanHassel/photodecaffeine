@@ -252,6 +252,10 @@ export interface Client {
   notes: string;
   projectCount?: number;
   lastSignIn?: string | null;
+  /** A test client: the studio can try the whole portal out as them. */
+  isTest?: boolean;
+  /** Portal: the studio is looking along as this client. */
+  viewAs?: boolean;
   createdAt: string;
   updatedAt: string;
 }

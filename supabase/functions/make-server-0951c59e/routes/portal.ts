@@ -1,5 +1,5 @@
 import { Hono } from "npm:hono";
-import { clientForUser, clientToApi, projectIdsForClient } from "../lib/clients.ts";
+import { clientToApi, portalClient, projectIdsForClient, testClientIds, viewingAs } from "../lib/clients.ts";
 import { EMAIL_ADMIN_NOTIFY, SITE_URL } from "../lib/config.ts";
 import { db, found, must } from "../lib/db.ts";
 import { emailWrap, escapeHtml, sendEmail } from "../lib/email.ts";
@@ -22,9 +22,9 @@ r.use(`${P}/*`, async (c, next) => {
   return requireUser(c, next);
 });
 
-/** The signed-in client, and whether they may see this project. */
+/** The signed-in client (or the one the studio looks along as), and whether they may see this project. */
 async function access(c: any, projectId?: string) {
-  const client = await clientForUser(c.get("user"));
+  const client = await portalClient(c, c.get("user"));
   if (projectId) {
     const ids = await projectIdsForClient(client.id);
     if (!ids.includes(projectId)) fail(403, "Dit project hoort niet bij je account.");
@@ -42,18 +42,23 @@ async function locationsFor(ids: string[]) {
 // --- account ---
 r.get(`${P}/me`, async (c) => {
   const client = await access(c);
-  return c.json({ client: clientToApi(client) });
+  // Looking along: the portal says whose it is, and whether trying things out is saved.
+  const preview = viewingAs(c) ? { viewAs: true, isTest: (await testClientIds()).has(client.id) } : {};
+  return c.json({ client: clientToApi(client, preview) });
 });
 
 r.put(`${P}/me`, async (c) => {
   const client = await access(c);
   const b = await readBody(c, z.object({ name: text(200).min(1, "Vul je naam in.").optional(), company: text(200).optional(), phone: text(50).optional() }));
-  const row = must(await db.from("clients").update(b).eq("id", client.id).select("*").single());
+  const row = must(await db.from("clients").update(b).eq("id", client.id).select("*").single()) as any;
   const user = c.get("user");
-  await db.auth.admin.updateUserById(user.id, {
-    user_metadata: { ...user.user_metadata, name: (row as any).name, company: (row as any).company },
-  });
-  return c.json({ client: clientToApi(row as any) });
+  if (!viewingAs(c)) {
+    await db.auth.admin.updateUserById(user.id, { user_metadata: { ...user.user_metadata, name: row.name, company: row.company } });
+  } else if (row.user_id) {
+    // The studio trying a test client's account page: that client's login, never the studio's own.
+    await db.auth.admin.updateUserById(row.user_id, { user_metadata: { name: row.name, company: row.company } });
+  }
+  return c.json({ client: clientToApi(row) });
 });
 
 // --- projects ---
@@ -219,11 +224,14 @@ r.get(`${P}/events`, async (c) => {
 // --- quotes and invoices ---
 r.get(`${P}/quotes`, async (c) => {
   const client = await access(c);
-  const email = String(c.get("user").email || "").toLowerCase();
+  // Looking along, it is the client's address that counts, not the studio's login.
+  const email = String((viewingAs(c) ? client.email : c.get("user").email) || "").toLowerCase();
   // A replaced quote is history; the client sees the one that took its place.
-  // Older quotes only carry an email address, so match on both.
+  // Older quotes only carry an email address, so match on both. A client
+  // without an address (a test client) only gets their own.
+  const match = email ? `client_id.eq.${client.id},client_email.eq."${email.replace(/"/g, "")}"` : `client_id.eq.${client.id}`;
   const rows = must(await db.from("quotes").select("*").not("status", "in", "(draft,replaced)")
-    .or(`client_id.eq.${client.id},client_email.eq."${email.replace(/"/g, "")}"`).order("sent_at", { ascending: false })) || [];
+    .or(match).order("sent_at", { ascending: false })) || [];
   return c.json({
     quotes: rows.map((q: any) => ({
       id: q.id,

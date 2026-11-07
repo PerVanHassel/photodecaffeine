@@ -163,6 +163,13 @@ function HeaderActions({ project: p }: { project: Project }) {
         <Popover.Portal>
           <div className="studio" style={{ minHeight: 0 }}>
             <Popover.Content align="end" sideOffset={6} className="s-card" style={{ padding: 6, minWidth: 200, zIndex: 50, boxShadow: "var(--shadow)" }}>
+              {/* The whole portal as this project's (first) client sees it, in a new tab. */}
+              {p.clientIds?.[0] && (
+                <a className="s-item" style={{ padding: "8px 10px", gridTemplateColumns: "1fr", textDecoration: "none" }}
+                  href={`/portal/project/${p.id}?als=${p.clientIds[0]}`} target="_blank" rel="noreferrer" onClick={() => setOpen(false)}>
+                  <span className="t">Portaal als klant bekijken</span>
+                </a>
+              )}
               <button className="s-item" style={{ padding: "8px 10px", gridTemplateColumns: "1fr" }} onClick={() => { setOpen(false); archive.mutate(); }}>
                 <span className="t">{p.stage === "archived" ? "Uit archief halen" : "Archiveren"}</span>
               </button>

@@ -601,6 +601,14 @@ a.s-stat:hover { background: var(--hover); }
 
 /* ---------- portal ---------- */
 .p-top { display: flex; align-items: center; gap: 20px; padding: 14px clamp(16px, 4vw, 48px); border-bottom: 1px solid var(--line); background: var(--surface); flex-wrap: wrap; position: sticky; top: 0; z-index: 30; }
+/* The studio looking along as a client (PortalShell): always clear that this is a preview. */
+.p-viewas { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 9px clamp(16px, 4vw, 48px); background: var(--warn-soft); color: var(--text); font-size: 13px; line-height: 1.45; border-bottom: 1px solid var(--line); }
+.p-viewas.test { background: var(--info-soft); }
+.p-viewas > svg { flex: none; width: 16px; height: 16px; color: var(--warn); }
+.p-viewas.test > svg { color: var(--info); }
+.p-viewas > span:first-of-type { flex: 1 1 320px; min-width: 0; }
+.p-viewas-end { display: flex; gap: 14px; margin-left: auto; }
+.p-viewas-end a, .p-viewas-end button { padding: 0; border: 0; background: none; color: inherit; font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .p-top .s-brand { flex-direction: row; align-items: center; gap: 12px; padding: 0; }
 .p-top .s-brand .s-logo { width: 150px; }
 .p-top .s-brand-tag { padding-left: 12px; border-left: 1px solid var(--line-strong); }

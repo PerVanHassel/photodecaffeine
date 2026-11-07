@@ -2,7 +2,8 @@ import { Hono } from "npm:hono";
 import { fail, isoDateTime, readBody, requireAdmin, requirePermission, text as textField, uuid, z } from "../lib/http.ts";
 import * as kv from "../kv_store.tsx";
 import { verifyAdmin, verifyAuth } from "../lib/auth.ts";
-import { clientForUser, projectIdsForClient, projectRecipients } from "../lib/clients.ts";
+import { portalClient, projectIdsForClient, projectRecipients } from "../lib/clients.ts";
+import { HttpError } from "../lib/http.ts";
 import { EMAIL_ADMIN_NOTIFY, SITE_URL } from "../lib/config.ts";
 import { emailWrap, escapeHtml, sendEmail } from "../lib/email.ts";
 import { deleteReply, googleConnection, putReply } from "../lib/google.ts";
@@ -58,8 +59,15 @@ r.use("/make-server-0951c59e/admin/feedback", requireAdmin as any, requirePermis
 
 const GENERAL_FEEDBACK_SCOPE = "general";
 
-async function loadProjectForClient(projectId: string, user: any) {
-  const client = await clientForUser(user);
+async function loadProjectForClient(projectId: string, user: any, c: any) {
+  // The studio may be looking along as this client (lib/clients.ts).
+  let client;
+  try {
+    client = await portalClient(c, user);
+  } catch (err) {
+    if (err instanceof HttpError) return { error: err.message, status: err.status as 403 | 404 };
+    throw err;
+  }
   const ids = await projectIdsForClient(client.id);
   if (!ids.includes(projectId)) return { error: "Unauthorized", status: 403 as const };
   const row = await loadProject(projectId).catch(() => null);
@@ -340,7 +348,7 @@ r.get("/make-server-0951c59e/portal/project/:id/engagement", async (c) => {
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
     const projectId = c.req.param("id");
-    const loaded = await loadProjectForClient(projectId, user);
+    const loaded = await loadProjectForClient(projectId, user, c);
     if (loaded.error) return c.json({ error: loaded.error }, loaded.status);
 
     const [reviewReqStr, feedbackReqStr, reviews, feedbackIdsStr, link] = await Promise.all([
@@ -402,7 +410,7 @@ r.post("/make-server-0951c59e/portal/project/:id/feedback", async (c) => {
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
     const projectId = c.req.param("id");
-    const loaded = await loadProjectForClient(projectId, user);
+    const loaded = await loadProjectForClient(projectId, user, c);
     if (loaded.error) return c.json({ error: loaded.error }, loaded.status);
     const project = loaded.project;
 

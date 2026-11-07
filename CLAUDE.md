@@ -45,6 +45,9 @@ API-aanroepen te onderscheppen.
   `projectToApi` (`forClient`), `gateOf` en `downloadLink` houden hem tegen; een
   nieuwe route die foto's naar klanten of gasten stuurt, moet dat ook doen.
 - Er zijn geen geautomatiseerde tests.
+- "Bekijk als klant": de admin opent het portaal met `?als=<klant-id>`, de portaalverzoeken sturen dan
+  `X-View-As` mee. Alleen kijken, behalve bij een testklant (kv `portal:test-clients`). Een nieuwe
+  portaalroute zoekt de klant op met `portalClient` (`lib/clients.ts`), niet met `clientForUser`.
 
 ## Edge function deployen
 

@@ -14,6 +14,28 @@ async function accessToken(): Promise<string | null> {
   return data.session?.access_token ?? null;
 }
 
+// The studio looking along as a client in the portal ("Bekijk als klant" on
+// the client page). Kept per browser tab; the portal's requests then carry the
+// client's id, and the edge function only lets the studio do that.
+const VIEW_AS = "pdc-portal-als";
+
+export function viewAsClient(): string {
+  try {
+    return sessionStorage.getItem(VIEW_AS) || "";
+  } catch {
+    return "";
+  }
+}
+
+export function setViewAsClient(id: string) {
+  try {
+    if (id) sessionStorage.setItem(VIEW_AS, id);
+    else sessionStorage.removeItem(VIEW_AS);
+  } catch {
+    // Storage blocked: the preview lasts until the next page load.
+  }
+}
+
 type Options = {
   method?: "GET" | "POST" | "PUT" | "DELETE";
   body?: unknown;
@@ -36,6 +58,8 @@ export async function api<T>(path: string, opts: Options = {}): Promise<T> {
   const token = opts.anonymous ? null : await accessToken();
   const headers: Record<string, string> = { Authorization: `Bearer ${token || publicAnonKey}` };
   if (!opts.form && opts.body !== undefined) headers["Content-Type"] = "application/json";
+  const viewAs = path.startsWith("/portal/") && !opts.anonymous ? viewAsClient() : "";
+  if (viewAs) headers["X-View-As"] = viewAs;
 
   let res: Response;
   try {

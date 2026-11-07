@@ -1,4 +1,4 @@
-import { ArrowLeft, Download, Mail, Plus, Search, Trash2, UserCheck, Users } from "lucide-react";
+import { ArrowLeft, Download, Eye, Mail, Plus, Search, Trash2, UserCheck, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { del, post, put } from "../api";
@@ -6,7 +6,7 @@ import { NewProjectDialog } from "../components/NewProjectDialog";
 import { ago, fmtDate, initials, STAGE_LABEL } from "../format";
 import { keys, useAction, useClient, useClients } from "../queries";
 import type { Client } from "../types";
-import { Button, Card, Empty, ErrorState, Modal, PageHead, Photo, Pill, Skeleton, SkeletonList, TextAreaField, TextField, useConfirm } from "../ui";
+import { Button, Card, Empty, ErrorState, Field, Modal, PageHead, Photo, Pill, Segmented, Skeleton, SkeletonList, TextAreaField, TextField, useConfirm } from "../ui";
 import { INVOICE_STATUS, QUOTE_STATUS } from "./Money";
 
 export function ClientsPage() {
@@ -66,7 +66,7 @@ export function ClientsPage() {
                     </td>
                     <td className="s-small"><div>{c.email || <span className="s-faint">geen e-mail</span>}</div><div className="s-muted">{c.phone}</div></td>
                     <td className="s-mono">{c.projectCount ?? 0}</td>
-                    <td>{c.hasAccount ? <Pill tone="ok">{c.lastSignIn ? `Actief ${ago(c.lastSignIn)}` : "Account"}</Pill> : <Pill plain>Geen</Pill>}</td>
+                    <td>{c.hasAccount ? <Pill tone="ok">{c.lastSignIn ? `Actief ${ago(c.lastSignIn)}` : "Account"}</Pill> : <Pill plain>Geen</Pill>}{c.isTest && <> <Pill tone="info">Test</Pill></>}</td>
                     <td className="s-muted">{fmtDate(c.createdAt)}</td>
                   </tr>
                 ))}
@@ -133,6 +133,11 @@ export function ClientPage() {
     invalidate: () => [keys.client(id)],
     success: (_d, c) => `Uitnodiging verstuurd naar ${c.email}`,
   });
+  const markTest = useAction({
+    fn: (on: boolean) => put(`/admin/client/${id}/test`, { on }),
+    invalidate: () => [keys.client(id), keys.clients],
+    success: (_d, on) => (on ? "Testklant aan: in het voorbeeld werkt alles echt" : "Testklant uit"),
+  });
   const remove = useAction({
     fn: () => del(`/admin/client/${id}`),
     invalidate: () => [keys.clients, keys.projects],
@@ -198,20 +203,35 @@ export function ClientPage() {
           </Card>
         </div>
         <div className="s-stack lg">
-          <Card title="Klantportaal">
-            {c.hasAccount ? (
-              <div className="s-stack sm">
-                <Pill tone="ok"><UserCheck size={11} /> Heeft een account</Pill>
-                <span className="s-small s-muted">{c.lastSignIn ? `Laatst ingelogd ${ago(c.lastSignIn)}` : "Nog niet ingelogd"}</span>
-              </div>
-            ) : c.email ? (
-              <div className="s-stack sm">
-                <span className="s-small s-muted">Nog geen account. Met een uitnodiging kiest de klant zelf een wachtwoord.</span>
-                <Button icon={<Mail />} loading={invite.isPending} onClick={() => invite.mutate(c)} style={{ alignSelf: "flex-start" }}>Uitnodigen</Button>
-              </div>
-            ) : (
-              <span className="s-small s-muted">Voeg een e-mailadres toe om uit te nodigen.</span>
-            )}
+          <Card title="Klantportaal" action={c.isTest && <Pill tone="info">Testklant</Pill>}>
+            <div className="s-stack">
+              {c.hasAccount ? (
+                <div className="s-stack sm">
+                  <Pill tone="ok"><UserCheck size={11} /> Heeft een account</Pill>
+                  <span className="s-small s-muted">{c.lastSignIn ? `Laatst ingelogd ${ago(c.lastSignIn)}` : "Nog niet ingelogd"}</span>
+                </div>
+              ) : c.email ? (
+                <div className="s-stack sm">
+                  <span className="s-small s-muted">Nog geen account. Met een uitnodiging kiest de klant zelf een wachtwoord.</span>
+                  <Button icon={<Mail />} loading={invite.isPending} onClick={() => invite.mutate(c)} style={{ alignSelf: "flex-start" }}>Uitnodigen</Button>
+                </div>
+              ) : (
+                <span className="s-small s-muted">Voeg een e-mailadres toe om uit te nodigen.</span>
+              )}
+              {/* The portal as this client sees it, in a new tab (portal/PortalShell.tsx). */}
+              <a className="s-btn" href={`/portal/dashboard?als=${c.id}`} target="_blank" rel="noreferrer" style={{ alignSelf: "flex-start" }}>
+                <Eye size={15} aria-hidden="true" />Bekijk als klant
+              </a>
+              <Field label="Testklant" hint={c.isTest
+                ? "Aan: in het voorbeeld werkt alles echt, zoals berichten, favorieten en feedback. Gebruik dit alleen voor een klant om mee te testen."
+                : "Uit: in het voorbeeld kun je alleen kijken. Er wordt niets opgeslagen."}>
+                <div>
+                  <Segmented<"no" | "yes"> label="Testklant" value={c.isTest ? "yes" : "no"}
+                    onChange={(v) => !markTest.isPending && markTest.mutate(v === "yes")}
+                    options={[{ value: "no", label: "Uit" }, { value: "yes", label: "Aan" }]} />
+                </div>
+              </Field>
+            </div>
           </Card>
           <Card title="Notities">
             {c.notes ? <p style={{ whiteSpace: "pre-wrap", fontSize: 13.5 }}>{c.notes}</p> : <span className="s-small s-faint">Geen notities.</span>}

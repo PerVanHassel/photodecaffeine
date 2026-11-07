@@ -46,7 +46,8 @@ app.use(
   "/*",
   cors({
     origin: "*",
-    allowHeaders: ["Content-Type", "Authorization"],
+    // X-View-As: the studio looking along as a client in the portal (lib/clients.ts).
+    allowHeaders: ["Content-Type", "Authorization", "X-View-As"],
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     exposeHeaders: ["Content-Length"],
     maxAge: 600,

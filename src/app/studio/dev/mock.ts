@@ -665,12 +665,27 @@ const storedLabels = {
 };
 
 /** Mirrors the edge function's routes closely enough to drive every screen. */
+// The studio looking along as a client (routes/portal.ts, lib/clients.ts): only reads, unless it is a test client.
+const testClients = new Set<string>([id(3)]);
+const viewAsId = () => {
+  try { return sessionStorage.getItem("pdc-portal-als") || ""; } catch { return ""; }
+};
+
 export async function mockApi(path: string, method: string, body: Json): Promise<Json> {
   await delay(120 + Math.random() * 180);
   const url = new URL(path, "http://mock");
   const p = url.pathname;
   const m = (re: RegExp) => p.match(re);
   let r: RegExpMatchArray | null;
+
+  if (p.startsWith("/portal/") && method !== "GET" && viewAsId() && !testClients.has(viewAsId())) {
+    throw new ApiError(403, "Dit is een voorbeeld, dus er wordt niets opgeslagen. Wil je het echt uitproberen? Zet de klant dan op testklant.");
+  }
+  if ((r = m(/^\/admin\/client\/([^/]+)\/test$/)) && method === "PUT") {
+    if (body.on) testClients.add(r[1]);
+    else testClients.delete(r[1]);
+    return { success: true, isTest: body.on };
+  }
 
   if (p.startsWith("/admin/analytics")) {
     const { analyticsMock } = await import("./analyticsMock");
@@ -704,10 +719,10 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     if ((r = m(/^\/admin\/project\/([^/]+)\/child-tags$/))) return childTagState(r[1]);
     if ((r = m(/^\/consent\/([^/]+)$/))) return consentForm(r[1], url.searchParams.get("key") || "");
     if ((r = m(/^\/share\/([^/]+)$/))) return shareReply(r[1], url.searchParams.get("key") || "", url.searchParams.get("preview") === "1");
-    if (p === "/admin/clients") return { clients };
+    if (p === "/admin/clients") return { clients: clients.map((c) => ({ ...c, isTest: testClients.has(c.id) })) };
     if ((r = m(/^\/admin\/client\/([^/]+)$/))) {
       const c = clients.find((x) => x.id === r![1]);
-      return { client: c, projects: projects.filter((x) => x.clientIds.includes(c.id)), quotes: quotes.filter((q) => q.clientId === c.id).map((q) => ({ id: q.id, number: q.number, title: q.title, status: q.status, sent_at: q.sentAt, created_at: q.createdAt })), invoices: invoices.filter((i) => i.clientId === c.id).map((i) => ({ id: i.id, number: i.number, status: i.status, due_on: i.dueOn, created_at: i.createdAt })), inquiries: [] };
+      return { client: { ...c, isTest: testClients.has(c.id) }, projects: projects.filter((x) => x.clientIds.includes(c.id)), quotes: quotes.filter((q) => q.clientId === c.id).map((q) => ({ id: q.id, number: q.number, title: q.title, status: q.status, sent_at: q.sentAt, created_at: q.createdAt })), invoices: invoices.filter((i) => i.clientId === c.id).map((i) => ({ id: i.id, number: i.number, status: i.status, due_on: i.dueOn, created_at: i.createdAt })), inquiries: [] };
     }
     if (p === "/admin/inquiries") return { inquiries };
     if (p === "/admin/locations") return { locations };
@@ -779,8 +794,12 @@ export async function mockApi(path: string, method: string, body: Json): Promise
         { ref: "ig-automotive-2", label: "", active: false, hidden: false },
       ],
     };
-    // portal
-    if (p === "/portal/projects") return { projects: projects.filter((x) => x.clientIds.includes(id(2)) || x.clientIds.includes(id(1))).map((x) => ({ ...x, briefing: undefined })), locations: Object.fromEntries(locations.map((l) => [l.id, l])) };
+    // portal (the studio looking along as a client: see viewAsId)
+    if (p === "/portal/projects") {
+      const as = viewAsId();
+      const mine = projects.filter((x) => (as ? x.clientIds.includes(as) : x.clientIds.includes(id(2)) || x.clientIds.includes(id(1))));
+      return { projects: mine.map((x) => ({ ...x, briefing: undefined })), locations: Object.fromEntries(locations.map((l) => [l.id, l])) };
+    }
     if ((r = m(/^\/portal\/project\/([^/]+)$/))) {
       const share = shares.find((s) => s.projectId === r![1] && s.active);
       return {
@@ -796,7 +815,12 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     if (p === "/portal/events") return { events: eventsWithContext().filter((e) => e.startsAt > iso(-1)), locations: Object.fromEntries(locations.map((l) => [l.id, l])) };
     if (p === "/portal/quotes") return { quotes: quotes.filter((q) => q.status !== "draft").map((q) => ({ ...q, token: "abc" })) };
     if (p === "/portal/invoices") return { invoices: invoices.filter((i) => i.status !== "draft").map((i) => ({ id: i.id, number: i.number, status: i.status, issuedOn: i.issuedOn, dueOn: i.dueOn, paidAt: i.paidAt, totals: i.totals, token: "abc", payable: i.status === "sent" })) };
-    if (p === "/portal/me") return { client: clients[1] };
+    if (p === "/portal/me") {
+      const as = viewAsId();
+      const c = as ? clients.find((x) => x.id === as) : clients[1];
+      if (!c) throw new ApiError(404, "Deze klant bestaat niet (meer).");
+      return { client: as ? { ...c, viewAs: true, isTest: testClients.has(as) } : c };
+    }
     if ((r = m(/^\/portal\/project\/([^/]+)\/engagement$/))) {
       const rv = reviews.find((x) => x.projectId === r![1]);
       return { reviewRequested: !!reviewRequests[r[1]], reviewLink: "https://g.page/r/CUkHU8gqLEm4EBI/review", review: rv ? { rating: rv.rating, text: rv.text, source: rv.source } : null, feedbackRequested: false, feedbackCount: 0 };
