@@ -3,7 +3,7 @@ import { Navigate, useLocation, type RouteObject } from "react-router";
 import { Root } from "./Root";
 import { AppError } from "./components/AppError";
 import { appRoutes } from "./mobile/routes";
-import { ArticleConsent, ConsentForm, GuestGallery, portalRoutes, PublicInvoice, ReviewRedirect, studioRoutes } from "./studio/routes";
+import { ArticleConsent, ConsentForm, GuestGallery, MyPhotos, portalRoutes, PublicInvoice, ReviewRedirect, studioRoutes } from "./studio/routes";
 import { Home } from "./pages/Home";
 
 /**
@@ -76,6 +76,8 @@ export const routes: RouteObject[] = [
       // A client gallery passed round a group: a name and e-mail at the door
       // instead of a login.
       { path: "/galerij/:token", Component: GuestGallery },
+      // Someone who bought photos: everything that is theirs, behind a code by mail.
+      { path: "/mijn-fotos", Component: MyPhotos },
       // Parents say per child what may be done at a shoot, by token as well.
       { path: "/toestemming/:token", Component: ConsentForm },
       // Whoever is on a portfolio piece says where it may be shown, by token too.

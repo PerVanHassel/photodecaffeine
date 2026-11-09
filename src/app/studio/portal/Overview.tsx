@@ -81,7 +81,61 @@ export function PortalOverview() {
   );
 }
 
+/**
+ * Where the work is. With parts (Projecten 2.0) every part gets its own steps,
+ * and a part that waits for the client says what they need to do.
+ */
 export function Journey({ project, compact }: { project: Project; compact?: boolean }) {
+  const parts = (project.parts || []).filter((x) => x.hold !== "stopped");
+  if (parts.length > 0) return <PartsJourney project={project} parts={parts} compact={compact} />;
+  return <OldJourney project={project} compact={compact} />;
+}
+
+const KIND_ORDER: Record<string, string[]> = {
+  photo: ["lead", "quote", "booked", "shoot", "editing", "delivered", "done"],
+  video: ["lead", "quote", "booked", "shoot", "editing", "delivered", "done"],
+  web: ["lead", "quote", "booked", "intake", "design", "build", "review", "live"],
+};
+
+function PartsJourney({ project, parts, compact }: { project: Project; parts: Project["parts"]; compact?: boolean }) {
+  const t = useT();
+  const labels = (kind: string) => (kind === "web" ? t.partStepsWeb : kind === "video" ? t.partStepsVideo : t.partStepsPhoto);
+  const waiting = parts.filter((x) => x.hold === "waiting");
+  return (
+    <div className="s-stack">
+      {waiting.map((part) => (
+        <div key={part.id} className="p-youdo" role="status">
+          <span className="s-eyebrow">{t.partYouDo}</span>
+          <b>{part.holdNote || t.partName[part.kind]}</b>
+          <Link className="s-btn primary sm" to={`/portal/project/${project.id}#berichten`}>{t.messages}</Link>
+        </div>
+      ))}
+      <Card bodyClass="none">
+        <ul className="p-parts">
+          {parts.map((part) => {
+            const steps = KIND_ORDER[part.kind] || KIND_ORDER.photo;
+            const at = Math.max(0, steps.indexOf(part.stage));
+            const names = labels(part.kind);
+            return (
+              <li key={part.id} className="p-part">
+                <span className="p-part-name"><span className={`s-partdot ${part.kind}`} aria-hidden="true" />{t.partName[part.kind]}</span>
+                <div className="p-part-bar" aria-hidden="true">
+                  {steps.map((s, i) => <span key={s} className={i < at ? "done" : i === at ? "now" : undefined} />)}
+                </div>
+                <span className="p-part-now">
+                  {part.hold === "paused" ? t.partPaused : t.partNow(names[at] || "")}
+                  {!compact && names[at + 1] && part.hold !== "paused" ? <span className="s-faint"> · {t.partNext(names[at + 1])}</span> : null}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      </Card>
+    </div>
+  );
+}
+
+function OldJourney({ project, compact }: { project: Project; compact?: boolean }) {
   const t = useT();
   const at = journeyIndex(project.stage);
   const hint = (i: number) => (i === 3 && project.gallery.length ? t.journeyChoosing : t.journeyHint[i]);

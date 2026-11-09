@@ -8,7 +8,7 @@ import type { GalleryImage, GalleryProject } from "../types";
 import { cx, isVideo } from "../ui";
 import { useUrlState } from "../urlState";
 import { DEFAULT_RATIO, justify, masonry, rowBoxes, story, type Box } from "./layout";
-import { fontHref, accentOf, onAccent, styleOf, type StyleDef } from "./styles";
+import { accentOf, fontHref, fontVars, onAccent, sizing, styleOf, type StyleDef } from "./styles";
 import "./gallery.css";
 
 // The client's gallery in the look the studio chose for the project. Used by
@@ -71,24 +71,24 @@ const pad = (n: number) => String(n).padStart(2, "0");
  * Row heights per look: larger on wide screens, a photo or two across on a
  * phone, where a lone portrait may also take the full width.
  */
-const ROWS: Record<string, (w: number) => { target: number; gap: number; max?: number }> = {
-  atelier: (w) => (w < 560 ? { target: w * 0.56, gap: 4, max: w * 1.5 } : { target: clamp(200, w * 0.21, 320), gap: 8 }),
-  noir: (w) => (w < 560 ? { target: w * 0.62, gap: 3, max: w * 1.5 } : { target: clamp(240, w * 0.27, 440), gap: 4 }),
-  compact: (w) => (w < 560 ? { target: w * 0.3, gap: 3 } : { target: clamp(110, w * 0.11, 170), gap: 4 }),
+const ROWS: Record<string, (w: number, k: number) => { target: number; gap: number; max?: number }> = {
+  atelier: (w, k) => (w < 560 ? { target: w * 0.56 * k, gap: 4, max: w * 1.5 } : { target: clamp(200, w * 0.21, 320) * k, gap: 8 }),
+  noir: (w, k) => (w < 560 ? { target: w * 0.62 * k, gap: 3, max: w * 1.5 } : { target: clamp(240, w * 0.27, 440) * k, gap: 4 }),
+  compact: (w, k) => (w < 560 ? { target: w * 0.3 * k, gap: 3 } : { target: clamp(110, w * 0.11, 170) * k, gap: 4 }),
 };
 
 /**
  * Arena's tempo: one tall row with a highlight or two, then two low rows that
  * read like a burst of frames. On a phone: one photo across, then pairs.
  */
-function tempo(ratios: number[], w: number) {
-  const base = w < 560 ? w * 0.3 : clamp(150, w * 0.15, 230);
-  const gap = w < 560 ? 3 : 4;
+function tempo(ratios: number[], w: number, k = 1, g = 1) {
+  const base = (w < 560 ? w * 0.3 : clamp(150, w * 0.15, 230)) * k;
+  const gap = Math.round((w < 560 ? 3 : 4) * g);
   const rows = justify(ratios, w, (row) => (row % 3 === 0 ? base * 1.9 : base), gap, w < 560 ? w * 1.5 : undefined);
   return rowBoxes(rows, ratios, w, gap);
 }
 
-export function ClientGallery({ project: p, favs, favNames, counts, guest, kids, basket, actions, review, back, above, after, only, openId, preview }: {
+export function ClientGallery({ project: p, favs, favNames, counts, guest, kids, basket, actions, review, back, above, after, only, openId, preview, buyLink }: {
   project: GalleryProject;
   favs: Set<string>;
   /** Preview: who picked each photo. */
@@ -112,11 +112,19 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
   /** A photo to open straight away (a link to one photo). */
   openId?: string;
   preview?: boolean;
+  /** The client sees watermarks while photos are for sale: where to buy them. */
+  buyLink?: string;
 }) {
   const t = useT();
   const style = styleOf(p);
   const accent = accentOf(p);
   const [filter, setFilter] = useUrlState<Filter>("filter", "all", ["all", "fav", "popular"]);
+  // Sets: the chapters the studio made, such as "Eerste helft".
+  const sets = setsOf(p);
+  const [chapter, setChapter] = useUrlState<string>("set", "", ["", ...sets]);
+  const size = sizing(p);
+  const fonts = fontVars(p);
+  const numbers = !!p.gallerySettings.showNumbers;
   const [view, setView] = useUrlState<View>("view", "large", ["large", "compact"]);
   const [open, setOpen] = useState<{ list: GalleryImage[]; index: number } | null>(null);
   const [onlyKid, setOnlyKid] = useState(false);
@@ -131,7 +139,8 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
   // Most hearts first; equal ones keep the studio's order.
   const popular = p.gallery.filter((g) => countOf(g) > 0).sort((a, b) => countOf(b) - countOf(a) || numberOf.get(a.id)! - numberOf.get(b.id)!);
   const showPopular = popular.length > 0 || filter === "popular";
-  const listed = filter === "fav" ? p.gallery.filter((g) => favs.has(g.id)) : filter === "popular" ? popular : p.gallery;
+  const inSet = chapter ? p.gallery.filter((g) => g.set === chapter) : p.gallery;
+  const listed = filter === "fav" ? inSet.filter((g) => favs.has(g.id)) : filter === "popular" ? popular.filter((g) => !chapter || g.set === chapter) : inSet;
   const hasKid = (g: GalleryImage) => !!kids?.tags[g.id]?.includes(kids.active);
   const kidCount = p.gallery.filter(hasKid).length;
   // With no photo of this child left, the filter lets go by itself.
@@ -178,6 +187,7 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
       buy={basket && g.buy ? { price: basket.price, on: basket.has(g), toggle: () => basket.toggle(g) } : undefined}
       eager={opts.eager ?? i < 8}
       heart={opts.heart}
+      number={numbers ? numberOf.get(g.id) : undefined}
       t={t}
     />
   );
@@ -188,15 +198,18 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
   else if (layout === "sheet") {
     body = <SheetLayout images={shown} ratios={ratios} tile={tile} numberOf={numberOf} favs={favs} favNames={favNames} counts={countAs === "heart" ? counts : undefined} onToggle={actions.toggle} t={t} />;
   }
-  else if (layout === "tempo") body = <PlacedLayout images={shown} tile={tile} place={(w) => tempo(ratios, w)} />;
+  else if (layout === "tempo") body = <PlacedLayout images={shown} tile={tile} place={(w) => tempo(ratios, w, size.size, size.gap)} />;
   else if (layout === "masonry") {
-    body = <PlacedLayout images={shown} tile={tile} place={(w) => masonry(ratios, w, w < 620 ? 2 : w < 1080 ? 3 : 4, w < 620 ? 8 : 16)} />;
+    // Larger photos: a column fewer; smaller: one more.
+    const extra = size.size < 1 ? 1 : size.size > 1 ? -1 : 0;
+    body = <PlacedLayout images={shown} tile={tile} place={(w) => masonry(ratios, w, Math.max(1, (w < 620 ? 2 : w < 1080 ? 3 : 4) + extra), Math.round((w < 620 ? 8 : 16) * size.gap))} />;
   } else {
-    const sizing = ROWS[layout === "compact" ? "compact" : style.id] || ROWS.atelier;
+    // Rows: each look has its own heights; a chosen layout without one takes Atelier's.
+    const rowsOf = ROWS[layout === "compact" ? "compact" : style.id] || ROWS.atelier;
     body = (
       <PlacedLayout images={shown} tile={tile} place={(w) => {
-        const { target, gap, max } = sizing(w);
-        const g = layout === "compact" && style.id === "noir" ? 2 : gap;
+        const { target, gap, max } = rowsOf(w, size.size);
+        const g = Math.round((layout === "compact" && style.id === "noir" ? 2 : gap) * size.gap);
         return rowBoxes(justify(ratios, w, target, g, max), ratios, w, g);
       }} />
     );
@@ -215,10 +228,13 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
     : null;
   const intro = (
     <>
+      {p.gallerySettings.intro && <p className="g-welcome">{p.gallerySettings.intro}</p>}
       <p className="g-intro">
         {guest ? t.guestIntro(guest.name.split(" ")[0], downloads !== "none") : delivered ? t.galleryDownloadIntro : t.galleryChooseIntro}
       </p>
-      {(downloads === "watermark" || p.watermarked) && <p className="g-small">{guest ? t.watermarkNoteGuest : t.watermarkNote}</p>}
+      {buyLink ? (
+        <p className="g-small">{t.watermarkBuyNote} <a href={buyLink}>{t.watermarkBuyLink}</a>.</p>
+      ) : (downloads === "watermark" || p.watermarked) && <p className="g-small">{guest ? t.watermarkNoteGuest : p.galleryDelivered ? t.watermarkNoteKept : t.watermarkNote}</p>}
       {p.downloadsUntil && !preview && (
         <p className="g-small">{p.downloadsUntil < new Date().toLocaleDateString("sv-SE") ? t.downloadsClosed(fmtDate(p.downloadsUntil)) : downloads !== "none" && t.downloadsOpen(fmtDate(p.downloadsUntil))}</p>
       )}
@@ -244,8 +260,10 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
       className={cx("g-page", preview && "framed")}
       data-style={style.id}
       data-tone={style.dark ? "dark" : "light"}
+      data-theme={p.gallerySettings.theme || undefined}
       data-view={view}
-      style={{ "--g-accent": accent, "--g-on-accent": onAccent(accent), "--g-top": `${top}px` } as CSSProperties}
+      data-gap={p.gallerySettings.gap || undefined}
+      style={{ "--g-accent": accent, "--g-on-accent": onAccent(accent), "--g-top": `${top}px`, ...fonts } as CSSProperties}
     >
       <Helmet>
         {style.font && <link rel="stylesheet" href={fontHref(style.font)} />}
@@ -265,10 +283,20 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
         ) : (
           <>
             {kids && <KidsPanel kids={kids} count={kidCount} only={onlyKidOn} onOnly={setOnlyKid} t={t} />}
+            {sets.length > 0 && (
+              <nav className="g-sets" aria-label={t.setsLabel}>
+                <button type="button" className="g-set" aria-pressed={!chapter} onClick={() => setChapter("")}>{t.allShort}</button>
+                {sets.map((name) => (
+                  <button key={name} type="button" className="g-set" aria-pressed={chapter === name} onClick={() => setChapter(name)}>
+                    {name}<span className="n">{p.gallery.filter((g) => g.set === name).length}</span>
+                  </button>
+                ))}
+              </nav>
+            )}
             <div className="g-bar">
               <div className={cx("g-tabs", showPopular && "three")} role="group" aria-label="Filter">
                 <button type="button" className="g-tab" aria-pressed={filter === "all"} onClick={() => setFilter("all")}>
-                  {t.allShort}<span className="n">{p.gallery.length}</span>
+                  {t.allShort}<span className="n">{inSet.length}</span>
                 </button>
                 <button type="button" className="g-tab" aria-pressed={filter === "fav"} onClick={() => setFilter("fav")}>
                   <Heart fill={filter === "fav" ? "currentColor" : "none"} /><span className="g-tab-label">{t.favoritesShort}</span><span className="n">{favs.size}</span>
@@ -525,15 +553,25 @@ function SheetLayout({ images, ratios, tile, numberOf, favs, favNames, counts, o
 // One photo
 // ---------------------------------------------------------------------------
 
+/** The sets that have photos, in the studio's order. */
+function setsOf(p: GalleryProject): string[] {
+  const used = new Set(p.gallery.map((g) => g.set).filter((x): x is string => !!x));
+  const order = (p.gallerySettings.sets || []).filter((x) => used.has(x));
+  return [...order, ...[...used].filter((x) => !order.includes(x))];
+}
+
 /** Photos already shown once this visit appear without fading in again. */
 const seen = new Set<string>();
 
-function Tile({ img, label, alt, fav, favBy, count, countAs, onOpen, onToggle, onDownload, onSize, kid, buy, eager, heart = true, t }: {
+function Tile({ img, label, alt, fav, favBy, count, countAs, onOpen, onToggle, onDownload, onSize, kid, buy, eager, heart = true, number, t }: {
   img: GalleryImage; label: string; alt: string; fav: boolean; favBy?: string[]; count: number; countAs: CountAs; onOpen: () => void; onToggle?: () => void;
   onDownload?: () => void;
   onSize: (w: number, h: number) => void; kid?: { name: string; on: boolean; onTag: () => void };
   buy?: { price: string; on: boolean; toggle: () => void };
-  eager?: boolean; heart?: boolean; t: T;
+  eager?: boolean; heart?: boolean;
+  /** The photo's number, when the studio shows them. */
+  number?: number;
+  t: T;
 }) {
   const video = isVideo(img.fileName || img.url);
   const [loaded, setLoaded] = useState(() => seen.has(img.url));
@@ -555,6 +593,7 @@ function Tile({ img, label, alt, fav, favBy, count, countAs, onOpen, onToggle, o
         />
       )}
       {video && <span className="g-play" aria-hidden="true"><Play fill="currentColor" /></span>}
+      {number !== undefined && <span className="g-num-badge" aria-hidden="true">{pad(number)}</span>}
       {kid && (
         <button type="button" className={cx("g-kid", kid.on && "on")} aria-pressed={kid.on} aria-label={t.kidsOnPhoto(kid.name)} title={t.kidsOnPhoto(kid.name)}
           onClick={(e) => { e.stopPropagation(); kid.onTag(); }}>
@@ -562,6 +601,7 @@ function Tile({ img, label, alt, fav, favBy, count, countAs, onOpen, onToggle, o
         </button>
       )}
       {img.restriction === "no_social" && <span className="g-nopost" title={t.noSocialHint}><MegaphoneOff aria-hidden="true" /><span>{t.noSocial}</span></span>}
+      {img.bought && <span className="g-buy g-bought" title={t.saleBoughtTag}><Check aria-hidden="true" /><span>{t.saleBoughtTag}</span></span>}
       {buy && (
         <button type="button" className={cx("g-buy", buy.on && "on")} aria-pressed={buy.on} aria-label={buy.on ? `${t.saleChosen}: ${alt}` : `${t.saleAdd(buy.price)}: ${alt}`}
           title={buy.on ? t.saleRemove : t.saleAdd(buy.price)} onClick={(e) => { e.stopPropagation(); buy.toggle(); }}>

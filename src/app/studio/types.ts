@@ -5,6 +5,27 @@ import type { QuoteDetails } from "../components/quote/model";
 
 export type Stage = "lead" | "quote" | "booked" | "shoot" | "editing" | "delivered" | "review" | "archived";
 export type ProjectType = "photo" | "video" | "web";
+
+/** Projecten 2.0: what a project is made of. Each part has its own steps (format.ts STEPS). */
+export type PartKind = ProjectType;
+export type Hold = "" | "waiting" | "paused" | "stopped";
+
+export interface ProjectPart {
+  id: string;
+  kind: PartKind;
+  /** Portret, Sport, Nieuwe website... */
+  category: string;
+  /** One of STEPS[kind]. */
+  stage: string;
+  hold: Hold;
+  /** Admin: why it waits. Portal: what the client is waited on for. */
+  holdNote?: string;
+  holdSince?: string | null;
+  sort?: number;
+  deliveredAt: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
 export type EventKind = "shoot" | "meeting" | "deadline" | "edit" | "other";
 export type LocationKind = "urban" | "nature" | "beach" | "indoor" | "studio" | "other";
 export type BestLight = "" | "morning" | "midday" | "evening" | "night" | "any";
@@ -26,6 +47,14 @@ export interface GalleryImage {
   mine?: boolean;
   /** Group link, watermarked gallery: this guest can buy it. */
   buy?: boolean;
+  /** Group link: bought with an account that is not signed in here. */
+  bought?: boolean;
+  /** The set (chapter) it is in, such as "Eerste helft". */
+  set?: string;
+  /** Admin: a light copy to look at exists. */
+  light?: boolean;
+  /** Admin: when it was uploaded. */
+  addedAt?: string;
 }
 
 export type Restriction = "no_social" | "no_photo";
@@ -87,11 +116,37 @@ export interface Project {
     deliveredAt?: string;
     /** A last day the studio set by hand, instead of a quarter after delivery. */
     downloadsUntil?: string;
+    /** A welcome under the title, in the studio's words. */
+    intro?: string;
+    /** Overrides of the style: layout, light or dark, title font, photo size, space between. */
+    layout?: GalleryLayoutChoice;
+    theme?: "light" | "dark";
+    font?: string;
+    density?: "s" | "m" | "l";
+    gap?: "tight" | "normal" | "airy";
+    showNumbers?: boolean;
+    /** The order the sets show in. */
+    sets?: string[];
+    /** The Watermerk switch: everyone but the studio sees watermarked copies. */
+    watermark?: boolean;
+    /** With the watermark on: the client still gets the originals. */
+    clientOriginals?: boolean;
+    /** The client may download (what they see). */
+    clientDownloads?: boolean;
   };
   /** Portal only: what this client may download right now. */
   downloads?: EarlyDownloads;
+  /** Portal only: the client sees the watermarked copies. */
+  watermarked?: boolean;
   /** The last day of downloading, YYYY-MM-DD; empty while it is not running yet. */
   downloadsUntil?: string;
+  /** Projecten 2.0: the parts, in order. */
+  parts: ProjectPart[];
+  archivedAt?: string | null;
+  /** A Foto or Video part is delivered: the gallery is open. */
+  galleryDelivered?: boolean;
+  /** Admin: who sees what right now. */
+  access?: { watermark: boolean; open: boolean; client: { sees: "original" | "watermark"; downloads: EarlyDownloads } };
   galleryUrls: string[];
   gallery: GalleryImage[];
   events: StudioEvent[];
@@ -112,7 +167,7 @@ export interface Project {
   favoriteIds?: string[];
   unreadMessages?: number;
   /** Portal: the group link the client can pass on, while it is switched on, and how many came in with it. */
-  share?: { url: string; guests: number } | null;
+  share?: { url: string; guests: number; selling?: boolean } | null;
   /** Portal: hearts per photo from the people the group link reached. */
   groupHearts?: Record<string, number>;
   createdAt: string;
@@ -120,7 +175,9 @@ export interface Project {
 }
 
 /** What the client gallery shows: the portal's project, or the part a group link gets to see. */
-export type GalleryProject = Pick<Project, "title" | "stage" | "gallerySettings" | "gallery" | "downloads" | "downloadsUntil"> & {
+export type GalleryLayoutChoice = "rows" | "story" | "masonry" | "sheet" | "tempo";
+
+export type GalleryProject = Pick<Project, "title" | "stage" | "gallerySettings" | "gallery" | "downloads" | "downloadsUntil" | "galleryDelivered"> & {
   events?: Pick<StudioEvent, "kind" | "startsAt">[];
   /** The photos are watermarked copies, also when there is nothing to download. */
   watermarked?: boolean;
@@ -134,13 +191,39 @@ export interface ShareState {
     priority: boolean; priorityPrice: number; priorityDays: number;
     /** Photos for sale while the gallery is watermarked: the start-up price and the normal one (incl. btw). */
     sales: boolean; photoPrice: number; photoPriceNormal: number;
+    /** "5 foto's voor €20"; 0 is no bundle. */
+    bundleSize: number; bundlePrice: number;
+    /** The start-up price runs until this day (YYYY-MM-DD); empty: no end. */
+    discountUntil: string;
+    /** What guests pay today. */
+    priceNow: number;
     /** Mollie runs on the live key, so guests can pay. */
     paymentsLive: boolean;
   } | null;
   guests: ShareGuest[];
   /** Hearts per photo. */
   hearts: Record<string, number>;
-  totals: { guests: number; visits: number; hearts: number; downloads: number; sold: number; revenue: number };
+  totals: { guests: number; visits: number; hearts: number; downloads: number; sold: number; revenue: number; buyers: number };
+}
+
+/** Admin: everything a gallery did, per photo and in lists. */
+export interface GalleryInsights {
+  perImage: { hearts: Record<string, number>; downloads: Record<string, number>; sold: Record<string, number> };
+  /** The latest downloads, a zip as one entry. */
+  downloads: { id: string; who: string; guestId: string | null; clientId: string | null; source: "portal" | "link" | "account"; version: "original" | "watermark"; count: number; images: string[]; at: string }[];
+  orders: GalleryOrder[];
+  totals: { downloads: number; downloaders: number; sold: number; revenue: number; buyers: number; baskets: number };
+}
+
+export interface GalleryOrder {
+  id: string;
+  guest: { id: string; name: string; email: string };
+  images: string[];
+  amount: number;
+  paid: boolean;
+  invoice: { id: string; number: string; status: Invoice["status"] } | null;
+  paidAt: string | null;
+  createdAt: string;
 }
 
 export interface ShareGuest {
@@ -152,6 +235,11 @@ export interface ShareGuest {
   hearts: number;
   /** Asked for a mail when new photos arrive. */
   notifyPhotos: boolean;
+  /** Signed in with an account (to buy). */
+  account?: boolean;
+  /** Photos bought, and what they paid. */
+  bought?: number;
+  spent?: number;
   firstSeenAt: string;
   lastSeenAt: string;
 }

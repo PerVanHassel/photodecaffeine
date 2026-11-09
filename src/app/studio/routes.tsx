@@ -120,6 +120,7 @@ const Login = lazy(() => import("./portal/Auth").then((m) => ({ default: () => <
 const ResetPassword = page(() => import("./portal/Auth"), "ResetPasswordPage");
 export const PublicInvoice = wrap(page(() => import("./portal/PublicInvoice"), "PublicInvoicePage"));
 export const GuestGallery = wrap(page(() => import("./share/GuestGallery"), "GuestGalleryPage"));
+export const MyPhotos = wrap(page(() => import("./share/MyPhotos"), "MyPhotosPage"));
 export const ConsentForm = wrap(page(() => import("./share/ConsentForm"), "ConsentPage"));
 export const ArticleConsent = wrap(page(() => import("./share/ArticleConsent"), "ArticleConsentPage"));
 export const ReviewRedirect = wrap(page(() => import("./share/ReviewRedirect"), "ReviewRedirectPage"));

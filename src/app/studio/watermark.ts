@@ -1,25 +1,29 @@
-// Watermarked copies of gallery photos, made in the admin's browser: the edge
-// function has too little CPU to decode full-size photos itself.
+// The copies of gallery photos, made in the admin's browser: the edge function
+// has too little CPU to decode full-size photos itself. A light copy to look at
+// (the gallery shows that one; the original is only ever downloaded) and the
+// same with the studio's watermark across it.
 
-const LONG_EDGE = 2000;
+const LONG_EDGE = 2048;
 const MARK = "PHOTODECAFFEINE";
 
-/** A JPEG of at most 2000px with the studio name across it, or null when the browser can't read the file. */
+/** A JPEG of at most 2048 px with the studio name across it, or null when the browser can't read the file. */
 export async function watermark(source: Blob, name: string): Promise<File | null> {
   return (await prepareUpload(source, name)).preview;
 }
 
 /**
- * For an upload: the watermarked copy (photos only) and the pixel size as
- * shown, rotation included, from a single decode. 0 × 0 when unreadable.
+ * For an upload: a light copy to look at, the watermarked copy (photos only)
+ * and the pixel size as shown, rotation included, from a single decode. 0 × 0
+ * and no copies when the browser cannot read the file (HEIC and TIFF outside
+ * Safari, for instance).
  */
-export async function prepareUpload(source: Blob, name: string): Promise<{ preview: File | null; w: number; h: number }> {
-  if (source.type.startsWith("video/")) return { preview: null, ...(await videoSize(source)) };
+export async function prepareUpload(source: Blob, name: string): Promise<{ preview: File | null; display: File | null; w: number; h: number }> {
+  if (source.type.startsWith("video/")) return { preview: null, display: null, ...(await videoSize(source)) };
   let bitmap: ImageBitmap;
   try {
     bitmap = await createImageBitmap(source, { imageOrientation: "from-image" });
   } catch {
-    return { preview: null, w: 0, h: 0 }; // HEIC and TIFF outside Safari, for instance
+    return { preview: null, display: null, w: 0, h: 0 };
   }
   const dims = { w: bitmap.width, h: bitmap.height };
   const scale = Math.min(1, LONG_EDGE / Math.max(bitmap.width, bitmap.height));
@@ -31,12 +35,18 @@ export async function prepareUpload(source: Blob, name: string): Promise<{ previ
   const ctx = canvas.getContext("2d")!;
   ctx.drawImage(bitmap, 0, 0, w, h);
   bitmap.close();
-  const font = `600 ${Math.round(Math.max(w, h) / 24)}px "Geist", "Helvetica Neue", Arial, sans-serif`;
+  const base = name.replace(/\.\w+$/, "") || "foto";
+
+  // The light copy first, before the watermark goes on the same canvas.
+  const clean = await new Promise<Blob | null>((done) => canvas.toBlob(done, "image/jpeg", 0.86));
+  const display = clean ? new File([clean], `${base}-view.jpg`, { type: "image/jpeg" }) : null;
+
+  const size = Math.round(Math.max(w, h) / 24);
+  const font = `600 ${size}px "Geist", "Helvetica Neue", Arial, sans-serif`;
   await document.fonts?.load(font).catch(() => undefined);
 
   // Diagonal rows across the whole frame, every other row shifted, so no
   // part of the photo can be cropped out clean.
-  const size = Math.round(Math.max(w, h) / 24);
   ctx.font = font;
   ctx.textBaseline = "middle";
   ctx.lineJoin = "round";
@@ -55,8 +65,7 @@ export async function prepareUpload(source: Blob, name: string): Promise<{ previ
   }
 
   const blob = await new Promise<Blob | null>((done) => canvas.toBlob(done, "image/jpeg", 0.85));
-  if (!blob) return { preview: null, ...dims };
-  return { preview: new File([blob], `${name.replace(/\.\w+$/, "") || "foto"}.jpg`, { type: "image/jpeg" }), ...dims };
+  return { preview: blob ? new File([blob], `${base}.jpg`, { type: "image/jpeg" }) : null, display, ...dims };
 }
 
 function videoSize(file: Blob): Promise<{ w: number; h: number }> {

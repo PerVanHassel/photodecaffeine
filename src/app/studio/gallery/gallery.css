@@ -859,3 +859,111 @@
 .gp-swatch.custom.on { background: var(--c); }
 .gp-swatch.custom:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
 .gp-swatch.custom input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+
+/* ===================================================================== */
+/* Galerij 2.0: the studio's own choices on top of a style               */
+/* ===================================================================== */
+
+/* Light or dark, whatever the style: placed after the styles, so it wins. */
+.g-page[data-theme="dark"] {
+  --g-bg: #0f0e0d;
+  --g-text: #f3f0ea;
+  --g-muted: #a8a197;
+  --g-faint: #736d65;
+  --g-line: #292624;
+  --g-tile: #1a1816;
+  --g-accent-ink: color-mix(in oklab, var(--g-accent) 70%, white);
+  color-scheme: dark;
+}
+.g-page[data-theme="light"] {
+  --g-bg: #fbfaf7;
+  --g-text: #1d1915;
+  --g-muted: #6b635a;
+  --g-faint: #9a9188;
+  --g-line: #e7e2da;
+  --g-tile: #eee9e1;
+  --g-accent-ink: var(--g-accent);
+  color-scheme: light;
+}
+.studio:has(> #portal-main .g-page[data-theme="light"]) { color-scheme: light; }
+
+/* A word of welcome from the studio, under the title. */
+.g-page .g-welcome { max-width: 58ch; margin: 0 0 12px; color: var(--g-text); font-size: clamp(16px, 1.4vw, 19px); line-height: 1.55; white-space: pre-line; text-wrap: pretty; }
+
+/* Sets: the chapters of the gallery. */
+.g-sets { display: flex; gap: 6px; overflow-x: auto; padding: 18px 0 4px; scrollbar-width: none; }
+.g-sets::-webkit-scrollbar { display: none; }
+.studio .g-set {
+  display: inline-flex; align-items: center; gap: 7px; flex: none; height: 36px; padding: 0 15px; border: 1px solid var(--g-line); border-radius: var(--g-control);
+  background: transparent; color: var(--g-text); font-size: 13.5px; font-weight: 600; white-space: nowrap; transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.g-set .n { font-family: var(--mono); font-size: 11.5px; color: var(--g-faint); font-weight: 500; }
+.studio .g-set:hover { border-color: var(--g-text); }
+.studio .g-set[aria-pressed="true"] { background: var(--g-text); border-color: var(--g-text); color: var(--g-bg); }
+.studio .g-set[aria-pressed="true"] .n { color: color-mix(in srgb, var(--g-bg) 70%, transparent); }
+
+/* A photo's number, when the studio shows them. */
+.g-num-badge { position: absolute; z-index: 1; top: 8px; left: 8px; padding: 2px 7px; border-radius: 999px; background: rgba(15, 10, 6, 0.55); color: #fff; font-family: var(--mono); font-size: 11px; pointer-events: none; backdrop-filter: blur(4px); }
+.g-page[data-style="arena"] .g-num-badge, .g-page[data-style="catalogus"] .g-num-badge { border-radius: 0; }
+
+/* Bought with an account: the tag instead of the price. */
+.studio .g-buy.g-bought { background: var(--g-accent); color: var(--g-on-accent); pointer-events: none; }
+
+/* Signing in with a code. */
+.g-account { display: grid; gap: 12px; max-width: 420px; }
+.g-account.compact { max-width: none; }
+.g-account-form { display: grid; gap: 12px; }
+.g-account-form .g-btn { justify-content: center; min-height: 44px; }
+.g-account-sent { display: flex; gap: 8px; align-items: flex-start; margin: 0; color: var(--g-text); font-size: 14px; line-height: 1.5; }
+.g-account-sent svg { flex: none; width: 18px; height: 18px; margin-top: 2px; color: var(--g-accent-ink); }
+.g-field input.g-code { font-family: var(--mono); font-size: 24px; letter-spacing: 0.3em; text-align: center; font-variant-numeric: tabular-nums; }
+.studio .g-link { display: inline-flex; align-items: center; gap: 4px; justify-self: start; padding: 0; border: 0; background: none; color: var(--g-muted); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.studio .g-link:hover { color: var(--g-text); }
+.g-link svg { width: 14px; height: 14px; }
+.studio .g-link.danger { color: #b4432e; }
+.g-account-links { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+/* In a dialog the gallery's colours are not around: take the studio's. */
+.s-dialog .g-account {
+  --g-accent: var(--accent); --g-on-accent: #fff; --g-accent-ink: var(--accent-strong); --g-text: var(--text); --g-muted: var(--muted);
+  --g-faint: var(--faint); --g-line: var(--line-strong); --g-bg: var(--surface); --g-control: 8px; --g-ease: ease;
+}
+.s-dialog .g-account .g-field input { color: var(--text); }
+
+/* Signed in, at the top of the gallery. */
+.g-guest-right { display: inline-flex; align-items: center; gap: 10px; }
+.g-account-chip { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--g-line); border-radius: 999px; padding: 2px; }
+.g-account-chip a, .studio .g-account-chip button { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 0; border-radius: 999px; background: none; color: var(--g-text); font-size: 12.5px; font-weight: 600; text-decoration: none; }
+.g-account-chip svg { width: 14px; height: 14px; }
+.g-account-chip a:hover, .studio .g-account-chip button:hover { background: color-mix(in srgb, var(--g-text) 8%, transparent); }
+.studio .g-account-chip button { padding: 0 8px; color: var(--g-muted); }
+
+.g-dock-hint { display: block; margin-left: 4px; font-size: 12px; font-weight: 500; color: var(--g-muted); }
+
+/* Mijn foto's */
+.g-mine { padding: clamp(16px, 3vw, 28px) var(--g-pad) 120px; }
+.g-mine > * { max-width: 1180px; margin-left: auto; margin-right: auto; }
+.g-mine-wait { padding: 80px 0; color: var(--g-muted); text-align: center; }
+.g-mine-door { display: grid; gap: 14px; max-width: 460px; padding: clamp(48px, 10vw, 120px) 0; }
+.g-mine-door .g-title { font-size: clamp(38px, 6vw, 64px); }
+.g-mine-head { display: grid; gap: 8px; padding: clamp(36px, 7vw, 80px) 0 28px; }
+.g-mine-head .g-title { font-size: clamp(36px, 5.5vw, 60px); }
+.g-mine-gallery { padding: 28px 0; border-top: 1px solid var(--g-line); }
+.g-mine-gallery-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 24px; margin-bottom: 18px; }
+.g-mine-gallery-head .g-title { font-size: clamp(26px, 3.4vw, 38px); }
+.g-mine-gallery-head .g-prio-actions { margin-top: 0; }
+.g-mine-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(46%, 220px), 1fr)); gap: 8px; }
+.g-mine-grid li { position: relative; aspect-ratio: 4 / 5; overflow: hidden; border-radius: var(--g-radius); background: var(--g-tile); }
+.g-mine-grid img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.g-mine-receipts { list-style: none; display: grid; gap: 6px; margin: 16px 0 0; padding: 0; font-size: 13px; color: var(--g-muted); }
+.g-mine-receipts li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.g-mine-receipts svg { width: 15px; height: 15px; }
+.g-mine-receipts a { color: var(--g-text); font-weight: 600; }
+.g-mine-account { display: grid; gap: 18px; padding: 32px 0; border-top: 1px solid var(--g-line); }
+.g-mine-account .g-title { font-size: clamp(24px, 3vw, 32px); }
+.g-mine-account-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; }
+.g-mine-account-grid .g-btn { justify-self: start; }
+.g-mine-account-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; }
+.g-mine-delete { display: grid; gap: 4px; max-width: 46ch; text-align: right; }
+.g-mine .g-small a { color: var(--g-text); display: inline-flex; align-items: center; gap: 4px; }
+.g-mine .g-small a svg { width: 13px; height: 13px; }
+.s-dialog .g-account .g-field label { font-size: 12.5px; font-weight: 600; color: var(--muted); }

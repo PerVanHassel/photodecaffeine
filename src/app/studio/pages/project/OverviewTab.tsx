@@ -3,21 +3,23 @@ import { Check, Copy, Globe, Mail, MessageSquareHeart, Plus, RotateCw, Star, Tra
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { get, post, put } from "../../api";
-import { ago, euro, TYPE_LABEL } from "../../format";
+import { ago, euro, hasKind } from "../../format";
 import { copyText } from "../../gallery/share";
 import { keys, useAction, useClients, useQuotes } from "../../queries";
-import type { Deliverable, Project, ProjectType } from "../../types";
-import { Button, Card, Field, Input, Pill, Select, SelectField, TextAreaField, TextField, undoToast, useConfirm } from "../../ui";
+import type { Deliverable, Project } from "../../types";
+import { Button, Card, Field, Input, Pill, Select, TextAreaField, TextField, undoToast, useConfirm } from "../../ui";
+import { PartsSummary } from "./parts";
 import { useUnsavedChanges } from "../../unsaved";
 
-export function OverviewTab({ project }: { project: Project }) {
+export function OverviewTab({ project, onSelectPart }: { project: Project; onSelectPart: (partId: string) => void }) {
   return (
     <div className="s-grid-2">
       <div className="s-stack lg">
         <NoAgreementNote project={project} />
+        <PartsSummary project={project} onSelect={onSelectPart} />
         <DetailsCard project={project} />
         <DeliverablesCard project={project} />
-        {project.type === "web" && <DemosCard project={project} />}
+        {hasKind(project, "web") && <DemosCard project={project} />}
       </div>
       <div className="s-stack lg">
         <ClientsCard project={project} />
@@ -30,6 +32,8 @@ export function OverviewTab({ project }: { project: Project }) {
 /** Booked without an accepted quote: nobody said yes to the terms. */
 function NoAgreementNote({ project: p }: { project: Project }) {
   const quotes = useQuotes();
+  // A free start-up sale shoot has no price to agree to.
+  if (p.gallerySettings.watermark && p.valueCents === 0) return null;
   if (!quotes.data || !["booked", "shoot", "editing", "delivered", "review"].includes(p.stage)) return null;
   if (quotes.data.some((q) => q.projectId === p.id && q.status === "accepted")) return null;
   return (
@@ -48,7 +52,6 @@ function DetailsCard({ project: p }: { project: Project }) {
   const save = useAction({
     fn: () => put(`/admin/project/${p.id}`, {
       title: form.title.trim(),
-      type: form.type,
       description: form.description,
       dueDate: form.dueDate || "",
       valueCents: form.value === "" ? null : Math.round(Number(form.value.replace(",", ".")) * 100),
@@ -69,10 +72,7 @@ function DetailsCard({ project: p }: { project: Project }) {
       )}
     >
       <div className="s-form-grid">
-        <TextField className="full" label="Titel" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-        <SelectField label="Soort" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as ProjectType })}>
-          {(Object.keys(TYPE_LABEL) as ProjectType[]).map((t) => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
-        </SelectField>
+        <TextField className="full" label="Titel" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} hint="De naam van de opdracht, niet van één onderdeel." />
         <Field label="Deadline" htmlFor="pd-due">
           <Input id="pd-due" type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
         </Field>
@@ -84,7 +84,6 @@ function DetailsCard({ project: p }: { project: Project }) {
           error={valueInvalid ? "Vul een bedrag in, bijv. 895 of 895,50" : null}
           hint="Voor de pijplijn; de factuur komt uit de offerte"
         />
-        <div />
         <TextAreaField className="full" label="Omschrijving (zichtbaar voor de klant)" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={4} />
       </div>
     </Card>
@@ -94,7 +93,6 @@ function DetailsCard({ project: p }: { project: Project }) {
 function fromProject(p: Project) {
   return {
     title: p.title,
-    type: p.type,
     description: p.description,
     dueDate: p.dueDate || "",
     value: p.valueCents != null ? String(p.valueCents / 100).replace(".", ",") : "",

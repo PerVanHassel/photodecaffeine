@@ -1,11 +1,11 @@
-import { ArrowLeft, Eye, MoreHorizontal, Trash2 } from "lucide-react";
+import { Archive, ArrowLeft, ExternalLink, Eye, MoreHorizontal, Trash2 } from "lucide-react";
 import * as Popover from "@radix-ui/react-popover";
 import { useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { del, put } from "../../api";
-import { PIPELINE, STAGE_LABEL, TYPE_LABEL } from "../../format";
+import { fmtDate, hasGallery, hasKind, mainPart, PART_LABEL } from "../../format";
 import { keys, useAction, useConsent, useProject } from "../../queries";
-import type { Project, Stage } from "../../types";
+import type { Project } from "../../types";
 import { Button, ErrorState, PageHead, Skeleton, useConfirm } from "../../ui";
 import { ConsentTab } from "./ConsentTab";
 import { FinanceTab } from "./FinanceTab";
@@ -13,27 +13,35 @@ import { GalleryTab } from "./GalleryTab";
 import { MessagesTab } from "./MessagesTab";
 import { NotesTab } from "./NotesTab";
 import { OverviewTab } from "./OverviewTab";
+import { PartControls, PartsBar } from "./parts";
 import { PlanningTab } from "./PlanningTab";
+import { SharingTab } from "./SharingTab";
+import { StyleTab } from "./StyleTab";
 
-const TABS = [
+// One project, made of parts (Foto, Video, Website). The parts sit on top with
+// their own steps; the tabs below are the project's: Foto and Video share the
+// gallery, its look and the link that sells it.
+
+type Tab = { id: string; label: string; when?: (p: Project) => boolean };
+const TABS: Tab[] = [
   { id: "overview", label: "Overzicht" },
+  { id: "gallery", label: "Galerij", when: hasGallery },
+  { id: "style", label: "Stijl", when: hasGallery },
+  { id: "sharing", label: "Delen & verkoop", when: hasGallery },
+  { id: "consent", label: "Toestemming", when: (p) => hasKind(p, "photo") },
   { id: "planning", label: "Planning" },
-  { id: "gallery", label: "Galerij" },
-  { id: "consent", label: "Toestemming" },
   { id: "messages", label: "Berichten" },
   { id: "finance", label: "Financieel" },
   { id: "notes", label: "Notities" },
-] as const;
-type TabId = (typeof TABS)[number]["id"];
+];
 
 export function ProjectPage() {
   const { id = "" } = useParams();
   const [params, setParams] = useSearchParams();
-  const tab = (TABS.some((t) => t.id === params.get("tab")) ? params.get("tab") : "overview") as TabId;
   const project = useProject(id);
   const p = project.data;
   // A website has no shoot to ask consent for.
-  const consent = useConsent(id, !!p && p.type !== "web");
+  const consent = useConsent(id, !!p && hasKind(p, "photo"));
   const answers = consent.data?.children || [];
   const needCare = answers.filter((k) => k.answer !== "full").length;
 
@@ -50,31 +58,48 @@ export function ProjectPage() {
       <div className="s-view" aria-busy="true">
         <Skeleton h={14} w={120} />
         <Skeleton h={34} w={360} />
+        <Skeleton h={64} r={12} />
         <Skeleton h={32} w={560} r={16} />
         <Skeleton h={320} r={12} />
       </div>
     );
   }
 
+  const tabs = TABS.filter((t) => !t.when || t.when(p));
+  const asked = params.get("tab");
+  const tab = tabs.some((t) => t.id === asked) ? asked! : "overview";
+  const part = p.parts.find((x) => x.id === params.get("deel")) || mainPart(p);
+  const set = (next: Record<string, string>) => {
+    const q = new URLSearchParams(params);
+    for (const [k, v] of Object.entries(next)) {
+      if (v) q.set(k, v);
+      else q.delete(k);
+    }
+    setParams(q, { replace: true });
+  };
   const clientLine = (p.clients || []).map((c) => c.company || c.name).join(", ");
+  const partsLine = p.parts.length > 1 ? `${p.parts.length} onderdelen` : part ? PART_LABEL[part.kind] : "";
 
   return (
     <div className="s-view">
       <PageHead
         back={<Link to="/admin/pipeline" className="s-back"><ArrowLeft size={14} /> Pijplijn</Link>}
-        eyebrow={[clientLine, TYPE_LABEL[p.type]].filter(Boolean).join(" · ")}
+        eyebrow={[clientLine, partsLine, p.archivedAt ? `Gearchiveerd op ${fmtDate(p.archivedAt)}` : ""].filter(Boolean).join(" · ")}
         title={p.title}
         actions={<HeaderActions project={p} />}
       />
-      <Stepper project={p} />
+      <div className="s-stack" style={{ gap: 10 }}>
+        <PartsBar project={p} selected={part} onSelect={(deel) => set({ deel: deel === mainPart(p)?.id ? "" : deel })} />
+        {part && <PartControls project={p} part={part} />}
+      </div>
       <div className="s-tabs" role="tablist" aria-label="Projectonderdelen">
-        {TABS.filter((t) => t.id !== "consent" || p.type !== "web").map((t) => (
+        {tabs.map((t) => (
           <button
             key={t.id}
             role="tab"
             type="button"
             aria-selected={t.id === tab}
-            onClick={() => setParams(t.id === "overview" ? {} : { tab: t.id }, { replace: true })}
+            onClick={() => set({ tab: t.id === "overview" ? "" : t.id })}
           >
             {t.label}
             {t.id === "messages" && !!p.unreadMessages && <span className="badge">{p.unreadMessages}</span>}
@@ -86,10 +111,12 @@ export function ProjectPage() {
         ))}
       </div>
       <div role="tabpanel">
-        {tab === "overview" && <OverviewTab project={p} />}
-        {tab === "planning" && <PlanningTab project={p} />}
+        {tab === "overview" && <OverviewTab project={p} onSelectPart={(deel) => set({ deel })} />}
         {tab === "gallery" && <GalleryTab project={p} />}
+        {tab === "style" && <StyleTab project={p} />}
+        {tab === "sharing" && <SharingTab project={p} />}
         {tab === "consent" && <ConsentTab project={p} />}
+        {tab === "planning" && <PlanningTab project={p} />}
         {tab === "messages" && <MessagesTab project={p} />}
         {tab === "finance" && <FinanceTab project={p} />}
         {tab === "notes" && <NotesTab project={p} />}
@@ -98,55 +125,15 @@ export function ProjectPage() {
   );
 }
 
-function Stepper({ project: p }: { project: Project }) {
-  const confirm = useConfirm();
-  const consent = useConsent(p.id, p.type !== "web");
-  const index = PIPELINE.indexOf(p.stage);
-  const move = useAction({
-    fn: (stage: Stage) => put(`/admin/project/${p.id}`, { stage }),
-    invalidate: () => [keys.project(p.id), keys.projects, keys.overview],
-    success: (_d, stage) => `Verplaatst naar ${STAGE_LABEL[stage]}`,
-  });
-
-  async function go(stage: Stage) {
-    if (stage === p.stage) return;
-    if (stage === "delivered" && !["delivered", "review", "archived"].includes(p.stage)) {
-      const childPhotos = consent.data?.children.some((k) => k.photoUrl) ?" De foto's van de kinderen bij Toestemming worden dan verwijderd." : "";
-      const ok = await confirm({ title: "Project leveren?", body: `De klant krijgt een mail dat de galerij klaarstaat.${childPhotos}`, confirm: "Leveren en mailen" });
-      if (!ok) return;
-    }
-    move.mutate(stage);
-  }
-
-  return (
-    <div className="s-row">
-      <div className="s-stepper" role="group" aria-label="Stap in de pijplijn">
-        {PIPELINE.map((s, i) => (
-          <button
-            key={s}
-            type="button"
-            className={s === p.stage ? "now" : i < index ? "done" : undefined}
-            aria-current={s === p.stage ? "step" : undefined}
-            onClick={() => go(s)}
-            disabled={move.isPending}
-          >
-            {STAGE_LABEL[s]}
-          </button>
-        ))}
-      </div>
-      {p.stage === "archived" && <span className="s-pill plain">Gearchiveerd</span>}
-    </div>
-  );
-}
-
 function HeaderActions({ project: p }: { project: Project }) {
   const navigate = useNavigate();
   const confirm = useConfirm();
   const [open, setOpen] = useState(false);
+  const archived = !!p.archivedAt;
   const archive = useAction({
-    fn: () => put(`/admin/project/${p.id}`, { stage: p.stage === "archived" ? "delivered" : "archived" }),
-    invalidate: () => [keys.project(p.id), keys.projects],
-    success: p.stage === "archived" ? "Teruggezet uit het archief" : "Gearchiveerd",
+    fn: () => put(`/admin/project/${p.id}`, { archived: !archived }),
+    invalidate: () => [keys.project(p.id), keys.projects, keys.overview],
+    success: archived ? "Teruggezet uit het archief" : "Gearchiveerd, zonder mail",
   });
   const remove = useAction({
     fn: () => del(`/admin/project/${p.id}`),
@@ -157,25 +144,27 @@ function HeaderActions({ project: p }: { project: Project }) {
 
   return (
     <>
-      <Link className="s-btn" to={`/admin/project/${p.id}/gallery`}><Eye size={15} />Voorbeeld als klant</Link>
+      {hasGallery(p) && <Link className="s-btn" to={`/admin/project/${p.id}/gallery`}><Eye size={15} />Galerij als klant</Link>}
       <Popover.Root open={open} onOpenChange={setOpen}>
         <Popover.Trigger asChild><Button iconOnly aria-label="Meer acties" icon={<MoreHorizontal />} /></Popover.Trigger>
         <Popover.Portal>
           <div className="studio" style={{ minHeight: 0 }}>
-            <Popover.Content align="end" sideOffset={6} className="s-card" style={{ padding: 6, minWidth: 200, zIndex: 50, boxShadow: "var(--shadow)" }}>
+            <Popover.Content align="end" sideOffset={6} className="s-card s-menu" style={{ zIndex: 50 }}>
               {/* The whole portal as this project's (first) client sees it, in a new tab. */}
               {p.clientIds?.[0] && (
-                <a className="s-item" style={{ padding: "8px 10px", gridTemplateColumns: "1fr", textDecoration: "none" }}
-                  href={`/portal/project/${p.id}?als=${p.clientIds[0]}`} target="_blank" rel="noreferrer" onClick={() => setOpen(false)}>
-                  <span className="t">Portaal als klant bekijken</span>
+                <a className="s-menu-item" href={`/portal/project/${p.id}?als=${p.clientIds[0]}`} target="_blank" rel="noreferrer" onClick={() => setOpen(false)}>
+                  <span className="s-menu-ico" aria-hidden="true"><ExternalLink size={15} /></span>
+                  <span><b>Portaal als klant bekijken</b><small>In een nieuw tabblad, alleen kijken</small></span>
                 </a>
               )}
-              <button className="s-item" style={{ padding: "8px 10px", gridTemplateColumns: "1fr" }} onClick={() => { setOpen(false); archive.mutate(); }}>
-                <span className="t">{p.stage === "archived" ? "Uit archief halen" : "Archiveren"}</span>
+              <button type="button" className="s-menu-item" onClick={() => { setOpen(false); archive.mutate(); }}>
+                <span className="s-menu-ico" aria-hidden="true"><Archive size={15} /></span>
+                <span><b>{archived ? "Uit het archief halen" : "Archiveren"}</b><small>{archived ? "Het project komt terug op het bord" : "Geen mail. Het project houdt zijn stappen."}</small></span>
               </button>
+              <span className="s-menu-sep" aria-hidden="true" />
               <button
-                className="s-item"
-                style={{ padding: "8px 10px", gridTemplateColumns: "auto 1fr", color: "var(--bad)" }}
+                type="button"
+                className="s-menu-item danger"
                 onClick={async () => {
                   setOpen(false);
                   const ok = await confirm({
@@ -187,7 +176,8 @@ function HeaderActions({ project: p }: { project: Project }) {
                   if (ok) remove.mutate();
                 }}
               >
-                <Trash2 size={15} /><span className="t">Verwijderen</span>
+                <span className="s-menu-ico" aria-hidden="true"><Trash2 size={15} /></span>
+                <span><b>Verwijderen</b><small>Alles van dit project gaat weg</small></span>
               </button>
             </Popover.Content>
           </div>

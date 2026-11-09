@@ -17,6 +17,49 @@ const iso = (offsetDays: number, hour = 10, minute = 0) => {
 const dateOnly = (offsetDays: number) => new Date(now + offsetDays * day).toISOString().slice(0, 10);
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 
+/** Mirrors stepForStage in lib/parts.ts. */
+function stepFor(kind: string, stage: string): string {
+  if (kind === "web") return ({ lead: "lead", quote: "quote", booked: "booked", shoot: "intake", editing: "build", delivered: "live", review: "live", archived: "live" } as Record<string, string>)[stage] || "booked";
+  return ({ lead: "lead", quote: "quote", booked: "booked", shoot: "shoot", editing: "editing", delivered: "delivered", review: "done", archived: "done" } as Record<string, string>)[stage] || "booked";
+}
+const STEPS_OF: Record<string, string[]> = {
+  photo: ["lead", "quote", "booked", "shoot", "editing", "delivered", "done"],
+  video: ["lead", "quote", "booked", "shoot", "editing", "delivered", "done"],
+  web: ["lead", "quote", "booked", "intake", "design", "build", "review", "live"],
+};
+const DELIVERY_OF: Record<string, string> = { photo: "delivered", video: "delivered", web: "live" };
+const partDelivered = (p: Json) => STEPS_OF[p.kind].indexOf(p.stage) >= STEPS_OF[p.kind].indexOf(DELIVERY_OF[p.kind]);
+const mkPart = (n: number, kind: string, stage: string, extra: Json = {}) => ({
+  id: id(n), kind, category: "", stage, hold: "", holdNote: "", holdSince: null, sort: 0, deliveredAt: partDelivered({ kind, stage }) ? iso(-3) : null, createdAt: iso(-20), updatedAt: iso(-1), ...extra,
+});
+
+/** Mirrors galleryAccess in lib/projects.ts: the Watermerk switch, or the older earlyDownloads. */
+function accessOf(x: Json) {
+  const gs = x.gallerySettings || {};
+  const delivered = (x.parts || []).some((p: Json) => p.kind !== "web" && p.hold !== "stopped" && partDelivered(p));
+  if (typeof gs.watermark !== "boolean") {
+    const sees = !delivered && gs.earlyDownloads === "watermark" ? "watermark" : "original";
+    return { delivered, open: true, watermark: gs.earlyDownloads === "watermark" && !delivered, client: { sees, downloads: delivered || gs.earlyDownloads !== "none" ? sees : "none" } };
+  }
+  const sees = gs.watermark && !gs.clientOriginals ? "watermark" : "original";
+  return { delivered, open: true, watermark: gs.watermark, client: { sees, downloads: gs.clientDownloads !== false ? sees : "none" } };
+}
+
+/** The older fields the phone app reads, from the first part that has not stopped. */
+function syncLegacy(x: Json) {
+  const main = x.parts.find((p: Json) => p.hold !== "stopped") || x.parts[0];
+  if (!main) return;
+  const old: Record<string, string> = main.kind === "web"
+    ? { lead: "lead", quote: "quote", booked: "booked", intake: "booked", design: "editing", build: "editing", review: "editing", live: "delivered" }
+    : { lead: "lead", quote: "quote", booked: "booked", shoot: "shoot", editing: "editing", delivered: "delivered", done: "review" };
+  x.stage = x.archivedAt ? "archived" : old[main.stage] || "booked";
+  x.type = main.kind;
+  const a = accessOf(x);
+  x.galleryDelivered = a.delivered;
+  x.access = { watermark: a.watermark, open: a.open, client: a.client };
+}
+
+
 // Stock photos so the gallery and cards look real while clicking through.
 const PHOTOS = [
   "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=900&q=70",
@@ -67,13 +110,22 @@ const projects: Json[] = [
       { id: id(62), kind: "meeting", title: "Intake", startsAt: iso(-5, 10), endsAt: iso(-5, 11), allDay: false, locationId: null, locationText: "Telefonisch", link: "", notes: "", clientVisible: true },
     ],
     gallery: PHOTOS.slice(0, 4), description: "Avondshoot aan de Maas met rollers op de brug.", deliverables: [{ name: "bewerkte foto's", count: 25, done: false }, { name: "reel van 30 s", count: 1, done: false }] }),
-  mkProject(52, "Teamfoto's 2026", "photo", "editing", [id(2)], { valueCents: 118000, dueDate: dateOnly(-2), gallery: PHOTOS.slice(4, 12), favorites: [0, 2, 3, 6] }),
+  mkProject(52, "Teamfoto's 2026", "photo", "editing", [id(2)], { valueCents: 0, dueDate: dateOnly(2), category: "Sport",
+    gallery: PHOTOS.slice(4, 12).map((url, i) => ({ url, set: i < 4 ? "Eerste helft" : i < 7 ? "Tweede helft" : "Teamfoto", ...(i === 6 ? { watermark: false } : {}) })), favorites: [0, 2, 3, 6],
+    gallerySettings: { style: "arena", watermark: true, clientOriginals: false, clientDownloads: false, sets: ["Eerste helft", "Tweede helft", "Teamfoto"], intro: "Wat een wedstrijd! Hier staan alle foto's. Tik op de prijs bij je favorieten." } }),
   mkProject(53, "Portret Noor Bakker", "photo", "quote", [id(3)], { valueCents: 45000 }),
   mkProject(54, "Najaarsmenu", "photo", "lead", [id(4)], { events: [{ id: id(63), kind: "shoot", title: "", startsAt: iso(4, 9, 30), endsAt: iso(4, 12), allDay: false, locationId: null, locationText: "Witte de Withstraat", link: "", notes: "", clientVisible: true }] }),
   mkProject(55, "Zomerterras", "photo", "delivered", [id(4)], { valueCents: 54000, gallery: PHOTOS.slice(8, 11) }),
-  mkProject(56, "Bruiloft Lotte & Sem", "photo", "editing", [id(2)], { valueCents: 125000, gallery: WEDDING, favorites: [1, 4, 9],
+  mkProject(56, "Bruiloft Lotte & Sem", "photo", "editing", [id(2)], { valueCents: 125000, gallery: WEDDING, favorites: [1, 4, 9], category: "Bruiloft",
+    parts: [mkPart(561, "photo", "editing", { category: "Bruiloft" }), mkPart(562, "video", "shoot", { category: "Korte film", sort: 1 })],
     gallerySettings: { style: "editorial", subtitle: "Kasteel Wouw, 14 juni 2026" },
     events: [{ id: id(64), kind: "shoot", title: "Bruiloft", startsAt: iso(-20, 11), endsAt: iso(-20, 23), allDay: false, locationId: null, locationText: "Kasteel Wouw", link: "", notes: "", clientVisible: true }] }),
+  mkProject(58, "Suroh", "web", "booked", [id(2)], { valueCents: 80000, category: "Nieuwe website",
+    parts: [
+      mkPart(581, "web", "booked", { category: "Nieuwe website", hold: "waiting", holdNote: "Stuur je logo en kleuren, dan gaan we verder met het ontwerp.", holdSince: iso(-6) }),
+      mkPart(582, "photo", "lead", { category: "Portret", sort: 1 }),
+      mkPart(583, "video", "lead", { category: "Sfeervideo", sort: 2 }),
+    ] }),
   mkProject(57, "Stratenloop Roosendaal 10K", "photo", "delivered", [id(2)], { valueCents: 68000, gallery: [...WEDDING].reverse().slice(0, 18), favorites: [2, 5],
     gallerySettings: { style: "arena", subtitle: "12 oktober, Markt Roosendaal" } }),
 ];
@@ -83,7 +135,7 @@ const projects: Json[] = [
 const shares: Json[] = [
   { projectId: id(57), token: "k3F9xQ2mPz7Lw4Rb", active: true, downloads: true, priority: false, priorityPrice: 5, priorityDays: 2, sales: false, photoPrice: 2.99, photoPriceNormal: 7.5, createdAt: iso(-3) },
   { projectId: id(56), token: "Wd8hT4nE2sYq9cVa", active: true, downloads: false, priority: false, priorityPrice: 5, priorityDays: 2, sales: false, photoPrice: 2.99, photoPriceNormal: 7.5, createdAt: iso(-6) },
-  { projectId: id(52), token: "Jv6nP3rT8kYw2Qd5", active: true, downloads: false, priority: true, priorityPrice: 5, priorityDays: 2, sales: true, photoPrice: 2.99, photoPriceNormal: 7.5, createdAt: iso(-1) },
+  { projectId: id(52), token: "Jv6nP3rT8kYw2Qd5", active: true, downloads: false, priority: true, priorityPrice: 5, priorityDays: 2, sales: true, photoPrice: 5, photoPriceNormal: 5, bundleSize: 5, bundlePrice: 20, discountUntil: "", createdAt: iso(-1) },
 ];
 const guestList: Json[] = [
   ["Ruben Smit", "ruben@example.nl", 4, 12, -3, 0],
@@ -183,13 +235,18 @@ function shareState(projectId: string) {
       url: `https://www.photodecaffeine.com/galerij/${share.token}`, active: share.active, downloads: share.downloads, consentRequired: !!share.consentRequired, createdAt: share.createdAt,
       priority: !!share.priority, priorityPrice: share.priorityPrice ?? 5, priorityDays: share.priorityDays ?? 2,
       sales: !!share.sales, photoPrice: share.photoPrice ?? 2.99, photoPriceNormal: share.photoPriceNormal ?? 7.5, paymentsLive: false,
+      bundleSize: share.bundleSize || 0, bundlePrice: share.bundlePrice || 0, discountUntil: share.discountUntil || "", priceNow: share.photoPrice ?? 2.99,
     },
-    guests: list.map(({ projectId: _p, key: _k, ...g }) => g),
+    guests: list.map(({ projectId: _p, key: _k, ...g }) => {
+      const paid = mockOrders().filter((o) => o.guestId === g.id && o.paid);
+      return { ...g, account: !!g.account || paid.length > 0, bought: paid.reduce((n, o) => n + o.images.length, 0), spent: paid.reduce((n, o) => n + (o.amount ?? o.images.length * o.price), 0) };
+    }),
     hearts,
     totals: {
       guests: list.length, visits: sum(list.map((g) => g.visits)), hearts: sum(Object.values(hearts)), downloads: sum(list.map((g) => g.downloads)),
       sold: sum(mockOrders().filter((o) => o.projectId === projectId && o.paid).map((o) => o.images.length)),
-      revenue: sum(mockOrders().filter((o) => o.projectId === projectId && o.paid).map((o) => o.images.length * o.price)),
+      revenue: sum(mockOrders().filter((o) => o.projectId === projectId && o.paid).map((o) => o.amount ?? o.images.length * o.price)),
+      buyers: new Set(mockOrders().filter((o) => o.projectId === projectId && o.paid).map((o) => o.guestId)).size,
     },
   };
 }
@@ -211,7 +268,8 @@ function shareReply(token: string, key: string, preview: boolean) {
   const share = shares.find((s) => s.token === token && s.active);
   if (!share) throw new ApiError(404, "Deze link werkt niet (meer). Vraag degene die hem stuurde om een nieuwe.");
   const x = projects.find((y) => y.id === share.projectId);
-  const guest = guestList.find((g) => g.key === key && g.projectId === share.projectId);
+  const account = preview ? null : mockBuyer();
+  const guest = account ? guestForAccount(share.projectId, account) : guestList.find((g) => g.key === key && g.projectId === share.projectId);
   const shoot = x.events.find((e: Json) => e.kind === "shoot");
   if (!guest && !preview) {
     const cover = x.gallery.find((g: Json) => g.id === x.gallerySettings.coverImageId) || x.gallery[0];
@@ -229,23 +287,32 @@ function shareReply(token: string, key: string, preview: boolean) {
   const priority = guestPriority(share, x, guest || null);
   const raw = new Map(x.gallery.map((g: Json) => [g.id, g]));
   const bought = guest ? mockOrders().filter((o) => o.guestId === guest.id && o.paid).flatMap((o) => o.images) : [];
-  const own = new Set<string>([...priority.own, ...bought]);
+  // Bought photos are theirs only signed in with the account they bought with.
+  const own = new Set<string>([...priority.own, ...(account ? bought : [])]);
+  const elsewhere = new Set<string>(account ? [] : bought);
   // Selling puts the guests' view on watermark by itself (lib/orders.ts), whatever the client sees.
   const forSale = !!share.sales;
+  const a = accessOf(x);
+  const sees = forSale || a.watermark ? "watermark" : "original";
   return {
     guest: guest ? { name: guest.name, email: guest.email, notifyPhotos: !!guest.notifyPhotos } : null,
+    account: account && guest ? { email: account.email, name: account.name } : null,
     preview: !guest,
     priority: priority.view,
     sales: forSale ? {
-      price: share.photoPrice, normalPrice: share.photoPriceNormal, payable: !!guest,
+      price: share.photoPrice, normalPrice: share.photoPriceNormal, bundleSize: share.bundleSize || 0, bundlePrice: share.bundlePrice || 0, discountUntil: share.discountUntil || "",
+      payable: !!guest,
       statement: { nl: orderStatementOf("nl", share.photoPrice), en: orderStatementOf("en", share.photoPrice) },
     } : null,
     project: {
-      id: x.id, title: x.title, stage: x.stage, gallerySettings: x.gallerySettings,
-      gallery: client.gallery.map((g: Json) => (own.has(g.id)
-        ? { ...g, url: (raw.get(g.id) as Json)?.url || g.url, download: true, mine: true }
-        : { ...g, download: canDownload && g.download, ...(forSale ? { buy: true } : {}) })),
-      downloads: canDownload ? client.downloads : "none", watermarked: client.downloads === "watermark",
+      id: x.id, title: x.title, stage: x.stage, gallerySettings: client.gallerySettings, galleryDelivered: a.delivered,
+      gallery: x.gallery.filter((g: Json) => g.restriction !== "no_photo" && (own.has(g.id) || sees === "original" || g.watermark !== false)).map((g0: Json) => {
+        const g = { id: g0.id, fileName: g0.fileName, w: g0.w, h: g0.h, restriction: g0.restriction, set: g0.set, url: g0.url, download: canDownload };
+        if (own.has(g.id)) return { ...g, url: (raw.get(g.id) as Json)?.url || g.url, download: true, mine: true };
+        if (elsewhere.has(g.id)) return { ...g, bought: true };
+        return { ...g, ...(forSale ? { buy: true } : {}) };
+      }),
+      downloads: canDownload ? sees : "none", watermarked: sees === "watermark",
       events: shoot ? [{ kind: "shoot", startsAt: shoot.startsAt }] : [],
     },
     hearts: heartCounts(x.id),
@@ -418,26 +485,300 @@ function saveConsent(token: string, body: FormData) {
 function guestOf(token: string, key: string) {
   const share = shares.find((s) => s.token === token && s.active);
   if (!share) throw new ApiError(404, "Deze link werkt niet (meer).");
-  const guest = guestList.find((g) => g.key === key && g.projectId === share.projectId);
+  const account = mockBuyer();
+  const guest = account ? guestForAccount(share.projectId, account) : guestList.find((g) => g.key === key && g.projectId === share.projectId);
   if (!guest) throw new ApiError(401, "Vul eerst je naam en e-mail in.");
-  return { share, guest };
+  return { share, guest, account };
+}
+
+// --- accounts to buy with (routes/account.ts) ---
+const SESSION_KEY = "sb-uunwhesmymkwmkgqkmxy-auth-token";
+
+/** The mock's stand-in for a sign-in with a code: a session marked buyer, as the server marks it. */
+export function mockSignIn(email: string, name: string) {
+  const user = { id: `buyer-${email}`, email, aud: "authenticated", role: "authenticated", app_metadata: { buyer: true }, user_metadata: { name: name || email.split("@")[0] }, created_at: new Date().toISOString() };
+  const session = { access_token: "mock", refresh_token: "mock", token_type: "bearer", expires_in: 86400, expires_at: Math.floor(Date.now() / 1000) + 86400, user };
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+}
+
+/** The signed-in account, when it is not the studio. */
+function mockBuyer(): { id: string; email: string; name: string } | null {
+  try {
+    const user = JSON.parse(localStorage.getItem(SESSION_KEY) || "null")?.user;
+    if (!user || user.app_metadata?.role === "admin") return null;
+    return { id: user.id, email: String(user.email || "").toLowerCase(), name: user.user_metadata?.name || "" };
+  } catch {
+    return null;
+  }
+}
+
+function guestForAccount(projectId: string, account: { id: string; email: string; name: string }) {
+  let guest = guestList.find((g) => g.projectId === projectId && g.email === account.email);
+  if (!guest) {
+    guest = { id: `g-${account.id}-${projectId}`, projectId, key: "", name: account.name || account.email, email: account.email, visits: 1, downloads: 0, notifyPhotos: false, firstSeenAt: new Date().toISOString(), lastSeenAt: new Date().toISOString() };
+    guestList.push(guest);
+  }
+  guest.account = true;
+  return guest;
+}
+
+// The download log (lib/downloads.ts), kept for the visit.
+const downloadLog: Json[] = [
+  { id: "d1", projectId: id(57), imageId: id(5700), who: "Ruben Smit", source: "link", version: "original", batch: "z1", at: iso(-1, 20, 4) },
+  { id: "d2", projectId: id(57), imageId: id(5703), who: "Ruben Smit", source: "link", version: "original", batch: "z1", at: iso(-1, 20, 4) },
+  { id: "d3", projectId: id(57), imageId: id(5705), who: "Ruben Smit", source: "link", version: "original", batch: "z1", at: iso(-1, 20, 4) },
+  { id: "d4", projectId: id(57), imageId: id(5703), who: "Sanne Veldhuis", source: "portal", version: "original", batch: null, at: iso(0, 9, 30) },
+  { id: "d5", projectId: id(52), imageId: id(5201), who: "Emma de Vries", source: "account", version: "original", batch: null, at: iso(0, 8, 12) },
+];
+function logDownload(projectId: string, imageIds: string[], who: string, source: string, version: string) {
+  const batch = imageIds.length > 1 ? crypto.randomUUID() : null;
+  for (const imageId of imageIds) downloadLog.unshift({ id: crypto.randomUUID(), projectId, imageId, who, source, version, batch, at: new Date().toISOString() });
+}
+
+function insightsOf(projectId: string) {
+  const x = projects.find((y) => y.id === projectId);
+  const log = downloadLog.filter((d) => d.projectId === projectId);
+  const downloads: Record<string, number> = {};
+  for (const d of log) downloads[d.imageId] = (downloads[d.imageId] || 0) + 1;
+  const groups = new Map<string, Json>();
+  for (const d of log) {
+    const k = d.batch || d.id;
+    const g = groups.get(k);
+    if (g) { g.count++; g.images.push(d.imageId); continue; }
+    groups.set(k, { id: k, who: d.who, guestId: null, clientId: null, source: d.source, version: d.version, count: 1, images: [d.imageId], at: d.at });
+  }
+  const orders = mockOrders().filter((o) => o.projectId === projectId).map((o) => {
+    const g = guestList.find((y) => y.id === o.guestId);
+    return { id: o.id, guest: { id: o.guestId, name: g?.name || "", email: g?.email || "" }, images: o.images, amount: o.amount ?? o.images.length * o.price, paid: !!o.paid, invoice: o.paid ? { id: id(12), number: "FA-2026-040", status: "paid" } : null, paidAt: o.paid ? o.paidAt || iso(0) : null, createdAt: o.createdAt || iso(0) };
+  });
+  // Two sales on the team gallery, so the lists are not empty.
+  if (projectId === id(52) && !orders.some((o) => o.id === "seed-1")) {
+    orders.push(
+      { id: "seed-1", guest: { id: id(1051), name: "Mark Peters", email: "mark.peters@example.nl" }, images: [id(5200), id(5201), id(5202), id(5203), id(5204)], amount: 20, paid: true, invoice: { id: id(12), number: "FA-2026-038", status: "paid" }, paidAt: iso(-1, 21), createdAt: iso(-1, 21) },
+      { id: "seed-2", guest: { id: id(1052), name: "Lisa Bakker", email: "lisa@example.nl" }, images: [id(5205)], amount: 5, paid: false, invoice: null, paidAt: null, createdAt: iso(0, 7) },
+    );
+  }
+  const sold: Record<string, number> = {};
+  for (const o of orders) if (o.paid) for (const i of o.images) sold[i] = (sold[i] || 0) + 1;
+  const paid = orders.filter((o) => o.paid);
+  return {
+    perImage: { hearts: heartCounts(projectId), downloads, sold },
+    downloads: [...groups.values()],
+    orders,
+    totals: { downloads: log.length, downloaders: new Set(log.map((d) => d.who)).size, sold: paid.reduce((n, o) => n + o.images.length, 0), revenue: paid.reduce((n, o) => n + o.amount, 0), buyers: new Set(paid.map((o) => o.guest.id)).size, baskets: orders.length, x: !!x },
+  };
+}
+
+/** Mirrors deliveryPlan in routes/projects.ts, with a simple mail. */
+function deliveryPlanOf(x: Json, part: Json, clientOriginals?: boolean) {
+  const gs = { ...x.gallerySettings };
+  if (clientOriginals !== undefined && typeof gs.watermark === "boolean") gs.clientOriginals = clientOriginals;
+  const after = { ...x, gallerySettings: gs, parts: x.parts.map((p: Json) => (p.id === part.id ? { ...p, stage: DELIVERY_OF[p.kind] } : p)) };
+  const a = accessOf(after);
+  const share = shares.find((y) => y.projectId === x.id && y.active);
+  const until = part.kind === "web" ? "" : gs.downloadsUntil || new Date(Date.now() + 91 * day).toISOString().slice(0, 10);
+  const first = x.clients[0]?.name.split(" ")[0] || "[voornaam]";
+  const text = part.kind === "web" ? `Hoi ${first}, je website staat live.`
+    : a.client.sees === "watermark" ? `Hoi ${first}, alle foto's staan online. Ze hebben een watermerk.${share?.sales ? " Losse foto's zonder watermerk zijn te koop in de galerij, voor jou en voor iedereen met de groepslink." : ""}`
+    : `Hoi ${first}, je galerij staat klaar. Alle foto's zijn bewerkt en in volle kwaliteit te bekijken${a.client.downloads !== "none" ? " en te downloaden" : ""}.`;
+  const html = `<body style="margin:0;background:#0d0703;font-family:Arial,sans-serif;color:#fffbe0"><div style="max-width:520px;margin:0 auto;padding:28px"><div style="height:150px;background:url(${x.gallery[0]?.url || ""}) center/cover;border-radius:6px"></div><p style="color:#c8905a;font-size:10px;letter-spacing:.28em;text-transform:uppercase;margin:22px 0 6px">${part.kind === "web" ? "Website live" : "Galerij klaar"}</p><h1 style="margin:0 0 14px;font-size:22px">${x.gallerySettings.title || x.title}</h1><p style="color:rgba(255,251,224,.6);line-height:1.7">${text}</p>${until && a.client.downloads !== "none" ? `<p style="color:rgba(255,251,224,.5);font-size:13px">Je kunt alles downloaden tot ${until}.</p>` : ""}<a style="display:inline-block;margin-top:16px;background:#fffbe0;color:#1a0c04;padding:13px 26px;text-decoration:none;font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase">Bekijk de galerij</a></div></body>`;
+  return {
+    kind: part.kind, first: !part.deliveredAt, until, clientSees: a.client.sees, clientDownloads: a.client.downloads, watermark: a.watermark, selling: !!share?.sales,
+    childPhotos: part.kind === "photo" ? consents.filter((c) => c.projectId === x.id && c.photoUrl).length : 0,
+    recipients: x.clients.filter((c: Json) => c.email).map((c: Json) => ({ name: c.name, email: c.email })),
+    subject: part.kind === "web" ? `Je website staat live: ${x.title}` : `Je foto's staan klaar: ${x.title}`, html, gs,
+  };
+}
+
+/** Projecten 2.0 and the new gallery: answered before the older routes. */
+function projecten2(p: string, method: string, body: Json, url: URL): Json | undefined {
+  const m = (re: RegExp) => p.match(re);
+  let r: RegExpMatchArray | null;
+  const project = (pid: string) => {
+    const x = projects.find((y) => y.id === pid);
+    if (!x) throw new ApiError(404, "Project niet gevonden");
+    return x;
+  };
+  // Parts
+  if ((r = m(/^\/admin\/project\/([^/]+)\/parts$/)) && method === "POST") {
+    const x = project(r[1]);
+    if (x.parts.some((q: Json) => q.kind === body.kind)) throw new ApiError(409, "Dit project heeft dat onderdeel al.");
+    x.parts.push(mkPart(Date.now() % 100000, body.kind, body.stage || "booked", { category: body.category || "", sort: x.parts.length }));
+    syncLegacy(x);
+    return { project: x };
+  }
+  if ((r = m(/^\/admin\/project\/([^/]+)\/parts\/([^/]+)\/deliver$/))) {
+    const x = project(r[1]);
+    const part = x.parts.find((q: Json) => q.id === r![2]);
+    if (!part) throw new ApiError(404, "Dit onderdeel bestaat niet (meer).");
+    const q = url.searchParams.get("clientOriginals");
+    if (method === "GET") {
+      const { gs: _gs, ...plan } = deliveryPlanOf(x, part, q === null ? undefined : q === "1");
+      return plan;
+    }
+    const plan = deliveryPlanOf(x, part, body.clientOriginals);
+    Object.assign(part, { stage: DELIVERY_OF[part.kind], hold: part.hold === "stopped" ? "stopped" : "", deliveredAt: part.deliveredAt || new Date().toISOString() });
+    x.gallerySettings = { ...plan.gs, deliveredAt: x.gallerySettings.deliveredAt || new Date().toISOString() };
+    syncLegacy(x);
+    return { project: x, sentTo: body.mail ? plan.recipients.map((c: Json) => c.email) : [] };
+  }
+  if ((r = m(/^\/admin\/project\/([^/]+)\/parts\/([^/]+)$/))) {
+    const x = project(r[1]);
+    const part = x.parts.find((q: Json) => q.id === r![2]);
+    if (!part) throw new ApiError(404, "Dit onderdeel bestaat niet (meer).");
+    if (method === "DELETE") {
+      if (x.parts.length <= 1) throw new ApiError(409, "Een project houdt minstens één onderdeel. Verwijder anders het hele project.");
+      x.parts.splice(x.parts.indexOf(part), 1);
+    } else {
+      if (body.stage !== undefined) {
+        if (!partDelivered(part) && partDelivered({ kind: part.kind, stage: body.stage })) throw new ApiError(409, "Leveren gaat met de knop Leveren, zodat je eerst ziet wat de klant krijgt.");
+        part.stage = body.stage;
+      }
+      if (body.hold !== undefined && body.hold !== part.hold) Object.assign(part, { hold: body.hold, holdSince: body.hold ? new Date().toISOString() : null });
+      if (body.holdNote !== undefined) part.holdNote = body.holdNote;
+      if (body.category !== undefined) part.category = body.category;
+    }
+    syncLegacy(x);
+    return { project: x };
+  }
+  // Insights, and the studio's own original
+  if ((r = m(/^\/admin\/project\/([^/]+)\/insights$/))) return insightsOf(r[1]);
+  if ((r = m(/^\/admin\/project\/([^/]+)\/gallery\/([^/]+)\/original$/))) {
+    const g = project(r[1]).gallery.find((y: Json) => y.id === r![2]);
+    return { url: g?.url || PHOTOS[0], fileName: g?.fileName || "foto.jpg" };
+  }
+  // Uploads: object URLs stand in for storage.
+  if ((r = m(/^\/admin\/project\/([^/]+)\/gallery$/)) && method === "POST") {
+    const x = project(r[1]);
+    const form = body as FormData;
+    const files = form.getAll("files") as File[];
+    const set = String(form.get("set") || "");
+    files.forEach((f, i) => {
+      const size = String(form.get(`size-${i}`) || "").split("x").map(Number);
+      x.gallery.push({
+        id: crypto.randomUUID(), fileName: f.name, url: URL.createObjectURL(f), w: size[0] || undefined, h: size[1] || undefined,
+        watermark: form.get(`preview-${i}`) instanceof File, light: form.get(`display-${i}`) instanceof File, set: set || undefined, addedAt: new Date().toISOString(),
+        previewUrl: form.get(`preview-${i}`) instanceof File ? URL.createObjectURL(form.get(`preview-${i}`) as File) : undefined,
+      });
+    });
+    return { project: x, added: files.length };
+  }
+  if ((r = m(/^\/admin\/project\/([^/]+)\/gallery\/order$/)) && method === "PUT") {
+    const x = project(r[1]);
+    const byId = new Map(x.gallery.map((g: Json) => [g.id, g]));
+    x.gallery = body.ids.map((i: string) => byId.get(i)).filter(Boolean);
+    return { project: x };
+  }
+  if ((r = m(/^\/admin\/project\/([^/]+)\/gallery\/remove$/)) && method === "POST") {
+    const x = project(r[1]);
+    const sold = new Set(insightsOf(r[1]).orders.filter((o: Json) => o.paid).flatMap((o: Json) => o.images));
+    const gone = body.ids.filter((i: string) => !sold.has(i));
+    x.gallery = x.gallery.filter((g: Json) => !gone.includes(g.id));
+    return { project: x, removed: gone.length, kept: body.ids.length - gone.length };
+  }
+  if ((r = m(/^\/admin\/project\/([^/]+)\/gallery\/set$/)) && method === "PUT") {
+    const x = project(r[1]);
+    for (const g of x.gallery) if (body.ids.includes(g.id)) g.set = body.set || undefined;
+    const used = [...new Set(x.gallery.map((g: Json) => g.set).filter(Boolean))] as string[];
+    const order = (x.gallerySettings.sets || []).filter((v: string) => used.includes(v));
+    x.gallerySettings = { ...x.gallerySettings, sets: [...order, ...used.filter((v) => !order.includes(v))] };
+    return { project: x };
+  }
+  if ((r = m(/^\/admin\/project\/([^/]+)\/gallery\/([^/]+)\/copies$/)) && method === "PUT") {
+    const g = project(r[1]).gallery.find((y: Json) => y.id === r![2]);
+    const form = body as FormData;
+    if (form.get("preview") instanceof File) Object.assign(g, { watermark: true, previewUrl: URL.createObjectURL(form.get("preview") as File) });
+    if (form.get("display") instanceof File) g.light = true;
+    return { success: true };
+  }
+  if ((r = m(/^\/admin\/project\/([^/]+)\/gallery\/([^/]+)$/)) && method === "DELETE") {
+    const x = project(r[1]);
+    x.gallery = x.gallery.filter((g: Json) => g.id !== r![2]);
+    return { project: x };
+  }
+  // Zips: links for each photo, written in the log.
+  if ((r = m(/^\/share\/([^/]+)\/downloads$/)) && method === "POST") {
+    const { share, guest, account } = guestOf(r[1], body.key);
+    const x = project(share.projectId);
+    const own = new Set([...priorityRequests.filter((q) => q.guestId === guest.id && q.status === "delivered").flatMap((q) => q.images), ...(account ? mockOrders().filter((o) => o.guestId === guest.id && o.paid).flatMap((o) => o.images) : [])]);
+    const files = x.gallery.filter((g: Json) => body.imageIds.includes(g.id) && (own.has(g.id) || share.downloads)).map((g: Json) => ({ id: g.id, url: g.url, fileName: g.fileName, version: own.has(g.id) ? "original" : "watermark" }));
+    if (!files.length) throw new ApiError(403, "Downloaden kan nu niet bij deze foto's.");
+    logDownload(x.id, files.map((f: Json) => f.id), guest.name, "link", files[0].version);
+    return { files };
+  }
+  if ((r = m(/^\/portal\/project\/([^/]+)\/downloads$/)) && method === "POST") {
+    const x = project(r[1]);
+    const files = x.gallery.filter((g: Json) => body.imageIds.includes(g.id)).map((g: Json) => ({ id: g.id, url: g.url, fileName: g.fileName, version: "original" }));
+    logDownload(x.id, files.map((f: Json) => f.id), "Sanne Veldhuis", "portal", "original");
+    return { files };
+  }
+  // Mijn foto's
+  if (p === "/account/code" && method === "POST") return { sent: true };
+  if (p === "/account/verify" && method === "POST") {
+    if (body.code !== "123456") throw new ApiError(400, "Deze code klopt niet. Kijk hem nog eens na. (In de mock is het 123456.)");
+    return { tokenHash: "mock", type: "magiclink", created: true };
+  }
+  if (p === "/account/me") {
+    const a = mockBuyer();
+    if (!a) throw new ApiError(401, "Log eerst in.");
+    if (method === "PUT") {
+      const raw = JSON.parse(localStorage.getItem(SESSION_KEY) || "{}");
+      raw.user.user_metadata.name = body.name;
+      localStorage.setItem(SESSION_KEY, JSON.stringify(raw));
+      return { account: { email: a.email, name: body.name, buyerOnly: true } };
+    }
+    return { account: { email: a.email, name: a.name, buyerOnly: true } };
+  }
+  if (p === "/account" && method === "DELETE") return { success: true };
+  if (p === "/account/photos") {
+    const a = mockBuyer();
+    if (!a) throw new ApiError(401, "Log eerst in.");
+    const galleries = [];
+    for (const share of shares) {
+      const x = projects.find((y) => y.id === share.projectId);
+      const guest = guestList.find((g) => g.projectId === share.projectId && g.email === a.email);
+      if (!guest) continue;
+      const orders = mockOrders().filter((o) => o.guestId === guest.id && o.paid);
+      const ids = new Set([...orders.flatMap((o) => o.images), ...priorityRequests.filter((q) => q.guestId === guest.id && q.status === "delivered").flatMap((q) => q.images)]);
+      const photos = x.gallery.filter((g: Json) => ids.has(g.id)).map((g: Json) => ({ id: g.id, url: g.url, fileName: g.fileName, w: g.w, h: g.h, download: true, mine: true }));
+      if (!photos.length) continue;
+      galleries.push({
+        id: x.id, title: x.gallerySettings.title || x.title, subtitle: x.gallerySettings.subtitle || "", style: x.gallerySettings.style || "", accentColor: x.gallerySettings.accentColor || "",
+        link: `https://www.photodecaffeine.com/galerij/${share.token}`, open: true, until: dateOnly(60), photos,
+        orders: orders.map((o, i) => ({ id: o.id, number: `FA-2026-04${i}`, amount: o.amount ?? o.images.length * o.price, count: o.images.length, paidAt: o.paidAt || iso(0), invoiceLink: `/factuur/${id(12)}?t=abc` })),
+      });
+    }
+    return { galleries };
+  }
+  if (p === "/account/downloads" && method === "POST") {
+    const x = project(body.projectId);
+    const files = x.gallery.filter((g: Json) => body.imageIds.includes(g.id)).map((g: Json) => ({ id: g.id, url: g.url, fileName: g.fileName, version: "original" }));
+    logDownload(x.id, files.map((f: Json) => f.id), mockBuyer()?.name || "Koper", "account", "original");
+    return { files };
+  }
+  return undefined;
 }
 
 // Mirrors projectToApi's client view: watermarked copies and download rights.
 function forClient(x: Json) {
   if (!x) return x;
-  const done = ["delivered", "review", "archived"].includes(x.stage);
-  const downloads = done ? "original" : x.gallerySettings.earlyDownloads || "original";
-  const gallery = x.gallery.filter((g: Json) => g.restriction !== "no_photo").map((g: Json) => ({
-    id: g.id, fileName: g.fileName, w: g.w, h: g.h, restriction: g.restriction,
-    url: downloads === "watermark" && g.previewUrl ? g.previewUrl : g.url,
-    download: downloads === "original" || (downloads === "watermark" && !!g.previewUrl),
+  const a = accessOf(x);
+  const gallery = x.gallery.filter((g: Json) => g.restriction !== "no_photo" && (a.client.sees === "original" || g.watermark !== false)).map((g: Json) => ({
+    id: g.id, fileName: g.fileName, w: g.w, h: g.h, restriction: g.restriction, set: g.set,
+    url: a.client.sees === "watermark" && g.previewUrl ? g.previewUrl : g.url,
+    download: a.client.downloads !== "none",
   }));
-  return { ...x, downloads, gallery, galleryUrls: gallery.map((g: Json) => g.url) };
+  const { watermark: _w, clientOriginals: _o, clientDownloads: _d, earlyDownloads: _e, consentClub: _c, ...look } = x.gallerySettings || {};
+  return {
+    ...x, gallerySettings: look, downloads: a.client.downloads, watermarked: a.client.sees === "watermark", galleryDelivered: a.delivered,
+    gallery, galleryUrls: gallery.map((g: Json) => g.url), parts: x.parts.filter((p: Json) => p.hold !== "stopped"), access: undefined,
+  };
 }
 
 function mkProject(n: number, title: string, type: string, stage: string, clientIds: string[], extra: Json = {}) {
-  const gallery = (extra.gallery || []).map((g: string | Json, i: number) => ({ id: id(n * 100 + i), fileName: `IMG_${2200 + i}.jpg`, ...(typeof g === "string" ? { url: g } : g) }));
+  const gallery = (extra.gallery || []).map((g: string | Json, i: number) => ({
+    id: id(n * 100 + i), fileName: `IMG_${2200 + i}.jpg`, watermark: true, light: true, addedAt: iso(-3, 10, i), ...(typeof g === "string" ? { url: g } : g),
+  }));
   const favorites: Record<string, string[]> = {};
   for (const i of extra.favorites || []) if (gallery[i]) favorites[gallery[i].id] = ["Sanne Veldhuis"];
   const cl = clients.filter((c) => clientIds.includes(c.id));
@@ -448,9 +789,13 @@ function mkProject(n: number, title: string, type: string, stage: string, client
     locationId: extra.locationId || null, clientIds, clientId: clientIds[0], clients: cl.map((c) => ({ id: c.id, name: c.name, email: c.email, company: c.company, userId: c.userId })),
     clientNames: cl.map((c) => c.name), briefing: "Intake: wil vooral de Targa-beugel en het interieur. Geen kentekens zichtbaar.", briefingUpdatedAt: iso(-4),
     valueCents: extra.valueCents ?? null, inquiryId: null, favorites, favoriteIds: Object.keys(favorites), unreadMessages: n === 52 ? 1 : 0,
+    parts: extra.parts || [mkPart(n * 10 + 1, type, stepFor(type, stage), { category: extra.category || "" })],
+    archivedAt: stage === "archived" ? iso(-2) : null,
     createdAt: iso(-n % 30 - 5), updatedAt: iso(-1),
   };
 }
+
+for (const x of projects) syncLegacy(x);
 
 const messages: Json[] = [
   { id: id(71), projectId: id(52), senderId: id(102), senderName: "Sanne Veldhuis", senderRole: "client", content: "Kan de achtergrond iets warmer? Verder super!", readAt: null, createdAt: iso(0, 9, 12) },
@@ -682,6 +1027,8 @@ export async function mockApi(path: string, method: string, body: Json): Promise
   if (p.startsWith("/portal/") && method !== "GET" && viewAsId() && !testClients.has(viewAsId())) {
     throw new ApiError(403, "Dit is een voorbeeld, dus er wordt niets opgeslagen. Wil je het echt uitproberen? Zet de klant dan op testklant.");
   }
+  const answered = projecten2(p, method, body, url);
+  if (answered !== undefined) return structuredClone(answered);
   if ((r = m(/^\/admin\/client\/([^/]+)\/test$/)) && method === "PUT") {
     if (body.on) testClients.add(r[1]);
     else testClients.delete(r[1]);
@@ -709,8 +1056,9 @@ export async function mockApi(path: string, method: string, body: Json): Promise
   if (method === "GET") {
     if ((r = m(/^\/admin\/documents\/([^/]+)$/))) return structuredClone({ notes: docNotes, read: docRead[r[1]] || { done: [], at: null } });
     if (p === "/admin/overview") return overview();
-    if (p === "/admin/projects") return { projects };
-    if ((r = m(/^\/admin\/project\/([^/]+)$/))) return { project: projects.find((x) => x.id === r![1]) };
+    // Copies: react-query keeps its old data when the objects it holds were changed in place.
+    if (p === "/admin/projects") return { projects: structuredClone(projects) };
+    if ((r = m(/^\/admin\/project\/([^/]+)$/))) return { project: structuredClone(projects.find((x) => x.id === r![1])) };
     if ((r = m(/^\/admin\/project\/([^/]+)\/messages$/))) return { messages: messages.filter((x) => x.projectId === r![1]) };
     if ((r = m(/^\/admin\/project\/([^/]+)\/shots$/))) return { shots: shots.filter((x) => x.projectId === r![1]).sort((a, b) => a.sort - b.sort) };
     if ((r = m(/^\/admin\/project\/([^/]+)\/engagement$/))) return { reviewRequest: reviewRequests[r[1]] || null, feedbackRequest: null, review: structuredClone(reviews.find((x) => x.projectId === r![1]) || null), feedback: [] };
@@ -817,6 +1165,8 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     if (p === "/portal/quotes") return { quotes: quotes.filter((q) => q.status !== "draft").map((q) => ({ ...q, token: "abc" })) };
     if (p === "/portal/invoices") return { invoices: invoices.filter((i) => i.status !== "draft").map((i) => ({ id: i.id, number: i.number, status: i.status, issuedOn: i.issuedOn, dueOn: i.dueOn, paidAt: i.paidAt, totals: i.totals, token: "abc", payable: i.status === "sent" })) };
     if (p === "/portal/me") {
+      // Only an account made to buy has no portal; a client who buys keeps theirs.
+      if (!viewAsId() && mockBuyer() && (() => { try { return !!JSON.parse(localStorage.getItem(SESSION_KEY) || "null")?.user?.app_metadata?.buyer; } catch { return false; } })()) return { client: null, buyer: true };
       const as = viewAsId();
       const c = as ? clients.find((x) => x.id === as) : clients[1];
       if (!c) throw new ApiError(404, "Deze klant bestaat niet (meer).");
@@ -826,7 +1176,10 @@ export async function mockApi(path: string, method: string, body: Json): Promise
       const rv = reviews.find((x) => x.projectId === r![1]);
       return { reviewRequested: !!reviewRequests[r[1]], reviewLink: "https://g.page/r/CUkHU8gqLEm4EBI/review", review: rv ? { rating: rv.rating, text: rv.text, source: rv.source } : null, feedbackRequested: false, feedbackCount: 0 };
     }
-    if ((r = m(/^\/portal\/project\/([^/]+)\/download\/([^/]+)$/))) return { url: PHOTOS[0], fileName: "foto.jpg" };
+    if ((r = m(/^\/portal\/project\/([^/]+)\/download\/([^/]+)$/))) {
+      logDownload(r[1], [r[2]], "Sanne Veldhuis", "portal", "original");
+      return { url: PHOTOS[0], fileName: "foto.jpg" };
+    }
     if ((r = m(/^\/invoice\/([^/]+)$/))) {
       const { quoteId: _q, projectId: _p, clientId: _c, link: _l, ...pub } = invoices.find((x) => x.id === r![1]) || invoices[0];
       const test = url.searchParams.get("test") === "1";
@@ -898,11 +1251,15 @@ export async function mockApi(path: string, method: string, body: Json): Promise
   // Buying photos: "Mollie" sends the guest straight back, the check says paid
   // (or what localStorage "pdc-mock-pay" says: "failed", "open").
   if ((r = m(/^\/share\/([^/]+)\/order$/))) {
-    const { share, guest } = guestOf(r[1], body.key);
+    const { share, guest, account } = guestOf(r[1], body.key);
+    if (!account) throw new ApiError(403, "Log eerst in of maak een account. Daar blijven je foto's staan.");
     if (!body.agree) throw new ApiError(400, "Vink aan dat je akkoord gaat.");
-    const order = { id: crypto.randomUUID(), projectId: share.projectId, guestId: guest.id, images: body.imageIds, price: share.photoPrice, paid: false };
+    const n = body.imageIds.length;
+    const bundles = share.bundleSize ? Math.floor(n / share.bundleSize) : 0;
+    const amount = Math.round((bundles * (share.bundlePrice || 0) + (n - bundles * (share.bundleSize || 0)) * share.photoPrice) * 100) / 100;
+    const order = { id: crypto.randomUUID(), projectId: share.projectId, guestId: guest.id, images: body.imageIds, price: share.photoPrice, amount, paid: false, createdAt: new Date().toISOString() };
     saveOrders([...mockOrders(), order]);
-    return { id: order.id, checkoutUrl: `/galerij/${r[1]}?bestelling=${order.id}`, count: order.images.length, amount: order.images.length * order.price };
+    return { id: order.id, checkoutUrl: `/galerij/${r[1]}?bestelling=${order.id}`, count: n, amount };
   }
   if ((r = m(/^\/share\/([^/]+)\/order\/([^/]+)\/check$/))) {
     const { guest } = guestOf(r[1], body.key);
@@ -1009,7 +1366,7 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     const share = shares.find((s) => s.projectId === r![1]);
     const token = () => Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10);
     if (r[2]) Object.assign(share, { token: token(), active: true });
-    else if (method === "PUT") Object.assign(share, body);
+    else if (method === "PUT") Object.assign(share, body, body.discountUntil !== undefined ? { discountUntil: body.discountUntil } : {});
     else if (share) share.active = true;
     else shares.push({ projectId: r[1], token: token(), active: true, downloads: false, createdAt: new Date().toISOString() });
     return shareState(r[1]);
@@ -1059,6 +1416,7 @@ export async function mockApi(path: string, method: string, body: Json): Promise
     if (!share.downloads && !(r[2] ? own.length : own.includes(body.imageId))) throw new ApiError(403, "Downloaden staat uit voor deze galerij.");
     guest.downloads += body.count || 1;
     const img = projects.find((x) => x.id === share.projectId).gallery.find((g: Json) => g.id === body.imageId);
+    if (!r[2]) logDownload(share.projectId, [img.id], guest.name, "link", own.includes(img.id) ? "original" : "watermark");
     return r[2] ? { success: true } : { url: img.url, fileName: img.fileName };
   }
   if ((r = m(/^\/admin\/project\/([^/]+)\/gallery\/sizes$/)) && method === "PUT") {
@@ -1074,13 +1432,19 @@ export async function mockApi(path: string, method: string, body: Json): Promise
   }
   if ((r = m(/^\/admin\/project\/([^/]+)$/)) && method === "PUT") {
     const x = projects.find((y) => y.id === r![1]);
-    if (body.stage) x.stage = body.stage;
+    if (body.stage && x.parts[0]) x.parts[0].stage = stepFor(x.parts[0].kind, body.stage);
+    if (body.archived !== undefined) x.archivedAt = body.archived ? new Date().toISOString() : null;
     if (body.locationId !== undefined) x.locationId = body.locationId;
     Object.assign(x, Object.fromEntries(Object.entries(body).filter(([k]) => ["title", "description", "dueDate", "deliverables", "valueCents", "briefing", "gallerySettings"].includes(k))));
-    return { project: x };
+    if (body.gallerySettings) x.gallerySettings = JSON.parse(JSON.stringify(body.gallerySettings));
+    syncLegacy(x);
+    return { project: structuredClone(x) };
   }
   if (p === "/admin/project" && method === "POST") {
-    const x = mkProject(projects.length + 60, body.title, body.type, body.stage, body.clientIds);
+    const n = projects.length + 60;
+    const parts = (body.parts || [{ kind: body.type || "photo", stage: body.stage || "booked", category: "" }]).map((q: Json, i: number) => mkPart(n * 10 + i, q.kind, q.stage || "booked", { category: q.category || "", sort: i }));
+    const x = mkProject(n, body.title, parts[0].kind, "booked", body.clientIds, { parts, gallerySettings: body.gallerySettings || {}, valueCents: body.valueCents ?? null, dueDate: body.dueDate || "" });
+    syncLegacy(x);
     projects.unshift(x);
     return { project: x };
   }

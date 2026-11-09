@@ -30,7 +30,11 @@ const START: ReaderSection[] = [
     "blocks": [
       {
         "t": "note",
-        "text": "**Status op 7 november 2026:** versie 1.4. Alle notities van Per zijn verwerkt en de invulvelden zijn ingevuld. De klantteksten staan op de website en nieuwe offertes gaan met deze versie de deur uit. Een jurist heeft de teksten niet getoetst: dat moet nog, net als de andere punten onder H in de interne notities. De website is op 2 november 2026 met een browser gecontroleerd op cookies, lokale opslag en externe diensten. De uitkomst staat in het Cookiebeleid."
+        "text": "**Status op 9 november 2026:** versie 1.5. Alle notities van Per zijn verwerkt en de invulvelden zijn ingevuld. De klantteksten staan op de website en nieuwe offertes gaan met deze versie de deur uit. Een jurist heeft de teksten niet getoetst: dat moet nog, net als de andere punten onder H in de interne notities. De website is op 2 november 2026 met een browser gecontroleerd op cookies, lokale opslag en externe diensten. De uitkomst staat in het Cookiebeleid."
+      },
+      {
+        "t": "note",
+        "text": "**Wat is er veranderd in versie 1.5:** wie foto’s koopt in een groepsgalerij, maakt een account met een code per mail. Daar blijven de gekochte foto’s staan, bij Mijn foto’s, zolang downloaden kan. Een bundelprijs en een einddatum voor de start-up korting kunnen erbij. We houden bij welke foto’s iemand downloadt. De privacyverklaring noemt het account, het downloadlog en hoe lang we ze bewaren; het cookiebeleid noemt het mandje, dat er al was maar nog niet genoemd werd."
       },
       {
         "t": "note",

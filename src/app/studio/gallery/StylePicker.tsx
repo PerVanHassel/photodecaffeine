@@ -76,7 +76,7 @@ export function StylePicker({ project: p }: { project: Project }) {
 }
 
 /** A small drawing of the style, made with the project's own photos. */
-function Thumb({ style, title, urls, accent }: { style: StyleDef; title: string; urls: string[]; accent: string }) {
+export function Thumb({ style, title, urls, accent }: { style: StyleDef; title: string; urls: string[]; accent: string }) {
   const ph = (k: number, cls?: string) => <i className={cls} style={urls.length ? { backgroundImage: `url("${urls[k % urls.length]}")` } : undefined} />;
   return (
     <span className="gp-thumb" data-style={style.id} style={{ "--g-accent": accent } as CSSProperties} aria-hidden="true">

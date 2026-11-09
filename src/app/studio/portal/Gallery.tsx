@@ -5,7 +5,7 @@ import { Link, useParams } from "react-router";
 import { toast } from "sonner";
 import { errorMessage, get, post } from "../api";
 import { ClientGallery } from "../gallery/ClientGallery";
-import { savePhoto, saveZip } from "../gallery/download";
+import { savePhoto, saveZip, type SaveFile } from "../gallery/download";
 import { shareLink } from "../gallery/share";
 import { ShareDialog } from "../gallery/ShareDialog";
 import { useAction } from "../queries";
@@ -56,7 +56,9 @@ export function PortalGallery() {
     if (!p || !list.length) return;
     setZip({ done: 0, total: list.length });
     try {
-      const how = await saveZip(list, p.gallerySettings.title || p.title, { watermarked: downloads === "watermark", onProgress: (done) => setZip({ done, total: list.length }), text: { ready: t.toPhotosReady, save: t.toPhotosSave } });
+      // The links come from the server, which also writes every photo in the download log.
+      const { files } = await post<{ files: SaveFile[] }>(`/portal/project/${id}/downloads`, { imageIds: list.map((g) => g.id) });
+      const how = await saveZip(files, p.gallerySettings.title || p.title, { onProgress: (done) => setZip({ done, total: files.length }), text: { ready: t.toPhotosReady, save: t.toPhotosSave } });
       if (how === "zip") toast.success(t.downloadStarted);
     } catch (err) {
       toast.error(errorMessage(err));
@@ -85,6 +87,7 @@ export function PortalGallery() {
         actions={{ toggle, downloadOne, downloadAll, zip, submit: () => setSubmitting(true), ...(share && { share: () => setSharing(true), sharePhoto }) }}
         review={engagement.data && !engagement.data.review ? { url: engagement.data.reviewLink } : undefined}
         back={<Link to={`/portal/project/${p.id}`}><ArrowLeft size={14} /> {p.title}</Link>}
+        buyLink={p.watermarked && share?.selling ? new URL(share.url).pathname : undefined}
       />
       <SubmitDialog project={p} open={submitting} onClose={() => setSubmitting(false)} count={favs.size} />
       {share && <ShareDialog open={sharing} onClose={() => setSharing(false)} url={share.url} title={title} guests={share.guests} />}

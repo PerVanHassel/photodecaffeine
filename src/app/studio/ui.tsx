@@ -255,6 +255,25 @@ export function SelectField({ label, hint, className, children, ...select }: Sel
   );
 }
 
+/** An on/off setting: the label and what it does on the left, the switch on the right. */
+export function Switch({ checked, onChange, label, hint, disabled, busy }: {
+  checked: boolean; onChange: (on: boolean) => void; label: ReactNode; hint?: ReactNode; disabled?: boolean; busy?: boolean;
+}) {
+  const id = useId();
+  return (
+    <div className={cx("s-switch-row", disabled && "off")}>
+      <div className="s-switch-text">
+        <label htmlFor={id}>{label}</label>
+        {hint && <span id={`${id}-hint`} className="hint">{hint}</span>}
+      </div>
+      <button id={id} type="button" role="switch" aria-checked={checked} aria-describedby={hint ? `${id}-hint` : undefined}
+        className="s-switch" disabled={disabled || busy} aria-busy={busy || undefined} onClick={() => onChange(!checked)}>
+        <span aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
 export function Segmented<T extends string>({ value, onChange, options, label }: {
   value: T; onChange: (v: T) => void; options: { value: NoInfer<T>; label: ReactNode }[]; label: string;
 }) {

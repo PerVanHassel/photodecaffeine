@@ -1,16 +1,16 @@
 import { keepPreviousData, QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, LogOut, UserRound } from "lucide-react";
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import { Helmet } from "react-helmet-async";
 import { useParams, useSearchParams } from "react-router";
 import { toast, Toaster } from "sonner";
-import { isAdmin } from "../../../lib/supabase";
+import { isAdmin, supabase } from "../../../lib/supabase";
 import { useAuth } from "../../context/AuthContext";
 import { api, ApiError, errorMessage } from "../api";
 import { StudioFonts } from "../fonts";
 import { euro, fmt } from "../format";
 import { ClientGallery } from "../gallery/ClientGallery";
-import { savePhoto, saveZip } from "../gallery/download";
+import { savePhoto, saveZip, type SaveFile } from "../gallery/download";
 import { shareLink } from "../gallery/share";
 import { ShareDialog } from "../gallery/ShareDialog";
 import { fontHref, accentOf, onAccent, styleOf } from "../gallery/styles";
@@ -18,7 +18,8 @@ import { usePortalLanguage, useT, type PortalText } from "../portal/i18n";
 import { queryClient } from "../queries";
 import "../studio.css";
 import type { GalleryImage, GalleryProject } from "../types";
-import { cx } from "../ui";
+import { cx, Modal } from "../ui";
+import { AccountSignIn } from "./Account";
 import { ConsentStep, type ConsentFormData } from "./ConsentForm";
 import { LangSwitch } from "./LangSwitch";
 import { type GuestPriority, type GuestPriorityRequest, type PriorityAsk, PriorityPanel } from "./PriorityPanel";
@@ -31,6 +32,8 @@ import { BasketDock, CheckoutDialog, type GuestSales, SalesPanel } from "./Sales
 type Gate = { title: string; subtitle: string; shootDate: string; style: string; accentColor: string; cover: string; photos: number; videos: number };
 type Inside = {
   guest: { name: string; email: string; notifyPhotos: boolean } | null;
+  /** Signed in with an account (to buy, and Mijn foto's). */
+  account: { email: string; name: string } | null;
   /** A studio admin looking without being counted. */
   preview: boolean;
   project: GalleryProject & { id: string };
@@ -145,7 +148,9 @@ function Entrance() {
   const [params] = useSearchParams();
   const t = useT();
   const lang = usePortalLanguage();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  // Signed in with an account (not the studio): the server knows them by it.
+  const buyer = user && !isAdmin(user) ? user : null;
   const [key, setKeyState] = useState(() => readKey(token));
   const [preview, setPreview] = useState(false);
   const setKey = (next: string) => {
@@ -154,16 +159,19 @@ function Entrance() {
   };
   // While payments run on Mollie's test key, buying only shows with ?test=1.
   const test = params.get("test") === "1";
-  const queryKey = ["share", token, preview ? "preview" : key, test];
+  const queryKey = ["share", token, preview ? "preview" : buyer ? `account:${buyer.id}` : key, test];
   const path = `/share/${encodeURIComponent(token)}`;
   const query = useQuery({
     queryKey,
-    // An admin's preview goes with their session; guests never send one.
+    // An admin's preview and an account go with their session; guests never send one.
     queryFn: ({ signal }) => preview
       ? api<Reply>(`${path}?preview=1`, { signal })
-      : api<Reply>(key ? `${path}?key=${key}${test ? "&test=1" : ""}` : path, { signal, anonymous: true }),
+      : buyer
+        ? api<Reply>(`${path}${test ? "?test=1" : ""}`, { signal })
+        : api<Reply>(key ? `${path}?key=${key}${test ? "&test=1" : ""}` : path, { signal, anonymous: true }),
     retry: false,
     placeholderData: keepPreviousData,
+    enabled: !authLoading,
   });
   const data = query.data;
 
@@ -183,7 +191,7 @@ function Entrance() {
     return <Door path={path} gate={data.gate} busy={query.isPlaceholderData} onEnter={setKey} admin={isAdmin(user)} onPreview={() => setPreview(true)} t={t} lang={lang} />;
   }
   return (
-    <Gallery path={path} token={token} data={data} guestKey={key} queryKey={queryKey} onLeave={() => setKey("")}
+    <Gallery path={path} token={token} data={data} guestKey={key} queryKey={queryKey} signedIn={!!buyer} onLeave={() => setKey("")}
       openId={params.get("foto") || undefined} priorityId={params.get("voorrang") || ""} test={test} t={t} lang={lang} />
   );
 }
@@ -266,8 +274,11 @@ function Door({ path, gate, busy, onEnter, admin, onPreview, t, lang }: {
 // Inside
 // ---------------------------------------------------------------------------
 
-function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, priorityId, test, t, lang }: {
-  path: string; token: string; data: Inside; guestKey: string; queryKey: unknown[]; onLeave: () => void; openId?: string;
+function Gallery({ path, token, data, guestKey, queryKey, signedIn, onLeave, openId, priorityId, test, t, lang }: {
+  path: string; token: string; data: Inside; guestKey: string; queryKey: unknown[];
+  /** Requests go with the account's session instead of the key. */
+  signedIn: boolean;
+  onLeave: () => void; openId?: string;
   /** From the mail that the voorrang photos are there: open on those. */
   priorityId: string;
   /** Payments on Mollie's test key: buying goes through test mode. */
@@ -286,7 +297,9 @@ function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, prior
   const title = p.gallerySettings.title || p.title;
   const url = `${window.location.origin}/galerij/${token}`;
   const favs = new Set(data.mine);
-  const send = <R,>(route: string, body: Record<string, unknown>) => api<R>(`${path}/${route}`, { method: "POST", body: { key: guestKey, ...body }, anonymous: true });
+  const send = <R,>(route: string, body: Record<string, unknown>) => api<R>(`${path}/${route}`, { method: "POST", body: { key: guestKey, ...body }, anonymous: !signedIn });
+  const [signingIn, setSigningIn] = useState(false);
+  const account = data.account;
   const language = lang.language === "en" ? "en" : "nl";
 
   // Voorrang: the photos picked for one of this guest's requests can be shown alone,
@@ -294,6 +307,8 @@ function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, prior
   const ready = (data.priority?.requests || []).filter((r) => r.status === "delivered" && r.images.length > 0);
   const fromPriority = new Set((data.priority?.requests || []).flatMap((r) => r.images));
   const bought = p.gallery.filter((g) => g.mine && !fromPriority.has(g.id));
+  // Bought with an account, but not signed in here: they sign in to download.
+  const boughtElsewhere = p.gallery.filter((g) => g.bought).length;
   const [onlyId, setOnlyId] = useState(() => (ready.some((r) => r.id === priorityId) ? priorityId : ""));
   const onlyRequest = ready.find((r) => r.id === onlyId);
   const only = onlyRequest ? new Set(onlyRequest.images) : onlyId === "bought" && bought.length ? new Set(bought.map((g) => g.id)) : null;
@@ -406,10 +421,16 @@ function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, prior
     const list = all.filter((g) => g.download !== false);
     if (list.length === 1) return downloadOne(list[0]);
     if (!list.length) return;
+    await zipOf(list, name);
+  }
+
+  /** Links for the photos from the server, then one zip (or Photos on an iPhone). */
+  async function zipOf(list: GalleryImage[], name: string) {
     setZip({ done: 0, total: list.length });
     try {
-      const how = await saveZip(list, name, { watermarked: false, onProgress: (done) => setZip({ done, total: list.length }), text: { ready: t.toPhotosReady, save: t.toPhotosSave } });
-      send("downloaded", { count: list.length, test }).catch(() => {});
+      const { files } = await send<{ files: SaveFile[] }>("downloads", { imageIds: list.map((g) => g.id), test });
+      setZip({ done: 0, total: files.length });
+      const how = await saveZip(files, name, { onProgress: (done) => setZip({ done, total: files.length }), text: { ready: t.toPhotosReady, save: t.toPhotosSave } });
       if (how === "zip") toast.success(t.downloadStarted);
     } catch (err) {
       failed(err);
@@ -484,16 +505,12 @@ function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, prior
   async function downloadAll(all: GalleryImage[]) {
     const list = all.filter((g) => g.download !== false);
     if (!list.length) return;
-    setZip({ done: 0, total: list.length });
-    try {
-      const how = await saveZip(list, title, { watermarked: p.downloads === "watermark" && !list.every((g) => g.mine), onProgress: (done) => setZip({ done, total: list.length }), text: { ready: t.toPhotosReady, save: t.toPhotosSave } });
-      send("downloaded", { count: list.length, test }).catch(() => {});
-      if (how === "zip") toast.success(t.downloadStarted);
-    } catch (err) {
-      failed(err);
-    } finally {
-      setZip(null);
-    }
+    await zipOf(list, title);
+  }
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    toast(t.signOut);
   }
 
   async function sharePhoto(img: GalleryImage) {
@@ -517,14 +534,26 @@ function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, prior
         review={data.reviewUrl ? { url: data.reviewUrl, onOpen: () => { send("review", {}).catch(() => {}); } } : undefined}
         back={
           <>
-            <div className="g-guest-top"><span className="g-brand">PhotoDeCaffeine</span><LangSwitch lang={lang} t={t} /></div>
+            <div className="g-guest-top">
+              <span className="g-brand">PhotoDeCaffeine</span>
+              <span className="g-guest-right">
+                {account && (
+                  <span className="g-account-chip">
+                    <a href="/mijn-fotos" title={t.accountSignedInAs(account.name || account.email)}><UserRound aria-hidden="true" /><span>{t.accountMine}</span></a>
+                    <button type="button" onClick={signOut} aria-label={t.accountSignOut} title={t.accountSignOut}><LogOut aria-hidden="true" /></button>
+                  </span>
+                )}
+                <LangSwitch lang={lang} t={t} />
+              </span>
+            </div>
             {data.preview && <p className="g-preview-note">{t.previewBanner}</p>}
           </>
         }
-        above={(sales || bought.length > 0 || data.priority) && (
+        above={(sales || bought.length > 0 || boughtElsewhere > 0 || data.priority) && (
           <>
-            {(sales || bought.length > 0) && (
-              <SalesPanel sales={sales} bought={bought} onlyMine={onlyId === "bought" && !!only} onOnly={(on) => setOnlyId(on ? "bought" : "")}
+            {(sales || bought.length > 0 || boughtElsewhere > 0) && (
+              <SalesPanel sales={sales} bought={bought} boughtElsewhere={boughtElsewhere} signedIn={!!account} onSignIn={() => setSigningIn(true)}
+                onlyMine={onlyId === "bought" && !!only} onOnly={(on) => setOnlyId(on ? "bought" : "")}
                 onDownload={(list) => downloadOwn(list, title)} zip={zip} preview={data.preview} t={t} />
             )}
             {data.priority && (
@@ -541,8 +570,12 @@ function Gallery({ path, token, data, guestKey, queryKey, onLeave, openId, prior
       {sales && chosen.length > 0 && <BasketDock count={chosen.length} sales={sales} onCheckout={() => setCheckout(true)} t={t} />}
       {sales && (
         <CheckoutDialog open={checkout} onClose={() => setCheckout(false)} sales={sales} images={chosen} language={language}
+          signedIn={!!account} guest={data.guest} onSignedIn={() => qc.invalidateQueries({ queryKey: ["share", token] })}
           onPay={pay} onClear={() => setBasket([])} t={t} />
       )}
+      <Modal open={signingIn && !account} onOpenChange={(o) => !o && setSigningIn(false)} title={t.signInTitle} description={t.accountIntro}>
+        <AccountSignIn email={data.guest?.email} name={data.guest?.name} language={language} t={t} onDone={() => setSigningIn(false)} compact />
+      </Modal>
       <ShareDialog open={sharing} onClose={() => setSharing(false)} url={url} title={title} guests={data.guests} forGuest />
     </>
   );

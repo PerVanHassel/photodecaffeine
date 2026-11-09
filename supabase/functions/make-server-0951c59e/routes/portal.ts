@@ -99,7 +99,8 @@ r.get(`${P}/project/:id`, async (c) => {
     project: {
       ...project,
       favoriteIds: favs.map((f: any) => f.image_id),
-      share: share?.active ? { url: shareUrl(share.token), guests } : null,
+      // Photos for sale on the link: a client who sees the watermark buys there too.
+      share: share?.active ? { url: shareUrl(share.token), guests, selling: share.sales } : null,
       groupHearts: hearts.images,
     },
     locations,

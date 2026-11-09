@@ -1107,7 +1107,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
           ],
           [
             "Groepsgalerij",
-            "Naam, e-mailadres, bezoeken, hartjes en downloads van gasten",
+            "Naam, e-mailadres, bezoeken en hartjes van gasten, en welke foto’s ze downloaden en wanneer",
             "Gerechtvaardigd belang: bijhouden wie de foto’s bekijkt. Vraag je om een mail bij nieuwe foto’s, dan gebruiken we je e-mailadres ook daarvoor. In elke mail staat een link om je af te melden. Niet voor reclame"
           ],
           [
@@ -1118,7 +1118,12 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
           [
             "Foto’s kopen in een groepsgalerij",
             "Welke foto’s je koopt, je naam, e-mailadres en betaling",
-            "Uitvoering van de overeenkomst: de betaling verwerken, de foto’s voor je openzetten en je de factuur mailen. De factuur bewaren we zo lang de wet dat vraagt"
+            "Uitvoering van de overeenkomst: de betaling verwerken, de foto’s in je account voor je openzetten en je de factuur mailen. De factuur bewaren we zo lang de wet dat vraagt"
+          ],
+          [
+            "Account voor je foto’s (Mijn foto’s)",
+            "Je e-mailadres en naam, een wachtwoord als je dat zelf instelt (versleuteld), en welke foto’s je kocht of eerder kreeg",
+            "Uitvoering van de overeenkomst: je laten inloggen met een code per mail, en je foto’s bewaren zodat je ze opnieuw kunt downloaden zolang dat kan"
           ],
           [
             "Toestemming voor foto’s van kinderen",
@@ -1345,6 +1350,14 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
             "12 maanden na hun laatste bezoek, of eerder als de studio de gast verwijdert"
           ],
           [
+            "Welke foto’s iemand downloadde",
+            "12 maanden, of eerder als de studio de gast verwijdert"
+          ],
+          [
+            "Account voor je foto’s",
+            "Tot je het zelf verwijdert, of 24 maanden na je laatste keer inloggen. Een factuur bewaren we 7 jaar"
+          ],
+          [
             "Aanvragen voor voorrang en gekochte foto’s in een groepsgalerij",
             "Zolang de gast bewaard blijft: 12 maanden na het laatste bezoek, of eerder als de studio de gast verwijdert. Een factuur bewaren we 7 jaar"
           ],
@@ -1511,7 +1524,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
           [
             "Supabase, lokale opslag",
             "sb-uunwhesmymkwmkgqkmxy-auth-token",
-            "Ingelogd blijven in het klantportaal. Noodzakelijk",
+            "Ingelogd blijven in het klantportaal of bij Mijn foto’s. Noodzakelijk",
             "Je inlogsessie",
             "Tot je uitlogt",
             "Supabase, in de EU"
@@ -1522,6 +1535,14 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
             "Terugkomen in een groepsgalerij zonder alles opnieuw in te vullen. Noodzakelijk",
             "Je gastsleutel",
             "Tot je de opslag wist",
+            "Geen"
+          ],
+          [
+            "PDC, lokale opslag",
+            "pdc-mandje:<code>",
+            "Je mandje met foto’s in een groepsgalerij bewaren, ook als je even naar de betaalpagina gaat. Noodzakelijk",
+            "Welke foto’s je koos",
+            "Tot je betaalt, het mandje leegmaakt of de opslag wist",
             "Geen"
           ],
           [

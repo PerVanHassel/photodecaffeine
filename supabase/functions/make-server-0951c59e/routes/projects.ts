@@ -28,7 +28,7 @@ import { consentMessageEmail, deliveredEmail, deliveredSubject, galleryGrewEmail
 import { mollieMode } from "../lib/mollie.ts";
 import { ordersOf, pricingOf, salesOf } from "../lib/orders.ts";
 import { forgetPhotoMails, guestHearts, mailGuestsNewPhotos, photoMailGuests, setPhotoMails, shareFor, shareToken, shareUrl } from "../lib/shares.ts";
-import { removePrivate, uploadPrivate } from "../lib/storage.ts";
+import { removePrivate, signDownload, uploadPrivate } from "../lib/storage.ts";
 import { demoSlugOf, projectDemos } from "../lib/util.ts";
 
 const r = new Hono<Env>();
@@ -622,6 +622,17 @@ r.put(`${P}/project/:id/gallery/:imageId/copies`, async (c) => {
   must(await db.from("gallery_images").update(patch).eq("id", img.id));
   await removePrivate(old);
   return c.json({ success: true });
+});
+
+// The studio saves an original from the photo's details; not in the download log.
+r.get(`${P}/project/:id/gallery/:imageId/original`, async (c) => {
+  const id = c.req.param("id");
+  const img = found(
+    await db.from("gallery_images").select("*").eq("id", c.req.param("imageId")).eq("project_id", id).maybeSingle(),
+    "Foto niet gevonden",
+  ) as any;
+  const fileName = img.file_name || "foto.jpg";
+  return c.json({ url: img.storage_path ? await signDownload(img.storage_path, fileName) : img.url, fileName });
 });
 
 // The older screens' route for only the watermarked copy.

@@ -61,6 +61,10 @@ function Frame({ viewAs }: { viewAs: string }) {
   const location = useLocation();
   const projects = usePortalProjects();
   const me = useMe();
+  // An account made to buy photos has no portal: its photos are at Mijn foto's.
+  useEffect(() => {
+    if ((me.data as { buyer?: boolean } | undefined)?.buyer && !viewAs) window.location.replace("/mijn-fotos");
+  }, [me.data, viewAs]);
   const unread = (projects.data?.projects || []).reduce((s, p) => s + (p.unreadMessages || 0), 0);
   // Looking along, the portal shows the client's name, not the studio's.
   const name = viewAs ? me.data?.name || "" : user?.user_metadata?.name || user?.email || "";

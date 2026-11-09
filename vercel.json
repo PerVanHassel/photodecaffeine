@@ -17,6 +17,7 @@
     { "source": "/offerte/:path*", "destination": "/app-shell.html" },
     { "source": "/factuur/:path*", "destination": "/app-shell.html" },
     { "source": "/galerij/:path*", "destination": "/app-shell.html" },
+    { "source": "/mijn-fotos", "destination": "/app-shell.html" },
     { "source": "/toestemming/:path*", "destination": "/app-shell.html" },
     { "source": "/werk-toestemming/:path*", "destination": "/app-shell.html" },
     { "source": "/review/:path*", "destination": "/app-shell.html" },

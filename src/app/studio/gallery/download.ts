@@ -1,7 +1,6 @@
 import { downloadZip } from "client-zip";
 import { toast } from "sonner";
 import { saveFile } from "../portal/data";
-import type { GalleryImage } from "../types";
 
 // Saving photos from the client gallery, in the portal and on the group page.
 // On an iPhone or iPad a plain download lands in Files, not in Photos. There the
@@ -73,37 +72,32 @@ export async function savePhoto(url: string, fileName: string, text: PhotosText)
   await toPhotos([file], text);
 }
 
-/** The name a photo gets once it leaves the gallery. */
-function nameOf(img: GalleryImage, n: number, watermarked: boolean) {
-  let name = img.fileName || `foto-${n}.jpg`;
-  // A photo that may not be posted says so in its name, also once it has left the gallery.
-  if (img.restriction === "no_social") name = name.replace(/(\.\w+)?$/, (ext) => `-niet-op-social-media${ext}`);
-  if (watermarked) name = `${name.replace(/\.\w+$/, "")}-voorbeeld.jpg`;
-  return name;
-}
+/** A file to save: a signed link from the server and the name it gets (watermark and "niet op social media" already in it). */
+export type SaveFile = { url: string; fileName: string };
 
 /**
- * The photos as shown. On an iPhone, up to PHOTOS_MAX of them go to Photos;
+ * Many photos at once. On an iPhone, up to PHOTOS_MAX of them go to Photos;
  * otherwise they come in one zip. Files are fetched one after another and
  * streamed into the zip, so a large gallery never has to sit in memory twice.
  * Says which of the two it did.
  */
-export async function saveZip(list: GalleryImage[], title: string, opts: { watermarked: boolean; onProgress: (done: number) => void; text: PhotosText }): Promise<"zip" | "photos"> {
+export async function saveZip(list: SaveFile[], title: string, opts: { onProgress: (done: number) => void; text: PhotosText }): Promise<"zip" | "photos"> {
   let done = 0;
   const makeUnique = () => {
     const used = new Set<string>();
     return (name: string) => {
-      while (used.has(name)) name = name.replace(/(\.\w+)?$/, (ext) => `-${done}${ext}`);
-      used.add(name);
-      return name;
+      let out = name || `foto-${done + 1}.jpg`;
+      while (used.has(out)) out = out.replace(/(\.\w+)?$/, (ext) => `-${done}${ext}`);
+      used.add(out);
+      return out;
     };
   };
   let unique = makeUnique();
 
   if (savesToPhotos() && list.length <= PHOTOS_MAX) {
     const files: File[] = [];
-    for (const img of list) {
-      files.push(await asFile(img.url, unique(nameOf(img, done + 1, opts.watermarked))));
+    for (const f of list) {
+      files.push(await asFile(f.url, unique(f.fileName)));
       done += 1;
       opts.onProgress(done);
     }
@@ -116,10 +110,10 @@ export async function saveZip(list: GalleryImage[], title: string, opts: { water
   }
 
   async function* files() {
-    for (const img of list) {
-      const res = await fetch(img.url);
-      if (!res.ok) throw new Error(`${img.fileName || "Een foto"} kon niet worden opgehaald.`);
-      yield { name: unique(nameOf(img, done + 1, opts.watermarked)), input: res };
+    for (const f of list) {
+      const res = await fetch(f.url);
+      if (!res.ok) throw new Error(`${f.fileName || "Een foto"} kon niet worden opgehaald.`);
+      yield { name: unique(f.fileName), input: res };
       done += 1;
       opts.onProgress(done);
     }

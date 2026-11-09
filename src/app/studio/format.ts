@@ -1,6 +1,6 @@
 import { differenceInCalendarDays, format, formatDistanceToNowStrict, isSameDay, isToday, isTomorrow, isYesterday, parseISO } from "date-fns";
 import { enGB, nl } from "date-fns/locale";
-import type { EventKind, LocationKind, ProjectType, Stage } from "./types";
+import type { EventKind, Hold, LocationKind, PartKind, ProjectPart, ProjectType, Stage } from "./types";
 
 // Dates in the admin read the way people say them: "morgen 18:15",
 // "za 3 okt", "3 dagen geleden". Everything is shown in the viewer's timezone.
@@ -150,3 +150,56 @@ export function mapsLink(lat: number, lng: number): string {
 export function mapsSearchLink(query: string): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
+
+// ---------------------------------------------------------------------------
+// Projecten 2.0: parts with their own steps (supabase lib/parts.ts)
+// ---------------------------------------------------------------------------
+
+export const PART_LABEL: Record<PartKind, string> = { photo: "Foto", video: "Video", web: "Website" };
+export const PART_KINDS: PartKind[] = ["photo", "video", "web"];
+
+export const STEPS: Record<PartKind, string[]> = {
+  photo: ["lead", "quote", "booked", "shoot", "editing", "delivered", "done"],
+  video: ["lead", "quote", "booked", "shoot", "editing", "delivered", "done"],
+  web: ["lead", "quote", "booked", "intake", "design", "build", "review", "live"],
+};
+
+const STEP_NAMES: Record<string, string> = {
+  lead: "Aanvraag", quote: "Offerte", booked: "Geboekt", shoot: "Shoot", editing: "Bewerken", delivered: "Geleverd", done: "Afgerond",
+  intake: "Intake", design: "Ontwerp", build: "Bouwen", review: "Review", live: "Live",
+};
+const VIDEO_NAMES: Record<string, string> = { shoot: "Opname", editing: "Montage" };
+
+export function stepLabel(kind: PartKind, step: string): string {
+  return (kind === "video" && VIDEO_NAMES[step]) || STEP_NAMES[step] || step;
+}
+
+/** The step that delivers: the gallery opens, the site goes live. */
+export const DELIVERY_STEP: Record<PartKind, string> = { photo: "delivered", video: "delivered", web: "live" };
+
+export function isDelivered(p: Pick<ProjectPart, "kind" | "stage">): boolean {
+  const steps = STEPS[p.kind];
+  return steps.indexOf(p.stage) >= steps.indexOf(DELIVERY_STEP[p.kind]);
+}
+
+export const HOLD_LABEL: Record<Hold, string> = { "": "Loopt", waiting: "Wacht op klant", paused: "Gepauzeerd", stopped: "Gestopt" };
+
+/** Per kind, the categories the admin picks from. A photo category suggests the gallery's style. */
+export const CATEGORIES: Record<PartKind, string[]> = {
+  photo: ["Sport", "Portret", "Automotive", "Evenement", "Concert", "Bruiloft", "Zakelijk", "Iets anders"],
+  video: ["Korte film", "Sfeervideo", "Social media content", "Iets anders"],
+  web: ["Nieuwe website", "Website vernieuwen", "Website met eigen foto en video", "Iets anders"],
+};
+
+/** The part the older fields follow: the first that has not stopped. */
+export function mainPart(p: { parts?: ProjectPart[] }): ProjectPart | undefined {
+  const parts = p.parts || [];
+  return parts.find((x) => x.hold !== "stopped") || parts[0];
+}
+
+/** Foto and Video share the gallery. */
+export const hasGallery = (p: { parts?: ProjectPart[]; type?: ProjectType }) =>
+  p.parts?.length ? p.parts.some((x) => x.kind !== "web" && x.hold !== "stopped") : p.type !== "web";
+
+export const hasKind = (p: { parts?: ProjectPart[]; type?: ProjectType }, kind: PartKind) =>
+  p.parts?.length ? p.parts.some((x) => x.kind === kind && x.hold !== "stopped") : p.type === kind;

@@ -2,7 +2,7 @@ import { keepPreviousData, QueryClient, useMutation, useQuery, useQueryClient, t
 import { toast } from "sonner";
 import { del, errorMessage, get, post, put, upload } from "./api";
 import type {
-  Business, ChildTag, Client, ConsentState, Inquiry, Invoice, Message, Overview, PriorityRequest, Project, Quote, SearchResults, Shot, StudioEvent, StudioLocation, Task,
+  Business, ChildTag, Client, ConsentState, GalleryInsights, Inquiry, Invoice, Message, Overview, PriorityRequest, Project, Quote, SearchResults, Shot, StudioEvent, StudioLocation, Task,
 } from "./types";
 
 export const queryClient = new QueryClient({
@@ -25,6 +25,7 @@ export const keys = {
   consent: (id: string) => ["consent", id] as const,
   childTags: (id: string) => ["child-tags", id] as const,
   priority: (id: string) => ["priority", id] as const,
+  insights: (id: string) => ["insights", id] as const,
   clients: ["clients"] as const,
   client: (id: string) => ["client", id] as const,
   inquiries: ["inquiries"] as const,
@@ -79,6 +80,15 @@ export const usePriority = (projectId: string) =>
     queryKey: keys.priority(projectId),
     queryFn: ({ signal }) => get<{ requests: PriorityRequest[] }>(`/admin/priority/project/${projectId}`, signal).then((r) => r.requests),
     refetchInterval: 30_000,
+    enabled: !!projectId,
+  });
+
+/** Per photo hearts, downloads and sales, the latest downloads and every basket. */
+export const useInsights = (projectId: string) =>
+  useQuery({
+    queryKey: keys.insights(projectId),
+    queryFn: ({ signal }) => get<GalleryInsights>(`/admin/project/${projectId}/insights`, signal),
+    refetchInterval: 60_000,
     enabled: !!projectId,
   });
 

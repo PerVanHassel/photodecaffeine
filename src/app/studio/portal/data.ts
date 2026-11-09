@@ -56,8 +56,13 @@ export const usePortalQuotes = () =>
 export const usePortalInvoices = () =>
   useQuery({ queryKey: pkeys.invoices, queryFn: ({ signal }) => get<{ invoices: PortalInvoice[] }>("/portal/invoices", signal).then((r) => r.invoices) });
 
+/** The client, or for an account that only buys photos { buyer: true }: that one has no portal. */
 export const useMe = () =>
-  useQuery({ queryKey: pkeys.me, queryFn: ({ signal }) => get<{ client: Client }>("/portal/me", signal).then((r) => r.client) });
+  useQuery({
+    queryKey: pkeys.me,
+    queryFn: ({ signal }) => get<{ client: Client | null; buyer?: boolean }>("/portal/me", signal)
+      .then((r) => (r.client ? r.client : ({ buyer: true } as Partial<Client> & { buyer: true }) as Client & { buyer?: boolean })),
+  });
 
 /** The steps a client sees, from quote to review. */
 export const JOURNEY = [
