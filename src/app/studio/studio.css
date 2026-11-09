@@ -766,3 +766,29 @@ a.s-stat:hover { background: var(--hover); }
   .studio .s-tree { display: none; }
   .studio .s-files-search, .studio .s-files-used { max-width: none; width: 100%; }
 }
+
+/* Logo's: every version of the logo with its files. A tile shows the logo the
+   way it is meant to be seen; a checkerboard means the file has no background. */
+.studio .s-logo-tile { aspect-ratio: 1; overflow: hidden; border-radius: calc(var(--r) - 1px) calc(var(--r) - 1px) 0 0; border-bottom: 1px solid var(--line); }
+.studio .s-logo-tile img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.studio .s-logo-tile.brown { background: #3e250a; }
+.studio .s-logo-tile.cream { background: #fffbe0; }
+.studio .s-logo-tile.light { background: #ffffff repeating-conic-gradient(#efece6 0 25%, transparent 0 50%) 0 0 / 18px 18px; }
+.studio .s-logo-tile.dark { background: #2a2520 repeating-conic-gradient(#353029 0 25%, transparent 0 50%) 0 0 / 18px 18px; }
+.studio .s-logo-meta { padding: 14px 16px 4px; }
+.studio .s-logo-meta h2 { font-size: 14px; font-weight: 700; }
+.studio .s-logo-files { list-style: none; margin: 0; padding: 4px 6px 8px; }
+.studio .s-logo-files a { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 8px 10px; border-radius: 8px; text-decoration: none; font-size: 13px; }
+.studio .s-logo-files a:hover { background: var(--hover); }
+.studio .s-logo-files b { font-weight: 600; white-space: nowrap; }
+.studio .s-logo-files .d { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 12.5px; }
+.studio .s-logo-files svg { margin-left: auto; width: 15px; height: 15px; color: var(--faint); }
+.studio .s-logo-files a:hover svg { color: var(--text); }
+.studio .s-colors { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.studio .s-colors li { display: flex; align-items: center; gap: 12px; }
+.studio .s-swatch { width: 40px; height: 40px; border-radius: 8px; box-shadow: inset 0 0 0 1px rgba(23, 19, 15, 0.12); flex: none; }
+/* On a phone a lower tile, so the four versions take less scrolling; only empty margin is cut off. */
+@media (max-width: 860px) {
+  .studio .s-logo-tile { aspect-ratio: 16 / 10; }
+  .studio .s-logo-tile img { object-fit: cover; }
+}
