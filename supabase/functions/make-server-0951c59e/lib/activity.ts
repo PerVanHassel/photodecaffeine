@@ -112,6 +112,9 @@ type Rule = {
   skip?: (x: Ctx) => boolean;
 };
 
+const PART_LABEL: Record<string, string> = { photo: "Foto", video: "Video", web: "Website" };
+const HOLD_LABEL: Record<string, string> = { waiting: "Wacht op klant", paused: "Onderdeel gepauzeerd", stopped: "Onderdeel gestopt" };
+
 const clip = (s: unknown, n = 140) => {
   const t = String(s ?? "").replace(/\s+/g, " ").trim();
   return t.length > n ? `${t.slice(0, n - 1)}…` : t;
@@ -158,6 +161,9 @@ const QUIET = [
   "PUT /admin/documents/:doc/read",
   "PUT /admin/project/:id/gallery/sizes",
   "PUT /admin/project/:id/gallery/:imageId/preview",
+  "PUT /admin/project/:id/gallery/:imageId/copies",
+  // A code by mail to sign in: asked often, and the sign-in itself is logged.
+  "POST /account/code",
   "POST /admin/ai/generate-description",
   "POST /admin/declarations/receipt",
   "POST /admin/investments/photo",
@@ -179,6 +185,27 @@ const RULES: Record<string, Rule> = {
     area: "Galerij", action: "Foto's geüpload", detail: (x) => (x.json?.added ? plural(x.json.added, "bestand", "bestanden") : ""),
   },
   "PUT /admin/project/:id/gallery/order": { area: "Galerij", action: "Volgorde van de galerij aangepast" },
+  "POST /admin/project/:id/gallery/remove": {
+    area: "Galerij", action: "Foto's verwijderd", of: PROJECT,
+    detail: (x) => join(plural(x.json?.removed || 0, "foto", "foto's"), x.json?.kept ? `${plural(x.json.kept, "gekochte foto", "gekochte foto's")} bleven staan` : ""),
+  },
+  "PUT /admin/project/:id/gallery/set": {
+    area: "Galerij", of: PROJECT,
+    action: (x) => (x.body?.set ? `Foto's in de set ${clip(x.body.set, 60)} gezet` : "Foto's uit hun set gehaald"),
+    detail: (x) => plural(x.body?.ids?.length || 0, "foto", "foto's"),
+  },
+  // Projecten 2.0: parts with their own steps (lib/parts.ts).
+  "POST /admin/project/:id/parts": { area: "Projecten", action: "Onderdeel toegevoegd", of: PROJECT, detail: (x) => PART_LABEL[x.body?.kind] || "" },
+  "PUT /admin/project/:id/parts/:partId": {
+    area: "Projecten", of: PROJECT, param: "id",
+    action: (x) => (x.body?.stage ? "Stap van een onderdeel verzet" : x.body?.hold !== undefined ? (HOLD_LABEL[x.body.hold] || "Onderdeel loopt weer") : "Onderdeel bijgewerkt"),
+    detail: (x) => join(x.body?.stage, x.body?.holdNote ? clip(x.body.holdNote) : ""),
+  },
+  "DELETE /admin/project/:id/parts/:partId": { area: "Projecten", action: "Onderdeel verwijderd", of: PROJECT, param: "id" },
+  "POST /admin/project/:id/parts/:partId/deliver": {
+    area: "Projecten", action: "Geleverd", of: PROJECT, param: "id",
+    detail: (x) => (x.json?.sentTo?.length ? `Mail naar ${x.json.sentTo.join(", ")}` : "Zonder mail"),
+  },
   "DELETE /admin/project/:id/gallery/:imageId": { area: "Galerij", action: "Foto verwijderd", of: IMAGE },
   "POST /admin/project/:id/gallery/privatize": { area: "Galerij", action: "Galerij naar privé-opslag verplaatst" },
   "POST /admin/project/:id/gallery/notify": {
@@ -197,6 +224,9 @@ const RULES: Record<string, Rule> = {
       x.body?.sales === undefined ? "" : x.body.sales ? "foto's verkopen aan" : "foto's verkopen uit",
       x.body?.photoPrice === undefined ? "" : `foto ${euro(x.body.photoPrice)}`,
       x.body?.photoPriceNormal === undefined ? "" : `normaal ${euro(x.body.photoPriceNormal)}`,
+      x.body?.bundleSize === undefined ? "" : x.body.bundleSize ? `bundel van ${x.body.bundleSize}` : "geen bundel",
+      x.body?.bundlePrice === undefined ? "" : `bundel ${euro(x.body.bundlePrice)}`,
+      x.body?.discountUntil === undefined ? "" : x.body.discountUntil ? `korting tot ${x.body.discountUntil}` : "korting zonder einddatum",
     ),
   },
   // Voorrang (routes/priority.ts): the studio's answers to a guest who asked for their photos first.
@@ -455,6 +485,20 @@ const RULES: Record<string, Rule> = {
     who: (x) => guestByKey(x.params.token, x.body?.key),
     detail: (x) => imageName(x.body?.imageId),
   },
+  "POST /share/:token/downloads": {
+    area: "Galerij", action: "Foto's gedownload als zip", of: SHARE,
+    who: (x) => guestByKey(x.params.token, x.body?.key),
+    detail: (x) => plural(x.json?.files?.length || 0, "foto", "foto's"),
+  },
+  "POST /portal/project/:id/downloads": { area: "Galerij", action: "Foto's gedownload als zip", of: PROJECT, detail: (x) => plural(x.json?.files?.length || 0, "foto", "foto's") },
+  // Mijn foto's (routes/account.ts).
+  "POST /account/verify": {
+    area: "Galerij", action: (x) => (x.json?.created ? "Account gemaakt bij Mijn foto's" : "Ingelogd bij Mijn foto's"),
+    who: (x) => ({ kind: "guest", name: "", email: String(x.body?.email || "") }),
+  },
+  "PUT /account/me": { area: "Galerij", action: "Naam aangepast bij Mijn foto's" },
+  "DELETE /account": { area: "Galerij", action: "Account verwijderd bij Mijn foto's" },
+  "POST /account/downloads": { area: "Galerij", action: "Eigen foto's gedownload bij Mijn foto's", detail: (x) => plural(x.json?.files?.length || 0, "foto", "foto's") },
   "POST /share/:token/downloaded": {
     area: "Galerij", action: "Foto's gedownload als zip", of: SHARE,
     who: (x) => guestByKey(x.params.token, x.body?.key),
@@ -564,7 +608,8 @@ async function attempt<T>(fn: () => Promise<T> | T, fallback: T): Promise<T> {
 async function actorOf(c: Context, rule: Rule, x: Ctx): Promise<Actor> {
   const user = c.get("user") || (await attempt(() => verifyAuth(c.req.header("Authorization") ?? null), null));
   if (user) {
-    const kind: Kind = user.email === OWNER_EMAIL ? "owner" : isAdminUser(user) ? "team" : "client";
+    // Someone with an account to buy photos (lib/accounts.ts) is a guest, not a client.
+    const kind: Kind = user.email === OWNER_EMAIL ? "owner" : isAdminUser(user) ? "team" : user.app_metadata?.buyer ? "guest" : "client";
     return { id: user.id, name: user.user_metadata?.name || user.email || "", email: user.email || "", kind };
   }
   const who = (await attempt(async () => (await rule.who?.(x)) || null, null)) || {};

@@ -1,4 +1,5 @@
 import * as kv from "../kv_store.tsx";
+import { isBuyerOnly } from "./accounts.ts";
 import { db } from "./db.ts";
 
 // What the privacy statement promises about keeping things (part 6, article 6).
@@ -15,6 +16,26 @@ const monthsAgo = (n: number) => {
   return d.toISOString();
 };
 
+/**
+ * Accounts made to buy photos (lib/accounts.ts) that nobody signed in to for
+ * two years go, as the privacy statement says. Clients and the studio stay.
+ */
+async function purgeIdleBuyerAccounts() {
+  const before = monthsAgo(24);
+  for (let page = 1; page <= 20; page++) {
+    const { data, error } = await db.auth.admin.listUsers({ page, perPage: 200 });
+    if (error || !data?.users?.length) return;
+    for (const u of data.users) {
+      const last = u.last_sign_in_at || u.created_at;
+      if (!u.app_metadata?.buyer || !last || last >= before) continue;
+      if (!(await isBuyerOnly(u))) continue;
+      await db.from("gallery_guests").update({ user_id: null }).eq("user_id", u.id);
+      await db.auth.admin.deleteUser(u.id);
+    }
+    if (data.users.length < 200) return;
+  }
+}
+
 export async function purgeExpiredOncePerDay() {
   try {
     const last = await kv.get(LAST_RUN);
@@ -25,10 +46,13 @@ export async function purgeExpiredOncePerDay() {
       db.from("inquiries").delete().is("client_id", null).is("project_id", null).lt("created_at", monthsAgo(12)),
       db.from("gallery_guests").delete().lt("last_seen_at", monthsAgo(12)),
       db.from("activity_log").delete().lt("created_at", monthsAgo(12)),
+      // Who downloaded what (lib/downloads.ts).
+      db.from("gallery_downloads").delete().lt("created_at", monthsAgo(12)),
       db.from("payments").delete().neq("status", "paid").lt("created_at", monthsAgo(12)),
       // Baskets of photos that were never paid (lib/orders.ts).
       db.from("gallery_orders").delete().is("invoice_id", null).lt("created_at", monthsAgo(12)),
     ]);
+    await purgeIdleBuyerAccounts();
   } catch (err) {
     // Cleaning up is never worth failing the admin's first page over; tomorrow it tries again.
     console.log("retention:", err);

@@ -1,13 +1,15 @@
 import { db, found, must } from "./db.ts";
 import { fail } from "./http.ts";
+import { ensureParts, galleryDelivered, mediaParts, partToApi, sortedParts } from "./parts.ts";
 import { imageKey, removePrivate, signDownload, signPaths } from "./storage.ts";
-import { projectDemos } from "./util.ts";
+import { projectDemos, todayAmsterdam } from "./util.ts";
 
 // ---------------------------------------------------------------------------
 // Stages and the older status field
 // ---------------------------------------------------------------------------
-// stage drives the pipeline. status is what the mobile app and the portal
-// were built on; it is derived from stage and written alongside it.
+// Since Projecten 2.0 the steps live on the project's parts (lib/parts.ts).
+// stage and status on the project row are written from its first part, for
+// the phone app and the older screens.
 
 export const STAGES = ["lead", "quote", "booked", "shoot", "editing", "delivered", "review", "archived"] as const;
 export type Stage = (typeof STAGES)[number];
@@ -35,15 +37,17 @@ export function stageForStatus(status: Status, current: Stage): Stage {
 
 export const PROJECT_SELECT = `
   *,
+  project_parts ( * ),
   project_clients ( client_id, position, clients ( id, name, email, company, user_id ) ),
-  gallery_images ( id, url, storage_path, preview_path, file_name, sort, width, height, restriction ),
+  gallery_images ( id, url, storage_path, preview_path, display_path, file_name, sort, width, height, restriction, set_name, created_at ),
   events ( id, kind, title, starts_at, ends_at, all_day, location_text, link, notes, location_id, client_visible )
 `;
 
 export type ProjectRow = Record<string, any>;
 
 export async function loadProject(id: string): Promise<ProjectRow> {
-  return found(await db.from("projects").select(PROJECT_SELECT).eq("id", id).maybeSingle(), "Project niet gevonden");
+  const row = found(await db.from("projects").select(PROJECT_SELECT).eq("id", id).maybeSingle(), "Project niet gevonden");
+  return (await ensureParts([row as any]))[0];
 }
 
 export async function loadProjects(filter: { ids?: string[]; type?: string } = {}): Promise<ProjectRow[]> {
@@ -53,7 +57,7 @@ export async function loadProjects(filter: { ids?: string[]; type?: string } = {
     q = q.in("id", filter.ids);
   }
   if (filter.type) q = q.eq("type", filter.type);
-  return must(await q) || [];
+  return ensureParts((must(await q) || []) as any[]);
 }
 
 export function clientIdsOf(row: ProjectRow): string[] {
@@ -105,13 +109,22 @@ export function eventToApi(e: any) {
   };
 }
 
-export type Downloads = "original" | "watermark" | "none";
+// ---------------------------------------------------------------------------
+// Who sees what: watermark and downloads
+// ---------------------------------------------------------------------------
+// The studio sets one switch, Watermerk, per gallery. With it on, everyone but
+// the studio sees the watermarked copies, unless the client is allowed the
+// originals (clientOriginals). Selling photos on the group link always shows
+// the guests watermarks. Downloading gives the version someone sees, while
+// downloading is open: before delivery, and a quarter after it (terms,
+// Oplevering & revisies, article 5) or until the date the studio set.
+//
+// Galleries from before the switch kept their watermark in earlyDownloads, and
+// only until delivery; they keep working that way (legacy).
 
-/**
- * What a client may download. Once the project is delivered that is always
- * the original; before that the studio chooses per project.
- */
-/** After delivery a client can download for a quarter (terms, Oplevering & revisies, article 5). */
+export type Downloads = "original" | "watermark" | "none";
+export type Version = "original" | "watermark";
+
 const DOWNLOAD_MONTHS = 3;
 
 /** The last day of downloading, YYYY-MM-DD; empty when it is not running yet. A date the studio set wins. */
@@ -124,14 +137,48 @@ export function downloadsUntil(row: { gallery_settings?: any }): string {
   return d.toISOString().slice(0, 10);
 }
 
-const dayPassed = (day: string) => !!day && day < new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Amsterdam" });
+const dayPassed = (day: string) => !!day && day < todayAmsterdam();
 
+export type Access = {
+  delivered: boolean;
+  /** Downloading can happen now, as far as time goes. */
+  open: boolean;
+  /** The Watermerk switch. */
+  watermark: boolean;
+  client: { sees: Version; downloads: Downloads };
+};
+
+export function galleryAccess(row: ProjectRow): Access {
+  const gs = row.gallery_settings || {};
+  const delivered = galleryDelivered(row);
+  // A website has no download, unless the studio set a date for its photos.
+  const media = row.project_parts ? mediaParts(row).length > 0 : row.type !== "web";
+  const open = (media || !!gs.downloadsUntil) && !(delivered && dayPassed(downloadsUntil(row)));
+  if (typeof gs.watermark !== "boolean") {
+    const early = gs.earlyDownloads;
+    const sees: Version = !delivered && early === "watermark" ? "watermark" : "original";
+    const on = delivered || early !== "none";
+    return { delivered, open, watermark: early === "watermark" && !delivered, client: { sees, downloads: open && on ? sees : "none" } };
+  }
+  const sees: Version = gs.watermark && !gs.clientOriginals ? "watermark" : "original";
+  const on = gs.clientDownloads !== false;
+  return { delivered, open, watermark: gs.watermark, client: { sees, downloads: open && on ? sees : "none" } };
+}
+
+/** What a client may download; "none" outside the window or with downloads off. */
 export function clientDownloads(row: ProjectRow): Downloads {
-  // A website is delivered by going live, unless the studio sets a date for its photos.
-  if (row.type === "web" && !row.gallery_settings?.downloadsUntil) return "none";
-  if (DONE_STAGES.includes(row.stage)) return dayPassed(downloadsUntil(row)) ? "none" : "original";
-  const early = row.gallery_settings?.earlyDownloads;
-  return early === "watermark" || early === "none" ? early : "original";
+  return galleryAccess(row).client.downloads;
+}
+
+/** What someone on the group link sees and may download for free. */
+export function guestAccess(row: ProjectRow, share: { downloads: boolean; sales: boolean }): { sees: Version; downloads: Downloads } {
+  const a = galleryAccess(row);
+  const legacy = typeof (row.gallery_settings || {}).watermark !== "boolean";
+  const sees: Version = share.sales || (legacy ? a.client.sees === "watermark" : a.watermark) ? "watermark" : "original";
+  if (!share.downloads || !a.open) return { sees, downloads: "none" };
+  // Before the switch, guests downloaded what the client could.
+  if (legacy && a.client.downloads === "none") return { sees, downloads: "none" };
+  return { sees, downloads: sees };
 }
 
 /** The name a watermarked copy is saved under. */
@@ -142,6 +189,11 @@ export function watermarkedName(name: string): string {
 /** A photo with a child on it who may not be shown: the studio sees it, nobody else. */
 export const heldBack = (img: any) => img.restriction === "no_photo";
 
+export const isVideoName = (name: string) => /\.(mp4|mov|m4v|webm)$/i.test(String(name || "").split("?")[0]);
+
+/** Someone who sees watermarks only gets photos that have a watermarked copy; videos have none. */
+export const showsAs = (img: any, sees: Version) => sees === "original" || Boolean(img.preview_path);
+
 /** A photo that may not be posted says so in its file name, so it still does once it has left the gallery. */
 function savedName(img: any): string {
   const name = img.file_name || "foto.jpg";
@@ -149,30 +201,77 @@ function savedName(img: any): string {
 }
 
 /** A link that saves one gallery photo, as far as `downloads` allows; fails when it allows nothing. */
-export async function downloadLink(img: any, downloads: Downloads): Promise<{ url: string; fileName: string }> {
+export async function downloadLink(img: any, downloads: Downloads): Promise<{ url: string; fileName: string; version: Version }> {
   if (heldBack(img)) fail(404, "Foto niet gevonden");
   if (downloads === "none" || (downloads === "watermark" && !img.preview_path)) {
-    fail(403, "Downloaden kan zodra de foto's geleverd zijn.");
+    fail(403, "Downloaden kan nu niet bij deze foto.");
   }
   if (downloads === "watermark") {
     const fileName = watermarkedName(savedName(img));
-    return { url: await signDownload(img.preview_path, fileName), fileName };
+    return { url: await signDownload(img.preview_path, fileName), fileName, version: "watermark" };
   }
   const fileName = savedName(img);
   const url = img.storage_path ? await signDownload(img.storage_path, fileName) : img.url;
-  return { url, fileName };
+  return { url, fileName, version: "original" };
 }
 
-export type Signer = (img: any, preview?: boolean) => string;
+/** Download links for many photos at once, for a zip. Photos it may not give are left out. */
+export async function downloadLinks(images: any[], downloadsOf: (img: any) => Downloads) {
+  const out: { id: string; url: string; fileName: string; version: Version }[] = [];
+  for (let i = 0; i < images.length; i += 20) {
+    const chunk = images.slice(i, i + 20);
+    const links = await Promise.all(chunk.map(async (img) => {
+      const d = downloadsOf(img);
+      if (heldBack(img) || d === "none" || (d === "watermark" && !img.preview_path)) return null;
+      try {
+        return { id: img.id, ...(await downloadLink(img, d)) };
+      } catch {
+        return null;
+      }
+    }));
+    out.push(...links.filter((l): l is NonNullable<typeof l> => !!l));
+  }
+  return out;
+}
 
-/** Signs every private gallery image across the given projects in one call. */
+/** "view": the light copy to look at (or the original); "watermark": the watermarked copy; "original": the file itself. */
+export type Signer = (img: any, version?: Version | "view") => string;
+
+/** Signs the private gallery images across the given projects in one call. */
 export async function gallerySigner(rows: ProjectRow[]): Promise<Signer> {
-  const paths = rows.flatMap((r) => (r.gallery_images || []).flatMap((g: any) => [g.storage_path, g.preview_path])).filter(Boolean);
+  const paths = rows.flatMap((r) => (r.gallery_images || []).flatMap((g: any) => [g.display_path || g.storage_path, g.preview_path])).filter(Boolean);
   const signed = await signPaths(paths);
-  return (img: any, preview = false) => {
-    if (preview && img.preview_path) return signed.get(img.preview_path) || "";
-    return img.storage_path ? signed.get(img.storage_path) || "" : img.url;
+  return (img: any, version: Version | "view" = "view") => {
+    if (version === "watermark") return img.preview_path ? signed.get(img.preview_path) || "" : "";
+    const path = version === "view" ? img.display_path || img.storage_path : img.storage_path;
+    if (!path) return img.url;
+    // The original is only signed on its own, for a download; the light copy stands in for it.
+    return signed.get(path) || signed.get(img.display_path || img.storage_path) || "";
   };
+}
+
+/** The gallery's look and words, for anyone who sees it; the studio's own switches stay out. */
+const PUBLIC_SETTINGS = [
+  "title", "subtitle", "intro", "coverImageId", "coverUrl", "accentColor", "style", "layout", "theme", "font", "density", "gap",
+  "showNumbers", "sets", "deliveredAt", "downloadsUntil",
+] as const;
+
+export function publicSettings(gs: Record<string, any> = {}): Record<string, any> {
+  const out: Record<string, any> = {};
+  for (const k of PUBLIC_SETTINGS) if (gs[k] !== undefined && gs[k] !== "") out[k] = gs[k];
+  return out;
+}
+
+/** The image as a gallery shows it to someone who sees `sees`. */
+export function imageToApi(g: any, sign: Signer, sees: Version) {
+  const img: Record<string, any> = { id: g.id, url: sign(g, sees === "watermark" ? "watermark" : "view"), fileName: g.file_name };
+  if (g.restriction) img.restriction = g.restriction;
+  if (g.set_name) img.set = g.set_name;
+  if (g.width > 0 && g.height > 0) {
+    img.w = g.width;
+    img.h = g.height;
+  }
+  return img;
 }
 
 /**
@@ -182,19 +281,18 @@ export async function gallerySigner(rows: ProjectRow[]): Promise<Signer> {
 export function projectToApi(row: ProjectRow, sign: Signer, opts: { forClient?: boolean } = {}) {
   const clientIds = clientIdsOf(row);
   const demos = projectDemos(row);
-  const downloads = clientDownloads(row);
-  // A client on a watermarked project only ever gets the watermarked copy, so
-  // the original can't be saved from the page either.
-  const watermarked = opts.forClient && downloads === "watermark";
+  const access = galleryAccess(row);
   const all = sortedImages(row);
-  const images = (opts.forClient ? all.filter((g) => !heldBack(g)) : all).map((g) => {
-    const img: Record<string, any> = { id: g.id, url: sign(g, watermarked), fileName: g.file_name };
-    if (opts.forClient) img.download = downloads === "original" || (downloads === "watermark" && Boolean(g.preview_path));
-    else img.watermark = Boolean(g.preview_path);
-    if (g.restriction) img.restriction = g.restriction;
-    if (g.width > 0 && g.height > 0) {
-      img.w = g.width;
-      img.h = g.height;
+  const sees: Version = opts.forClient ? access.client.sees : "original";
+  // The client never gets a photo that is held back, and with the watermark on only photos that have one.
+  const shown = opts.forClient ? all.filter((g) => !heldBack(g) && showsAs(g, sees)) : all;
+  const images = shown.map((g) => {
+    const img = imageToApi(g, sign, sees);
+    if (opts.forClient) img.download = access.client.downloads !== "none";
+    else {
+      img.watermark = Boolean(g.preview_path);
+      img.light = Boolean(g.display_path);
+      img.addedAt = g.created_at;
     }
     return img;
   });
@@ -204,8 +302,8 @@ export function projectToApi(row: ProjectRow, sign: Signer, opts: { forClient?: 
   const gallerySettings = { ...(row.gallery_settings || {}) };
   const cover = gallerySettings.coverImageId ? images.find((i) => i.id === gallerySettings.coverImageId) : null;
   if (cover) gallerySettings.coverUrl = cover.url;
-  else if (images.length < all.length) {
-    // The cover may be the photo that is held back; the gallery then opens with its first photo.
+  else if (images.length < all.length || sees === "watermark") {
+    // The cover may be held back, or have no watermarked copy; the gallery then opens with its first photo.
     delete gallerySettings.coverImageId;
     delete gallerySettings.coverUrl;
   }
@@ -213,6 +311,7 @@ export function projectToApi(row: ProjectRow, sign: Signer, opts: { forClient?: 
     .filter((e: any) => !opts.forClient || e.client_visible)
     .sort((a: any, b: any) => a.starts_at.localeCompare(b.starts_at))
     .map(eventToApi);
+  const parts = sortedParts(row).filter((p) => !opts.forClient || p.hold !== "stopped").map((p) => partToApi(p, opts));
 
   const api: Record<string, any> = {
     id: row.id,
@@ -227,6 +326,8 @@ export function projectToApi(row: ProjectRow, sign: Signer, opts: { forClient?: 
     gallerySettings,
     galleryUrls: images.map((i) => i.url),
     gallery: images,
+    parts,
+    archivedAt: row.archived_at || null,
     meeting: meeting
       ? {
         date: meeting.starts_at,
@@ -249,8 +350,13 @@ export function projectToApi(row: ProjectRow, sign: Signer, opts: { forClient?: 
   };
 
   api.downloadsUntil = downloadsUntil(row);
-  if (opts.forClient) api.downloads = downloads;
-  else {
+  api.galleryDelivered = access.delivered;
+  if (opts.forClient) {
+    api.downloads = access.client.downloads;
+    api.watermarked = sees === "watermark";
+    // What the gallery says, without the studio's own switches.
+    api.gallerySettings = publicSettings(gallerySettings);
+  } else {
     const clients = clientsOf(row);
     api.clients = clients;
     api.clientNames = clients.map((c) => c.name);
@@ -258,6 +364,7 @@ export function projectToApi(row: ProjectRow, sign: Signer, opts: { forClient?: 
     api.briefingUpdatedAt = row.briefing_updated_at || "";
     api.valueCents = row.value_cents;
     api.inquiryId = row.inquiry_id;
+    api.access = { watermark: access.watermark, client: access.client, open: access.open };
   }
   return api;
 }
@@ -291,7 +398,7 @@ export async function syncGalleryUrls(row: ProjectRow, urls: string[]): Promise<
   const removed = existing.filter((g) => !wantedKeys.has(g.storage_path || imageKey(g.url)));
   if (removed.length) {
     must(await db.from("gallery_images").delete().in("id", removed.map((g) => g.id)));
-    await removePrivate(removed.map((g) => g.preview_path));
+    await removePrivate(removed.flatMap((g) => [g.preview_path, g.display_path]));
   }
 
   let added = 0;

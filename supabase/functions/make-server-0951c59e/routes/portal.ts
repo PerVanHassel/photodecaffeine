@@ -5,7 +5,9 @@ import { db, found, must } from "../lib/db.ts";
 import { emailWrap, escapeHtml, sendEmail } from "../lib/email.ts";
 import { type Env, fail, readBody, requireUser, text, uuid, z } from "../lib/http.ts";
 import { notify } from "../lib/notify.ts";
-import { clientDownloads, downloadLink, eventToApi, gallerySigner, loadProject, loadProjects, projectToApi } from "../lib/projects.ts";
+import { isBuyerOnly } from "../lib/accounts.ts";
+import { logDownloads } from "../lib/downloads.ts";
+import { clientDownloads, downloadLink, downloadLinks, eventToApi, gallerySigner, loadProject, loadProjects, projectToApi } from "../lib/projects.ts";
 import { clientMessageToStudioEmail } from "../lib/projectEmails.ts";
 import { guestCount, guestHearts, shareFor, shareUrl } from "../lib/shares.ts";
 import { invoiceTotals, payableOnline } from "./invoices.ts";
@@ -41,6 +43,8 @@ async function locationsFor(ids: string[]) {
 
 // --- account ---
 r.get(`${P}/me`, async (c) => {
+  // An account that only buys photos has no portal: it goes to Mijn foto's.
+  if (!viewingAs(c) && c.get("user")?.app_metadata?.buyer && await isBuyerOnly(c.get("user"))) return c.json({ client: null, buyer: true });
   const client = await access(c);
   // Looking along: the portal says whose it is, and whether trying things out is saved.
   const preview = viewingAs(c) ? { viewAs: true, isTest: (await testClientIds()).has(client.id) } : {};
@@ -195,15 +199,35 @@ r.post(`${P}/project/:id/favorites/submit`, async (c) => {
 });
 
 // --- downloads ---
+// Every download goes in the log (lib/downloads.ts), except the studio looking along.
 r.get(`${P}/project/:id/download/:imageId`, async (c) => {
   const id = c.req.param("id");
-  await access(c, id);
-  const img = found(
-    await db.from("gallery_images").select("*").eq("id", c.req.param("imageId")).eq("project_id", id).maybeSingle(),
-    "Foto niet gevonden",
-  ) as any;
-  const project = found(await db.from("projects").select("stage, gallery_settings").eq("id", id).maybeSingle(), "Project niet gevonden") as any;
-  return c.json(await downloadLink(img, clientDownloads(project)));
+  const client = await access(c, id);
+  const row = await loadProject(id);
+  const img = (row.gallery_images || []).find((g: any) => g.id === c.req.param("imageId"));
+  if (!img) fail(404, "Foto niet gevonden");
+  const link = await downloadLink(img, clientDownloads(row));
+  if (!viewingAs(c)) {
+    await logDownloads([{ project_id: id, image_id: img.id, client_id: client.id, who: client.name || client.email, source: "portal", version: link.version }]);
+  }
+  return c.json(link);
+});
+
+// Links for a zip, made in the browser from the originals (or the watermarked copies).
+r.post(`${P}/project/:id/downloads`, async (c) => {
+  const id = c.req.param("id");
+  const client = await access(c, id);
+  const { imageIds } = await readBody(c, z.object({ imageIds: z.array(uuid).min(1).max(2000) }));
+  const row = await loadProject(id);
+  const rights = clientDownloads(row);
+  const wanted = new Set(imageIds);
+  const images = (row.gallery_images || []).filter((g: any) => wanted.has(g.id)).sort((a: any, b: any) => a.sort - b.sort);
+  const files = await downloadLinks(images, () => rights);
+  if (files.length === 0) fail(403, "Downloaden kan nu niet bij deze foto's.");
+  if (!viewingAs(c)) {
+    await logDownloads(files.map((f) => ({ project_id: id, image_id: f.id, client_id: client.id, who: client.name || client.email, source: "portal", version: f.version })), crypto.randomUUID());
+  }
+  return c.json({ files });
 });
 
 // --- agenda ---

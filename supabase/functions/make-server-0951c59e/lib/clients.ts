@@ -46,6 +46,8 @@ export async function clientForUser(user: any): Promise<ClientRow> {
       return must(await db.from("clients").update({ user_id: user.id }).eq("id", byEmail.id).select("*").single()) as ClientRow;
     }
   }
+  // An account made to buy photos (lib/accounts.ts) is no client: its photos are at Mijn foto's.
+  if (user.app_metadata?.buyer) fail(403, "Dit account is voor je gekochte foto's. Je vindt ze bij Mijn foto's.");
   return must(await db.from("clients").insert({
     id: user.id,
     user_id: user.id,

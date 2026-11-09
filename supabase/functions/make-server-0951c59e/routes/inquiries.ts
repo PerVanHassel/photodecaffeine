@@ -7,6 +7,7 @@ import { emailWrap, escapeHtml, getPromoPortfolioArticle, glassImageCard, sendEm
 import { EMAIL_ADMIN_NOTIFY } from "../lib/config.ts";
 import { type Env, fail, readBody, requireAdmin, requirePermission, text, uuid, z } from "../lib/http.ts";
 import { notify } from "../lib/notify.ts";
+import { addParts } from "../lib/parts.ts";
 import { smallCopy } from "../lib/portfolio.ts";
 
 const r = new Hono<Env>();
@@ -317,6 +318,8 @@ r.post(`${A}/inquiry/:id/convert`, async (c) => {
     }).select("id").single()) as any;
     projectId = project.id;
     must(await db.from("project_clients").insert({ project_id: projectId, client_id: client.id, position: 0 }));
+    const kind = b.project.type === "web" ? "web" : b.project.type === "video" ? "video" : "photo";
+    await addParts(project.id, [{ kind, stage: b.quote ? "quote" : "lead" }]);
   }
 
   let quoteId: string | null = null;

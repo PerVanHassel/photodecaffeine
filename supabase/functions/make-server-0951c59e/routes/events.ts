@@ -3,6 +3,7 @@ import { SITE_URL } from "../lib/config.ts";
 import { db, found, must } from "../lib/db.ts";
 import { type Env, isoDateTime, readBody, requireAdmin, requirePermission, text, uuid, z } from "../lib/http.ts";
 import { toIcs } from "../lib/ics.ts";
+import { advance } from "../lib/parts.ts";
 import { eventToApi } from "../lib/projects.ts";
 
 const r = new Hono<Env>();
@@ -93,7 +94,7 @@ r.post(`${A}/events`, async (c) => {
   const row = must(await db.from("events").insert(toRow(b)).select(SELECT).single());
   // A shoot on the calendar means the project is booked.
   if (b.kind === "shoot" && b.projectId) {
-    await db.from("projects").update({ stage: "booked" }).eq("id", b.projectId).in("stage", ["lead", "quote"]);
+    await advance(b.projectId, "booked", ["lead", "quote"]);
   }
   return c.json({ event: withContext(row) });
 });

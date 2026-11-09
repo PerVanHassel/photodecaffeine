@@ -7,6 +7,7 @@ import { emailWrap, escapeHtml, sendEmail } from "../lib/email.ts";
 import { type Env, fail, nameOf, requireAdmin } from "../lib/http.ts";
 import { bookingConfirmedEmail } from "../lib/legalEmails.ts";
 import { notify } from "../lib/notify.ts";
+import { addParts, advance, type Kind } from "../lib/parts.ts";
 import { todayAmsterdam } from "../lib/util.ts";
 
 const r = new Hono<Env>();
@@ -564,7 +565,7 @@ r.post(A, async (c) => {
     status: "draft",
     created_by: { id: admin.id, name: nameOf(admin) },
   }).select("*").single());
-  if (links.projectId) await db.from("projects").update({ stage: "quote" }).eq("id", links.projectId).eq("stage", "lead");
+  if (links.projectId) await advance(links.projectId, "quote", ["lead"], quoteKind(String(fields.type)));
   return c.json({ quote: adminQuote(rowToQuote(row)) });
 });
 
@@ -614,7 +615,7 @@ r.post(`${A}/:id/send`, async (c) => {
     sent_at: new Date().toISOString(),
     send_count: (Number(quote.sendCount) || 0) + 1,
   }).eq("id", id).select("*").single());
-  if (quote.projectId) await db.from("projects").update({ stage: "quote" }).eq("id", quote.projectId).eq("stage", "lead");
+  if (quote.projectId) await advance(quote.projectId, "quote", ["lead"], quoteKind(quote.type));
   // The quote this one replaces can no longer be accepted, unless it already was.
   const replaces = String(quote.details?.replaces?.id || "");
   if (/^[0-9a-f-]{36}$/.test(replaces) && replaces !== id) {
@@ -622,6 +623,9 @@ r.post(`${A}/:id/send`, async (c) => {
   }
   return c.json({ success: true, quote: adminQuote(rowToQuote(row)) });
 });
+
+/** The part a quote is for. Quotes are for photos or websites; video goes as photo for now. */
+const quoteKind = (type: string): Kind => (type === "web" ? "web" : "photo");
 
 /**
  * An accepted quote books the work: the linked project moves to "booked"
@@ -640,8 +644,10 @@ async function onAccepted(quote: ReturnType<typeof rowToQuote>) {
     projectId = created.id;
     must(await db.from("project_clients").insert({ project_id: projectId, client_id: quote.clientId, position: 0 }));
     must(await db.from("quotes").update({ project_id: projectId }).eq("id", quote.id));
+    await addParts(created.id, [{ kind: quoteKind(quote.type), stage: "booked" }]);
   } else if (projectId) {
-    await db.from("projects").update({ stage: "booked", status: "in_progress" }).eq("id", projectId).in("stage", ["lead", "quote"]);
+    // The part this quote is for moves on; a project without one gets it.
+    await advance(projectId, "booked", ["lead", "quote"], quoteKind(quote.type));
   }
   must(await db.from("tasks").insert({
     title: `${quote.type === "web" ? "Start het project" : "Plan de shoot"}: ${quote.title}`,

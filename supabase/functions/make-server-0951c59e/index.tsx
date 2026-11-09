@@ -4,6 +4,7 @@ import { logger } from "npm:hono/logger";
 import { activityLog } from "./lib/activity.ts";
 import { onError } from "./lib/http.ts";
 
+import account from "./routes/account.ts";
 import activity from "./routes/activity.ts";
 import analytics from "./routes/analytics.ts";
 import clients from "./routes/clients.ts";
@@ -59,7 +60,7 @@ app.use("*", activityLog);
 
 const modules: Hono<any>[] = [
   clients, portal, projects, quotes, invoices, payments, inquiries, tasks, locations, events, overview,
-  engagement, google, portfolio, team, declarations, investments, documents, files, settings, notifications, storage, share, priority, consent, articleConsent, withdrawal, activity, analytics,
+  engagement, google, portfolio, team, declarations, investments, documents, files, settings, notifications, storage, share, account, priority, consent, articleConsent, withdrawal, activity, analytics,
 ];
 for (const module of modules) app.route("/", module);
 

@@ -128,31 +128,61 @@ export function guestNewPhotosEmail(o: { language: "nl" | "en"; name: string; ti
             `);
 }
 
-export function deliveredEmail(o: { firstName: string; title: string; coverUrl?: string; galleryLink: string; until?: string }): string {
+/**
+ * The delivery: the gallery is open, or the website is live. What it says
+ * follows what the client actually gets: originals to download, photos with a
+ * watermark (and maybe for sale), or a site to visit.
+ */
+export function deliveredEmail(o: {
+  firstName: string; title: string; coverUrl?: string; galleryLink: string; until?: string;
+  kind?: "photo" | "video" | "web";
+  /** The client sees the photos with the watermark. */
+  watermarked?: boolean;
+  /** The client may download. */
+  downloads?: boolean;
+  /** Photos are for sale on the group link. */
+  selling?: boolean;
+}): string {
   const { firstName, coverUrl, galleryLink } = o;
-  const updated = { title: o.title };
+  const kind = o.kind || "photo";
+  const name = escapeHtml(firstName);
+  const until = o.until ? new Date(o.until).toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" }) : "";
+  const text = kind === "web"
+    ? `Hoi ${name}, je website staat live. Bekijk hem gerust nog even goed en laat het ons weten als je iets ziet.`
+    : kind === "video"
+      ? `Hoi ${name}, je video staat klaar.${o.downloads ? " Je kunt hem bekijken en downloaden." : " Je kunt hem bekijken in je galerij."}`
+      : o.watermarked
+        ? `Hoi ${name}, alle foto's staan online. Ze hebben een watermerk.${o.selling ? " Losse foto's zonder watermerk zijn te koop in de galerij, voor jou en voor iedereen met de groepslink." : ""}`
+        : `Hoi ${name}, je galerij staat klaar. Alle foto's zijn bewerkt en in volle kwaliteit te bekijken${o.downloads ? " en te downloaden" : ""}.`;
+  const button = kind === "web" ? "Bekijk je project" : o.downloads && !o.watermarked ? "Bekijk &amp; download" : "Bekijk de galerij";
+  const eyebrow = kind === "web" ? "Website live" : kind === "video" ? "Video klaar" : "Galerij klaar";
   return emailWrap(`              ${glassImageCard({
                 imageUrl: coverUrl,
-                eyebrow: "Project Afgerond",
-                title: escapeHtml(updated.title),
+                eyebrow,
+                title: escapeHtml(o.title),
                 accentColor: "#c8905a",
                 linkUrl: galleryLink,
                 topSpace: 150,
               })}
               <tr>
-                <td style="padding:32px 36px 0;text-align:center;"><span style="color:rgba(255,251,224,0.55);font-size:14px;font-weight:300;line-height:1.75;">Hi ${firstName}, je volledige galerij staat klaar. Alle foto's zijn bewerkt en in hoge resolutie beschikbaar om te bekijken en downloaden.</span></td>
+                <td style="padding:32px 36px 0;text-align:center;"><span style="color:rgba(255,251,224,0.55);font-size:14px;font-weight:300;line-height:1.75;">${text}</span></td>
               </tr>
-              ${o.until ? `<tr>
-                <td style="padding:16px 36px 0;text-align:center;"><span style="color:rgba(255,251,224,0.55);font-size:13px;font-weight:300;line-height:1.7;">Je kunt alles downloaden tot ${new Date(o.until).toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" })}. Bewaar de bestanden zelf goed. Wat je ermee mag doen, staat in onze <a href="${SITE_URL}/gebruiksrechten" style="color:#fffbe0;">gebruiksrechten</a>.</span></td>
+              ${until && o.downloads && kind !== "web" ? `<tr>
+                <td style="padding:16px 36px 0;text-align:center;"><span style="color:rgba(255,251,224,0.55);font-size:13px;font-weight:300;line-height:1.7;">Je kunt alles downloaden tot ${until}. Bewaar de bestanden zelf goed. Wat je ermee mag doen, staat in onze <a href="${SITE_URL}/gebruiksrechten" style="color:#fffbe0;">gebruiksrechten</a>.</span></td>
               </tr>` : ""}
               <tr>
                 <td style="padding:26px 36px 44px;text-align:center;">
-                  <a href="${galleryLink}" style="display:inline-block;background-color:#fffbe0;color:#1a0c04;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:14px 32px;">Bekijk &amp; download</a>
+                  <a href="${galleryLink}" style="display:inline-block;background-color:#fffbe0;color:#1a0c04;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;text-decoration:none;padding:14px 32px;">${button}</a>
                   <div style="height:18px;line-height:18px;font-size:0;">&nbsp;</div>
-                  <span style="color:rgba(255,251,224,0.3);font-size:11px;">Bedankt voor het vertrouwen &mdash; we horen graag hoe de shoot is bevallen.</span>
+                  <span style="color:rgba(255,251,224,0.3);font-size:11px;">Bedankt voor het vertrouwen. We horen graag hoe het is bevallen.</span>
                 </td>
               </tr>
             `);
+}
+
+/** The subject of the delivery mail. */
+export function deliveredSubject(kind: "photo" | "video" | "web", title: string): string {
+  return kind === "web" ? `Je website staat live: ${title}` : kind === "video" ? `Je video staat klaar: ${title}` : `Je foto's staan klaar: ${title}`;
 }
 
 /** To a parent: what they chose for their child, and the way to change it. */

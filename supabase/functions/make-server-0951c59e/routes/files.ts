@@ -33,6 +33,8 @@ const FOLDER_NAMES: Record<string, string> = {
   web: "Verkleind voor de site",
   galerijen: "Galerijen",
   wm: "Met watermerk",
+  // The light copy a gallery shows; the original is only for downloading.
+  view: "Om te bekijken",
   toestemming: "Toestemming",
   locaties: "Locaties",
   bonnetjes: "Bonnetjes",

@@ -7,7 +7,7 @@ import { type Env, fail, readBody, requireAdmin, text, z } from "../lib/http.ts"
 import { amountOf, createPayment, createRefund, getPayment, type MolliePayment, mollieMode } from "../lib/mollie.ts";
 import { notify } from "../lib/notify.ts";
 import { kept, keptOf, methodLabel, paymentsOf } from "../lib/payments.ts";
-import { orderPaidMail } from "../lib/orders.ts";
+import { orderAmount, orderPaidMail, receiptLines } from "../lib/orders.ts";
 import { paidMail, personLabel, priorityForInvoice } from "../lib/priority.ts";
 import { shareFor, shareUrl } from "../lib/shares.ts";
 import { greetingOf, invoiceLink, invoiceMail, invoiceTotals, payableOnline } from "./invoices.ts";
@@ -224,8 +224,9 @@ async function onOrderPaid(row: any, mp: MolliePayment): Promise<{ event: string
   const images = (must(await db.from("gallery_order_images").select("image_id").eq("order_id", order.id)) || []) as any[];
   const count = images.length;
   const price = Number(order.price);
-  if (count === 0 || Math.abs(amount - round2(price * count)) >= 0.005) {
-    await alert(where, "Betaling voor foto's klopt niet", `Er is ${euro(amount)} betaald via ${via} voor ${count} foto's van ${euro(price)}. Kijk het na in Mollie.`);
+  const due = orderAmount(order, count);
+  if (count === 0 || Math.abs(amount - due) >= 0.005) {
+    await alert(where, "Betaling voor foto's klopt niet", `Er is ${euro(amount)} betaald via ${via} voor ${count} foto's, de bestelling was ${euro(due)}. Kijk het na in Mollie.`);
     return { event: "mismatch", id: "" };
   }
   if (order.invoice_id) {
@@ -243,12 +244,7 @@ async function onOrderPaid(row: any, mp: MolliePayment): Promise<{ event: string
     project_id: order.project_id,
     client_name: guest.name || "",
     client_email: guest.email || "",
-    lines: [{
-      label: "Foto's zonder watermerk",
-      quantity: count,
-      amount: price,
-      note: [title, normal > price ? `Start-up korting: normaal ${euro(normal)} per foto` : ""].filter(Boolean).join(". "),
-    }],
+    lines: receiptLines(count, { price, normal, bundleSize: Number(order.bundle_size) || 0, bundlePrice: Number(order.bundle_price) || 0, title }),
     vat_basis: "incl",
     vat_rate: 21,
     notes: "Je gaf toestemming om de foto's meteen te leveren. Daardoor is je herroepingsrecht vervallen.",
