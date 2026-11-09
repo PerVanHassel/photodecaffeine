@@ -1,3 +1,5 @@
+import { GOOGLE_MAPS_URL } from "./google";
+
 // The business as search engines read it (schema.org), on the homepage only.
 // PhotoDeCaffeine works on location across the Netherlands; the address is only
 // where the company is registered, so the street is left out and there are no
@@ -71,5 +73,6 @@ export const BUSINESS_JSON_LD = {
     "https://www.instagram.com/photodecaffeine",
     "https://www.linkedin.com/company/photodecaffeine/",
     "https://www.tiktok.com/@photodecaffeine",
+    GOOGLE_MAPS_URL,
   ],
 };

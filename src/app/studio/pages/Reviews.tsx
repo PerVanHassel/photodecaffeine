@@ -411,7 +411,7 @@ function SetupSteps() {
   return (
     <ol className="s-small s-stack sm" style={{ listStyle: "decimal", paddingLeft: 20, margin: 0, lineHeight: 1.6 }}>
       <li>Maak in {a(`${CONSOLE}/projectcreate`, "Google Cloud")} een project, bijvoorbeeld PhotoDeCaffeine.</li>
-      <li>Vraag met {a("https://support.google.com/business/contact/api_default", "dit formulier")} toegang tot de Business Profile API. Google keurt dat meestal binnen een paar dagen goed.</li>
+      <li>Vraag met {a("https://support.google.com/business/contact/api_default", "dit formulier")} toegang tot de Business Profile API. Dat kan pas als je bedrijfsprofiel 60 dagen geverifieerd is, dus vanaf 9 januari 2027. Google mailt als het goedgekeurd is.</li>
       <li>
         Zet deze drie API's aan: {a(`${CONSOLE}/apis/library/mybusinessaccountmanagement.googleapis.com`, "Account Management")},{" "}
         {a(`${CONSOLE}/apis/library/mybusinessbusinessinformation.googleapis.com`, "Business Information")} en{" "}
