@@ -11,6 +11,7 @@ import { Contact } from "../components/Contact";
 import { Hero } from "../components/Hero";
 import { WhatWeDo } from "../components/WhatWeDo";
 import { CustomCTA } from "../components/CustomCTA";
+import { SportCampaignBand } from "../components/SportCampaignBand";
 import { useSiteSettings, type SectionKey } from "../lib/siteData";
 import { useLanguage } from "../context/LanguageContext";
 
@@ -25,6 +26,7 @@ const Divider = () => (
 );
 
 const DEFAULT_SECTIONS: Record<SectionKey, boolean> = {
+  sportCampaign: true,
   workProcess: true,
   portfolio: true,
   about: true,
@@ -53,7 +55,7 @@ export function Home() {
         <script type="application/ld+json">{JSON.stringify(BUSINESS_JSON_LD)}</script>
       </Helmet>
       <Hero />
-      <Divider />
+      {sections.sportCampaign ? <SportCampaignBand /> : <Divider />}
       <WhatWeDo />
       {sections.workProcess && <><Divider /><WorkProcess /></>}
       {sections.portfolio && <><Divider /><Portfolio /></>}

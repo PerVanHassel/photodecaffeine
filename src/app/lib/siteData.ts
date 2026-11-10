@@ -11,7 +11,7 @@ import type { ArticlePage } from "./articlePage";
 // hydration succeeds; each resource is then fetched once in the background and
 // the page updates if anything changed since the build.
 
-export type SectionKey = "workProcess" | "portfolio" | "about" | "services" | "socialProof" | "customCTA";
+export type SectionKey = "sportCampaign" | "workProcess" | "portfolio" | "about" | "services" | "socialProof" | "customCTA";
 
 export interface SiteSettings {
   heroImageUrl?: string;

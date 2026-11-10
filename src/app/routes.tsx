@@ -62,6 +62,7 @@ export const routes: RouteObject[] = [
           { path: "contact-en-klachten", lazy: chunk(() => import("./pages/LegalPage"), (m) => m.ComplaintsPage) },
           { path: "websitevoorwaarden", lazy: chunk(() => import("./pages/LegalPage"), (m) => m.SiteTermsPage) },
           { path: "herroepen", lazy: chunk(() => import("./pages/WithdrawPage"), (m) => m.WithdrawPage) },
+          { path: "sportactie", lazy: chunk(() => import("./pages/SportCampaignPage"), (m) => m.SportCampaignPage) },
           { path: "bedankt", lazy: chunk(() => import("./pages/ThankYouPage"), (m) => m.ThankYouPage) },
         ],
       },

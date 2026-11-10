@@ -11,6 +11,7 @@ import { ErrorState, SkeletonList, useToast } from "../ui/feedback";
 import { HeaderAction, Screen } from "../ui/Screen";
 
 const SECTION_LABELS: { key: keyof SiteSettings["sections"]; label: string; hint: string }[] = [
+  { key: "sportCampaign", label: "Sportactie", hint: "Balk onder de foto bovenaan, naar /sportactie" },
   { key: "workProcess", label: "Werkwijze", hint: "Het stappenplan op de homepage" },
   { key: "portfolio", label: "Portfolio", hint: "Uitgelicht werk op de homepage" },
   { key: "about", label: "Over ons", hint: "Introductieblok" },
