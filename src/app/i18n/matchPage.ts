@@ -1,10 +1,10 @@
-// Texts of the match photography campaign: the band on the home page, the
+// Texts of the match photography campaign: the strip on the home page, the
 // page /wedstrijdfotografie with its request form, and the page after sending.
 // Prices live in lib/matchBooking.ts; the sentences here say the same numbers.
 //
-// House rules for this campaign: "geen vaste kosten vooraf" only next to a
-// team or club booking, "gratis" never, no number of photos per player and
-// no delivery time beyond the week in the steps.
+// House rules for this campaign: "gratis" and "geen vaste kosten vooraf" only
+// next to a team or club booking, never as a promise for everyone. No number
+// of photos per player and no delivery time beyond the week in the steps.
 
 const EMAIL = "contact@photodecaffeine.com";
 
@@ -14,88 +14,139 @@ const TRAVEL =
 export const matchPage = {
   path: "/wedstrijdfotografie",
   sentPath: "/wedstrijdfotografie/verstuurd",
+  stepsId: "zo-werkt-het",
   email: EMAIL,
   metaTitle: "Wedstrijdfotografie voor spelers, teams en clubs | PhotoDeCaffeine",
   metaDescription:
     "Een fotograaf bij je wedstrijd. Boek met je team of club zonder vaste kosten vooraf, of alleen voor jezelf met €20 bijdrage. Elke foto kost €5.",
 
-  // The band under the service cards on the home page.
+  // The strip on the home page, right under the service cards. The label says
+  // who the free booking is for, so the headline does not promise it to everyone.
   band: {
-    title: "Fotograaf bij je wedstrijd",
-    body: "Team of club: geen vaste kosten vooraf. Alleen voor jezelf: €20 bijdrage, daarna €5 per foto.",
+    label: "Voor teams en clubs",
+    title: "Gratis boeking",
+    titleEm: "voor je wedstrijd.",
+    // Non-breaking spaces keep each amount with its word.
+    body: "Team of club: geen vaste kosten vooraf. Alleen voor jezelf: €20\u00a0bijdrage, daarna €5\u00a0per\u00a0foto.",
     cta: "Boek je wedstrijdfotograaf",
+    more: "Zo werkt het",
+    facts: [
+      { value: "€0", text: "boekingsbijdrage voor je team" },
+      { value: "€5", text: "per foto, inclusief btw" },
+      { value: "1 week", text: "tot de foto's in de galerij staan" },
+    ],
   },
 
   backLabel: "Home",
-  titleLead: "Wedstrijdfotografie",
-  titleRest: "voor spelers, teams en clubs",
+  label: "Start-upcampagne",
+  // A soft hyphen, so the long word breaks cleanly on a phone.
+  title: "Wedstrijd\u00adfotografie",
+  titleEm: "voor spelers, teams en clubs",
   subtitle:
     "Boek met je team of club, zonder vaste kosten vooraf. Of boek alleen voor jezelf, met een bijdrage van €20. Elke foto kost daarna €5.",
   bookCta: "Boek je wedstrijdfotograaf",
 
-  choicesTitle: "Kies hoe je boekt",
+  choose: {
+    label: "Twee manieren",
+    title1: "Kies hoe",
+    title2: "je boekt.",
+    body: "Voor het hele team, of alleen voor jezelf. In de galerij koopt iedereen zelf foto's, voor €5 per stuk.",
+  },
   team: {
-    title: "Voor je team of club",
+    name: "Voor je team of club",
+    badge: "Gratis boeking",
+    pitch: "Je boekt voor het hele team. Spelers, ouders en fans kopen zelf de foto's die ze willen.",
     price: "€0",
     priceNote: "boekingsbijdrage",
-    points: [
+    perPhoto: "Daarna €5 per foto",
+    example: "Voorbeeld: 3 foto's = €15",
+    items: [
       "Geen vaste kosten vooraf",
-      "Iedereen koopt zelf foto's in de galerij",
-      "€5 per foto, inclusief btw",
+      "Iedereen koopt zelf in de galerij",
+      "Foto's eerst met watermerk, na aankoop zonder",
+      "Kopen en downloaden met een account in het klantportaal",
     ],
-    example: "Koop je 3 foto's, dan betaal je €15.",
     cta: "Boek voor je team",
   },
   individual: {
-    title: "Voor jezelf",
+    name: "Voor jezelf",
+    pitch: "Voor een speler die alleen voor zichzelf boekt, of een ouder die boekt voor het eigen kind.",
     price: "€20",
-    priceNote: "boekingsbijdrage, pas na onze bevestiging",
-    points: [
-      "Voor een speler die alleen voor zichzelf boekt",
-      "Of een ouder die boekt voor het eigen kind",
-      "Daarna €5 per foto, inclusief btw",
+    priceNote: "boekingsbijdrage",
+    perPhoto: "Daarna €5 per foto",
+    example: "Voorbeeld: bijdrage + 3 foto's = €35",
+    items: [
+      "Je betaalt de bijdrage pas na onze bevestiging",
+      "Daarna staat de datum vast",
+      "Foto's eerst met watermerk, na aankoop zonder",
+      "Kopen en downloaden met een account in het klantportaal",
     ],
-    example: "Met 3 foto's betaal je in totaal €35.",
     cta: "Boek voor jezelf",
   },
 
-  stepsTitle: "Zo werkt het",
-  steps: [
-    { title: "Vul de aanvraag in", body: "Kies of je voor je team of voor jezelf boekt, en vertel welke wedstrijd het is." },
-    { title: "Wij bevestigen binnen 24 uur", body: "Je krijgt een bevestiging van de datum, met eventuele reiskosten erbij." },
-    { title: "Voor jezelf? Betaal de bijdrage", body: "Je betaalt €20 na onze bevestiging. Daarna staat de datum vast. Bij een teamboeking sla je deze stap over." },
-    { title: "Wij fotograferen de wedstrijd", body: "Binnen een week staan de foto's met watermerk in de galerij." },
-    { title: "Kies en download je foto's", body: "Maak een account in het klantportaal, betaal €5 per foto en download ze zonder watermerk." },
-  ],
+  steps: {
+    label: "Het proces",
+    title1: "Zo werkt",
+    title2: "het.",
+    body: "Vijf stappen, van je aanvraag tot je foto's.",
+    step: (n: number) => `Stap ${String(n).padStart(2, "0")}`,
+    items: [
+      { title: "Aanvraag", sub: "Jij vult het formulier in", body: "Kies of je voor je team of voor jezelf boekt, en vertel welke wedstrijd het is." },
+      { title: "Bevestiging", sub: "Binnen 24 uur", body: "We bevestigen de datum, met eventuele reiskosten erbij." },
+      { title: "Bijdrage", sub: "Alleen als je voor jezelf boekt", body: "Je betaalt €20 na onze bevestiging. Daarna staat de datum vast. Bij een teamboeking sla je deze stap over." },
+      { title: "Wedstrijd", sub: "Wij fotograferen", body: "Binnen een week staan de foto's met watermerk in de galerij." },
+      { title: "Je foto's", sub: "Kiezen en downloaden", body: "Maak een account in het klantportaal, betaal €5 per foto en download ze zonder watermerk." },
+    ],
+  },
 
-  pricesTitle: "Wat het kost",
-  pricesCaption: "Wat je in totaal betaalt, inclusief btw",
-  pricesPhotos: "Aantal foto's",
-  pricesIndividual: "Voor jezelf",
-  pricesIndividualNote: "€20 bijdrage + €5 per foto",
-  pricesTeam: "Team of club",
-  pricesTeamNote: "€5 per foto, per koper",
-  photoCount: (n: number) => (n === 1 ? "1 foto" : `${n} foto's`),
-  travelLabel: "Reiskosten",
-  travel: TRAVEL,
-  rightsLabel: "Watermerk en rechten",
-  rightsBefore: "In de galerij staan de foto's eerst met watermerk. Na aankoop download je ze zonder watermerk, met de ",
-  rightsLink: "gebruiksrechten uit onze voorwaarden",
-  rightsAfter: ".",
-  packagesLabel: "Liever vooraf vastleggen?",
-  packagesBefore: "Wil je een vaste set foto's vooraf? ",
-  packagesLink: "Bekijk onze sportpakketten vanaf €50",
-  packagesAfter: ".",
+  prices: {
+    label: "Prijzen",
+    title1: "Wat het",
+    title2: "kost.",
+    body: "Wat je in totaal betaalt, inclusief btw.",
+    team: "Team of club",
+    teamNote: "€5 per foto, per koper",
+    individual: "Voor jezelf",
+    individualNote: "€20 bijdrage + €5 per foto",
+    photoCount: (n: number) => (n === 1 ? "1 foto" : `${n} foto's`),
+    travelLabel: "Reiskosten",
+    travel: TRAVEL,
+    rightsLabel: "Watermerk en rechten",
+    rightsBefore: "In de galerij staan de foto's eerst met watermerk. Na aankoop download je ze zonder watermerk, met de ",
+    rightsLink: "gebruiksrechten uit onze voorwaarden",
+    rightsAfter: ".",
+    packagesLabel: "Liever vooraf vastleggen?",
+    packagesBefore: "Wil je een vaste set foto's vooraf? ",
+    packagesLink: "Bekijk onze sportpakketten vanaf €50",
+    packagesAfter: ".",
+  },
 
-  photosTitle: "Voorbeeldfoto's",
-  photosBody: "Hier komen foto's van wedstrijden, zodra we die met toestemming mogen laten zien.",
-  photoPlaceholder: "Voorbeeldfoto volgt",
+  photos: {
+    label: "Voorbeeldfoto's",
+    title1: "Langs de",
+    title2: "lijn.",
+    body: "Hier komen foto's van wedstrijden, zodra we die met toestemming mogen laten zien.",
+    placeholder: "Voorbeeldfoto volgt",
+  },
+
+  request: {
+    includedLabel: "Wat je kunt verwachten",
+    included: [
+      "Antwoord op je aanvraag binnen 24 uur",
+      "Eventuele reiskosten in de bevestiging, voordat de boeking vaststaat",
+      "Binnen een week de foto's met watermerk in de galerij",
+      "Foto's kopen voor €5 per stuk, inclusief btw",
+      "Downloaden zonder watermerk, met de gebruiksrechten uit onze voorwaarden",
+    ],
+    mailLabel: "Liever mailen?",
+    mailBody: "Stuur je aanvraag gerust naar",
+  },
 
   form: {
+    label: "Aanvraag",
     title: "Vraag je wedstrijd aan",
     intro: "Vul in wat je weet. We reageren binnen 24 uur.",
     optionalNote: "Velden zonder (optioneel) zijn nodig om je aanvraag te versturen.",
-    contactNote: "Liever mailen? Dat kan via",
 
     typeLegend: "Hoe boek je?",
     typeTeam: "Voor je team of club",
@@ -112,15 +163,18 @@ export const matchPage = {
       club: "Club of bestuur",
     },
     nameLabel: "Je naam",
+    namePlaceholder: "Voor- en achternaam…",
     emailLabel: "E-mailadres",
+    emailPlaceholder: "jij@voorbeeld.nl",
     emailHint: "Hier sturen we de bevestiging naartoe.",
     phoneLabel: "Telefoon (optioneel)",
+    phonePlaceholder: "06 12345678",
 
     matchLegend: "De wedstrijd",
     clubLabel: "Naam van de club",
     teamLabel: "Team",
     teamLabelOptional: "Team (optioneel)",
-    teamHint: "Bijvoorbeeld JO13-1 of Dames 2.",
+    teamPlaceholder: "Bijvoorbeeld JO13-1 of Dames 2",
     sportLabel: "Sport",
     sports: ["Voetbal", "Hockey", "Korfbal", "Handbal", "Basketbal", "Volleybal", "Rugby", "Anders"],
     sportOther: "Anders",
@@ -128,7 +182,7 @@ export const matchPage = {
     dateLabel: "Datum",
     timeLabel: "Aanvangstijd",
     locationLabel: "Locatie",
-    locationHint: "Sportpark of sporthal, met de plaats.",
+    locationPlaceholder: "Sportpark of sporthal, met de plaats",
     matchesLabel: "Eén wedstrijd of meerdere? (optioneel)",
     matchesOne: "Eén wedstrijd",
     matchesMore: "Meerdere wedstrijden",
@@ -136,27 +190,27 @@ export const matchPage = {
 
     playerLegend: "Over de speler",
     forWhomLabel: "Voor wie zijn de foto's?",
-    forWhomHint: "De naam van de speler.",
+    forWhomPlaceholder: "Naam van de speler",
     shirtLabel: "Rugnummer (optioneel)",
     tipLabel: "Positie of herkenningstip (optioneel)",
-    tipHint: "Bijvoorbeeld keeper, of de kleur van de schoenen.",
+    tipPlaceholder: "Bijvoorbeeld keeper, of de kleur van de schoenen",
 
     teamLegend: "Over het team",
     playersLabel: "Ongeveer hoeveel spelers?",
     contactPersonLabel: "Contactpersoon: trainer of teammanager",
-    contactPersonHint: "Naam, en als je het hebt een telefoonnummer of e-mailadres.",
+    contactPersonPlaceholder: "Naam, en als je het hebt telefoon of e-mail",
 
     minorsLabel: "Spelen er spelers onder de 18 mee?",
     minorsHint: "Bijvoorbeeld een jeugdteam, of je boekt voor je kind.",
     yes: "Ja",
     no: "Nee",
-    consentTitle: "Toestemming voor foto's van kinderen",
+    consentTitle: "Toestemming bij kinderen",
     consentBody: `Voor herkenbare foto's van kinderen is toestemming van de ouders nodig. Die regel jij als klant. Ouders geven toestemming door een account te maken in het klantportaal, of schriftelijk via ${EMAIL}.`,
     consentCheckTeam: "Ik zorg dat de ouders van de spelers onder de 18 toestemming geven.",
     consentCheckIndividual: "Ik zorg voor toestemming van de ouders van de speler.",
 
     messageLabel: "Opmerkingen (optioneel)",
-    messageHint: "Alles wat helpt, zoals een tweede datum of de kleur van de shirts.",
+    messagePlaceholder: "Alles wat helpt, zoals een tweede datum of de kleur van de shirts…",
 
     priceTitle: "Wat het kost",
     priceEmpty: "Kies bovenaan hoe je boekt. Dan zie je hier wat het kost.",
@@ -180,6 +234,7 @@ export const matchPage = {
 
     submit: "Verstuur aanvraag",
     submitting: "Versturen…",
+    summaryLabel: "Nog niet compleet",
     summaryTitle: (n: number) => (n === 1 ? "Er ontbreekt nog 1 ding" : `Er ontbreken nog ${n} dingen`),
     sendError: `Versturen is niet gelukt. Probeer het nog eens, of mail je aanvraag naar ${EMAIL}.`,
 
@@ -259,15 +314,19 @@ export const matchPage = {
     },
   ],
 
-  linksTitle: "Voorwaarden",
-  links: [
-    { to: "/algemene-voorwaarden", label: "Algemene voorwaarden" },
-    { to: "/gebruiksrechten", label: "Gebruiksrechten" },
-    { to: "/annuleren-en-terugbetaling", label: "Annuleren en terugbetaling" },
-    { to: "/privacybeleid", label: "Privacyverklaring" },
-  ],
-  contactTitle: "Vragen?",
-  contactBody: "Mail ons gerust. We reageren binnen 24 uur.",
+  end: {
+    linksLabel: "Voorwaarden",
+    links: [
+      { to: "/algemene-voorwaarden", label: "Algemene voorwaarden" },
+      { to: "/gebruiksrechten", label: "Gebruiksrechten" },
+      { to: "/annuleren-en-terugbetaling", label: "Annuleren en terugbetaling" },
+      { to: "/privacybeleid", label: "Privacyverklaring" },
+    ],
+    contactLabel: "Contact",
+    title1: "Vragen?",
+    title2: "Mail ons.",
+    body: "We reageren binnen 24 uur.",
+  },
 
   sent: {
     metaTitle: "Aanvraag verstuurd | PhotoDeCaffeine",

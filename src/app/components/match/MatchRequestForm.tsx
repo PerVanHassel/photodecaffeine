@@ -1,6 +1,8 @@
-import { forwardRef, useEffect, useRef, useState, type FormEvent, type InputHTMLAttributes, type MouseEvent, type ReactNode, type TextareaHTMLAttributes } from "react";
+import { useEffect, useRef, useState, type FormEvent, type InputHTMLAttributes, type MouseEvent, type ReactNode, type TextareaHTMLAttributes } from "react";
 import { Link, useNavigate } from "react-router";
-import { AlertCircle, Check } from "lucide-react";
+import { Check } from "lucide-react";
+import { FormPrivacyNote } from "../form/FormPrivacyNote";
+import { EMAIL_INPUT, PHONE_INPUT } from "../form/PublicField";
 import { matchPage } from "../../i18n/matchPage";
 import { track, visitCampaign, visitId } from "../../lib/analytics";
 import {
@@ -27,9 +29,10 @@ const id = (field: RequestField) => `wf-${field}`;
 const FORMAT_FIELDS: RequestField[] = ["email", "date", "players"];
 
 /**
- * The request form of /wedstrijdfotografie. It splits after the kind of
- * booking: what does not belong to that choice stays hidden and is neither
- * checked nor sent. `preset` comes from the choice cards above it.
+ * The request form of /wedstrijdfotografie, in the look of the site's other
+ * forms (.pdc-field, .pdc-input, .pdc-choice in site.css). It splits after the
+ * kind of booking: what does not belong to that choice stays hidden and is
+ * neither checked nor sent. `preset` comes from the choice cards above it.
  */
 export function MatchRequestForm({ preset }: { preset: { type: BookingType; n: number } | null }) {
   const [form, setForm] = useState<MatchRequest>(EMPTY_REQUEST);
@@ -107,19 +110,18 @@ export function MatchRequestForm({ preset }: { preset: { type: BookingType; n: n
   };
 
   return (
-    <div className="wf-request-form">
-      <h2 id="wf-form-title" ref={heading} tabIndex={-1} className="wf-h2 wf-request-title">
+    <>
+      <span className="wf-label">{f.label}</span>
+      <h2 id="wf-form-title" ref={heading} tabIndex={-1} className="pdc-svc-form-title wf-form-title">
         {f.title}
       </h2>
-      <p className="wf-lead">{f.intro}</p>
-      <p className="wf-note">{f.optionalNote}</p>
+      <p className="wf-form-intro">{f.intro}</p>
+      <p className="pdc-field-hint wf-form-note">{f.optionalNote}</p>
 
       {submitted && errorList.length > 0 && (
         <div ref={summary} tabIndex={-1} role="alert" className="wf-summary" aria-labelledby="wf-summary-title">
-          <h3 id="wf-summary-title">
-            <AlertCircle size={20} strokeWidth={2} aria-hidden="true" />
-            {f.summaryTitle(errorList.length)}
-          </h3>
+          <span className="wf-summary-label">{f.summaryLabel}</span>
+          <h3 id="wf-summary-title">{f.summaryTitle(errorList.length)}</h3>
           <ul>
             {errorList.map((field) => (
               <li key={field}>
@@ -134,11 +136,11 @@ export function MatchRequestForm({ preset }: { preset: { type: BookingType; n: n
 
       <form noValidate onSubmit={handleSubmit} aria-labelledby="wf-form-title" data-track="Wedstrijdfotografie" className="wf-form">
         {/* ── Kind of booking ── */}
-        <fieldset className="wf-fieldset" aria-describedby={shown("type") ? `${id("type")}-error` : undefined}>
-          <legend className="wf-legend">{f.typeLegend}</legend>
-          <div className="wf-tiles">
+        <fieldset className="pdc-choices wf-types-set" aria-describedby={shown("type") ? `${id("type")}-error` : undefined}>
+          <legend className="wf-group-label">{f.typeLegend}</legend>
+          <div className="wf-types">
             {(["team", "individual"] as const).map((type, i) => (
-              <label key={type} className="wf-tile">
+              <label key={type} className="wf-type">
                 <input
                   type="radio"
                   name="wf-type"
@@ -148,10 +150,9 @@ export function MatchRequestForm({ preset }: { preset: { type: BookingType; n: n
                   onChange={() => set("type", type)}
                   aria-invalid={shown("type") ? true : undefined}
                 />
-                <span className="wf-tile-body">
-                  <span className="wf-tile-mark" aria-hidden="true"><Check size={16} strokeWidth={3} /></span>
-                  <span className="wf-tile-title">{type === "team" ? f.typeTeam : f.typeIndividual}</span>
-                  <span className="wf-tile-note">{type === "team" ? f.typeTeamNote : f.typeIndividualNote}</span>
+                <span>
+                  <strong>{type === "team" ? f.typeTeam : f.typeIndividual}</strong>
+                  <small>{type === "team" ? f.typeTeamNote : f.typeIndividualNote}</small>
                 </span>
               </label>
             ))}
@@ -160,9 +161,8 @@ export function MatchRequestForm({ preset }: { preset: { type: BookingType; n: n
         </fieldset>
 
         {/* ── About you ── */}
-        <fieldset className="wf-fieldset">
-          <legend className="wf-legend">{f.aboutLegend}</legend>
-          <Choices
+        <Group label={f.aboutLegend}>
+          <RadioChips
             field="role"
             label={f.roleLabel}
             value={form.role}
@@ -170,35 +170,26 @@ export function MatchRequestForm({ preset }: { preset: { type: BookingType; n: n
             options={(Object.keys(f.roles) as Role[]).map((r) => ({ value: r, label: f.roles[r] }))}
             error={shown("role")}
           />
-          <TextField label={f.nameLabel} autoComplete="name" maxLength={120} {...text("name")} />
-          <div className="wf-row">
-            <TextField
-              label={f.emailLabel}
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              autoCapitalize="none"
-              spellCheck={false}
-              maxLength={160}
-              hint={f.emailHint}
-              {...text("email")}
-            />
-            <TextField label={f.phoneLabel} type="tel" inputMode="tel" autoComplete="tel" maxLength={40} {...text("phone")} />
+          <Input label={f.nameLabel} autoComplete="name" maxLength={120} placeholder={f.namePlaceholder} {...text("name")} />
+          <div className="pdc-form-row">
+            <Input label={f.emailLabel} {...EMAIL_INPUT} maxLength={160} placeholder={f.emailPlaceholder} hint={f.emailHint} {...text("email")} />
+            <Input label={f.phoneLabel} {...PHONE_INPUT} maxLength={40} placeholder={f.phonePlaceholder} {...text("phone")} />
           </div>
-        </fieldset>
+        </Group>
 
         {/* ── The match ── */}
-        <fieldset className="wf-fieldset">
-          <legend className="wf-legend">{f.matchLegend}</legend>
-          <TextField label={f.clubLabel} autoComplete="organization" maxLength={120} {...text("club")} />
-          <TextField
-            label={isTeam ? f.teamLabel : f.teamLabelOptional}
-            autoComplete="off"
-            maxLength={80}
-            hint={f.teamHint}
-            {...text("team")}
-          />
-          <Choices
+        <Group label={f.matchLegend}>
+          <div className="pdc-form-row">
+            <Input label={f.clubLabel} autoComplete="organization" maxLength={120} {...text("club")} />
+            <Input
+              label={isTeam ? f.teamLabel : f.teamLabelOptional}
+              autoComplete="off"
+              maxLength={80}
+              placeholder={f.teamPlaceholder}
+              {...text("team")}
+            />
+          </div>
+          <RadioChips
             field="sport"
             label={f.sportLabel}
             value={form.sport}
@@ -208,15 +199,15 @@ export function MatchRequestForm({ preset }: { preset: { type: BookingType; n: n
           />
           {form.sport === f.sportOther && (
             <div className="wf-reveal">
-              <TextField label={f.sportOtherLabel} autoComplete="off" maxLength={60} {...text("sportOther")} />
+              <Input label={f.sportOtherLabel} autoComplete="off" maxLength={60} {...text("sportOther")} />
             </div>
           )}
-          <div className="wf-row wf-row--always">
-            <TextField label={f.dateLabel} type="date" min={minDate} {...text("date")} />
-            <TextField label={f.timeLabel} type="time" step={300} {...text("time")} />
+          <div className="pdc-form-row">
+            <Input label={f.dateLabel} type="date" min={minDate} className="wf-input-when" {...text("date")} />
+            <Input label={f.timeLabel} type="time" step={300} className="wf-input-when" {...text("time")} />
           </div>
-          <TextField label={f.locationLabel} autoComplete="off" maxLength={160} hint={f.locationHint} {...text("location")} />
-          <Choices
+          <Input label={f.locationLabel} autoComplete="off" maxLength={160} placeholder={f.locationPlaceholder} {...text("location")} />
+          <RadioChips
             field="matches"
             label={f.matchesLabel}
             value={form.matches}
@@ -224,50 +215,48 @@ export function MatchRequestForm({ preset }: { preset: { type: BookingType; n: n
             options={[{ value: "one", label: f.matchesOne }, { value: "more", label: f.matchesMore }]}
             hint={form.matches === "more" ? f.matchesMoreHint : undefined}
           />
-        </fieldset>
+        </Group>
 
         {/* ── Only for one player ── */}
         {isIndividual && (
-          <fieldset className="wf-fieldset wf-reveal">
-            <legend className="wf-legend">{f.playerLegend}</legend>
-            <TextField label={f.forWhomLabel} autoComplete="off" maxLength={120} hint={f.forWhomHint} {...text("forWhom")} />
-            <div className="wf-row">
-              <TextField label={f.shirtLabel} inputMode="numeric" autoComplete="off" maxLength={10} {...text("shirt")} />
-              <TextField label={f.tipLabel} autoComplete="off" maxLength={160} hint={f.tipHint} {...text("tip")} />
+          <Group label={f.playerLegend} reveal>
+            <Input label={f.forWhomLabel} autoComplete="off" maxLength={120} placeholder={f.forWhomPlaceholder} {...text("forWhom")} />
+            <div className="pdc-form-row">
+              <Input label={f.shirtLabel} inputMode="numeric" autoComplete="off" maxLength={10} {...text("shirt")} />
+              <Input label={f.tipLabel} autoComplete="off" maxLength={160} placeholder={f.tipPlaceholder} {...text("tip")} />
             </div>
-          </fieldset>
+          </Group>
         )}
 
         {/* ── Only for a team ── */}
         {isTeam && (
-          <fieldset className="wf-fieldset wf-reveal">
-            <legend className="wf-legend">{f.teamLegend}</legend>
-            <TextField
+          <Group label={f.teamLegend} reveal>
+            <Input
               label={f.playersLabel}
               type="number"
               inputMode="numeric"
               min={1}
               max={99}
-              className="wf-input--short"
+              className="wf-input-short"
               {...text("players")}
             />
             {needsContactPerson(form) && (
               <div className="wf-reveal">
-                <TextField
+                <Input
                   label={f.contactPersonLabel}
                   autoComplete="off"
                   maxLength={160}
-                  hint={f.contactPersonHint}
+                  placeholder={f.contactPersonPlaceholder}
                   {...text("contactPerson")}
                 />
               </div>
             )}
-          </fieldset>
+          </Group>
         )}
 
         {/* ── Children in the photos ── */}
-        <fieldset className="wf-fieldset">
-          <Choices
+        <Group label={f.consentTitle}>
+          <RadioChips
             field="minors"
             label={f.minorsLabel}
             value={form.minors}
@@ -277,38 +266,30 @@ export function MatchRequestForm({ preset }: { preset: { type: BookingType; n: n
             error={shown("minors")}
           />
           {form.minors === "yes" && (
-            <div className="wf-consent wf-reveal">
-              <h3>{f.consentTitle}</h3>
+            <div className="wf-box wf-box--accent wf-reveal">
               <p>{f.consentBody}</p>
-              <CheckField
-                id={id("consentAgreed")}
-                checked={form.consentAgreed}
-                onChange={(v) => set("consentAgreed", v)}
-                error={shown("consentAgreed")}
-              >
+              <CheckField id={id("consentAgreed")} checked={form.consentAgreed} onChange={(v) => set("consentAgreed", v)} error={shown("consentAgreed")}>
                 {isIndividual ? f.consentCheckIndividual : f.consentCheckTeam}
               </CheckField>
             </div>
           )}
-        </fieldset>
+        </Group>
 
-        <TextArea label={f.messageLabel} hint={f.messageHint} maxLength={1500} {...text("message")} />
+        <TextArea label={f.messageLabel} maxLength={1500} placeholder={f.messagePlaceholder} {...text("message")} />
 
         {/* ── What the chosen option costs ── */}
-        <section className="wf-cost" aria-labelledby="wf-cost-title" aria-live="polite">
-          <h3 id="wf-cost-title">{f.priceTitle}</h3>
+        <section className="wf-box" aria-labelledby="wf-cost-title" aria-live="polite">
+          <h3 id="wf-cost-title" className="wf-box-label">{f.priceTitle}</h3>
           {!form.type ? (
-            <p className="wf-cost-empty">{f.priceEmpty}</p>
+            <p>{f.priceEmpty}</p>
           ) : (
             <>
-              <ul>
-                {(isTeam ? f.priceTeam : f.priceIndividual).map((line) => (
-                  <li key={line}>{line}</li>
-                ))}
-              </ul>
-              <p className="wf-cost-example">{isTeam ? f.priceTeamExample : f.priceIndividualExample}</p>
-              <p className="wf-cost-travel">
-                <strong>{matchPage.travelLabel}.</strong> {matchPage.travel}
+              {(isTeam ? f.priceTeam : f.priceIndividual).map((line) => (
+                <p key={line}>{line}</p>
+              ))}
+              <p className="wf-box-strong">{isTeam ? f.priceTeamExample : f.priceIndividualExample}</p>
+              <p className="wf-box-small">
+                {matchPage.prices.travelLabel}: {matchPage.prices.travel}
               </p>
             </>
           )}
@@ -325,93 +306,107 @@ export function MatchRequestForm({ preset }: { preset: { type: BookingType; n: n
             {f.termsBefore}
             <Link to="/algemene-voorwaarden" target="_blank" rel="noopener">
               {f.termsLink}
-              <span className="sr-only"> (opent in een nieuw tabblad)</span>
+              <span className="pdc-visually-hidden"> (opent in een nieuw tabblad)</span>
             </Link>
             {f.termsMiddle}
             <Link to="/privacybeleid" target="_blank" rel="noopener">
               {f.privacyLink}
-              <span className="sr-only"> (opent in een nieuw tabblad)</span>
+              <span className="pdc-visually-hidden"> (opent in een nieuw tabblad)</span>
             </Link>
             {f.termsAfter}
           </CheckField>
         </div>
 
         {sendError && (
-          <p className="wf-send-error" role="alert">
-            <AlertCircle size={18} strokeWidth={2} aria-hidden="true" />
+          <p className="pdc-form-error" role="alert">
             {f.sendError}
           </p>
         )}
 
-        <button type="submit" className="wf-btn wf-btn--solid wf-submit" disabled={sending} aria-busy={sending || undefined}>
+        <button
+          type="submit"
+          className="pdc-btn pdc-btn-solid pdc-svc-submit pdc-submit wf-submit"
+          disabled={sending}
+          aria-busy={sending || undefined}
+        >
           {sending ? f.submitting : f.submit}
         </button>
+        <FormPrivacyNote />
       </form>
-    </div>
+    </>
   );
 }
 
-/* ── Fields ─────────────────────────────────────────────────────────────── */
+/* ── Fields, in the site's form look ─────────────────────────────────────
+   The same classes as components/form/PublicField, without role="alert" on
+   every error: after a send the summary above the form says it once. */
 
 function FieldError({ id, error }: { id: string; error?: string }) {
   if (!error) return null;
+  return <span id={id} className="pdc-field-error">{error}</span>;
+}
+
+function described(base: string, hint?: string, error?: string) {
+  return error ? `${base}-error` : hint ? `${base}-hint` : undefined;
+}
+
+function Group({ label, reveal, children }: { label: string; reveal?: boolean; children: ReactNode }) {
+  const labelId = `wf-group-${label.replace(/\W+/g, "-").toLowerCase()}`;
   return (
-    <span id={id} className="wf-error">
-      <AlertCircle size={16} strokeWidth={2} aria-hidden="true" />
-      {error}
-    </span>
+    <div role="group" aria-labelledby={labelId} className={reveal ? "wf-group wf-reveal" : "wf-group"}>
+      <p id={labelId} className="wf-group-label">{label}</p>
+      {children}
+    </div>
   );
 }
 
-type TextFieldProps = InputHTMLAttributes<HTMLInputElement> & {
-  id: string;
-  label: string;
-  hint?: string;
-  error?: string;
-};
-
-const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function TextField(
-  { id, label, hint, error, className, ...input },
-  ref
-) {
-  const describedBy = [hint ? `${id}-hint` : "", error ? `${id}-error` : ""].filter(Boolean).join(" ") || undefined;
-  return (
-    <div className="wf-field">
-      <label htmlFor={id} className="wf-label">{label}</label>
-      {hint && <span id={`${id}-hint`} className="wf-hint">{hint}</span>}
-      <input
-        ref={ref}
-        id={id}
-        className={className ? `wf-input ${className}` : "wf-input"}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy}
-        {...input}
-      />
-      <FieldError id={`${id}-error`} error={error} />
-    </div>
-  );
-});
-
-function TextArea({
+function Input({
   id,
   label,
   hint,
   error,
-  ...area
-}: TextareaHTMLAttributes<HTMLTextAreaElement> & { id: string; label: string; hint?: string; error?: string }) {
-  const describedBy = [hint ? `${id}-hint` : "", error ? `${id}-error` : ""].filter(Boolean).join(" ") || undefined;
+  className,
+  ...input
+}: InputHTMLAttributes<HTMLInputElement> & { id: string; label: string; hint?: string; error?: string }) {
   return (
-    <div className="wf-field">
-      <label htmlFor={id} className="wf-label">{label}</label>
-      {hint && <span id={`${id}-hint`} className="wf-hint">{hint}</span>}
-      <textarea id={id} rows={4} className="wf-input wf-textarea" aria-invalid={error ? true : undefined} aria-describedby={describedBy} {...area} />
+    <div className="pdc-field">
+      <label htmlFor={id} className="pdc-field-label">{label}</label>
+      <input
+        id={id}
+        className={className ? `pdc-input wf-input ${className}` : "pdc-input wf-input"}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={described(id, hint, error)}
+        {...input}
+      />
+      {error ? <FieldError id={`${id}-error`} error={error} /> : hint && <span id={`${id}-hint`} className="pdc-field-hint">{hint}</span>}
+    </div>
+  );
+}
+
+function TextArea({
+  id,
+  label,
+  error,
+  ...area
+}: TextareaHTMLAttributes<HTMLTextAreaElement> & { id: string; label: string; error?: string }) {
+  return (
+    <div className="pdc-field">
+      <label htmlFor={id} className="pdc-field-label">{label}</label>
+      <textarea
+        id={id}
+        rows={3}
+        className="pdc-input wf-input"
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${id}-error` : undefined}
+        {...area}
+      />
       <FieldError id={`${id}-error`} error={error} />
     </div>
   );
 }
 
-/** One choice out of a few, as large tappable chips (radio buttons underneath). */
-function Choices({
+/** One choice out of a few: the site's chips (.pdc-choice), with radio buttons underneath. */
+function RadioChips({
   field,
   label,
   value,
@@ -429,14 +424,13 @@ function Choices({
   error?: string;
 }) {
   const base = id(field);
-  const describedBy = [hint ? `${base}-hint` : "", error ? `${base}-error` : ""].filter(Boolean).join(" ") || undefined;
   return (
-    <fieldset className="wf-field wf-choices" aria-describedby={describedBy}>
-      <legend className="wf-label">{label}</legend>
-      {hint && <span id={`${base}-hint`} className="wf-hint">{hint}</span>}
-      <div className="wf-chips">
+    <fieldset className="pdc-choices" aria-describedby={described(base, hint, error)}>
+      <legend className="pdc-field-label">{label}</legend>
+      {hint && <p id={`${base}-hint`} className="pdc-field-hint pdc-choices-hint">{hint}</p>}
+      <div className="pdc-choices-list">
         {options.map((o, i) => (
-          <label key={o.value} className="wf-chip">
+          <label key={o.value} className="pdc-choice">
             <input
               type="radio"
               name={`wf-${field}`}
@@ -469,7 +463,7 @@ function CheckField({
   children: ReactNode;
 }) {
   return (
-    <div className="wf-field">
+    <div className="pdc-field">
       <div className="wf-check">
         <input
           type="checkbox"
@@ -480,8 +474,8 @@ function CheckField({
           aria-describedby={error ? `${id}-error` : undefined}
         />
         <label htmlFor={id}>
-          <span className="wf-check-box" aria-hidden="true"><Check size={16} strokeWidth={3} /></span>
-          <span className="wf-check-text">{children}</span>
+          <span className="wf-check-box" aria-hidden="true"><Check size={13} strokeWidth={3} /></span>
+          <span>{children}</span>
         </label>
       </div>
       <FieldError id={`${id}-error`} error={error} />

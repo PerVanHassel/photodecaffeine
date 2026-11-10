@@ -1,7 +1,7 @@
 import { useState, type MouseEvent } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router";
-import { ArrowLeft, ArrowRight, Check, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, ArrowRight, Camera, Check } from "lucide-react";
 import { Faq } from "../components/Faq";
 import { MatchRequestForm } from "../components/match/MatchRequestForm";
 import { matchPage as m } from "../i18n/matchPage";
@@ -13,14 +13,33 @@ import { scrollBehavior } from "../lib/scroll";
  * until it gets a `src` (and an `alt` that says what is on it). Only photos
  * we have permission for, and no recognisable children without the parents' yes.
  */
-const EXAMPLE_PHOTOS: { src?: string; alt?: string }[] = [{}, {}, {}, {}, {}];
+const EXAMPLE_PHOTOS: { src?: string; alt?: string }[] = [{}, {}, {}];
 
 const URL = `https://www.photodecaffeine.com${m.path}`;
 
+/** A section header in the site's way: small label, two-line title with a dim second line, a line of text. */
+function SectionHead({ id, label, title1, title2, body }: { id: string; label: string; title1: string; title2: string; body?: string }) {
+  return (
+    <div className="pdc-pkgs-head wf-section-head">
+      <div>
+        <span className="pdc-pkgs-label">{label}</span>
+        <h2 id={id} className="pdc-pkgs-title">
+          {title1}
+          <br />
+          <span>{title2}</span>
+        </h2>
+      </div>
+      {body && <p className="pdc-pkgs-body">{body}</p>}
+    </div>
+  );
+}
+
 /**
- * The start-up campaign for matches, next to the fixed sport packages:
- * a team or club books without costs up front, a single player pays a €20
- * contribution, and buyers pay €5 per photo in the existing gallery.
+ * The start-up campaign for matches, next to the fixed sport packages: a team
+ * or club books without costs up front, a single player pays a €20
+ * contribution, and buyers pay €5 per photo in the existing gallery. Built from
+ * the same parts as the photography pages: the header, the package cards, the
+ * steps of the home page, the request form and the questions.
  */
 export function MatchPhotographyPage() {
   // Which card was used last; a counter so the same card twice still counts.
@@ -33,12 +52,16 @@ export function MatchPhotographyPage() {
   };
 
   const cards = [
-    { type: "team" as const, c: m.team },
-    { type: "individual" as const, c: m.individual },
+    { type: "team" as const, c: m.team, badge: m.team.badge },
+    { type: "individual" as const, c: m.individual, badge: null },
+  ];
+  const bills = [
+    { type: "team" as const, name: m.prices.team, note: m.prices.teamNote },
+    { type: "individual" as const, name: m.prices.individual, note: m.prices.individualNote },
   ];
 
   return (
-    <div className="wf-scope wf-page">
+    <div className="wf-page">
       <Helmet>
         <title>{m.metaTitle}</title>
         <meta name="description" content={m.metaDescription} />
@@ -60,65 +83,82 @@ export function MatchPhotographyPage() {
         })}</script>
       </Helmet>
 
-      {/* ── Head ── */}
-      <header className="wf-head">
-        <div className="wf-wrap">
+      {/* ── Header, like the service pages ── */}
+      <header className="pdc-svc-head wf-head">
+        <div className="wf-head-inner">
           <Link to="/" className="pdc-back-link">
             <ArrowLeft size={14} aria-hidden="true" />
             {m.backLabel}
           </Link>
-          <h1 className="wf-h1">
-            <span className="wf-h1-lead">{m.titleLead}</span> <span className="wf-h1-rest">{m.titleRest}</span>
-          </h1>
-          <p className="wf-sub">{m.subtitle}</p>
+          <div className="wf-head-grid">
+            <div>
+              <span className="wf-label">{m.label}</span>
+              <h1 className="wf-title">
+                {m.title}
+                <br />
+                <em>{m.titleEm}</em>
+              </h1>
+            </div>
+            <p className="wf-sub">{m.subtitle}</p>
+          </div>
         </div>
       </header>
 
-      {/* ── Two ways to book ── */}
-      <section className="wf-choose" aria-labelledby="wf-choose-title">
-        <div className="wf-wrap">
-          <h2 id="wf-choose-title" className="wf-h3">{m.choicesTitle}</h2>
-          <div className="wf-cards">
-            {cards.map(({ type, c }) => (
-              <article key={type} className={`wf-card wf-card--${type}`} aria-labelledby={`wf-card-${type}`}>
-                <h3 id={`wf-card-${type}`}>{c.title}</h3>
-                <p className="wf-card-price">
-                  <span className="wf-price">{c.price}</span>
-                  <span className="wf-card-price-note">{c.priceNote}</span>
-                </p>
-                <ul className="wf-card-points">
-                  {c.points.map((point) => (
-                    <li key={point}>
-                      <Check size={18} strokeWidth={2.5} aria-hidden="true" />
-                      {point}
-                    </li>
-                  ))}
-                </ul>
-                <p className="wf-card-example">{c.example}</p>
-                <a
-                  href="#aanvragen"
-                  onClick={choose(type)}
-                  className={`wf-btn ${type === "team" ? "wf-btn--solid" : "wf-btn--line"}`}
-                >
-                  {c.cta}
-                  <ArrowRight size={16} strokeWidth={2.5} aria-hidden="true" />
-                </a>
+      {/* ── Two ways to book, as package cards ── */}
+      <section className="pdc-section wf-choose" aria-labelledby="wf-choose-title">
+        <div className="pdc-wrap wf-wrap">
+          <SectionHead id="wf-choose-title" {...m.choose} />
+          <div className="pdc-pkg-grid wf-pair">
+            {cards.map(({ type, c, badge }) => (
+              <article key={type} className={`pdc-pkg${badge ? " pdc-pkg--best" : ""}`} aria-labelledby={`wf-card-${type}`}>
+                {badge && <span className="pdc-pkg-badge">{badge}</span>}
+                <div>
+                  <h3 id={`wf-card-${type}`} className="pdc-pkg-name wf-card-name">{c.name}</h3>
+                  <p className="pdc-pkg-pitch">{c.pitch}</p>
+                  <p className="pdc-pkg-price">
+                    {c.price}
+                    <span>{c.priceNote}</span>
+                  </p>
+                  <p className="pdc-pkg-photos">
+                    <strong>{c.perPhoto}</strong>
+                    <span>{c.example}</span>
+                  </p>
+                </div>
+                <div className="pdc-pkg-detail">
+                  <ul className="pdc-pkg-list">
+                    {c.items.map((item) => (
+                      <li key={item}>
+                        <Check size={14} strokeWidth={2} aria-hidden="true" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <a
+                    href="#aanvragen"
+                    onClick={choose(type)}
+                    className={`pdc-btn ${badge ? "pdc-btn-solid" : "pdc-btn-quiet"} pdc-pkg-btn`}
+                  >
+                    {c.cta}
+                  </a>
+                </div>
               </article>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── How it works ── */}
-      <section className="wf-sec" aria-labelledby="wf-steps-title">
-        <div className="wf-wrap">
-          <h2 id="wf-steps-title" className="wf-h2">{m.stepsTitle}</h2>
+      {/* ── How it works, like the steps on the home page ── */}
+      <section id={m.stepsId} className="pdc-section wf-steps-section" aria-labelledby="wf-steps-title">
+        <div className="pdc-wrap wf-wrap">
+          <SectionHead id="wf-steps-title" label={m.steps.label} title1={m.steps.title1} title2={m.steps.title2} body={m.steps.body} />
           <ol className="wf-steps">
-            {m.steps.map((step, i) => (
-              <li key={step.title} className={i === 2 ? "wf-step wf-step--optional" : "wf-step"}>
-                <span className="wf-step-no" aria-hidden="true">{i + 1}</span>
-                <h3>{step.title}</h3>
-                <p>{step.body}</p>
+            {m.steps.items.map((step, i) => (
+              <li key={step.title} className="wf-step">
+                <span className="wf-step-mark" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+                <span className="wf-step-label">{m.steps.step(i + 1)}</span>
+                <h3 className="wf-step-title">{step.title}</h3>
+                <p className="wf-step-sub">{step.sub}</p>
+                <p className="wf-step-body">{step.body}</p>
               </li>
             ))}
           </ol>
@@ -126,112 +166,123 @@ export function MatchPhotographyPage() {
       </section>
 
       {/* ── Prices ── */}
-      <section className="wf-sec" aria-labelledby="wf-prices-title">
-        <div className="wf-wrap wf-prices-grid">
-          <div>
-            <h2 id="wf-prices-title" className="wf-h2">{m.pricesTitle}</h2>
-            <table className="wf-table">
-              <caption>{m.pricesCaption}</caption>
-              <thead>
-                <tr>
-                  <th scope="col">{m.pricesPhotos}</th>
-                  <th scope="col">
-                    {m.pricesTeam}
-                    <span>{m.pricesTeamNote}</span>
-                  </th>
-                  <th scope="col">
-                    {m.pricesIndividual}
-                    <span>{m.pricesIndividualNote}</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {EXAMPLE_COUNTS.map((n) => (
-                  <tr key={n}>
-                    <th scope="row">{m.photoCount(n)}</th>
-                    <td className="wf-table-team">{euro(totalFor("team", n))}</td>
-                    <td>{euro(totalFor("individual", n))}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <section className="pdc-section" aria-labelledby="wf-prices-title">
+        <div className="pdc-wrap wf-wrap">
+          <SectionHead id="wf-prices-title" label={m.prices.label} title1={m.prices.title1} title2={m.prices.title2} body={m.prices.body} />
+          <div className="wf-bills">
+            {bills.map((bill) => (
+              <div key={bill.type} className={`wf-bill wf-bill--${bill.type}`}>
+                <h3 className="wf-bill-name">{bill.name}</h3>
+                <p className="wf-bill-note">{bill.note}</p>
+                <dl className="wf-bill-rows">
+                  {EXAMPLE_COUNTS.map((n) => (
+                    <div key={n}>
+                      <dt>{m.prices.photoCount(n)}</dt>
+                      <dd>{euro(totalFor(bill.type, n))}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            ))}
           </div>
-          <dl className="wf-facts">
-            <div>
-              <dt>{m.travelLabel}</dt>
-              <dd>{m.travel}</dd>
+          <div className="wf-notes">
+            <div className="wf-note">
+              <h3 className="wf-box-label">{m.prices.travelLabel}</h3>
+              <p>{m.prices.travel}</p>
             </div>
-            <div>
-              <dt>{m.rightsLabel}</dt>
-              <dd>
-                {m.rightsBefore}
-                <Link to="/gebruiksrechten" className="wf-link">{m.rightsLink}</Link>
-                {m.rightsAfter}
-              </dd>
+            <div className="wf-note">
+              <h3 className="wf-box-label">{m.prices.rightsLabel}</h3>
+              <p>
+                {m.prices.rightsBefore}
+                <Link to="/gebruiksrechten" className="wf-inline-link">{m.prices.rightsLink}</Link>
+                {m.prices.rightsAfter}
+              </p>
             </div>
-            <div>
-              <dt>{m.packagesLabel}</dt>
-              <dd>
-                {m.packagesBefore}
-                <Link to="/services/fotografie/sport" className="wf-link">{m.packagesLink}</Link>
-                {m.packagesAfter}
-              </dd>
+            <div className="wf-note">
+              <h3 className="wf-box-label">{m.prices.packagesLabel}</h3>
+              <p>
+                {m.prices.packagesBefore}
+                <Link to="/services/fotografie/sport" className="wf-inline-link">{m.prices.packagesLink}</Link>
+                {m.prices.packagesAfter}
+              </p>
             </div>
-          </dl>
-        </div>
-      </section>
-
-      {/* ── Example photos ── */}
-      <section className="wf-sec" aria-labelledby="wf-photos-title">
-        <div className="wf-wrap">
-          <h2 id="wf-photos-title" className="wf-h2">{m.photosTitle}</h2>
-          <p className="wf-body">{m.photosBody}</p>
-          <div className="wf-photos">
-            {EXAMPLE_PHOTOS.map((photo, i) =>
-              photo.src ? (
-                <figure key={i} className="wf-photo">
-                  <img src={photo.src} alt={photo.alt ?? ""} loading="lazy" />
-                </figure>
-              ) : (
-                <div key={i} className="wf-photo wf-photo--empty" aria-hidden="true">
-                  <ImageIcon size={28} strokeWidth={1.5} />
-                  <span>{m.photoPlaceholder}</span>
-                </div>
-              )
-            )}
           </div>
         </div>
       </section>
 
-      {/* ── Request form ── */}
-      <section id="aanvragen" className="wf-sec wf-request">
-        <div className="wf-wrap">
+      {/* ── Example photos (placeholders until real ones are in) ── */}
+      <section className="pdc-section wf-photos-section" aria-labelledby="wf-photos-title">
+        <div className="pdc-wrap wf-wrap">
+          <SectionHead id="wf-photos-title" {...m.photos} />
+        </div>
+        <div className="wf-photos">
+          {EXAMPLE_PHOTOS.map((photo, i) =>
+            photo.src ? (
+              <figure key={i} className="wf-photo">
+                <img src={photo.src} alt={photo.alt ?? ""} loading="lazy" />
+              </figure>
+            ) : (
+              <div key={i} className="wf-photo wf-photo--empty" aria-hidden="true">
+                <Camera size={22} strokeWidth={1.25} />
+                <span>{m.photos.placeholder}</span>
+              </div>
+            )
+          )}
+        </div>
+      </section>
+
+      {/* ── What to expect + the request form, like the service pages ── */}
+      <div className="wf-request-band">
+      <div className="pdc-svc-body wf-request">
+        <div className="wf-request-side">
+          <h2 className="wf-label">{m.request.includedLabel}</h2>
+          <ul className="wf-included">
+            {m.request.included.map((item) => (
+              <li key={item}>
+                <span aria-hidden="true">•</span>
+                {item}
+              </li>
+            ))}
+          </ul>
+          <div className="wf-box wf-mail">
+            <span className="wf-box-label">{m.request.mailLabel}</span>
+            <p>
+              {m.request.mailBody}{" "}
+              <a href={`mailto:${m.email}`} className="wf-inline-link">{m.email}</a>.
+            </p>
+          </div>
+        </div>
+        <div id="aanvragen" className="wf-request-form">
           <MatchRequestForm preset={preset} />
         </div>
-      </section>
+      </div>
+      </div>
 
       <Faq items={m.faq} />
 
       {/* ── Terms and contact ── */}
-      <section className="wf-sec" aria-label={`${m.linksTitle} en contact`}>
-        <div className="wf-wrap wf-end-grid">
+      <section className="wf-end" aria-labelledby="wf-end-title">
+        <div className="wf-end-grid">
           <nav aria-labelledby="wf-links-title">
-            <h2 id="wf-links-title" className="wf-h3">{m.linksTitle}</h2>
-            <ul className="wf-links">
-              {m.links.map((link) => (
+            <h2 id="wf-links-title" className="wf-label">{m.end.linksLabel}</h2>
+            <ul className="wf-included wf-links">
+              {m.end.links.map((link) => (
                 <li key={link.to}>
                   <Link to={link.to}>
                     {link.label}
-                    <ArrowRight size={18} strokeWidth={2} aria-hidden="true" />
+                    <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
                   </Link>
                 </li>
               ))}
             </ul>
           </nav>
           <div>
-            <h2 className="wf-h3">{m.contactTitle}</h2>
-            <p className="wf-body">{m.contactBody}</p>
-            <a href={`mailto:${m.email}`} className="wf-mail">{m.email}</a>
+            <span className="wf-label">{m.end.contactLabel}</span>
+            <h2 id="wf-end-title" className="pdc-svc-cta-title wf-end-title">
+              {m.end.title1} <span>{m.end.title2}</span>
+            </h2>
+            <p className="wf-end-body">{m.end.body}</p>
+            <a href={`mailto:${m.email}`} className="pdc-btn pdc-btn-invert wf-mail-btn">{m.email}</a>
           </div>
         </div>
       </section>

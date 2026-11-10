@@ -2,7 +2,6 @@ import { Link } from "react-router";
 import { useLanguage } from "../context/LanguageContext";
 import { focusFirst } from "../lib/photoFocus";
 import { useSiteSettings } from "../lib/siteData";
-import { MatchCampaignBand } from "./MatchCampaignBand";
 
 // The three service categories on the homepage, each leading to its own page
 // where the visitor puts together what they want.
@@ -135,7 +134,6 @@ export function WhatWeDo() {
             </div>
           ))}
         </div>
-        <MatchCampaignBand />
       </div>
     </section>
   );

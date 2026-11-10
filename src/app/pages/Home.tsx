@@ -11,6 +11,7 @@ import { Contact } from "../components/Contact";
 import { Hero } from "../components/Hero";
 import { WhatWeDo } from "../components/WhatWeDo";
 import { CustomCTA } from "../components/CustomCTA";
+import { MatchCampaignBand } from "../components/MatchCampaignBand";
 import { useSiteSettings, type SectionKey } from "../lib/siteData";
 import { useLanguage } from "../context/LanguageContext";
 
@@ -55,7 +56,8 @@ export function Home() {
       <Hero />
       <Divider />
       <WhatWeDo />
-      {sections.workProcess && <><Divider /><WorkProcess /></>}
+      <MatchCampaignBand />
+      {sections.workProcess && <WorkProcess />}
       {sections.portfolio && <><Divider /><Portfolio /></>}
       {sections.about && <><Divider /><About /></>}
       {sections.services && <><Divider /><Services /></>}

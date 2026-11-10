@@ -895,6 +895,7 @@ export const translations = {
         { to: "/services/fotografie/automotive", label: "Automotive" },
         { to: "/services/fotografie/sport", label: "Sport" },
         { to: "/services/fotografie/portret", label: "Portret" },
+        { to: "/wedstrijdfotografie", label: "Wedstrijdfotografie" },
       ],
       followUs: "Volg het werk",
       address: "Roosendaal · shoots door heel Nederland",
