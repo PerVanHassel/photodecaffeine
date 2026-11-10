@@ -1,19 +1,15 @@
 import { useState, type MouseEvent } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router";
-import { ArrowLeft, ArrowRight, Camera, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { Faq } from "../components/Faq";
+import { PhotoReel } from "../components/PhotoReel";
 import { MatchRequestForm } from "../components/match/MatchRequestForm";
 import { matchPage as m } from "../i18n/matchPage";
 import { EXAMPLE_COUNTS, euro, totalFor, type BookingType } from "../lib/matchBooking";
+import { focusPhotos } from "../lib/photoFocus";
 import { scrollBehavior } from "../lib/scroll";
-
-/**
- * Example photos from matches. Empty for now: each slot shows a placeholder
- * until it gets a `src` (and an `alt` that says what is on it). Only photos
- * we have permission for, and no recognisable children without the parents' yes.
- */
-const EXAMPLE_PHOTOS: { src?: string; alt?: string }[] = [{}, {}, {}];
+import { usePortfolio } from "../lib/siteData";
 
 const URL = `https://www.photodecaffeine.com${m.path}`;
 
@@ -44,6 +40,12 @@ function SectionHead({ id, label, title1, title2, body }: { id: string; label: s
 export function MatchPhotographyPage() {
   // Which card was used last; a counter so the same card twice still counts.
   const [preset, setPreset] = useState<{ type: BookingType; n: number } | null>(null);
+
+  // Example photos: the Sport category of the portfolio, the same photos as
+  // on the sport page. Only what is published there shows up, so a work that
+  // loses its permission leaves this page too. No Sport work: no strip.
+  const sport = focusPhotos(usePortfolio().data, "Sport", 9);
+  const examples = sport.focused ? sport.photos : [];
 
   const choose = (type: BookingType) => (e: MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
@@ -210,26 +212,19 @@ export function MatchPhotographyPage() {
         </div>
       </section>
 
-      {/* ── Example photos (placeholders until real ones are in) ── */}
-      <section className="pdc-section wf-photos-section" aria-labelledby="wf-photos-title">
-        <div className="pdc-wrap wf-wrap">
-          <SectionHead id="wf-photos-title" {...m.photos} />
-        </div>
-        <div className="wf-photos">
-          {EXAMPLE_PHOTOS.map((photo, i) =>
-            photo.src ? (
-              <figure key={i} className="wf-photo">
-                <img src={photo.src} alt={photo.alt ?? ""} loading="lazy" />
-              </figure>
-            ) : (
-              <div key={i} className="wf-photo wf-photo--empty" aria-hidden="true">
-                <Camera size={22} strokeWidth={1.25} />
-                <span>{m.photos.placeholder}</span>
-              </div>
-            )
-          )}
-        </div>
-      </section>
+      {/* ── Example photos from the portfolio, in the strip of the service pages ── */}
+      {examples.length > 0 && (
+        <PhotoReel
+          id="wf-photos-title"
+          label={m.photos.label}
+          titleLine1={m.photos.title1}
+          titleLine2={m.photos.title2}
+          body={m.photos.body}
+          link={m.photos.link}
+          photos={examples}
+          labels={{ previous: m.photos.previous, next: m.photos.next }}
+        />
+      )}
 
       {/* ── What to expect + the request form, like the service pages ── */}
       <div className="wf-request-band">

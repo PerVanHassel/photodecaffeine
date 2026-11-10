@@ -121,12 +121,15 @@ export const matchPage = {
     packagesAfter: ".",
   },
 
+  // Photos from the Sport category of the portfolio, in the photo strip of the service pages.
   photos: {
-    label: "Voorbeeldfoto's",
+    label: "Uit het portfolio",
     title1: "Langs de",
     title2: "lijn.",
-    body: "Hier komen foto's van wedstrijden, zodra we die met toestemming mogen laten zien.",
-    placeholder: "Voorbeeldfoto volgt",
+    body: "Een greep uit ons sportwerk. Klik op een foto om de hele serie te zien.",
+    link: "Bekijk het hele portfolio →",
+    previous: "Vorige foto's",
+    next: "Volgende foto's",
   },
 
   request: {

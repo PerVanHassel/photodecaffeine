@@ -186,27 +186,6 @@
   .wf-note { padding: 28px 24px; }
 }
 
-/* Example photos: the photo strip of the service pages, with empty frames for now. */
-.wf-photos {
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px;
-  max-width: 1400px; margin: 0 auto; padding: 0 40px; box-sizing: border-box;
-}
-.wf-photo { margin: 0; overflow: hidden; aspect-ratio: 4 / 3; background-color: #0d0703; }
-.wf-photo img { display: block; width: 100%; height: 100%; object-fit: cover; filter: contrast(1.05) saturate(0.6) brightness(0.8); }
-.wf-photo--empty {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
-  box-sizing: border-box; border: 1px solid rgba(255,251,224,0.06); color: rgba(255,251,224,0.3);
-}
-.wf-photo--empty span { color: rgba(255,251,224,0.45); font-size: 9px; font-weight: 600; letter-spacing: 0.3em; text-transform: uppercase; }
-@media (max-width: 767px) {
-  .wf-photos {
-    grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 78%;
-    overflow-x: auto; padding: 0 20px; scroll-padding: 0 20px; scroll-snap-type: x mandatory; scrollbar-width: none;
-  }
-  .wf-photos::-webkit-scrollbar { display: none; }
-  .wf-photo { scroll-snap-align: start; }
-}
-
 /* What to expect + the form, in the service pages' two columns. */
 .wf-request-band { border-top: 1px solid rgba(255,251,224,0.06); }
 .wf-request { max-width: 1400px; margin: 0 auto; display: grid; align-items: start; box-sizing: border-box; }
