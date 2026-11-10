@@ -9,7 +9,7 @@ import { Button, Card, Modal, PageHead, Photo, SelectField, Skeleton, TextAreaFi
 import type { Article } from "./Content";
 import { useUnsavedChanges } from "../unsaved";
 
-type Sections = { sportCampaign: boolean; workProcess: boolean; portfolio: boolean; about: boolean; services: boolean; socialProof: boolean; customCTA: boolean };
+type Sections = { workProcess: boolean; portfolio: boolean; about: boolean; services: boolean; socialProof: boolean; customCTA: boolean };
 type Settings = {
   heroImageUrl: string;
   heroImageMobileUrl: string;
@@ -23,7 +23,6 @@ type Settings = {
 };
 
 const SECTION_LABELS: { key: keyof Sections; label: string }[] = [
-  { key: "sportCampaign", label: "Sportactie" },
   { key: "workProcess", label: "Werkwijze" },
   { key: "portfolio", label: "Portfolio" },
   { key: "about", label: "Over ons" },
@@ -39,7 +38,7 @@ const IMAGES: { key: "heroImageUrl" | "heroImageMobileUrl" | "frameImageUrl"; la
 
 const EMPTY: Settings = {
   heroImageUrl: "", heroImageMobileUrl: "", frameImageUrl: "",
-  sections: { sportCampaign: true, workProcess: true, portfolio: true, about: true, services: true, socialProof: true, customCTA: true },
+  sections: { workProcess: true, portfolio: true, about: true, services: true, socialProof: true, customCTA: true },
   photoFocus: "",
   studioName: "", contactEmail: "",
   business: { name: "", address: "", kvk: "", vatNumber: "", iban: "", email: "" },

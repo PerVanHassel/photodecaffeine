@@ -54,7 +54,6 @@ const PAGES = [
   { route: "/contact-en-klachten", data: [] },
   { route: "/websitevoorwaarden", data: [] },
   { route: "/herroepen", data: [] },
-  { route: "/sportactie", data: ["settings", "articles"] },
   // Not in the sitemap and noindex; prerendered so Vercel serves it instead of the 404.
   { route: "/bedankt", data: [] },
 ];

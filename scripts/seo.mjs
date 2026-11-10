@@ -30,7 +30,6 @@ const STATIC_ROUTES = [
   { loc: "/services/videografie", changefreq: "monthly", priority: "0.9" },
   { loc: "/services/website", changefreq: "monthly", priority: "0.9" },
   { loc: "/services/social-media", changefreq: "monthly", priority: "0.8" },
-  { loc: "/sportactie", changefreq: "monthly", priority: "0.8" },
   { loc: "/about", changefreq: "monthly", priority: "0.7" },
 ];
 

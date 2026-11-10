@@ -19,11 +19,9 @@ export function StickyCta() {
   const target =
     pathname === "/services/social-media"
       ? { id: "boeken", to: `${pathname}#boeken`, label: t.socialMediaPage.requestLabel }
-      : pathname === t.sportCampaign.path
-        ? { id: "aanvragen", to: `${pathname}#aanvragen`, label: t.sportCampaign.requestLabel }
-        : isCategoryPage
-          ? { id: "boeken", to: `${pathname}#boeken`, label: t.servicePages.requestLabel }
-          : { id: "contact", to: "/#contact", label: t.nav.bookShoot };
+      : isCategoryPage
+        ? { id: "boeken", to: `${pathname}#boeken`, label: t.servicePages.requestLabel }
+        : { id: "contact", to: "/#contact", label: t.nav.bookShoot };
   const isHome = pathname === "/";
 
   const [formInView, setFormInView] = useState(false);

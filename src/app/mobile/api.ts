@@ -203,7 +203,6 @@ export interface SiteSettings {
   heroImageMobileUrl: string;
   frameImageUrl: string;
   sections: {
-    sportCampaign: boolean;
     workProcess: boolean;
     portfolio: boolean;
     about: boolean;

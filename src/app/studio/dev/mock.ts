@@ -1100,7 +1100,7 @@ export async function mockApi(path: string, method: string, body: Json): Promise
       };
     }
     if (p === "/admin/calendar-feed") return { url: "https://www.photodecaffeine.com/api/calendar/0123456789abcdef0123456789abcdef0123456789abcdef.ics" };
-    if (p === "/admin/settings") return { settings: { ...siteSettings, heroImageUrl: PHOTOS[0], heroImageMobileUrl: "", frameImageUrl: PHOTOS[6], studioName: "PhotoDeCaffeine", contactEmail: "contact@photodecaffeine.com", sections: { sportCampaign: true, workProcess: true, portfolio: true, about: true, services: true, socialProof: false, customCTA: true }, business: { name: "PhotoDeCaffeine Productions" } } };
+    if (p === "/admin/settings") return { settings: { ...siteSettings, heroImageUrl: PHOTOS[0], heroImageMobileUrl: "", frameImageUrl: PHOTOS[6], studioName: "PhotoDeCaffeine", contactEmail: "contact@photodecaffeine.com", sections: { workProcess: true, portfolio: true, about: true, services: true, socialProof: false, customCTA: true }, business: { name: "PhotoDeCaffeine Productions" } } };
     if (p === "/admin/notifications") return { notifications: [], unread: 0, readAt: "" };
     if (p === "/admin/files") return { files: structuredClone(storedFiles), labels: storedLabels, used: 798_415_390, limit: 1024 ** 3 };
     if (p === "/admin/files/link") return { url: url.searchParams.get("download") ? "#gedownload" : PHOTOS[1] };
