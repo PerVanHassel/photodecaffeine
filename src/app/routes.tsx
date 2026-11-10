@@ -63,6 +63,9 @@ export const routes: RouteObject[] = [
           { path: "websitevoorwaarden", lazy: chunk(() => import("./pages/LegalPage"), (m) => m.SiteTermsPage) },
           { path: "herroepen", lazy: chunk(() => import("./pages/WithdrawPage"), (m) => m.WithdrawPage) },
           { path: "bedankt", lazy: chunk(() => import("./pages/ThankYouPage"), (m) => m.ThankYouPage) },
+          // The start-up campaign for matches, next to the sport packages.
+          { path: "wedstrijdfotografie", lazy: chunk(() => import("./pages/MatchPhotographyPage"), (m) => m.MatchPhotographyPage) },
+          { path: "wedstrijdfotografie/verstuurd", lazy: chunk(() => import("./pages/MatchRequestSentPage"), (m) => m.MatchRequestSentPage) },
         ],
       },
       portalRoutes,

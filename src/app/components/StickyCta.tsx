@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router";
 import { useLanguage } from "../context/LanguageContext";
+import { matchPage } from "../i18n/matchPage";
 
 /**
  * A booking button pinned to the bottom of the screen on phones, where the
@@ -19,7 +20,9 @@ export function StickyCta() {
   const target =
     pathname === "/services/social-media"
       ? { id: "boeken", to: `${pathname}#boeken`, label: t.socialMediaPage.requestLabel }
-      : isCategoryPage
+      : pathname === matchPage.path
+        ? { id: "aanvragen", to: `${pathname}#aanvragen`, label: matchPage.bookCta }
+        : isCategoryPage
         ? { id: "boeken", to: `${pathname}#boeken`, label: t.servicePages.requestLabel }
         : { id: "contact", to: "/#contact", label: t.nav.bookShoot };
   const isHome = pathname === "/";
@@ -50,7 +53,7 @@ export function StickyCta() {
   const shown = pastHero && !formInView;
 
   // Just sent an inquiry: nothing left to book.
-  if (pathname === "/bedankt") return null;
+  if (pathname === "/bedankt" || pathname === matchPage.sentPath) return null;
 
   return (
     <>

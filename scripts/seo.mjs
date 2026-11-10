@@ -26,6 +26,7 @@ const STATIC_ROUTES = [
   { loc: "/services/fotografie", changefreq: "monthly", priority: "0.9" },
   { loc: "/services/fotografie/automotive", changefreq: "monthly", priority: "0.8" },
   { loc: "/services/fotografie/sport", changefreq: "monthly", priority: "0.8" },
+  { loc: "/wedstrijdfotografie", changefreq: "monthly", priority: "0.8" },
   { loc: "/services/fotografie/portret", changefreq: "monthly", priority: "0.8" },
   { loc: "/services/videografie", changefreq: "monthly", priority: "0.9" },
   { loc: "/services/website", changefreq: "monthly", priority: "0.9" },
