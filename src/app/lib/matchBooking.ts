@@ -39,11 +39,8 @@ export const EMPTY_REQUEST = {
   date: "",
   time: "",
   location: "",
-  matches: "" as "" | "one" | "more",
   // Individual only
   forWhom: "",
-  shirt: "",
-  tip: "",
   feeAgreed: false,
   // Team only
   players: "",
@@ -134,15 +131,12 @@ export function requestLines(r: MatchRequest): string[] {
     `Sport: ${sport}`,
     `Wedstrijd: ${longDate(r.date)}, aanvang ${r.time}`,
     `Locatie: ${r.location.trim()}`,
-    r.matches ? (r.matches === "one" ? f.matchesOne : f.matchesMore) : "",
   ];
   if (team) {
     lines.push(`Aantal spelers: ongeveer ${r.players.trim()}`);
     if (needsContactPerson(r)) lines.push(`Trainer of teammanager: ${r.contactPerson.trim()}`);
   } else {
     lines.push(`Foto's voor: ${r.forWhom.trim()}`);
-    if (r.shirt.trim()) lines.push(`Rugnummer: ${r.shirt.trim()}`);
-    if (r.tip.trim()) lines.push(`Herkenning: ${r.tip.trim()}`);
     lines.push(`Akkoord met de boekingsbijdrage van ${euro(BOOKING_FEE)}: ja`);
   }
   lines.push(`Spelers onder de 18: ${r.minors === "yes" ? "ja" : "nee"}`);

@@ -116,7 +116,6 @@ export function MatchRequestForm({ preset }: { preset: { type: BookingType; n: n
         {f.title}
       </h2>
       <p className="wf-form-intro">{f.intro}</p>
-      <p className="pdc-field-hint wf-form-note">{f.optionalNote}</p>
 
       {submitted && errorList.length > 0 && (
         <div ref={summary} tabIndex={-1} role="alert" className="wf-summary" aria-labelledby="wf-summary-title">
@@ -207,41 +206,13 @@ export function MatchRequestForm({ preset }: { preset: { type: BookingType; n: n
             <Input label={f.timeLabel} type="time" step={300} className="wf-input-when" {...text("time")} />
           </div>
           <Input label={f.locationLabel} autoComplete="off" maxLength={160} placeholder={f.locationPlaceholder} {...text("location")} />
-          <RadioChips
-            field="matches"
-            label={f.matchesLabel}
-            value={form.matches}
-            onChange={(v) => set("matches", v as MatchRequest["matches"])}
-            options={[{ value: "one", label: f.matchesOne }, { value: "more", label: f.matchesMore }]}
-            hint={form.matches === "more" ? f.matchesMoreHint : undefined}
-          />
-        </Group>
-
-        {/* ── Only for one player ── */}
-        {isIndividual && (
-          <Group label={f.playerLegend} reveal>
+          {isIndividual && (
             <Input label={f.forWhomLabel} autoComplete="off" maxLength={120} placeholder={f.forWhomPlaceholder} {...text("forWhom")} />
+          )}
+          {isTeam && (
             <div className="pdc-form-row">
-              <Input label={f.shirtLabel} inputMode="numeric" autoComplete="off" maxLength={10} {...text("shirt")} />
-              <Input label={f.tipLabel} autoComplete="off" maxLength={160} placeholder={f.tipPlaceholder} {...text("tip")} />
-            </div>
-          </Group>
-        )}
-
-        {/* ── Only for a team ── */}
-        {isTeam && (
-          <Group label={f.teamLegend} reveal>
-            <Input
-              label={f.playersLabel}
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={99}
-              className="wf-input-short"
-              {...text("players")}
-            />
-            {needsContactPerson(form) && (
-              <div className="wf-reveal">
+              <Input label={f.playersLabel} type="number" inputMode="numeric" min={1} max={99} {...text("players")} />
+              {needsContactPerson(form) && (
                 <Input
                   label={f.contactPersonLabel}
                   autoComplete="off"
@@ -249,20 +220,19 @@ export function MatchRequestForm({ preset }: { preset: { type: BookingType; n: n
                   placeholder={f.contactPersonPlaceholder}
                   {...text("contactPerson")}
                 />
-              </div>
-            )}
-          </Group>
-        )}
+              )}
+            </div>
+          )}
+        </Group>
 
         {/* ── Children in the photos ── */}
-        <Group label={f.consentTitle}>
+        <div className="wf-group">
           <RadioChips
             field="minors"
             label={f.minorsLabel}
             value={form.minors}
             onChange={(v) => set("minors", v as MatchRequest["minors"])}
             options={[{ value: "yes", label: f.yes }, { value: "no", label: f.no }]}
-            hint={f.minorsHint}
             error={shown("minors")}
           />
           {form.minors === "yes" && (
@@ -273,27 +243,9 @@ export function MatchRequestForm({ preset }: { preset: { type: BookingType; n: n
               </CheckField>
             </div>
           )}
-        </Group>
+        </div>
 
         <TextArea label={f.messageLabel} maxLength={1500} placeholder={f.messagePlaceholder} {...text("message")} />
-
-        {/* ── What the chosen option costs ── */}
-        <section className="wf-box" aria-labelledby="wf-cost-title" aria-live="polite">
-          <h3 id="wf-cost-title" className="wf-box-label">{f.priceTitle}</h3>
-          {!form.type ? (
-            <p>{f.priceEmpty}</p>
-          ) : (
-            <>
-              {(isTeam ? f.priceTeam : f.priceIndividual).map((line) => (
-                <p key={line}>{line}</p>
-              ))}
-              <p className="wf-box-strong">{isTeam ? f.priceTeamExample : f.priceIndividualExample}</p>
-              <p className="wf-box-small">
-                {matchPage.prices.travelLabel}: {matchPage.prices.travel}
-              </p>
-            </>
-          )}
-        </section>
 
         {/* ── Agreements ── */}
         <div className="wf-agree">

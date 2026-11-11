@@ -38,10 +38,9 @@ export const matchPage = {
   },
 
   backLabel: "Home",
-  label: "Start-upcampagne",
-  // A soft hyphen, so the long word breaks cleanly on a phone.
-  title: "Wedstrijd\u00adfotografie",
-  titleEm: "voor spelers, teams en clubs",
+  label: "Wedstrijdfotografie",
+  title: "Gratis boeken",
+  titleEm: "voor je team of club",
   subtitle:
     "Boek met je team of club, zonder vaste kosten vooraf. Of boek alleen voor jezelf, met een bijdrage van €20. Elke foto kost daarna €5.",
   bookCta: "Boek je wedstrijdfotograaf",
@@ -149,13 +148,12 @@ export const matchPage = {
     label: "Aanvraag",
     title: "Vraag je wedstrijd aan",
     intro: "Vul in wat je weet. We reageren binnen 24 uur.",
-    optionalNote: "Velden zonder (optioneel) zijn nodig om je aanvraag te versturen.",
 
     typeLegend: "Hoe boek je?",
     typeTeam: "Voor je team of club",
-    typeTeamNote: "Geen boekingsbijdrage",
+    typeTeamNote: "Gratis boeken, daarna €5 per foto",
     typeIndividual: "Voor jezelf",
-    typeIndividualNote: "€20 bijdrage na bevestiging",
+    typeIndividualNote: "€20 bijdrage na bevestiging, daarna €5 per foto",
 
     aboutLegend: "Over jou",
     roleLabel: "Ik ben",
@@ -186,47 +184,23 @@ export const matchPage = {
     timeLabel: "Aanvangstijd",
     locationLabel: "Locatie",
     locationPlaceholder: "Sportpark of sporthal, met de plaats",
-    matchesLabel: "Eén wedstrijd of meerdere? (optioneel)",
-    matchesOne: "Eén wedstrijd",
-    matchesMore: "Meerdere wedstrijden",
-    matchesMoreHint: "Zet de andere data bij de opmerkingen.",
 
-    playerLegend: "Over de speler",
     forWhomLabel: "Voor wie zijn de foto's?",
-    forWhomPlaceholder: "Naam van de speler",
-    shirtLabel: "Rugnummer (optioneel)",
-    tipLabel: "Positie of herkenningstip (optioneel)",
-    tipPlaceholder: "Bijvoorbeeld keeper, of de kleur van de schoenen",
+    forWhomPlaceholder: "Naam van de speler, en het rugnummer als je dat weet",
 
-    teamLegend: "Over het team",
     playersLabel: "Ongeveer hoeveel spelers?",
     contactPersonLabel: "Contactpersoon: trainer of teammanager",
     contactPersonPlaceholder: "Naam, en als je het hebt telefoon of e-mail",
 
     minorsLabel: "Spelen er spelers onder de 18 mee?",
-    minorsHint: "Bijvoorbeeld een jeugdteam, of je boekt voor je kind.",
     yes: "Ja",
     no: "Nee",
-    consentTitle: "Toestemming bij kinderen",
     consentBody: `Voor herkenbare foto's van kinderen is toestemming van de ouders nodig. Die regel jij als klant. Ouders geven toestemming door een account te maken in het klantportaal, of schriftelijk via ${EMAIL}.`,
     consentCheckTeam: "Ik zorg dat de ouders van de spelers onder de 18 toestemming geven.",
     consentCheckIndividual: "Ik zorg voor toestemming van de ouders van de speler.",
 
     messageLabel: "Opmerkingen (optioneel)",
-    messagePlaceholder: "Alles wat helpt, zoals een tweede datum of de kleur van de shirts…",
-
-    priceTitle: "Wat het kost",
-    priceEmpty: "Kies bovenaan hoe je boekt. Dan zie je hier wat het kost.",
-    priceTeam: [
-      "Geen boekingsbijdrage en geen vaste kosten vooraf.",
-      "Iedereen koopt zelf foto's in de galerij, voor €5 per foto.",
-    ],
-    priceTeamExample: "Voorbeeld: 3 foto's kosten €15.",
-    priceIndividual: [
-      "€20 boekingsbijdrage. Die betaal je pas na onze bevestiging, daarna staat de datum vast.",
-      "Daarna €5 per foto.",
-    ],
-    priceIndividualExample: "Voorbeeld: €20 + 3 foto's van €5 = €35.",
+    messagePlaceholder: "Alles wat helpt, zoals meerdere wedstrijden of de kleur van de shirts…",
 
     feeCheck: "Ik ga akkoord met de boekingsbijdrage van €20.",
     termsBefore: "Ik ga akkoord met de ",

@@ -210,17 +210,14 @@
 }
 .wf-box p { margin: 0; color: rgba(255,251,224,0.6); font-size: 13px; font-weight: 300; line-height: 1.7; overflow-wrap: break-word; }
 .wf-box p + p { margin-top: 6px; }
-.wf-box .wf-box-strong { margin-top: 14px; color: #fffbe0; font-size: 14px; font-weight: 600; }
-.wf-box .wf-box-small { margin-top: 14px; color: rgba(255,251,224,0.5); font-size: 12px; }
 .wf-box .pdc-field { margin-top: 18px; }
 @media (max-width: 767px) { .wf-box { padding: 24px 20px; } }
 
 /* The form */
 .wf-form-title { margin: 0 0 8px; color: #fffbe0; font-weight: 900; line-height: 1.05; letter-spacing: -0.02em; text-transform: uppercase; outline: none; }
-.wf-form-intro { margin: 0; color: rgba(255,251,224,0.5); font-size: 13px; font-weight: 300; line-height: 1.7; }
-.wf-form-note { display: block; margin: 4px 0 40px; }
-.wf-form { display: flex; flex-direction: column; gap: 48px; }
-.wf-group { display: flex; flex-direction: column; gap: 28px; }
+.wf-form-intro { margin: 0 0 32px; color: rgba(255,251,224,0.5); font-size: 13px; font-weight: 300; line-height: 1.7; }
+.wf-form { display: flex; flex-direction: column; gap: 36px; }
+.wf-group { display: flex; flex-direction: column; gap: 22px; }
 .wf-group-label {
   display: flex; align-items: center; gap: 14px; width: 100%; margin: 0; padding: 0; color: #c8905a;
   font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 700; line-height: 1.5; letter-spacing: 0.28em; text-transform: uppercase;
@@ -231,7 +228,6 @@
 .wf-form .wf-input { font-size: 16px; }
 .wf-form .wf-input-when { min-height: 55px; color-scheme: dark; }
 .wf-form .wf-input::-webkit-date-and-time-value { text-align: left; }
-.wf-form .wf-input-short { max-width: 160px; }
 .wf-form .pdc-choice input[aria-invalid="true"] + span { border-color: rgba(232,124,106,0.7); }
 
 /* Kind of booking: two tiles in the look of the package switch. */
