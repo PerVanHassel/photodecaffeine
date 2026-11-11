@@ -140,6 +140,7 @@ export const LANDING_PAGES = [
   { path: "/", label: "Home" },
   { path: "/services/social-media", label: "Social media" },
   { path: "/portfolio", label: "Portfolio" },
+  { path: "/wedstrijdfotografie", label: "Wedstrijdfotografie" },
 ];
 
 const PAGE_NAMES: Record<string, string> = {
@@ -153,6 +154,7 @@ const PAGE_NAMES: Record<string, string> = {
   "/services/videografie": "Videografie",
   "/services/website": "Websites",
   "/services/social-media": "Social media",
+  "/wedstrijdfotografie": "Wedstrijdfotografie",
   "/bedankt": "Bedankt (aanvraag verstuurd)",
   "/privacybeleid": "Privacybeleid",
   "/algemene-voorwaarden": "Algemene voorwaarden",
