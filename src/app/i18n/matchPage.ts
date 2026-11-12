@@ -39,11 +39,18 @@ export const matchPage = {
 
   backLabel: "Home",
   label: "Wedstrijdfotografie",
-  title: "Gratis boeken",
+  // Two lines in the site's way: the second one dim, then the copper italic.
+  title: "Gratis",
+  title2: "boeken",
   titleEm: "voor je team of club",
   subtitle:
     "Boek met je team of club, zonder vaste kosten vooraf. Of boek alleen voor jezelf, met een bijdrage van €20. Elke foto kost daarna €5.",
   bookCta: "Boek je wedstrijdfotograaf",
+  heroCta: "Boek voor je team",
+  heroMore: "Zo werkt het",
+  // The tag on the photo in the header.
+  heroTag: "Start-upcampagne",
+  heroPrice: "€5 per foto",
 
   choose: {
     label: "Twee manieren",

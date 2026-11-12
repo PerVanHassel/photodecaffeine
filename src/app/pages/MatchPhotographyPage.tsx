@@ -7,6 +7,7 @@ import { PhotoReel } from "../components/PhotoReel";
 import { MatchRequestForm } from "../components/match/MatchRequestForm";
 import { matchPage as m } from "../i18n/matchPage";
 import { EXAMPLE_COUNTS, euro, totalFor, type BookingType } from "../lib/matchBooking";
+import { HIGH_PRIORITY, webSrcSet } from "../lib/images";
 import { focusPhotos } from "../lib/photoFocus";
 import { scrollBehavior } from "../lib/scroll";
 import { usePortfolio } from "../lib/siteData";
@@ -46,11 +47,18 @@ export function MatchPhotographyPage() {
   // loses its permission leaves this page too. No Sport work: no strip.
   const sport = focusPhotos(usePortfolio().data, "Sport", 9);
   const examples = sport.focused ? sport.photos : [];
+  // The first of them goes in the header. No sport photo: the header is text only.
+  const hero = examples[0];
 
   const choose = (type: BookingType) => (e: MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     setPreset((p) => ({ type, n: (p?.n ?? 0) + 1 }));
     document.getElementById("aanvragen")?.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
+  };
+
+  const toSteps = (e: MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    document.getElementById(m.stepsId)?.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
   };
 
   const cards = [
@@ -85,23 +93,62 @@ export function MatchPhotographyPage() {
         })}</script>
       </Helmet>
 
-      {/* ── Header, like the service pages ── */}
+      {/* ── Header: the offer, the three numbers and a sport photo in the film frame of the home page ── */}
       <header className="pdc-svc-head wf-head">
         <div className="wf-head-inner">
           <Link to="/" className="pdc-back-link">
             <ArrowLeft size={14} aria-hidden="true" />
             {m.backLabel}
           </Link>
-          <div className="wf-head-grid">
-            <div>
-              <span className="wf-label">{m.label}</span>
+          <div className={hero ? "wf-head-grid wf-head-grid--photo" : "wf-head-grid"}>
+            <div className="wf-head-text">
+              <span className="wf-label wf-head-label">
+                <span aria-hidden="true" />
+                {m.label}
+              </span>
               <h1 className="wf-title">
                 {m.title}
                 <br />
+                <span className="wf-title-dim">{m.title2}</span>
                 <em>{m.titleEm}</em>
               </h1>
+              <p className="wf-sub">{m.subtitle}</p>
+              <div className="wf-head-actions">
+                <a href="#aanvragen" onClick={choose("team")} className="pdc-btn pdc-btn-solid wf-head-btn">
+                  {m.heroCta}
+                  <ArrowRight size={16} strokeWidth={2.25} aria-hidden="true" />
+                </a>
+                <a href={`#${m.stepsId}`} onClick={toSteps} className="wf-head-more">
+                  {m.heroMore}
+                </a>
+              </div>
             </div>
-            <p className="wf-sub">{m.subtitle}</p>
+            {hero && (
+              <figure className="wf-head-photo">
+                <span className="wf-head-tag">{m.heroTag}</span>
+                <div className="wf-head-frame">
+                  <img
+                    src={hero.url}
+                    srcSet={webSrcSet(hero.url)}
+                    sizes="(max-width: 1023px) 100vw, 480px"
+                    alt={hero.article.title}
+                    {...HIGH_PRIORITY}
+                  />
+                </div>
+                <figcaption>
+                  <span>{hero.article.title}</span>
+                  <span aria-hidden="true">{m.heroPrice}</span>
+                </figcaption>
+              </figure>
+            )}
+            <ul className="wf-head-facts">
+              {m.band.facts.map((fact) => (
+                <li key={fact.value}>
+                  <strong>{fact.value}</strong>
+                  <span>{fact.text}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </header>
