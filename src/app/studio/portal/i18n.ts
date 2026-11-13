@@ -909,17 +909,16 @@ export function useT(): PortalText {
   return language === "en" ? en : nl;
 }
 
-/** The portal language (remembered by LanguageContext), with dates and the page language in step. */
+/**
+ * The portal language: the site's own choice (LanguageContext, which also sets
+ * the page language), with the dates in step.
+ */
 export function usePortalLanguage() {
   const { language, setLanguage } = useLanguage();
   useEffect(() => {
     setDateLocale(language === "en" ? "en" : "nl");
-    document.documentElement.lang = language;
-    // Outside the portal the site is Dutch only.
-    return () => {
-      setDateLocale("nl");
-      document.documentElement.lang = "nl";
-    };
+    // The admin shares these date helpers and stays Dutch.
+    return () => setDateLocale("nl");
   }, [language]);
   return { language, choose: setLanguage };
 }

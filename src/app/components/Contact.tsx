@@ -7,6 +7,7 @@ import { Select } from "./portal/Select";
 import { ChoiceChips } from "./form/ChoiceChips";
 import { EMAIL_INPUT, PHONE_INPUT, PublicInput, PublicTextarea } from "./form/PublicField";
 import { useLanguage } from "../context/LanguageContext";
+import { translations } from "../i18n/translations";
 import { portalFetch } from "../../lib/supabase";
 import { useSiteSettings } from "../lib/siteData";
 import { focusFirst } from "../lib/photoFocus";
@@ -19,13 +20,16 @@ export function Contact() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const packageId = useId();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const set = (field: keyof typeof EMPTY) => (value: string) => setFormData((f) => ({ ...f, [field]: value }));
 
   // Picking a service category offers its options to tick, as on its own page.
+  // What is sent stays Dutch, whatever language the page is in.
   const [choices, setChoices] = useState<string[]>([]);
-  const category = t.servicePages.pages.find((p) => p.name === formData.package);
+  const category = t.servicePages.pages.find((p) => p.id === formData.package);
+  const nlCategory = translations.nl.servicePages.pages.find((p) => p.id === formData.package);
+  const optionLabel = (option: string) => (category && nlCategory ? category.options[nlCategory.options.indexOf(option)] ?? option : option);
   const choosePackage = (value: string) => {
     set("package")(value);
     setChoices([]);
@@ -44,9 +48,11 @@ export function Contact() {
         method: "POST",
         body: JSON.stringify({
           ...formData,
-          package: category && choices.length ? `${category.name}: ${choices.join(", ")}` : formData.package,
+          package: nlCategory ? (choices.length ? `${nlCategory.name}: ${choices.join(", ")}` : nlCategory.name) : formData.package,
           message: ref ? `${formData.message}\n\n[ref:${ref}]` : formData.message,
           visit: visitId(),
+          lang: language,
+          note: formData.message,
         }),
       });
       const sent: InquiryForm = "contact";
@@ -63,7 +69,7 @@ export function Contact() {
   const settings = useSiteSettings().data;
   const showPackages = settings?.sections?.services !== false;
   const packages = [
-    ...t.servicePages.pages.map((p) => ({ value: p.name, label: p.name })),
+    ...t.servicePages.pages.map((p) => ({ value: p.id, label: p.name })),
     ...(showPackages ? t.services.packages.map((p) => ({ value: p.id, label: `${p.name} (${p.price} ${p.per})` })) : []),
     { value: "custom", label: t.contact.packageCustom },
   ];
@@ -319,10 +325,11 @@ export function Contact() {
               />
             </div>
 
-            {category && (
+            {nlCategory && (
               <ChoiceChips
                 legend={t.contact.choiceLabel}
-                options={category.id === "fotografie" ? focusFirst(category.options, settings?.photoFocus) : category.options}
+                options={nlCategory.id === "fotografie" ? focusFirst(nlCategory.options, settings?.photoFocus) : nlCategory.options}
+                label={optionLabel}
                 value={choices}
                 onChange={setChoices}
               />

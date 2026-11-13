@@ -14,6 +14,34 @@ const r = new Hono<Env>();
 export default r;
 
 const CONTACT_LIMIT_PER_HOUR = 5;
+
+/** The words of the confirmation a sender gets, in the language of the site they used. */
+const CONFIRMATION = {
+  nl: {
+    subject: "We hebben je bericht ontvangen | PhotoDeCaffeine",
+    label: "Bericht ontvangen",
+    thanks: (firstName: string) => `Bedankt, ${firstName}.`,
+    body: "We lezen je bericht en nemen binnen 24 uur contact met je op.",
+    yours: "Jouw bericht",
+    more: "Meer van ons werk",
+    cta: "Bekijk het in het portfolio &rarr;",
+    tagline: "Gemaakt als koffie, geschoten als cinema.",
+    place: "Roosendaal, Nederland",
+    reply: "Reactie binnen 24 uur",
+  },
+  en: {
+    subject: "We've received your message | PhotoDeCaffeine",
+    label: "Message received",
+    thanks: (firstName: string) => `Thank you, ${firstName}.`,
+    body: "We'll read your message and get back to you within 24 hours.",
+    yours: "Your message",
+    more: "More of our work",
+    cta: "View it in the portfolio &rarr;",
+    tagline: "Brewed like coffee, shot like cinema.",
+    place: "Roosendaal, the Netherlands",
+    reply: "Reply within 24 hours",
+  },
+};
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Counts a contact submission for this IP; false once the hourly limit is reached. */
@@ -34,7 +62,11 @@ export async function withinContactLimit(forwardedFor: string | undefined): Prom
 // --- POST /contact — public contact form submission ---
 r.post("/make-server-0951c59e/contact", async (c) => {
   try {
-    const { name, email, phone, brand, message, package: pkg, visit } = await c.req.json();
+    const { name, email, phone, brand, message, package: pkg, visit, lang, note } = await c.req.json();
+    // The site's language when the form was sent. The request itself is always
+    // Dutch for the studio; the sender's confirmation follows the language, and
+    // in English quotes only what they typed themselves (note).
+    const english = lang === "en";
     // The automotive and social media forms ask for an email or a phone
     // number; either one is enough to get back to someone.
     if (!name?.trim() || !(email?.trim() || phone?.trim()) || !message?.trim()) {
@@ -68,7 +100,7 @@ r.post("/make-server-0951c59e/contact", async (c) => {
       email: email?.trim() || "",
       phone: phone?.trim() || "",
       brand: brand?.trim() || "",
-      message: message.trim(),
+      message: english ? `${message.trim()}\n\nTaal: Engels (via de Engelse site)` : message.trim(),
       package: pkg || "",
     }).select("*").single()) as any;
 
@@ -113,6 +145,7 @@ r.post("/make-server-0951c59e/contact", async (c) => {
               </tr>` : ""}
               ${inquiry.phone ? `<tr><td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);width:88px;color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;vertical-align:top;">Telefoon</td><td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);color:#fffbe0;font-size:13px;">${escapeHtml(inquiry.phone)}</td></tr>` : ""}
               ${inquiry.brand ? `<tr><td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;vertical-align:top;">Merk</td><td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);color:#fffbe0;font-size:13px;">${escapeHtml(inquiry.brand)}</td></tr>` : ""}
+              ${english ? `<tr><td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;vertical-align:top;">Taal</td><td style="padding:9px 0;border-bottom:1px solid rgba(255,251,224,0.06);color:#fffbe0;font-size:13px;">Engels, antwoord in het Engels</td></tr>` : ""}
               ${inquiry.package ? `<tr><td style="padding:9px 0;color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;vertical-align:top;">Pakket</td><td style="padding:9px 0;color:#fffbe0;font-size:13px;">${escapeHtml(inquiry.package)}</td></tr>` : ""}
             </table>
           </td>
@@ -141,18 +174,22 @@ r.post("/make-server-0951c59e/contact", async (c) => {
     // A phone-only lead has no address to confirm to.
     if (!inquiry.email) return c.json({ success: true });
 
-    // Confirmation to the visitor, with an optional "meer van ons werk" promo card
+    // Confirmation to the visitor, in the language of the site they used, with
+    // an optional "meer van ons werk" promo card. It quotes what they wrote,
+    // without the campaign tag the site adds for the studio.
+    const copy = english ? CONFIRMATION.en : CONFIRMATION.nl;
+    const written = String(english && typeof note === "string" ? note : message).replace(/\s*\[ref:[^\]]*\]/g, "").trim().slice(0, 5000);
     const promo = await getPromoPortfolioArticle();
     const promoRows = promo
       ? `
         <tr>
-          <td style="padding:40px 36px 0;"><span style="color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;">Meer Van Ons Werk</span></td>
+          <td style="padding:40px 36px 0;"><span style="color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;">${copy.more}</span></td>
         </tr>
         ${glassImageCard({
           imageUrl: smallCopy(promo.coverUrl),
           eyebrow: promo.category || "Portfolio",
           title: promo.title,
-          ctaText: "Bekijk in de portfolio &rarr;",
+          ctaText: copy.cta,
           accentColor: "#c8905a",
           linkUrl: `${SITE_URL}/portfolio/${promo.id}`,
           topSpace: 190,
@@ -161,38 +198,38 @@ r.post("/make-server-0951c59e/contact", async (c) => {
 
     await sendEmail({
       to: inquiry.email,
-      subject: "We hebben je bericht ontvangen — PhotoDeCaffeine",
+      subject: copy.subject,
       html: emailWrap(`
         <tr>
           <td style="padding:40px 36px 0;text-align:center;">
-            <span style="color:#c8905a;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;">Bericht Ontvangen</span>
+            <span style="color:#c8905a;font-size:10px;font-weight:700;letter-spacing:0.28em;text-transform:uppercase;">${copy.label}</span>
             <div style="height:16px;line-height:16px;font-size:0;">&nbsp;</div>
-            <span style="display:block;color:#fffbe0;font-size:30px;font-weight:800;letter-spacing:-0.02em;line-height:1.15;text-transform:uppercase;">Bedankt, ${escapeHtml(inquiry.name.split(" ")[0])}.</span>
+            <span style="display:block;color:#fffbe0;font-size:30px;font-weight:800;letter-spacing:-0.02em;line-height:1.15;text-transform:uppercase;">${copy.thanks(escapeHtml(inquiry.name.split(" ")[0]))}</span>
           </td>
         </tr>
         <tr>
-          <td style="padding:20px 48px 0;text-align:center;"><span style="color:rgba(255,251,224,0.55);font-size:14px;font-weight:300;line-height:1.75;">We bekijken jouw brief en nemen binnen één werkdag contact met je op. Bedankt voor het overwegen van PDC.</span></td>
+          <td style="padding:20px 48px 0;text-align:center;"><span style="color:rgba(255,251,224,0.55);font-size:14px;font-weight:300;line-height:1.75;">${copy.body}</span></td>
         </tr>
-        <tr>
-          <td style="padding:32px 36px 0;"><span style="color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;">Jouw Bericht</span></td>
+        ${written ? `<tr>
+          <td style="padding:32px 36px 0;"><span style="color:rgba(255,251,224,0.3);font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;">${copy.yours}</span></td>
         </tr>
         <tr>
           <td style="padding:10px 36px 0;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:rgba(255,251,224,0.03);border-left:2px solid #c8905a;">
-              <tr><td style="padding:16px 18px;color:rgba(255,251,224,0.55);font-size:13.5px;line-height:1.7;font-style:italic;">"${escapeHtml(inquiry.message).replace(/\n/g, "<br>")}"</td></tr>
+              <tr><td style="padding:16px 18px;color:rgba(255,251,224,0.55);font-size:13.5px;line-height:1.7;font-style:italic;">"${escapeHtml(written).replace(/\n/g, "<br>")}"</td></tr>
             </table>
           </td>
-        </tr>
+        </tr>` : ""}
         ${promoRows}
         <tr>
-          <td style="padding:36px 36px 0;text-align:center;"><span style="color:#c8905a;font-size:14px;font-style:italic;font-weight:300;">Gemaakt als Koffie, Geschoten als Cinema.</span></td>
+          <td style="padding:36px 36px 0;text-align:center;"><span style="color:#c8905a;font-size:14px;font-style:italic;font-weight:300;">${copy.tagline}</span></td>
         </tr>
         <tr>
           <td style="padding:32px 36px 32px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid rgba(255,251,224,0.06);">
               <tr><td style="height:24px;line-height:24px;font-size:0;">&nbsp;</td></tr>
-              <tr><td style="padding:5px 0;color:rgba(255,251,224,0.25);font-size:11px;text-align:center;"><a href="mailto:contact@photodecaffeine.com" style="color:rgba(255,251,224,0.45);text-decoration:none;">contact@photodecaffeine.com</a> &nbsp;·&nbsp; +31 6 36112514 &nbsp;·&nbsp; Roosendaal, Nederland</td></tr>
-              <tr><td style="padding:5px 0;color:rgba(255,251,224,0.2);font-size:11px;text-align:center;">Reactie binnen 24u &nbsp;·&nbsp; @photodecaffeine</td></tr>
+              <tr><td style="padding:5px 0;color:rgba(255,251,224,0.25);font-size:11px;text-align:center;"><a href="mailto:contact@photodecaffeine.com" style="color:rgba(255,251,224,0.45);text-decoration:none;">contact@photodecaffeine.com</a> &nbsp;·&nbsp; +31 6 36112514 &nbsp;·&nbsp; ${copy.place}</td></tr>
+              <tr><td style="padding:5px 0;color:rgba(255,251,224,0.2);font-size:11px;text-align:center;">${copy.reply} &nbsp;·&nbsp; @photodecaffeine</td></tr>
             </table>
           </td>
         </tr>

@@ -9,10 +9,11 @@ import { useLanguage } from "../context/LanguageContext";
 import DARKROOM from "@/assets/web/darkroom-1200.webp";
 import { scrollBehavior } from "../lib/scroll";
 
+// Roles and specialities are in the translations (aboutPage.members).
 const TEAM = [
-  { id: "per", name: "Per van Hassel", role: "Medeoprichter & strategie", tag: "Video & storytelling" },
-  { id: "ryan", name: "Ryan Chantre", role: "Medeoprichter & creative lead", tag: "Automotive, sport & concerten" },
-  { id: "majd", name: "Majd Tawashe", role: "Medeoprichter & creative director", tag: "6+ jaar fotografie" },
+  { id: "per", name: "Per van Hassel" },
+  { id: "ryan", name: "Ryan Chantre" },
+  { id: "majd", name: "Majd Tawashe" },
 ] as const;
 
 const PORTRAITS = { majd: image_IMG_9694, per: image_IMG_0114_TIF, ryan: image_IMG_0115_TIF };
@@ -134,7 +135,7 @@ function TeamCard({
               textTransform: "uppercase",
             }}
           >
-            {member.role}
+            {t.aboutPage.members[member.id].role}
           </div>
         </div>
       </div>
@@ -170,7 +171,7 @@ function TeamCard({
               textTransform: "uppercase",
             }}
           >
-            {member.role}
+            {t.aboutPage.members[member.id].role}
           </div>
         </div>
 
@@ -189,7 +190,7 @@ function TeamCard({
             fontFamily: "'Courier New', monospace",
           }}
         >
-          {member.tag}
+          {t.aboutPage.members[member.id].tag}
         </div>
 
         {/* Intro paragraph */}
@@ -243,22 +244,22 @@ export function AboutPage() {
         paddingTop: "72px",
       }}>
       <Helmet>
-        <title>Over ons: het team achter de lens | PhotoDeCaffeine</title>
-        <meta name="description" content="Maak kennis met Per, Ryan en Majd van PhotoDeCaffeine: een jong team uit Roosendaal voor fotografie, videografie en websites op maat, door heel Nederland." />
+        <title>{ta.metaTitle}</title>
+        <meta name="description" content={ta.metaDescription} />
         <link rel="canonical" href="https://www.photodecaffeine.com/about" />
-        <meta property="og:title" content="Over ons | PhotoDeCaffeine" />
-        <meta property="og:description" content="Maak kennis met het team van PhotoDeCaffeine: fotografie, videografie en websites op maat." />
+        <meta property="og:title" content={ta.shareTitle} />
+        <meta property="og:description" content={ta.shareDescription} />
         <meta property="og:url" content="https://www.photodecaffeine.com/about" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Over ons | PhotoDeCaffeine" />
-        <meta name="twitter:description" content="Maak kennis met het team van PhotoDeCaffeine: fotografie, videografie en websites op maat." />
+        <meta name="twitter:title" content={ta.shareTitle} />
+        <meta name="twitter:description" content={ta.shareDescription} />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "BreadcrumbList",
           "itemListElement": [
             { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.photodecaffeine.com/" },
-            { "@type": "ListItem", "position": 2, "name": "Over Ons", "item": "https://www.photodecaffeine.com/about" }
+            { "@type": "ListItem", "position": 2, "name": ta.breadcrumb, "item": "https://www.photodecaffeine.com/about" }
           ]
         })}</script>
       </Helmet>

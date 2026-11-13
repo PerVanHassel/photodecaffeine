@@ -14,7 +14,7 @@ import heroImage from "@/assets/web/majd-1365.webp";
 import { HIGH_PRIORITY } from "../lib/images";
 
 export function SocialMediaPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const ts = t.socialMediaPage;
 
   const [form, setForm] = useState({ name: "", email: "", phone: "", company: "", message: "" });
@@ -57,6 +57,8 @@ export function SocialMediaPage() {
           brand: form.company,
           message: `Social media beheer aanvraag.${form.message ? `\n\n${form.message}` : ""}${visitCampaign() ? `\n\n[ref:${visitCampaign()}]` : ""}`,
           visit: visitId(),
+          lang: language,
+          note: form.message,
         }),
       });
       const sent: InquiryForm = "social";
@@ -80,23 +82,23 @@ export function SocialMediaPage() {
       }}
     >
       <Helmet>
-        <title>Social media beheer voor automotive | PhotoDeCaffeine</title>
-        <meta name="description" content="Content en social media beheer voor autobedrijven, dealers en particuliere eigenaren. Fotografie, video en een consistente social media aanwezigheid, door heel Nederland." />
+        <title>{ts.metaTitle}</title>
+        <meta name="description" content={ts.metaDescription} />
         <link rel="canonical" href="https://www.photodecaffeine.com/services/social-media" />
-        <meta property="og:title" content="Social media beheer voor automotive | PhotoDeCaffeine" />
-        <meta property="og:description" content="Content en social media beheer voor autobedrijven, dealers en particuliere eigenaren, door heel Nederland." />
+        <meta property="og:title" content={ts.metaTitle} />
+        <meta property="og:description" content={ts.shareDescription} />
         <meta property="og:url" content="https://www.photodecaffeine.com/services/social-media" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Social media beheer voor automotive | PhotoDeCaffeine" />
-        <meta name="twitter:description" content="Content en social media beheer voor autobedrijven, dealers en particuliere eigenaren, door heel Nederland." />
+        <meta name="twitter:title" content={ts.metaTitle} />
+        <meta name="twitter:description" content={ts.shareDescription} />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "BreadcrumbList",
           "itemListElement": [
             { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.photodecaffeine.com/" },
-            { "@type": "ListItem", "position": 2, "name": "Videografie", "item": "https://www.photodecaffeine.com/services/videografie" },
-            { "@type": "ListItem", "position": 3, "name": "Social Media Beheer", "item": "https://www.photodecaffeine.com/services/social-media" }
+            { "@type": "ListItem", "position": 2, "name": ts.backLabel, "item": "https://www.photodecaffeine.com/services/videografie" },
+            { "@type": "ListItem", "position": 3, "name": ts.breadcrumb, "item": "https://www.photodecaffeine.com/services/social-media" }
           ]
         })}</script>
       </Helmet>

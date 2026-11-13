@@ -1,6 +1,8 @@
+import type { Language } from "../context/LanguageContext";
+
 // Where the texts for clients live on the site. The words themselves are in
-// legal.ts, which only the legal pages load; this stays small because the footer
-// and every form link here.
+// legal.ts (and legal.en.ts), which only the legal pages load; this stays small
+// because the footer and every form link here.
 
 export type PolicyDoc = {
   /** The part of the document in legal.ts. */
@@ -84,3 +86,66 @@ export const policies = {
     description: "Creatief werk, heldere afspraken en wederzijds respect: wat je van PhotoDeCaffeine mag verwachten.",
   },
 } satisfies Record<string, PolicyDoc>;
+
+type PolicyKey = keyof typeof policies;
+
+/** The English names of the same pages; the addresses stay Dutch. */
+const ENGLISH: Record<PolicyKey, Pick<PolicyDoc, "title" | "short" | "description">> = {
+  terms: {
+    title: "General terms and conditions",
+    short: "Terms and conditions",
+    description: "PhotoDeCaffeine's general terms and conditions: quotes, payment, how we carry out the work, liability and disputes.",
+  },
+  rights: {
+    title: "Copyright and usage rights",
+    short: "Usage rights",
+    description: "Who owns the copyright in photos and film by PhotoDeCaffeine, and how you may use them.",
+  },
+  cancel: {
+    title: "Cancellation, rescheduling and refunds",
+    short: "Cancellation and refunds",
+    description: "What happens when plans change: withdrawal, cancellation, rescheduling and refunds.",
+  },
+  delivery: {
+    title: "Delivery, revisions and file storage",
+    short: "Delivery and revisions",
+    description: "How PhotoDeCaffeine delivers: timing, revision rounds, download links and how long files are kept.",
+  },
+  websites: {
+    title: "Websites: build, hosting and maintenance",
+    short: "Websites",
+    description: "The agreements when PhotoDeCaffeine builds a website for you: renting or buying, hosting, maintenance and personal data.",
+  },
+  privacy: {
+    title: "Privacy statement",
+    short: "Privacy",
+    description: "Which data PhotoDeCaffeine processes, what for, for how long and what your rights are.",
+  },
+  cookie: {
+    title: "Cookie policy",
+    short: "Cookies",
+    description: "Which cookies and similar technologies photodecaffeine.com uses, and what you can choose.",
+  },
+  complaints: {
+    title: "Contact and complaints",
+    short: "Contact and complaints",
+    description: "A complaint or a question? Here's how it works, and how to reach PhotoDeCaffeine.",
+  },
+  site: {
+    title: "Use of this website",
+    short: "Website use",
+    description: "What is and isn't allowed on photodecaffeine.com, and who owns the texts and images.",
+  },
+  promise: {
+    title: "Our promise",
+    short: "Our promise",
+    description: "Creative work, clear agreements and mutual respect: what you can expect from PhotoDeCaffeine.",
+  },
+};
+
+const policiesEn = Object.fromEntries(
+  Object.entries(policies).map(([key, doc]) => [key, { ...doc, ...ENGLISH[key as PolicyKey] }]),
+) as Record<PolicyKey, PolicyDoc>;
+
+/** The pages with their names in the page's language. */
+export const localPolicies = (language: Language): Record<PolicyKey, PolicyDoc> => (language === "en" ? policiesEn : policies);

@@ -3,6 +3,7 @@ import { RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
 import { useAuth } from "../context/AuthContext";
+import { useDutchPage } from "../context/LanguageContext";
 import { isAdmin } from "../../lib/supabase";
 import { excludeThisDevice } from "../lib/analytics";
 import { AppDataProvider, useAppData } from "./AppData";
@@ -36,6 +37,7 @@ function depthOf(pathname: string) {
  * ever renders without a session.
  */
 export function MobileShell() {
+  useDutchPage();
   useEffect(() => {
     // The studio's own phones should not show up in the site's visitor statistics.
     excludeThisDevice();

@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import { Link } from "react-router";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { useLanguage } from "../context/LanguageContext";
+import { categoryLabel } from "../i18n/format";
 import { webSrcSet } from "../lib/images";
 import type { PortfolioArticle } from "../lib/siteData";
 
@@ -16,6 +18,7 @@ export function PortfolioTile({ item, layout, sizes = "(max-width: 767px) 100vw,
   layout: "fill" | "masonry";
   sizes?: string;
 }) {
+  const { t } = useLanguage();
   return (
     <Link to={`/portfolio/${item.id}`} className={`pdc-tile pdc-tile--${layout}`}>
       {item.coverType === "video" ? (
@@ -25,7 +28,7 @@ export function PortfolioTile({ item, layout, sizes = "(max-width: 767px) 100vw,
         <ImageWithFallback src={item.coverUrl} srcSet={webSrcSet(item.coverUrl)} sizes={sizes} alt="" loading="lazy" decoding="async" />
       )}
       <span className="pdc-tile-caption">
-        <span className="pdc-tile-category">{item.category}</span>
+        <span className="pdc-tile-category">{categoryLabel(t, item.category)}</span>
         <span className="pdc-tile-title">{item.title}</span>
         <span className="pdc-tile-rule" aria-hidden="true" />
       </span>

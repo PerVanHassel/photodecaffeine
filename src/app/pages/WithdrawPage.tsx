@@ -2,7 +2,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useSearchParams } from "react-router";
 import { PublicInput, PublicTextarea } from "../components/form/PublicField";
-import { policies } from "../lib/policies";
+import { useLanguage } from "../context/LanguageContext";
+import { localPolicies } from "../lib/policies";
 import { api } from "../studio/api";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -14,6 +15,9 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
  * ?offerte=, ?id= and ?t= come along from the quote page.
  */
 export function WithdrawPage() {
+  const { t, language } = useLanguage();
+  const tw = t.withdraw;
+  const policies = localPolicies(language);
   const [params] = useSearchParams();
   const [form, setForm] = useState({ name: "", email: "", reference: "", message: "" });
   const [errors, setErrors] = useState<Partial<Record<"name" | "email" | "reference" | "form", string>>>({});
@@ -32,9 +36,9 @@ export function WithdrawPage() {
   function next(e: FormEvent) {
     e.preventDefault();
     const found = {
-      name: form.name.trim() ? undefined : "Vul je naam in.",
-      email: EMAIL.test(form.email.trim()) ? undefined : "Vul een geldig e-mailadres in.",
-      reference: form.reference.trim() ? undefined : "Zeg om welke offerte of boeking het gaat.",
+      name: form.name.trim() ? undefined : tw.errorName,
+      email: EMAIL.test(form.email.trim()) ? undefined : tw.errorEmail,
+      reference: form.reference.trim() ? undefined : tw.errorReference,
     };
     setErrors(found);
     if (!found.name && !found.email && !found.reference) setStep("confirm");
@@ -49,14 +53,15 @@ export function WithdrawPage() {
         anonymous: true,
         body: {
           name: form.name.trim(), email: form.email.trim(), reference: form.reference.trim(), message: form.message.trim(),
-          quoteId: params.get("id") || undefined, token: params.get("t") || undefined,
+          quoteId: params.get("id") || undefined, token: params.get("t") || undefined, lang: language,
         },
       });
       setAt(res.at);
       setStep("done");
       window.scrollTo({ top: 0 });
     } catch (err) {
-      setErrors({ form: err instanceof Error ? err.message : `Dat lukte niet. Mail naar contact@photodecaffeine.com.` });
+      // The server answers in Dutch; in English the page says it itself.
+      setErrors({ form: language === "nl" && err instanceof Error ? err.message : tw.sendError });
     } finally {
       setSending(false);
     }
@@ -65,51 +70,52 @@ export function WithdrawPage() {
   return (
     <article className="pdc-legal">
       <Helmet>
-        <title>Overeenkomst herroepen | PhotoDeCaffeine</title>
-        <meta name="description" content="Ging je als particulier online akkoord en wil je toch niet? Binnen de bedenktijd herroep je de overeenkomst hier." />
+        <title>{tw.metaTitle}</title>
+        <meta name="description" content={tw.metaDescription} />
         <link rel="canonical" href="https://www.photodecaffeine.com/herroepen" />
       </Helmet>
       <div className="pdc-legal-inner pdc-withdraw">
-        <h1 className="pdc-legal-title">Overeenkomst herroepen</h1>
+        <h1 className="pdc-legal-title">{tw.title}</h1>
         {step === "done" ? (
           <div role="status">
-            <p className="pdc-withdraw-lead">We hebben je herroeping ontvangen.</p>
+            <p className="pdc-withdraw-lead">{tw.doneTitle}</p>
             <p>
-              Ontvangen op {new Date(at).toLocaleString("nl-NL", { timeZone: "Europe/Amsterdam", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}.
-              Je krijgt een bevestiging op {form.email.trim()}. Waar je recht op hebt, betalen we uiterlijk 14 dagen na vandaag terug.
+              {tw.done(
+                new Date(at).toLocaleString(t.locale, { timeZone: "Europe/Amsterdam", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+                form.email.trim(),
+              )}
             </p>
           </div>
         ) : step === "confirm" ? (
           <>
-            <p className="pdc-withdraw-lead">Kloppen deze gegevens?</p>
+            <p className="pdc-withdraw-lead">{tw.checkTitle}</p>
             <dl className="pdc-withdraw-check">
-              <dt>Naam</dt><dd>{form.name}</dd>
-              <dt>E-mail</dt><dd>{form.email}</dd>
-              <dt>Offerte of boeking</dt><dd>{form.reference}</dd>
-              {form.message.trim() && <><dt>Bericht</dt><dd>{form.message}</dd></>}
+              <dt>{tw.checkName}</dt><dd>{form.name}</dd>
+              <dt>{tw.checkEmail}</dt><dd>{form.email}</dd>
+              <dt>{tw.checkReference}</dt><dd>{form.reference}</dd>
+              {form.message.trim() && <><dt>{tw.checkMessage}</dt><dd>{form.message}</dd></>}
             </dl>
             {errors.form && <p className="pdc-form-error" role="alert">{errors.form}</p>}
             <div className="pdc-withdraw-actions">
               <button type="button" className="pdc-withdraw-btn" onClick={confirm} disabled={sending} aria-busy={sending || undefined}>
-                {sending ? "Versturen…" : "Herroeping bevestigen"}
+                {sending ? tw.sending : tw.confirm}
               </button>
-              <button type="button" className="pdc-legal-print" onClick={() => setStep("fill")} disabled={sending}>Terug</button>
+              <button type="button" className="pdc-legal-print" onClick={() => setStep("fill")} disabled={sending}>{tw.back}</button>
             </div>
           </>
         ) : (
           <>
             <p>
-              Ging je als particulier online of buiten onze werkplek akkoord met een opdracht? Dan heb je normaal 14 dagen
-              bedenktijd. Je hoeft geen reden te geven. Hoe het precies werkt, staat in <Link to={policies.cancel.path}>Annuleren en terugbetaling</Link>.
+              {tw.introBefore} <Link to={policies.cancel.path}>{tw.introLink}</Link>{tw.introAfter}
             </p>
             <form onSubmit={next} noValidate data-track="Herroepen">
-              <PublicInput label="Je naam" name="name" autoComplete="name" maxLength={120} value={form.name} onChange={set("name")} error={errors.name} />
-              <PublicInput label="Je e-mailadres" name="email" type="email" inputMode="email" autoComplete="email" maxLength={254} value={form.email} onChange={set("email")} error={errors.email}
-                hint="Hier sturen we de bevestiging naartoe." />
-              <PublicInput label="Offerte of boeking" name="reference" autoComplete="off" maxLength={120} value={form.reference} onChange={set("reference")} error={errors.reference}
-                hint="Bijvoorbeeld OF-2026-004, of omschrijf de opdracht." />
-              <PublicTextarea label="Bericht (mag leeg)" name="message" rows={3} maxLength={2000} value={form.message} onChange={set("message")} />
-              <button type="submit" className="pdc-withdraw-btn">Overeenkomst herroepen</button>
+              <PublicInput label={tw.nameLabel} name="name" autoComplete="name" maxLength={120} value={form.name} onChange={set("name")} error={errors.name} />
+              <PublicInput label={tw.emailLabel} name="email" type="email" inputMode="email" autoComplete="email" maxLength={254} value={form.email} onChange={set("email")} error={errors.email}
+                hint={tw.emailHint} />
+              <PublicInput label={tw.referenceLabel} name="reference" autoComplete="off" maxLength={120} value={form.reference} onChange={set("reference")} error={errors.reference}
+                hint={tw.referenceHint} />
+              <PublicTextarea label={tw.messageLabel} name="message" rows={3} maxLength={2000} value={form.message} onChange={set("message")} />
+              <button type="submit" className="pdc-withdraw-btn">{tw.submit}</button>
             </form>
           </>
         )}

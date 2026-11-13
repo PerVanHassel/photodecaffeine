@@ -6,7 +6,7 @@ import { FormPrivacyNote } from "../components/form/FormPrivacyNote";
 import { ChoiceChips } from "../components/form/ChoiceChips";
 import { Faq, type FaqItem } from "../components/Faq";
 import { PhotoReel } from "../components/PhotoReel";
-import { PhotoPackages, packageName, packagePrice, type PickedPackage } from "../components/PhotoPackages";
+import { PhotoPackages, packageCategoryName, packageName, packagePrice, packageTierName, type PickedPackage } from "../components/PhotoPackages";
 import { EMAIL_INPUT, PHONE_INPUT, PublicInput, PublicTextarea } from "../components/form/PublicField";
 import { track, visitCampaign, visitId } from "../lib/analytics";
 import { altByUrl, altFromFile } from "../lib/articlePage";
@@ -17,6 +17,8 @@ import { AUTOMOTIVE_GALLERY_TITLE, usePortfolio, useSiteSettings } from "../lib/
 import type { InquiryForm } from "./ThankYouPage";
 import { portalFetch } from "../../lib/supabase";
 import { useLanguage } from "../context/LanguageContext";
+import { categoryLabel } from "../i18n/format";
+import { translations } from "../i18n/translations";
 import darkroom from "@/assets/web/darkroom-1200.webp";
 import majdSmall from "@/assets/web/majd-800.webp";
 import majd from "@/assets/web/majd-1365.webp";
@@ -25,6 +27,7 @@ import team from "@/assets/web/per-1600.webp";
 // One page per service category: fotografie, videografie and website. The
 // visitor ticks what they want within the category and sends it with the
 // request, so it lands in the admin as e.g. "Fotografie: Portret, Sport".
+// The request is always written in Dutch, whatever language the page is in.
 
 type ServiceId = "fotografie" | "videografie" | "website";
 
@@ -49,21 +52,26 @@ function ServicePage({
   id,
   category,
   focus,
+  focusLabel,
   work = NO_WORK,
   gallery = [],
   faq,
 }: {
   id: ServiceId;
   category?: string;
+  /** The niche as a Dutch portfolio category, to match photos and options. */
   focus?: string;
+  /** The same niche in the page's language. */
+  focusLabel?: string;
   work?: ReturnType<typeof focusPhotos>;
   /** Photos picked in the admin for this page, shown as a strip under the form. */
   gallery?: string[];
   faq?: readonly FaqItem[];
 }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const ts = t.servicePages;
   const page = ts.pages.find((p) => p.id === id)!;
+  const nlPage = translations.nl.servicePages.pages.find((p) => p.id === id)!;
   const others = ts.pages.filter((p) => p.id !== id);
   const hero = HERO[id];
   // Only photography has fixed packages so far. A photography category with
@@ -76,7 +84,10 @@ function ServicePage({
   // A niche's photos fill the hero and the work grid, and its option comes first.
   const heroPhoto = work.focused ? work.photos[0] : undefined;
   const gridPhotos = (heroPhoto ? work.photos.slice(1) : work.photos).slice(0, 8);
-  const options = focusFirst(page.options, focus);
+  // The options stay Dutch, the way the request reaches the studio; each
+  // shows in the page's language.
+  const options = focusFirst(nlPage.options, focus);
+  const optionLabel = (option: string) => page.options[nlPage.options.indexOf(option)] ?? option;
 
   const [picked, setPicked] = useState<PickedPackage | null>(null);
   const pickedBox = useRef<HTMLDivElement>(null);
@@ -98,7 +109,7 @@ function ServicePage({
   // A picked package goes straight to the form, with focus on its summary.
   const pick = (pkg: PickedPackage) => {
     setPicked(pkg);
-    track("Pakket gekozen", { pakket: packageName(pkg) });
+    track("Pakket gekozen", { pakket: packageName(translations.nl, pkg) });
     requestAnimationFrame(() => {
       pickedBox.current?.focus({ preventScroll: true });
       document.getElementById("boeken")?.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
@@ -118,12 +129,13 @@ function ServicePage({
     }
     setLoading(true);
     setError(null);
-    const extra = choices.filter((c) => c !== picked?.category);
+    const nl = translations.nl;
+    const extra = choices.filter((c) => !picked || c !== packageCategoryName(picked));
     const chosen = picked
-      ? `${page.name}: ${packageName(picked)} (${packagePrice(picked)})${extra.length ? `, ${extra.join(", ")}` : ""}`
+      ? `${nlPage.name}: ${packageName(nl, picked)} (${packagePrice(nl, picked)})${extra.length ? `, ${extra.join(", ")}` : ""}`
       : choices.length
-        ? `${page.name}: ${choices.join(", ")}`
-        : page.name;
+        ? `${nlPage.name}: ${choices.join(", ")}`
+        : nlPage.name;
     const ref = visitCampaign();
     try {
       await portalFetch("/contact", {
@@ -136,10 +148,12 @@ function ServicePage({
           brand: form.company,
           message: `${picked ? "Boeking" : "Aanvraag"} ${chosen}.${form.message.trim() ? `\n\n${form.message.trim()}` : ""}${ref ? `\n\n[ref:${ref}]` : ""}`,
           visit: visitId(),
+          lang: language,
+          note: form.message.trim(),
         }),
       });
       const sent: InquiryForm = picked ? "booking" : "contact";
-      track("Aanvraag", picked ? { formulier: page.id, pakket: packageName(picked) } : { formulier: page.id });
+      track("Aanvraag", picked ? { formulier: page.id, pakket: packageName(translations.nl, picked) } : { formulier: page.id });
       navigate("/bedankt", { state: { from: sent } });
     } catch {
       setError(ts.errorGeneric);
@@ -314,7 +328,7 @@ function ServicePage({
         <PhotoReel
           id="niche-work"
           label={work.focused ? ts.workLabelFocus : ts.workLabel}
-          titleLine1={work.focused && focus ? focus : ts.workTitle1}
+          titleLine1={work.focused && focus ? (focusLabel ?? focus) : ts.workTitle1}
           titleLine2={work.focused ? ts.workTitleFocus2 : ts.workTitle2}
           body={ts.workBody}
           link={ts.workLink}
@@ -416,7 +430,7 @@ function ServicePage({
               <div ref={pickedBox} tabIndex={-1} className="pdc-pkg-picked">
                 <span className="pdc-field-label">{tp.pickedLabel}</span>
                 <p className="pdc-pkg-picked-name">
-                  {packageName(picked)} <span>{packagePrice(picked)}</span>
+                  {packageName(t, picked)} <span>{packagePrice(t, picked)}</span>
                 </p>
                 <div className="pdc-pkg-picked-actions">
                   <button
@@ -432,7 +446,7 @@ function ServicePage({
                 </div>
               </div>
             )}
-            <ChoiceChips legend={ts.chooseLabel} hint={ts.chooseHint} options={options} value={choices} onChange={setChoices} />
+            <ChoiceChips legend={ts.chooseLabel} hint={ts.chooseHint} options={options} label={optionLabel} value={choices} onChange={setChoices} />
             <PublicInput
               ref={nameInput}
               label={ts.nameLabel}
@@ -503,7 +517,7 @@ function ServicePage({
               {loading
                 ? ts.submitting
                 : tp && picked
-                  ? tp.submit(picked.name, packagePrice(picked))
+                  ? tp.submit(packageTierName(t, picked), packagePrice(t, picked))
                   : ts.submitButton}
             </button>
             <FormPrivacyNote />
@@ -589,9 +603,15 @@ function ServicePage({
 function Photography({ category }: { category?: string }) {
   const { t } = useLanguage();
   const sub = t.servicePages.packages.categories.find((c) => c.id === category);
+  // Portfolio categories are Dutch ("Portret"), so the niche is matched in Dutch.
+  const nlSub = translations.nl.servicePages.packages.categories.find((c) => c.id === category);
   const niche = useSiteSettings().data?.photoFocus;
   const articles = usePortfolio().data;
-  const focus = sub?.name ?? niche;
+  const focus = nlSub?.name ?? niche;
+  const nicheCategory = t.servicePages.packages.categories.find(
+    (c, i) => translations.nl.servicePages.packages.categories[i].name.toLowerCase() === niche?.trim().toLowerCase(),
+  );
+  const focusLabel = sub?.name ?? nicheCategory?.name ?? (niche ? categoryLabel(t, niche) : undefined);
   const work = focusPhotos(articles, focus, 9);
   // Automotive keeps the gallery and questions of its former own page.
   const automotive = category === "automotive";
@@ -601,6 +621,7 @@ function Photography({ category }: { category?: string }) {
       id="fotografie"
       category={category}
       focus={focus}
+      focusLabel={focusLabel}
       work={work}
       gallery={gallery}
       faq={automotive ? t.faq.automotive : undefined}

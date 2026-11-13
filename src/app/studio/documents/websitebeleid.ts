@@ -30,7 +30,11 @@ const START: ReaderSection[] = [
     "blocks": [
       {
         "t": "note",
-        "text": "**Status op 9 november 2026:** versie 1.5. Alle notities van Per zijn verwerkt en de invulvelden zijn ingevuld. De klantteksten staan op de website en nieuwe offertes gaan met deze versie de deur uit. Een jurist heeft de teksten niet getoetst: dat moet nog, net als de andere punten onder H in de interne notities. De website is op 2 november 2026 met een browser gecontroleerd op cookies, lokale opslag en externe diensten. De uitkomst staat in het Cookiebeleid."
+        "text": "**Status op 13 november 2026:** versie 1.6. Alle notities van Per zijn verwerkt en de invulvelden zijn ingevuld. De klantteksten staan op de website, in het Nederlands en in een Engelse vertaling, en nieuwe offertes gaan met deze versie de deur uit. Een jurist heeft de teksten niet getoetst: dat moet nog, net als de andere punten onder H in de interne notities. De website is op 2 november 2026 met een browser gecontroleerd op cookies, lokale opslag en externe diensten. De uitkomst staat in het Cookiebeleid."
+      },
+      {
+        "t": "note",
+        "text": "**Wat is er veranderd in versie 1.6:** de site is er nu ook in het Engels. De klantteksten staan in een Engelse vertaling op de site (src/app/lib/legal.en.ts), met bovenaan elke pagina dat de Nederlandse tekst geldt. Het cookiebeleid noemt pdc-lang nu als taalkeuze voor de hele site, niet alleen voor het portaal. Verander je de Nederlandse tekst, pas dan ook de vertaling aan en verhoog LEGAL_EN_VERSION. Tot die tijd toont de Engelse site de Nederlandse tekst, met een melding."
       },
       {
         "t": "note",
@@ -488,7 +492,7 @@ const NOTES: ReaderSection[] = [
   {
     "id": "intern--h-wat-er-nog-moet-gebeuren",
     "part": "intern",
-    "title": "H. Wat er nog moet gebeuren (bijgewerkt op 6 november 2026)",
+    "title": "H. Wat er nog moet gebeuren (bijgewerkt op 13 november 2026)",
     "blocks": [
       {
         "t": "p",
@@ -501,6 +505,10 @@ const NOTES: ReaderSection[] = [
       {
         "t": "li",
         "text": "**Jurist.** Laat de teksten toetsen, vooral artikel 19 Auteurswet, de vergoeding bij gebruik buiten de licentie, annuleringskosten voor consumenten, de aansprakelijkheid en de drone-afspraak."
+      },
+      {
+        "t": "li",
+        "text": "**Engelse vertaling.** De klantteksten staan ook in het Engels op de site. Laat de jurist die vertaling meelezen, vooral het herroepingsrecht en artikel 19 Auteurswet. Bij verschil geldt de Nederlandse tekst; dat staat boven elke Engelse pagina."
       },
       {
         "t": "li",

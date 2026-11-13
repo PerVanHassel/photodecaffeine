@@ -7,6 +7,7 @@ import {
 import { lookVars, pageFontLinks, pageVars, type LookRole } from "../../lib/typefaces";
 import { HIGH_PRIORITY, webSrcSet } from "../../lib/images";
 import { useLanguage } from "../../context/LanguageContext";
+import { categoryLabel } from "../../i18n/format";
 import { useArticleMotion } from "./motion";
 
 // One portfolio article as a page (styles: src/styles/article.css). The site
@@ -154,11 +155,12 @@ function Selectable({ id, editor, className, children }: { id: string; editor?: 
  * cover in its own shape unless the page chose one.
  */
 function Hero({ source, page, back, ctx }: { source: ArticleSource; page: ArticlePage; back?: ReactNode; ctx: Ctx }) {
+  const { t } = useLanguage();
   const cover = page.hero === "plain" ? null : heroCover(source);
   const style = cover ? page.hero : "plain";
   const head = (
     <div className="pa-hero-head">
-      {source.category && <p className="pa-kicker">{source.category}</p>}
+      {source.category && <p className="pa-kicker">{categoryLabel(t, source.category)}</p>}
       <h1 className="pa-title" {...lookProps(page.titleLook, "display")}>{source.title}</h1>
     </div>
   );

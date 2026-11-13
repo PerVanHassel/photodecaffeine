@@ -11,7 +11,7 @@ import { usePortfolio, useReviews, type PublicReview } from "../lib/siteData";
 
 export function PortfolioDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const td = t.portfolioDetail;
   // The article comes from the shared portfolio list, which the prerender
   // bakes into the page; unpublished or unknown ids are simply not in it.
@@ -80,7 +80,7 @@ export function PortfolioDetailPage() {
 
   const url = `https://www.photodecaffeine.com/portfolio/${article.id}`;
   const summary = pageSummary(article, page);
-  const seo = seoMeta(article, page);
+  const seo = seoMeta(article, page, language);
   const shareTitle = article.seoTitle?.trim() || `${article.title} | PhotoDeCaffeine`;
   const image = heroCover(article)?.kind === "image" ? heroCover(article)!.url : photos[0];
   const automotive = /automotive/i.test(article.category);

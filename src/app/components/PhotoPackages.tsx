@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Check, X } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
-import type { Translations } from "../i18n/translations";
+import { translations, type Translations } from "../i18n/translations";
 
 // The fixed packages on the photography page: a tab per category and, within
 // it, a set per kind of client (Particulier/Zakelijk, Sporter/Teamgalerij/Eigen
@@ -13,31 +13,66 @@ type Category = Texts["categories"][number];
 type Group = Category["groups"][number];
 type Tier = Group["tiers"][number];
 
+/**
+ * A picked package, by its ids, so it reads in whatever language the page is
+ * in and the request can always be written in Dutch for the studio.
+ */
 export interface PickedPackage {
   category: string;
   group: string;
-  name: string;
-  price: number;
-  /** "per speler" or "per maand" when the price is not for the whole shoot. */
-  priceUnit: string | null;
-  /** "excl. btw" for a business price; null when the price includes btw. */
-  vat: string | null;
+  /** A tier's id, or the id of the group's monthly plan. */
+  tier: string;
 }
 
-/** "€50", "€2,48", "€2.094": whole euros without cents, as everywhere on the site. */
-export const euro = (n: number) => {
+/**
+ * "€50", "€2,48", "€2.094" in Dutch and "€50", "€2.48", "€2,094" in English:
+ * whole euros without cents, as everywhere on the site.
+ */
+export const euro = (n: number, locale = "nl-NL") => {
   const [whole, cents] = (Number.isInteger(n) ? String(n) : n.toFixed(2)).split(".");
-  return `€${whole.replace(/\B(?=(\d{3})+$)/g, ".")}${cents ? `,${cents}` : ""}`;
+  const [thousands, decimal] = locale.startsWith("nl") ? [".", ","] : [",", "."];
+  return `€${whole.replace(/\B(?=(\d{3})+$)/g, thousands)}${cents ? `${decimal}${cents}` : ""}`;
 };
 
 /** A business price with 21% btw on top, to the cent. */
 const withVat = (n: number) => Math.round(n * 121) / 100;
 
-/** How a picked package reads in the form and in the request. */
-export const packageName = (pkg: PickedPackage) => `${pkg.category} · ${pkg.group} · ${pkg.name}`;
+/** The texts and price of a picked package in one language; null when the ids are unknown. */
+function resolve(t: Translations, pkg: PickedPackage) {
+  const category = t.servicePages.packages.categories.find((c) => c.id === pkg.category);
+  const group = category?.groups.find((g) => g.id === pkg.group);
+  const plan = group?.plan?.id === pkg.tier ? group.plan : null;
+  const tier = plan ?? group?.tiers.find((x) => x.id === pkg.tier);
+  if (!category || !group || !tier) return null;
+  const tp = t.servicePages.packages;
+  return {
+    category,
+    group,
+    tier,
+    // "per speler" or "per maand" when the price is not for the whole shoot.
+    priceUnit: plan ? tp.perMonth : tier.units === 1 ? group.unit : null,
+    // "excl. btw" for a business price; nothing when the price includes btw.
+    vat: group.vat === "excl" ? tp.exclVat : null,
+  };
+}
+
+/** How a picked package reads in the form ("Sport · Teamgalerij · Groot"). */
+export function packageName(t: Translations, pkg: PickedPackage) {
+  const p = resolve(t, pkg);
+  return p ? `${p.category.name} · ${p.group.name} · ${p.tier.name}` : "";
+}
 
 /** "€399 excl. btw", "€35 per speler": the picked price and what it covers. */
-export const packagePrice = (pkg: PickedPackage) => [euro(pkg.price), pkg.priceUnit, pkg.vat].filter(Boolean).join(" ");
+export function packagePrice(t: Translations, pkg: PickedPackage) {
+  const p = resolve(t, pkg);
+  return p ? [euro(p.tier.price, t.locale), p.priceUnit, p.vat].filter(Boolean).join(" ") : "";
+}
+
+/** The tier's own name, for the submit button. */
+export const packageTierName = (t: Translations, pkg: PickedPackage) => resolve(t, pkg)?.tier.name ?? "";
+
+/** The category's name in Dutch, the way the request form's options say it. */
+export const packageCategoryName = (pkg: PickedPackage) => resolve(translations.nl, pkg)?.category.name ?? "";
 
 const same = (a: string, b: string | undefined) => a.toLowerCase() === b?.trim().toLowerCase();
 
@@ -53,16 +88,19 @@ export function PhotoPackages({
   picked: PickedPackage | null;
   onPick: (pkg: PickedPackage) => void;
 }) {
-  const tp = useLanguage().t.servicePages.packages;
-  // Opens on the niche picked in the admin, until the visitor picks a tab.
+  const { t } = useLanguage();
+  const tp = t.servicePages.packages;
+  // Opens on the niche picked in the admin, until the visitor picks a tab. The
+  // niche is a portfolio category, so it matches the Dutch names.
   const [tab, setTab] = useState<string | null>(null);
   const [groups, setGroups] = useState<Record<string, string>>({});
+  const focusId = translations.nl.servicePages.packages.categories.find((c) => same(c.name, focus))?.id;
   const category =
-    tp.categories.find((c) => c.id === (only ?? tab)) ?? tp.categories.find((c) => same(c.name, focus)) ?? tp.categories[0];
+    tp.categories.find((c) => c.id === (only ?? tab ?? focusId)) ?? tp.categories[0];
   const group = category.groups.find((g) => g.id === groups[category.id]) ?? category.groups[0];
   // Where private and business prices sit side by side, the switch says which carry btw.
   const mixedVat = category.groups.some((g) => g.vat !== category.groups[0].vat);
-  const card = { tp, category, group, picked, onPick };
+  const card = { tp, locale: t.locale, category, group, picked, onPick };
 
   return (
     <section id="pakketten" className="pdc-section pdc-pkgs" aria-labelledby="pakketten-title">
@@ -131,6 +169,7 @@ export function PhotoPackages({
 
 function PackageCard({
   tp,
+  locale,
   category,
   group,
   tier,
@@ -139,6 +178,7 @@ function PackageCard({
   onPick,
 }: {
   tp: Texts;
+  locale: string;
   category: Category;
   group: Group;
   tier: Tier;
@@ -147,6 +187,7 @@ function PackageCard({
   picked: PickedPackage | null;
   onPick: (pkg: PickedPackage) => void;
 }) {
+  const money = (n: number) => euro(n, locale);
   const excl = group.vat === "excl";
   const vat = excl ? tp.exclVat : tp.inclVat;
   const priceUnit = months ? tp.perMonth : tier.units === 1 ? group.unit : null;
@@ -154,13 +195,13 @@ function PackageCard({
   const count = typeof tier.photos === "number" ? tier.photos : null;
   const perUnit =
     group.unit && tier.units && tier.units > 1
-      ? `${tp.perUnit(euro(Math.round(tier.price / tier.units)), group.unit, tier.price % tier.units !== 0)}${excl ? ` ${vat}` : ""}`
+      ? `${tp.perUnit(money(Math.round(tier.price / tier.units)), group.unit, tier.price % tier.units !== 0)}${excl ? ` ${vat}` : ""}`
       : null;
-  const extras = [count !== null && tp.perPhoto(euro(tier.price / count)), perUnit, group.extraPhoto && tp.extraPhoto(euro(group.extraPhoto))]
+  const extras = [count !== null && tp.perPhoto(money(tier.price / count)), perUnit, group.extraPhoto && tp.extraPhoto(money(group.extraPhoto))]
     .filter(Boolean)
     .join(" · ");
-  const pkg: PickedPackage = { category: category.name, group: group.name, name: tier.name, price: tier.price, priceUnit, vat: excl ? vat : null };
-  const isPicked = picked?.category === pkg.category && picked.group === pkg.group && picked.name === pkg.name;
+  const pkg: PickedPackage = { category: category.id, group: group.id, tier: tier.id };
+  const isPicked = picked?.category === pkg.category && picked.group === pkg.group && picked.tier === pkg.tier;
   const titleId = `pkg-${category.id}-${group.id}-${tier.id}`;
 
   return (
@@ -176,7 +217,7 @@ function PackageCard({
         <p className="pdc-pkg-pitch">{tier.pitch}</p>
 
         <p className="pdc-pkg-price">
-          {euro(tier.price)}
+          {money(tier.price)}
           <span>
             {priceUnit && (
               <>
@@ -187,11 +228,11 @@ function PackageCard({
             {vat}
           </span>
         </p>
-        {excl && <p className="pdc-pkg-vat">{tp.withVat(euro(withVat(tier.price)))}</p>}
+        {excl && <p className="pdc-pkg-vat">{tp.withVat(money(withVat(tier.price)))}</p>}
         {months && (
           <p className="pdc-pkg-vat">
-            {tp.term(months, `${euro(tier.price * months)} ${vat}`)}
-            {excl && ` (${tp.withVat(euro(withVat(tier.price * months)))})`}
+            {tp.term(months, `${money(tier.price * months)} ${vat}`)}
+            {excl && ` (${tp.withVat(money(withVat(tier.price * months)))})`}
           </p>
         )}
         {tier.best && group.upsell && <p className="pdc-pkg-upsell">{group.upsell}</p>}

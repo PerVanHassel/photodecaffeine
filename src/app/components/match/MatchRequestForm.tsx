@@ -3,11 +3,11 @@ import { Link, useNavigate } from "react-router";
 import { Check } from "lucide-react";
 import { FormPrivacyNote } from "../form/FormPrivacyNote";
 import { EMAIL_INPUT, PHONE_INPUT } from "../form/PublicField";
-import { matchPage } from "../../i18n/matchPage";
+import { useLanguage } from "../../context/LanguageContext";
+import { matchPage, useMatchPage } from "../../i18n/matchPage";
 import { track, visitCampaign, visitId } from "../../lib/analytics";
 import {
   EMPTY_REQUEST,
-  longDate,
   needsContactPerson,
   sendMatchRequest,
   today,
@@ -18,10 +18,11 @@ import {
   type Role,
 } from "../../lib/matchBooking";
 
-/** What the page after sending shows back. */
+/** What the page after sending shows back; the date as yyyy-mm-dd, written out there. */
 export type SentState = { type: BookingType; name: string; club: string; date: string };
 
-const f = matchPage.form;
+// The values that are sent: Dutch, whatever the page's language.
+const values = matchPage.form;
 const id = (field: RequestField) => `wf-${field}`;
 
 // Fields whose problem shows up before the first send, as soon as someone
@@ -35,6 +36,8 @@ const FORMAT_FIELDS: RequestField[] = ["email", "date", "players"];
  * neither checked nor sent. `preset` comes from the choice cards above it.
  */
 export function MatchRequestForm({ preset }: { preset: { type: BookingType; n: number } | null }) {
+  const { language } = useLanguage();
+  const f = useMatchPage().form;
   const [form, setForm] = useState<MatchRequest>(EMPTY_REQUEST);
   const [submitted, setSubmitted] = useState(false);
   const [touched, setTouched] = useState<Set<RequestField>>(() => new Set());
@@ -55,7 +58,7 @@ export function MatchRequestForm({ preset }: { preset: { type: BookingType; n: n
     heading.current?.focus({ preventScroll: true });
   }, [preset]);
 
-  const errors = validateRequest(form, minDate);
+  const errors = validateRequest(form, minDate, f.errors);
   const shown = (field: RequestField) => {
     if (!errors[field]) return undefined;
     if (submitted) return errors[field];
@@ -87,13 +90,13 @@ export function MatchRequestForm({ preset }: { preset: { type: BookingType; n: n
     }
     setSending(true);
     try {
-      await sendMatchRequest(form, { campaign: visitCampaign(), visit: visitId() });
+      await sendMatchRequest(form, { campaign: visitCampaign(), visit: visitId(), lang: language });
       track("Aanvraag", { formulier: "wedstrijdfotografie", soort: isTeam ? "team" : "voor zichzelf" });
       const state: SentState = {
         type: form.type as BookingType,
         name: form.name.trim().split(/\s+/)[0] ?? "",
         club: form.club.trim(),
-        date: longDate(form.date),
+        date: form.date,
       };
       navigate(matchPage.sentPath, { state });
     } catch {
@@ -193,10 +196,10 @@ export function MatchRequestForm({ preset }: { preset: { type: BookingType; n: n
             label={f.sportLabel}
             value={form.sport}
             onChange={(v) => set("sport", v)}
-            options={f.sports.map((s) => ({ value: s, label: s }))}
+            options={values.sports.map((s, i) => ({ value: s, label: f.sports[i] ?? s }))}
             error={shown("sport")}
           />
-          {form.sport === f.sportOther && (
+          {form.sport === values.sportOther && (
             <div className="wf-reveal">
               <Input label={f.sportOtherLabel} autoComplete="off" maxLength={60} {...text("sportOther")} />
             </div>
@@ -258,12 +261,12 @@ export function MatchRequestForm({ preset }: { preset: { type: BookingType; n: n
             {f.termsBefore}
             <Link to="/algemene-voorwaarden" target="_blank" rel="noopener">
               {f.termsLink}
-              <span className="pdc-visually-hidden"> (opent in een nieuw tabblad)</span>
+              <span className="pdc-visually-hidden">{f.newTab}</span>
             </Link>
             {f.termsMiddle}
             <Link to="/privacybeleid" target="_blank" rel="noopener">
               {f.privacyLink}
-              <span className="pdc-visually-hidden"> (opent in een nieuw tabblad)</span>
+              <span className="pdc-visually-hidden">{f.newTab}</span>
             </Link>
             {f.termsAfter}
           </CheckField>

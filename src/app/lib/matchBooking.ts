@@ -6,10 +6,14 @@
 // the edge function, routes/inquiries.ts): the request lands in the admin as
 // an inquiry, and the sender gets the usual confirmation mail. Only
 // sendMatchRequest knows that; swap its body to send somewhere else.
+//
+// The request reaches the studio in Dutch, whatever language the visitor used:
+// roles and sports are kept as their Dutch values (matchPage), and only the
+// error messages come in the page's language.
 
 import { portalFetch } from "../../lib/supabase";
 import { LEGAL_VERSION } from "./legalVersion";
-import { matchPage } from "../i18n/matchPage";
+import { matchPage, type MatchTexts } from "../i18n/matchPage";
 
 export const BOOKING_FEE = 20;
 export const PHOTO_PRICE = 5;
@@ -69,7 +73,7 @@ export function today() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-/** "zaterdag 15 november 2026", from a date input's value. */
+/** "zaterdag 15 november 2026", from a date input's value; Dutch, for the request. */
 export function longDate(value: string) {
   const d = new Date(`${value}T12:00:00`);
   return Number.isNaN(d.getTime())
@@ -78,11 +82,11 @@ export function longDate(value: string) {
 }
 
 /**
- * Every problem with the request, in the order the fields appear on screen.
- * Fields hidden for the chosen kind of booking are not checked.
+ * Every problem with the request, in the order the fields appear on screen,
+ * in the words of `e` (the page's language). Fields hidden for the chosen kind
+ * of booking are not checked.
  */
-export function validateRequest(r: MatchRequest, now = today()): RequestErrors {
-  const e = matchPage.form.errors;
+export function validateRequest(r: MatchRequest, now = today(), e: MatchTexts["form"]["errors"] = matchPage.form.errors): RequestErrors {
   const errors: RequestErrors = {};
   const blank = (v: string) => !v.trim();
 
@@ -154,7 +158,7 @@ export function packageName(type: BookingType) {
  * Sends a checked request. Throws when it did not arrive, so the form can
  * keep what was typed and say so.
  */
-export async function sendMatchRequest(r: MatchRequest, meta: { campaign: string; visit: string }) {
+export async function sendMatchRequest(r: MatchRequest, meta: { campaign: string; visit: string; lang: string }) {
   if (!r.type) throw new Error("No booking type");
   const note = r.message.trim();
   const message = [
@@ -173,6 +177,8 @@ export async function sendMatchRequest(r: MatchRequest, meta: { campaign: string
       package: packageName(r.type),
       message,
       visit: meta.visit,
+      lang: meta.lang,
+      note,
     }),
   });
 }

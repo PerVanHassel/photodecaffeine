@@ -360,6 +360,34 @@
 .pdc-nav-mobile-child::before { content: ""; width: 8px; height: 1px; background-color: #c8905a; }
 .pdc-nav-mobile[aria-current="page"] { color: #fffbe0; }
 
+/* NL | EN (components/LanguageSwitch.tsx): in the menu, next to the phone's
+   menu button and in the footer. */
+.pdc-lang { display: inline-flex; align-items: stretch; flex-shrink: 0; border: 1px solid rgba(255,251,224,0.18); }
+.pdc-lang-btn {
+  min-width: 36px; min-height: 30px; padding: 0 10px 0 calc(10px + 0.18em);
+  background: none; border: 0; cursor: pointer;
+  font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 500; line-height: 1;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: rgba(255,251,224,0.6);
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+.pdc-lang-btn:hover { color: #fffbe0; }
+.pdc-lang-btn[aria-pressed="true"] { background: rgba(255,251,224,0.12); color: #fffbe0; font-weight: 700; cursor: default; }
+.pdc-lang-btn:focus-visible { outline: 2px solid #c8905a; outline-offset: -2px; }
+.pdc-404-lang { position: absolute; top: 20px; right: 20px; z-index: 2; }
+/* The bar with the logo; on a phone it gives the language and menu buttons room. */
+.pdc-nav-bar { padding: 0 40px; }
+@media (max-width: 767px) {
+  .pdc-nav-bar { padding: 0 16px 0 12px; }
+  .pdc-nav-phone { display: flex; align-items: center; gap: 18px; }
+  .pdc-nav-phone .pdc-lang-btn { min-height: 32px; }
+}
+/* The smallest phones: a smaller logo, so the menu button stays on screen. */
+@media (max-width: 374px) {
+  .pdc-nav-logo svg { width: 150px; height: 60px; }
+  .pdc-nav-phone { gap: 12px; }
+}
+
 /* ── Public buttons and links that look like buttons ──────────────────── */
 
 .pdc-btn {
@@ -899,6 +927,8 @@ body:has(.pdc-skip-link), body:has(.pdc-404-number) { background-color: #080401;
   font: 500 12px/1.3 'Inter', sans-serif;
 }
 .pdc-legal-print:hover { background: rgba(255,251,224,0.08); }
+/* On the English pages: the Dutch text is the one that applies. */
+.pdc-legal-note { margin: -16px 0 40px; padding: 14px 16px; border-left: 2px solid #c8905a; background: rgba(255,251,224,0.04); color: rgba(255,251,224,0.78); font-size: 13.5px; line-height: 1.6; }
 .pdc-legal section p + p, .pdc-legal section ul + p, .pdc-legal section .pdc-legal-table + p { margin-top: 12px; }
 .pdc-legal section ul { margin: 0 0 0 20px; padding: 0; list-style: disc; color: rgba(255,251,224,0.72); font-size: 15px; line-height: 1.75; }
 .pdc-legal section li + li { margin-top: 8px; }
@@ -926,7 +956,8 @@ body:has(.pdc-skip-link), body:has(.pdc-404-number) { background-color: #080401;
 .pdc-withdraw-check dd { margin: 0; color: #fffbe0; overflow-wrap: anywhere; }
 .pdc-withdraw-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 
-/* The legal links at the foot of every page (Footer). */
+/* The legal links at the foot of every page (Footer), with the language after them. */
+.pdc-footer-end { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; }
 .pdc-footer-legal { display: flex; flex-wrap: wrap; gap: 6px 16px; max-width: 620px; font-size: 11px; line-height: 1.5; }
 .pdc-footer-legal a, .pdc-footer-legal button {
   padding: 0; border: 0; background: none; color: rgba(255,251,224,0.6); cursor: pointer; font: inherit; text-decoration: none; transition: color 0.2s;

@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { ArrowRight } from "lucide-react";
-import { matchPage } from "../i18n/matchPage";
+import { matchPage, useMatchPage } from "../i18n/matchPage";
 
 /**
  * The match photography campaign as its own strip on the home page, right
@@ -12,7 +12,7 @@ import { matchPage } from "../i18n/matchPage";
  * headline says who it is for, and the line under it gives the price for one player.
  */
 export function MatchCampaignBand() {
-  const b = matchPage.band;
+  const b = useMatchPage().band;
   return (
     <section className="pdc-match-band" aria-labelledby="match-band-title">
       <div className="pdc-match-band-inner">

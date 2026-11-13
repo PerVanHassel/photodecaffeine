@@ -9,6 +9,12 @@ import { AuthProvider } from "./app/context/AuthContext";
 import { LanguageProvider } from "./app/context/LanguageContext";
 import { seedSiteData, type SiteData } from "./app/lib/siteData";
 import { routes } from "./app/routes";
+import { compareLegal, compareTexts } from "./app/i18n/check";
+import { matchPages } from "./app/i18n/matchPage";
+import { translations } from "./app/i18n/translations";
+import { LEGAL_SECTIONS } from "./app/lib/legal";
+import { LEGAL_EN_VERSION, LEGAL_SECTIONS_EN } from "./app/lib/legal.en";
+import { LEGAL_VERSION } from "./app/lib/legalVersion";
 
 // The same route tree the browser uses. The static handler loads the lazy
 // route of the requested URL before rendering, so the prerender contains the
@@ -56,4 +62,21 @@ export async function render(url: string, data: SiteData = {}): Promise<RenderRe
     : "";
 
   return { appHtml, headHtml };
+}
+
+/**
+ * Where the English texts no longer line up with the Dutch ones (prices, ids,
+ * links, lengths of lists, the sections of the terms). The prerender stops the
+ * build on an error. English terms that follow an older version are only a
+ * warning: the English pages then show the Dutch text until they are updated.
+ */
+export function checkTexts(): { errors: string[]; warnings: string[] } {
+  const errors = [
+    ...compareTexts(translations.nl, translations.en, "translations"),
+    ...compareTexts(matchPages.nl, matchPages.en, "matchPage"),
+  ];
+  const warnings: string[] = [];
+  if (LEGAL_EN_VERSION === LEGAL_VERSION) errors.push(...compareLegal(LEGAL_SECTIONS, LEGAL_SECTIONS_EN));
+  else warnings.push(`De Engelse voorwaarden volgen versie ${LEGAL_EN_VERSION}, de Nederlandse zijn ${LEGAL_VERSION}. Tot lib/legal.en.ts bij is, toont de Engelse site de Nederlandse tekst.`);
+  return { errors, warnings };
 }

@@ -1,6 +1,7 @@
 import { Fragment, useState, useEffect, useRef, type KeyboardEvent } from "react";
 import { Link, NavLink, useLocation } from "react-router";
 import { PdcLogo } from "./PdcLogo";
+import { LanguageSwitch } from "./LanguageSwitch";
 import { useLanguage } from "../context/LanguageContext";
 import { scrollToTop } from "../lib/scroll";
 
@@ -88,10 +89,10 @@ export function Navigation() {
       }}
     >
       <div
+        className="pdc-nav-bar"
         style={{
           maxWidth: "1400px",
           margin: "0 auto",
-          padding: "0 40px",
           height: "72px",
           display: "flex",
           alignItems: "center",
@@ -105,6 +106,7 @@ export function Navigation() {
           onClick={() => {
             if (location.pathname === "/") scrollToTop();
           }}
+          className="pdc-nav-logo"
           style={{ display: "flex", alignItems: "center" }}
         >
           <PdcLogo artboard width={200} height={80} style={{ display: "block", color: "#fffbe0" }} />
@@ -177,6 +179,8 @@ export function Navigation() {
             {t.nav.about}
           </NavLink>
 
+          <LanguageSwitch />
+
           {/* Client Portal link */}
           <Link to="/portal/login" className="pdc-nav-link pdc-nav-quiet">
             {t.nav.clientPortal}
@@ -187,48 +191,50 @@ export function Navigation() {
           </Link>
         </div>
 
-        {/* Mobile Hamburger */}
-        <button
-          ref={menuButton}
-          type="button"
-          className="md:hidden"
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-expanded={menuOpen}
-          aria-controls="mobile-menu"
-          aria-label={menuOpen ? t.nav.closeMenu : t.nav.openMenu}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            display: "flex",
-            flexDirection: "column",
-            gap: "5px",
-            padding: "4px",
-          }}
-        >
-          {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              aria-hidden="true"
-              style={{
-                display: "block",
-                width: "24px",
-                height: "1px",
-                backgroundColor: "#fffbe0",
-                transition: "transform 0.3s ease",
-                transformOrigin: "center",
-                transform:
-                  menuOpen && i === 0
-                    ? "rotate(45deg) translate(4px, 4px)"
-                    : menuOpen && i === 1
-                    ? "scaleX(0)"
-                    : menuOpen && i === 2
-                    ? "rotate(-45deg) translate(4px, -4px)"
-                    : "none",
-              }}
-            />
-          ))}
-        </button>
+        {/* Phone: the language stays in sight next to the menu button. */}
+        <div className="md:hidden pdc-nav-phone">
+          <LanguageSwitch />
+          <button
+            ref={menuButton}
+            type="button"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-menu"
+            aria-label={menuOpen ? t.nav.closeMenu : t.nav.openMenu}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              gap: "5px",
+              padding: "4px",
+            }}
+          >
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                aria-hidden="true"
+                style={{
+                  display: "block",
+                  width: "24px",
+                  height: "1px",
+                  backgroundColor: "#fffbe0",
+                  transition: "transform 0.3s ease",
+                  transformOrigin: "center",
+                  transform:
+                    menuOpen && i === 0
+                      ? "rotate(45deg) translate(4px, 4px)"
+                      : menuOpen && i === 1
+                      ? "scaleX(0)"
+                      : menuOpen && i === 2
+                      ? "rotate(-45deg) translate(4px, -4px)"
+                      : "none",
+                }}
+              />
+            ))}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}

@@ -2,8 +2,9 @@ import { Link } from "react-router";
 import { Instagram, Linkedin, MapPin, Mail, Phone } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 import { PdcLogo } from "./PdcLogo";
+import { LanguageSwitch } from "./LanguageSwitch";
 import { openCookieSettings } from "../lib/cookieChoice";
-import { policies } from "../lib/policies";
+import { localPolicies } from "../lib/policies";
 import { GOOGLE_MAPS_URL } from "../lib/google";
 
 function GoogleIcon({ className }: { className?: string }) {
@@ -23,7 +24,7 @@ function TikTokIcon({ className }: { className?: string }) {
 }
 
 export function Footer() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const year = new Date().getFullYear();
 
   const socialLinks = [
@@ -170,20 +171,23 @@ export function Footer() {
           <div className="border-t border-[#fffbe0]/10 py-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div className="flex flex-col gap-1 sm:max-w-[40%]">
               <p className="text-[11px] text-[#fffbe0]/60 tracking-wide">
-                KvK {t.footer.kvk} &nbsp;·&nbsp; BTW {t.footer.btw}
+                {t.footer.kvkLabel} {t.footer.kvk} &nbsp;·&nbsp; {t.footer.btwLabel} {t.footer.btw}
               </p>
               <p className="text-[11px] text-[#fffbe0]/60 italic">
                 {t.footer.madeIn}
               </p>
               <p className="text-[11px] text-[#fffbe0]/60">{t.footer.copyright(year)}</p>
             </div>
-            <nav aria-label={t.footer.legal} className="pdc-footer-legal">
-              {Object.values(policies).map((p) => (
-                <Link key={p.path} to={p.path}>{p.short}</Link>
-              ))}
-              <Link to="/herroepen">{t.footer.withdraw}</Link>
-              <button type="button" onClick={openCookieSettings}>{t.footer.cookieSettings}</button>
-            </nav>
+            <div className="pdc-footer-end">
+              <nav aria-label={t.footer.legal} className="pdc-footer-legal">
+                {Object.values(localPolicies(language)).map((p) => (
+                  <Link key={p.path} to={p.path}>{p.short}</Link>
+                ))}
+                <Link to="/herroepen">{t.footer.withdraw}</Link>
+                <button type="button" onClick={openCookieSettings}>{t.footer.cookieSettings}</button>
+              </nav>
+              <LanguageSwitch />
+            </div>
           </div>
         </div>
       </footer>

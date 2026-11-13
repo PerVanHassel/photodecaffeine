@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import { Star, ArrowRight } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
+import { score } from "../i18n/format";
 import { useGoogleSummary, useReviews } from "../lib/siteData";
 import { GoogleG } from "./GoogleG";
 
@@ -68,7 +69,7 @@ export function SocialProof() {
               href={google.url}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label={t.socialProof.googleScore(google.rating.toFixed(1).replace(".", ","), google.count)}
+              aria-label={t.socialProof.googleScore(score(t, google.rating), google.count)}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -81,7 +82,7 @@ export function SocialProof() {
               }}
             >
               <GoogleG size={18} />
-              <b style={{ fontSize: "15px", fontWeight: 700 }}>{google.rating.toFixed(1).replace(".", ",")}</b>
+              <b style={{ fontSize: "15px", fontWeight: 700 }}>{score(t, google.rating)}</b>
               <span style={{ display: "flex", gap: "2px" }} aria-hidden="true">
                 {[1, 2, 3, 4, 5].map((n) => (
                   <Star key={n} size={13} color="#c8905a" fill={n <= Math.round(google.rating) ? "#c8905a" : "none"} strokeWidth={2} />

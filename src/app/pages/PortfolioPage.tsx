@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { PortfolioTile } from "../components/PortfolioTile";
 import { useLanguage } from "../context/LanguageContext";
+import { categoryLabel } from "../i18n/format";
 import { usePortfolio, visibleArticles } from "../lib/siteData";
 
 function SkeletonGrid({ label }: { label: string }) {
@@ -66,16 +67,16 @@ export function PortfolioPage() {
       }}
     >
       <Helmet>
-        <title>Portfolio: fotografie & video | PhotoDeCaffeine</title>
-        <meta name="description" content="Bekijk het portfolio van PhotoDeCaffeine: automotive-, editorial- en studiofotografie door heel Nederland. Scherpe beelden voor merken, showrooms en particulieren." />
+        <title>{t.portfolioPage.metaTitle}</title>
+        <meta name="description" content={t.portfolioPage.metaDescription} />
         <link rel="canonical" href="https://www.photodecaffeine.com/portfolio" />
-        <meta property="og:title" content="Portfolio | PhotoDeCaffeine" />
-        <meta property="og:description" content="Automotive-, editorial- en studiofotografie door heel Nederland. Bekijk onze shoots." />
+        <meta property="og:title" content={t.portfolioPage.shareTitle} />
+        <meta property="og:description" content={t.portfolioPage.shareDescription} />
         <meta property="og:url" content="https://www.photodecaffeine.com/portfolio" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Portfolio | PhotoDeCaffeine" />
-        <meta name="twitter:description" content="Automotive-, editorial- en studiofotografie door heel Nederland. Bekijk onze shoots." />
+        <meta name="twitter:title" content={t.portfolioPage.shareTitle} />
+        <meta name="twitter:description" content={t.portfolioPage.shareDescription} />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "BreadcrumbList",
@@ -190,7 +191,7 @@ export function PortfolioPage() {
                 aria-pressed={isActive}
                 onClick={() => setActiveCategory(cat)}
               >
-                {(t.portfolioPage.categories as Record<string, string>)[cat] ?? cat}
+                {categoryLabel(t, cat)}
               </button>
             );
           })}

@@ -1,5 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { Link, useNavigate } from "react-router";
+import { LanguageSwitch } from "../components/LanguageSwitch";
 import { useLanguage } from "../context/LanguageContext";
 import { Home, ArrowLeft, Camera } from "lucide-react";
 
@@ -27,6 +28,8 @@ export function NotFoundPage() {
         <meta name="robots" content="noindex" />
         <meta name="theme-color" content="#060301" />
       </Helmet>
+      {/* This page has no menu, so the language sits in the corner. */}
+      <LanguageSwitch className="pdc-404-lang" />
       {/* Background decorative elements */}
       <div
         style={{

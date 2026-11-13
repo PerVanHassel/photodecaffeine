@@ -4,7 +4,7 @@ import { EMAIL_ADMIN_NOTIFY, EMAIL_RE } from "../lib/config.ts";
 import { db, must } from "../lib/db.ts";
 import { sendEmail } from "../lib/email.ts";
 import { type Env, fail, readBody, text, z } from "../lib/http.ts";
-import { withdrawalEmail, withdrawalStudioEmail } from "../lib/legalEmails.ts";
+import { withdrawalEmail, withdrawalStudioEmail, withdrawalSubject } from "../lib/legalEmails.ts";
 import { notify } from "../lib/notify.ts";
 import { withinContactLimit } from "./inquiries.ts";
 
@@ -41,7 +41,10 @@ r.post("/make-server-0951c59e/withdrawal", async (c) => {
     message: text(2000).default(""),
     quoteId: z.string().optional(),
     token: z.string().optional(),
+    // The site's language when the withdrawal was made; the confirmation follows it.
+    lang: z.string().optional(),
   }));
+  const language = b.lang === "en" ? "en" : "nl";
   // This mails whatever address is typed in, just like the contact form.
   if (!(await withinContactLimit(c.req.header("x-forwarded-for")))) {
     fail(429, "Je hebt net al een paar berichten gestuurd. Probeer het over een uur opnieuw, of mail naar contact@photodecaffeine.com.");
@@ -50,7 +53,7 @@ r.post("/make-server-0951c59e/withdrawal", async (c) => {
   const at = new Date().toISOString();
   const quote = await findQuote(b);
   const id = crypto.randomUUID();
-  await kv.set(`withdrawals:${id}`, JSON.stringify({ id, at, name: b.name, email: b.email, reference: b.reference, message: b.message, quoteId: quote?.id || "" }));
+  await kv.set(`withdrawals:${id}`, JSON.stringify({ id, at, name: b.name, email: b.email, reference: b.reference, message: b.message, quoteId: quote?.id || "", language }));
 
   if (quote) {
     const details = { ...(quote.details || {}), withdrawal: { at, name: b.name, email: b.email } };
@@ -58,7 +61,7 @@ r.post("/make-server-0951c59e/withdrawal", async (c) => {
   }
   must(await db.from("tasks").insert({
     title: `Herroeping: ${b.name}`,
-    notes: `${b.reference}\n${b.email}${b.message ? `\n\n${b.message}` : ""}\n\nBetaal terug waar de klant recht op heeft, uiterlijk ${REFUND_DAYS} dagen na ontvangst.`,
+    notes: `${b.reference}\n${b.email}${b.message ? `\n\n${b.message}` : ""}${language === "en" ? "\n\nTaal: Engels" : ""}\n\nBetaal terug waar de klant recht op heeft, uiterlijk ${REFUND_DAYS} dagen na ontvangst.`,
     kind: "quote",
     project_id: quote?.project_id || null,
     client_id: quote?.client_id || null,
@@ -69,12 +72,12 @@ r.post("/make-server-0951c59e/withdrawal", async (c) => {
   const firstName = b.name.split(" ")[0];
   const reference = quote?.number ? `${quote.number}, ${quote.title}` : b.reference;
   const [mailed] = await Promise.all([
-    sendEmail({ to: b.email, replyTo: EMAIL_ADMIN_NOTIFY, subject: "Bevestiging: we hebben je herroeping ontvangen", html: withdrawalEmail({ firstName, at, reference }) }),
+    sendEmail({ to: b.email, replyTo: EMAIL_ADMIN_NOTIFY, subject: withdrawalSubject(language), html: withdrawalEmail({ firstName, at, reference, language }) }),
     sendEmail({
       to: EMAIL_ADMIN_NOTIFY,
       replyTo: b.email,
       subject: `Herroeping: ${b.name} (${reference})`,
-      html: withdrawalStudioEmail({ name: b.name, email: b.email, at, reference, message: b.message, known: quote ? `Gekoppeld aan ${quote.number}` : "Niet automatisch gekoppeld, zoek de boeking op" }),
+      html: withdrawalStudioEmail({ name: b.name, email: b.email, at, reference, message: b.message, known: quote ? `Gekoppeld aan ${quote.number}` : "Niet automatisch gekoppeld, zoek de boeking op", language }),
     }),
     notify({ type: "quote", title: `Herroeping: ${b.name}`, body: reference, link: "/admin/tasks" }),
   ]);

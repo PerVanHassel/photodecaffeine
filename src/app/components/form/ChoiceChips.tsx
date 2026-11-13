@@ -5,12 +5,16 @@ export function ChoiceChips({
   legend,
   hint,
   options,
+  label = (option) => option,
   value,
   onChange,
 }: {
   legend: string;
   hint?: string;
+  /** The values that are sent. */
   options: string[];
+  /** How a value reads on screen, when that differs from the value (another language). */
+  label?: (option: string) => string;
   value: string[];
   onChange: (value: string[]) => void;
 }) {
@@ -26,7 +30,7 @@ export function ChoiceChips({
         {options.map((option) => (
           <label key={option} className="pdc-choice">
             <input type="checkbox" checked={value.includes(option)} onChange={() => toggle(option)} />
-            <span>{option}</span>
+            <span>{label(option)}</span>
           </label>
         ))}
       </div>

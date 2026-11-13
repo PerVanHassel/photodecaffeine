@@ -5,14 +5,14 @@ import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { Faq } from "../components/Faq";
 import { PhotoReel } from "../components/PhotoReel";
 import { MatchRequestForm } from "../components/match/MatchRequestForm";
-import { matchPage as m } from "../i18n/matchPage";
+import { matchPage, useMatchPage } from "../i18n/matchPage";
 import { EXAMPLE_COUNTS, euro, totalFor, type BookingType } from "../lib/matchBooking";
 import { HIGH_PRIORITY, webSrcSet } from "../lib/images";
 import { focusPhotos } from "../lib/photoFocus";
 import { scrollBehavior } from "../lib/scroll";
 import { usePortfolio } from "../lib/siteData";
 
-const URL = `https://www.photodecaffeine.com${m.path}`;
+const URL = `https://www.photodecaffeine.com${matchPage.path}`;
 
 /** A section header in the site's way: small label, two-line title with a dim second line, a line of text. */
 function SectionHead({ id, label, title1, title2, body }: { id: string; label: string; title1: string; title2: string; body?: string }) {
@@ -39,6 +39,7 @@ function SectionHead({ id, label, title1, title2, body }: { id: string; label: s
  * steps of the home page, the request form and the questions.
  */
 export function MatchPhotographyPage() {
+  const m = useMatchPage();
   // Which card was used last; a counter so the same card twice still counts.
   const [preset, setPreset] = useState<{ type: BookingType; n: number } | null>(null);
 
@@ -88,7 +89,7 @@ export function MatchPhotographyPage() {
           "@type": "BreadcrumbList",
           itemListElement: [
             { "@type": "ListItem", position: 1, name: "Home", item: "https://www.photodecaffeine.com/" },
-            { "@type": "ListItem", position: 2, name: "Wedstrijdfotografie", item: URL },
+            { "@type": "ListItem", position: 2, name: m.label, item: URL },
           ],
         })}</script>
       </Helmet>

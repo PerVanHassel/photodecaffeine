@@ -101,6 +101,7 @@ De teksten voor klanten staan in `src/app/lib/legal.ts`, de pagina's erbij in
 notities (`studio/documents/websitebeleid.ts`); onderdeel H daarin is wat nog openstaat.
 Verander je de inhoud, verhoog dan `LEGAL_VERSION` (`lib/legalVersion.ts`) en
 `TERMS_VERSION` (`lib/config.ts` in de functie): bij elk akkoord bewaren we de versie.
+Werk ook de Engelse vertaling bij (`lib/legal.en.ts`) en zet `LEGAL_EN_VERSION` op dezelfde versie.
 
 - Akkoord op een offerte: `routes/quotes.ts` bewaart datum, versie, keuzes en een kopie in
   `details.accepted`, en mailt de klant een bevestiging. Herroepen: `/herroepen`, `routes/withdrawal.ts`.
@@ -120,9 +121,21 @@ Verander je de inhoud, verhoog dan `LEGAL_VERSION` (`lib/legalVersion.ts`) en
 
 ## Taal
 
-De site is tweetalig (`src/app/i18n/translations.ts`, standaard Nederlands).
+De site is tweetalig: Nederlands (standaard, dat wordt geprerenderd) en Engels. De knop NL/EN
+staat in het menu, op de telefoon naast de menuknop en in de footer. De keuze staat in `pdc-lang`
+en geldt ook voor het portaal; `?lang=en` in een link opent de site in het Engels.
+
+- Teksten: `src/app/i18n/translations.ts` (nl) en `en.ts`, wedstrijdfotografie in `matchPage.ts`,
+  voorwaarden in `lib/legal.ts` en `lib/legal.en.ts`. Verander je een tekst, doe het in beide talen.
+  De build (`i18n/check.ts`) stopt als prijzen, ids, links of lijsten tussen de talen verschillen.
+- Loopt `LEGAL_EN_VERSION` achter op `LEGAL_VERSION`, dan toont de Engelse site de Nederlandse
+  voorwaarden met een melding.
+- Wat naar de studio gaat (aanvragen, statistieken) blijft Nederlands. Formulieren sturen `lang` mee:
+  de admin ziet dan "Taal: Engels" en de bevestigingsmail aan de klant is Engels.
+- Portfolioteksten en reviews uit de admin, offertes en de admin zelf zijn alleen Nederlands.
+
 De adminkant is gemengd: sidebar, reviews en team zijn Nederlands, de
 portfoliomodal is Engels. Sluit aan bij het scherm waar je in werkt.
 
 Teksten voor klanten en de site: je in plaats van u, gewone woorden, geen
-gedachtestreepjes (—) en geen AI-slop.
+gedachtestreepjes (—) en geen AI-slop. Engels in Brits Engels, zoals het portaal.

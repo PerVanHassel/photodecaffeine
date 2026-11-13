@@ -11,6 +11,7 @@ import { Toaster } from "sonner";
 import { isAdmin } from "../../lib/supabase";
 import { excludeThisDevice } from "../lib/analytics";
 import { useAuth } from "../context/AuthContext";
+import { useDutchPage } from "../context/LanguageContext";
 import { CommandPalette } from "./CommandPalette";
 import { StudioFonts } from "./fonts";
 import { initials } from "./format";
@@ -25,6 +26,7 @@ const BAR = ["/admin/pipeline", "/admin/planning", "/admin/clients"];
 
 export function StudioShell() {
   const { session, user, loading } = useAuth();
+  useDutchPage();
   if (loading) return <div className="studio" aria-busy="true" />;
   if (!session) return <Navigate to="/admin/login" replace />;
   if (!isAdmin(user)) return <Navigate to="/portal/login" replace />;

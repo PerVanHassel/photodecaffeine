@@ -1,6 +1,7 @@
 import { RefreshCw } from "lucide-react";
 import { useEffect } from "react";
 import { isRouteErrorResponse, useRouteError } from "react-router";
+import { useLanguage } from "../context/LanguageContext";
 
 const RELOAD_KEY = "pdc-reloaded-at";
 
@@ -27,6 +28,7 @@ export function reloadOnce() {
 export function AppError() {
   const error = useRouteError();
   const stale = isStaleChunk(error);
+  const te = useLanguage().t.appError;
 
   useEffect(() => {
     if (stale) reloadOnce();
@@ -34,10 +36,10 @@ export function AppError() {
   }, [stale, error]);
 
   const t = {
-    title: stale ? "Er staat een nieuwe versie klaar" : "Er ging iets mis",
-    body: stale ? "De site is bijgewerkt terwijl deze pagina openstond. Ververs om de nieuwste versie te laden." : "Deze pagina liep vast. Verversen lost het meestal op.",
-    refresh: "Verversen",
-    home: "Naar home",
+    title: stale ? te.staleTitle : te.title,
+    body: stale ? te.staleBody : te.body,
+    refresh: te.refresh,
+    home: te.home,
   };
 
   const detail = isRouteErrorResponse(error) ? `${error.status} ${error.statusText}` : error instanceof Error ? error.message : "";

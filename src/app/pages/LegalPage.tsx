@@ -1,9 +1,12 @@
 import { Fragment, type ReactNode } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router";
+import { useLanguage } from "../context/LanguageContext";
+import { longDate } from "../i18n/format";
 import { LEGAL_SECTIONS } from "../lib/legal";
+import { LEGAL_EN_VERSION, LEGAL_SECTIONS_EN } from "../lib/legal.en";
 import { LEGAL_DATE, LEGAL_VERSION } from "../lib/legalVersion";
-import { policies, type PolicyDoc } from "../lib/policies";
+import { localPolicies, policies, type PolicyDoc } from "../lib/policies";
 import type { ReaderBlock } from "../studio/documents/types";
 
 const LINKS = /(https?:\/\/[^\s]+|www\.photodecaffeine\.com\/[\w-]*|[\w.+-]+@[\w-]+\.[a-z]{2,})/g;
@@ -26,7 +29,7 @@ function Inline({ text }: { text: string }) {
   return <>{text.split("**").map((piece, i) => (i % 2 ? <strong key={i}>{linked(piece)}</strong> : <Fragment key={i}>{linked(piece)}</Fragment>))}</>;
 }
 
-function Blocks({ blocks }: { blocks: ReaderBlock[] }) {
+function Blocks({ blocks, tableLabel }: { blocks: ReaderBlock[]; tableLabel: string }) {
   const out: ReactNode[] = [];
   let items: ReactNode[] = [];
   const endList = () => {
@@ -42,7 +45,7 @@ function Blocks({ blocks }: { blocks: ReaderBlock[] }) {
     if (b.t === "table") {
       const [head, ...rows] = b.rows;
       out.push(
-        <div key={i} className="pdc-legal-table" tabIndex={0} role="region" aria-label="Tabel">
+        <div key={i} className="pdc-legal-table" tabIndex={0} role="region" aria-label={tableLabel}>
           <table>
             <thead><tr>{head.map((c) => <th key={c} scope="col">{c}</th>)}</tr></thead>
             <tbody>{rows.map((r) => <tr key={r[0] + r[1]}>{r.map((c, j) => <td key={j}>{c}</td>)}</tr>)}</tbody>
@@ -57,9 +60,21 @@ function Blocks({ blocks }: { blocks: ReaderBlock[] }) {
   return <>{out}</>;
 }
 
-function LegalPage({ doc }: { doc: PolicyDoc }) {
-  const others = Object.values(policies).filter((p) => p.path !== doc.path);
-  const sections = LEGAL_SECTIONS.filter((s) => s.part === doc.part);
+// The English translation, while it follows the Dutch text that applies now.
+// When the Dutch text has moved on, the English pages show the Dutch one.
+const ENGLISH_CURRENT = LEGAL_EN_VERSION === LEGAL_VERSION;
+
+function LegalPage({ doc: dutchDoc }: { doc: PolicyDoc }) {
+  const { t, language } = useLanguage();
+  const tl = t.legalPage;
+  const local = localPolicies(language);
+  const doc = Object.values(local).find((p) => p.path === dutchDoc.path) ?? dutchDoc;
+  const others = Object.values(local).filter((p) => p.path !== doc.path);
+  const english = language === "en";
+  const translated = english && ENGLISH_CURRENT;
+  const sections = (translated ? LEGAL_SECTIONS_EN : LEGAL_SECTIONS).filter((s) => s.part === doc.part);
+  // Shown in Dutch, the text keeps saying so to screen readers and translation tools.
+  const textLang = english && !translated ? "nl" : undefined;
   return (
     <article className="pdc-legal">
       <Helmet>
@@ -73,16 +88,21 @@ function LegalPage({ doc }: { doc: PolicyDoc }) {
       <div className="pdc-legal-inner">
         <h1 className="pdc-legal-title">{doc.title}</h1>
         <div className="pdc-legal-head">
-          <p className="pdc-legal-updated">Versie {LEGAL_VERSION}, geldig vanaf {LEGAL_DATE}</p>
-          <button type="button" className="pdc-legal-print" onClick={() => window.print()}>Printen of opslaan als pdf</button>
+          <p className="pdc-legal-updated">{tl.version(LEGAL_VERSION, longDate(t, LEGAL_DATE))}</p>
+          <button type="button" className="pdc-legal-print" onClick={() => window.print()}>{tl.print}</button>
         </div>
-        {sections.map((section) => (
-          <section key={section.id}>
-            <h2>{section.title}</h2>
-            <Blocks blocks={section.blocks} />
-          </section>
-        ))}
-        <nav className="pdc-legal-others" aria-label="Andere voorwaarden">
+        {english && (translated ? tl.translationNote : tl.outdatedNote) && (
+          <p className="pdc-legal-note" role="note">{translated ? tl.translationNote : tl.outdatedNote}</p>
+        )}
+        <div lang={textLang}>
+          {sections.map((section) => (
+            <section key={section.id}>
+              <h2>{section.title}</h2>
+              <Blocks blocks={section.blocks} tableLabel={tl.table} />
+            </section>
+          ))}
+        </div>
+        <nav className="pdc-legal-others" aria-label={tl.others}>
           {others.map((p) => (
             <Link key={p.path} to={p.path}>
               {p.short}

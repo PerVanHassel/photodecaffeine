@@ -41,16 +41,16 @@ export function Home() {
   return (
     <div style={{ backgroundColor: "#080401", fontFamily: "'Inter', sans-serif", overflowX: "hidden" }}>
       <Helmet>
-        <title>Fotografie, video & websites op maat | PhotoDeCaffeine</title>
-        <meta name="description" content="Fotografie, videografie en websites op maat uit Roosendaal, door heel Nederland. Voor ondernemers, makers en particulieren. Gemaakt als koffie, geschoten als cinema." />
+        <title>{t.home.metaTitle}</title>
+        <meta name="description" content={t.home.metaDescription} />
         <link rel="canonical" href="https://www.photodecaffeine.com/" />
-        <meta property="og:title" content="Fotografie, video & websites op maat | PhotoDeCaffeine" />
-        <meta property="og:description" content="Fotografie, videografie en websites op maat uit Roosendaal, door heel Nederland. Voor ondernemers, makers en particulieren." />
+        <meta property="og:title" content={t.home.metaTitle} />
+        <meta property="og:description" content={t.home.shareDescription} />
         <meta property="og:url" content="https://www.photodecaffeine.com/" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Fotografie, video & websites op maat | PhotoDeCaffeine" />
-        <meta name="twitter:description" content="Fotografie, videografie en websites op maat, door heel Nederland." />
+        <meta name="twitter:title" content={t.home.metaTitle} />
+        <meta name="twitter:description" content={t.home.shortDescription} />
         <script type="application/ld+json">{JSON.stringify(BUSINESS_JSON_LD)}</script>
       </Helmet>
       <Hero />
@@ -84,7 +84,7 @@ export function Home() {
           {t.home.seoStart}{" "}
           {t.home.seoLinks.map((link, i, all) => (
             <Fragment key={link.to}>
-              {i > 0 ? (i === all.length - 1 ? " en " : ", ") : null}
+              {i > 0 ? (i === all.length - 1 ? t.home.seoAnd : ", ") : null}
               <Link to={link.to} className="pdc-seo-link">{link.text}</Link>
             </Fragment>
           ))}

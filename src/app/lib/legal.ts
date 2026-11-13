@@ -251,8 +251,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "We leggen geen willekeurige boetes voor te late betaling op. Je behoudt je wettelijke rechten om een factuur te betwisten, een evenredig betwist bedrag op te schorten of een andere rechtsgeldige oplossing te verlangen."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p2--6-wijzigingen-en-meerwerk",
@@ -782,8 +781,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Deze wettelijke rechten gaan voor op gewone annuleringskosten. Voor zakelijke boekingen geldt normaal gesproken geen herroepingsrecht voor consumenten."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p4--2-annuleren-buiten-het-wettelijke-herroe",
@@ -1271,8 +1269,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "We verkopen geen persoonsgegevens aan datahandelaren. Publicatie op socialmediaplatforms of in openbare galerijen vindt alleen plaats voor een specifiek, rechtmatig doel. Openbare berichten kunnen door anderen worden gekopieerd of gedeeld."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p6--5-doorgifte-buiten-de-eer",
@@ -1375,8 +1372,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Een auteursrechtlicentie kan blijven bestaan nadat PDC de archiefkopie heeft verwijderd. Het behouden van auteursrecht rechtvaardigt op zichzelf niet het onbeperkt bewaren van herkenbare opnamen."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p6--7-beveiliging",
@@ -1463,8 +1459,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "Betaal je een factuur online, dan ga je naar de betaalpagina van Mollie. Daar gelden de cookies en privacyregels van Mollie. Onze eigen site plaatst voor betalen geen cookies."
       }
-    ],
-    "changed": true
+    ]
   },
   {
     "id": "p7--2-categorieen",
@@ -1548,7 +1543,7 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
           [
             "PDC, lokale opslag",
             "pdc-lang",
-            "Je taalkeuze in het portaal. Noodzakelijk",
+            "Je taalkeuze op de site en in het portaal. Noodzakelijk",
             "Nederlands of Engels",
             "Tot je de opslag wist",
             "Geen"
@@ -1575,7 +1570,8 @@ export const LEGAL_SECTIONS: ReaderSection[] = [
         "t": "p",
         "text": "De overige lettertypen staan op onze eigen server, dus daarvoor gaat er niets naar Google of een andere aanbieder."
       }
-    ]
+    ],
+    "changed": true
   },
   {
     "id": "p7--4-jouw-keuzes",

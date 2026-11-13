@@ -44,7 +44,7 @@ const foot = (text: string) => `
 
 const link = (href: string, label: string) => `<a href="${href}" style="color:#fffbe0;">${escapeHtml(label)}</a>`;
 
-export const whenText = (iso: string) => new Date(iso).toLocaleString("nl-NL", {
+export const whenText = (iso: string, language: "nl" | "en" = "nl") => new Date(iso).toLocaleString(language === "en" ? "en-GB" : "nl-NL", {
   timeZone: "Europe/Amsterdam", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",
 });
 
@@ -73,7 +73,20 @@ export function bookingConfirmedEmail(o: {
 }
 
 /** Confirms a withdrawal straight away, with the date and time (what the law asks of the function). */
-export function withdrawalEmail(o: { firstName: string; at: string; reference: string }): string {
+/** The subject of the withdrawal confirmation, in the language the withdrawal was made in. */
+export const withdrawalSubject = (language: "nl" | "en") =>
+  language === "en" ? "Confirmation: we've received your withdrawal" : "Bevestiging: we hebben je herroeping ontvangen";
+
+export function withdrawalEmail(o: { firstName: string; at: string; reference: string; language?: "nl" | "en" }): string {
+  if (o.language === "en") {
+    return emailWrap(`
+    ${head("Withdrawal received", o.reference)}
+    ${para(`Hello ${escapeHtml(o.firstName)}, we received your withdrawal on ${escapeHtml(whenText(o.at, "en"))}.`)}
+    ${para("Anything you're entitled to, we'll refund no later than 14 days after that date, using the same means of payment. If you asked us to start during the cooling-off period, a proportionate amount may apply for what we have already done.")}
+    ${para(`How it works exactly is explained in ${link(`${SITE_URL}/annuleren-en-terugbetaling`, "Cancellation and refunds")}. The Dutch text of our terms is the one that applies.`)}
+    ${foot("Please keep this email. Questions? Just reply.")}
+  `);
+  }
   return emailWrap(`
     ${head("Herroeping ontvangen", o.reference)}
     ${para(`Hallo ${escapeHtml(o.firstName)}, we hebben je herroeping ontvangen op ${escapeHtml(whenText(o.at))}.`)}
@@ -83,10 +96,10 @@ export function withdrawalEmail(o: { firstName: string; at: string; reference: s
   `);
 }
 
-export function withdrawalStudioEmail(o: { name: string; email: string; at: string; reference: string; message: string; known: string }): string {
+export function withdrawalStudioEmail(o: { name: string; email: string; at: string; reference: string; message: string; known: string; language?: "nl" | "en" }): string {
   return emailWrap(`
     ${head("Herroeping", `${o.name} herroept een overeenkomst`)}
-    ${facts([["Wanneer", whenText(o.at)], ["Offerte of boeking", o.reference], ["E-mail", o.email], ["In de admin", o.known]])}
+    ${facts([["Wanneer", whenText(o.at)], ["Offerte of boeking", o.reference], ["E-mail", o.email], ["In de admin", o.known], ...(o.language === "en" ? [["Taal", "Engels, de klant kreeg de bevestiging in het Engels"] as [string, string]] : [])])}
     ${o.message ? para(`&ldquo;${escapeHtml(o.message)}&rdquo;`) : ""}
     ${para("Betaal terug waar de klant recht op heeft, uiterlijk 14 dagen na deze datum. Er staat een taak klaar.")}
     ${button("Open in het adminpaneel", `${SITE_URL}/admin/tasks`)}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router";
 import { useLanguage } from "../context/LanguageContext";
-import { matchPage } from "../i18n/matchPage";
+import { matchPage, useMatchPage } from "../i18n/matchPage";
 
 /**
  * A booking button pinned to the bottom of the screen on phones, where the
@@ -11,6 +11,7 @@ import { matchPage } from "../i18n/matchPage";
  */
 export function StickyCta() {
   const { t } = useLanguage();
+  const match = useMatchPage();
   const { pathname } = useLocation();
 
   // Service pages book through their own form; everything else through the contact form.
@@ -21,7 +22,7 @@ export function StickyCta() {
     pathname === "/services/social-media"
       ? { id: "boeken", to: `${pathname}#boeken`, label: t.socialMediaPage.requestLabel }
       : pathname === matchPage.path
-        ? { id: "aanvragen", to: `${pathname}#aanvragen`, label: matchPage.bookCta }
+        ? { id: "aanvragen", to: `${pathname}#aanvragen`, label: match.bookCta }
         : isCategoryPage
         ? { id: "boeken", to: `${pathname}#boeken`, label: t.servicePages.requestLabel }
         : { id: "contact", to: "/#contact", label: t.nav.bookShoot };

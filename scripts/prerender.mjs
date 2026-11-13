@@ -120,6 +120,16 @@ async function loadSiteData() {
   return data;
 }
 
+/**
+ * The pages are rendered in Dutch. A visitor who chose English (pdc-lang in
+ * localStorage, or ?lang=en; see context/LanguageContext.tsx) would see the
+ * Dutch text flash by before the switch, so the page stays hidden until
+ * LanguageContext has switched it, and never longer than 2.5 seconds.
+ */
+const LANGUAGE_SCRIPT = `<style>.pdc-lang-pending,.pdc-lang-pending body{background:#080401}.pdc-lang-pending #root{visibility:hidden}</style>
+<script>(function(){try{var q=new URLSearchParams(location.search).get("lang"),s=localStorage,l=q==="en"||q==="nl"?q:s.getItem("pdc-lang")||s.getItem("pdc-portal-lang");if(l!=="en")return;var h=document.documentElement;h.lang="en";h.classList.add("pdc-lang-pending");setTimeout(function(){h.classList.remove("pdc-lang-pending")},2500)}catch(e){}})()</script>
+`;
+
 /** JSON for inside a <script>: no way to close the tag early. */
 function scriptJson(value) {
   // <, U+2028 and U+2029 become JSON escape sequences, built from char codes
@@ -134,7 +144,14 @@ async function main() {
     throw new Error(`SSR bundle not found at ${ssrEntry}. Run "npm run build:ssr" first.`);
   }
 
-  const { render } = await import(`file://${ssrEntry.replace(/\\/g, "/")}`);
+  const { render, checkTexts } = await import(`file://${ssrEntry.replace(/\\/g, "/")}`);
+
+  // Dutch and English have to say the same prices, links and ids (src/app/i18n/check.ts).
+  const texts = checkTexts();
+  for (const warning of texts.warnings) console.warn(`vertaling: ${warning}`);
+  if (texts.errors.length) {
+    throw new Error(`De Engelse teksten lopen niet gelijk met de Nederlandse:\n  ${texts.errors.join("\n  ")}`);
+  }
   // A fresh `vite build` leaves an empty index.html; a second run over the same
   // dist/ finds the prerendered homepage there and uses the saved shell instead.
   const EMPTY_ROOT = '<div id="root"></div>';
@@ -170,7 +187,7 @@ async function main() {
     const dataScript = Object.keys(data).length ? `<script>window.__PDC_DATA__=${scriptJson(data)}</script>\n` : "";
     const html = template
       .replace(EMPTY_ROOT, `<div id="root">${appHtml}</div>`)
-      .replace("</head>", `${headHtml}\n${dataScript}  </head>`);
+      .replace("</head>", `${headHtml}\n${dataScript}${LANGUAGE_SCRIPT}  </head>`);
 
     const outPath = outputPathFor(page.route);
     await mkdir(path.dirname(outPath), { recursive: true });

@@ -277,14 +277,21 @@ export function pageSummary(source: ArticleSource, page: ArticlePage): string {
 /** Google shows about 60 characters of a title and 155 of a description. */
 export const SEO_LIMITS = { title: 60, description: 155 };
 
-/** The title and description for search engines: the studio's own, or made from the article. */
-export function seoMeta(source: ArticleSource, page: ArticlePage) {
+/**
+ * The title and description for search engines: the studio's own, or made from
+ * the article. The made-up sentence follows the site's language; the admin
+ * always gets the Dutch one.
+ */
+export function seoMeta(source: ArticleSource, page: ArticlePage, language: "nl" | "en" = "nl") {
   const autoTitle = `${source.title} | Portfolio | PhotoDeCaffeine`;
   const summary = pageSummary(source, page);
   const max = SEO_LIMITS.description;
+  const automotive = /automotive/i.test(source.category);
   const autoDescription = summary
     ? (summary.length > max ? `${summary.slice(0, max - 3).trimEnd()}…` : summary)
-    : `Bekijk de shoot ‘${source.title}’ van PhotoDeCaffeine: professionele ${/automotive/i.test(source.category) ? "automotive fotografie" : "fotografie"} door heel Nederland.`;
+    : language === "en"
+      ? `See the shoot ‘${source.title}’ by PhotoDeCaffeine: professional ${automotive ? "automotive photography" : "photography"} all over the Netherlands.`
+      : `Bekijk de shoot ‘${source.title}’ van PhotoDeCaffeine: professionele ${automotive ? "automotive fotografie" : "fotografie"} door heel Nederland.`;
   return {
     title: source.seoTitle?.trim() || autoTitle,
     description: source.seoDescription?.trim() || autoDescription,
