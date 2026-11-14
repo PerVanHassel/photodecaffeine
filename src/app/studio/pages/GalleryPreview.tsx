@@ -1,6 +1,9 @@
 import { ArrowLeft } from "lucide-react";
 import { Link, useParams } from "react-router";
+import { toast } from "sonner";
+import { errorMessage, get } from "../api";
 import { ClientGallery } from "../gallery/ClientGallery";
+import { saveUrl } from "../gallery/download";
 import { styleOf } from "../gallery/styles";
 import { useProject } from "../queries";
 import { ErrorState, Skeleton } from "../ui";
@@ -13,6 +16,15 @@ export function GalleryPreviewPage() {
   if (project.isError) return <ErrorState error={project.error} />;
   if (!p) return <div className="s-view"><Skeleton h={34} w={260} /><Skeleton h={400} r={12} /></div>;
   const favs = p.favorites || {};
+  // The studio's own copy of the original: it does not count as the client's download.
+  async function downloadOne(img: { id: string }) {
+    try {
+      const r = await get<{ url: string; fileName: string }>(`/admin/project/${p!.id}/gallery/${img.id}/original`);
+      saveUrl(r.url, r.fileName);
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
+  }
   // What is held back from the client stays out of this view of it too.
   const gallery = p.gallery.filter((g) => g.restriction !== "no_photo");
   const coverGone = gallery.length < p.gallery.length && !gallery.some((g) => g.id === p.gallerySettings.coverImageId);
@@ -23,7 +35,7 @@ export function GalleryPreviewPage() {
         <Link to={`/admin/project/${p.id}?tab=gallery`} className="s-back"><ArrowLeft size={14} /> Terug naar project</Link>
         <span className="s-small s-muted">Voorbeeld zoals de klant het ziet · stijl {styleOf(p).name}</span>
       </div>
-      <ClientGallery project={shown} favs={new Set(Object.keys(favs))} favNames={favs} actions={{}} review={{ url: "" }} back={null} preview />
+      <ClientGallery project={shown} favs={new Set(Object.keys(favs))} favNames={favs} actions={{ downloadOne }} review={{ url: "" }} back={null} preview />
     </div>
   );
 }

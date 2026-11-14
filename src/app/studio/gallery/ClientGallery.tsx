@@ -149,7 +149,8 @@ export function ClientGallery({ project: p, favs, favNames, counts, guest, kids,
   const shown = only ? kidShown.filter((g) => only.has(g.id)) : kidShown;
   const countAs: CountAs = guest ? "heart" : filter === "popular" ? "badge" : "none";
   // A photo marked downloadable on its own (a guest's voorrang) can be, whatever the rest may.
-  const canDownload = (g: GalleryImage) => !!actions.downloadOne && !preview && g.download !== false && (downloads !== "none" || g.download === true);
+  // In the studio's own preview the owner may save every photo, whatever the client is allowed.
+  const canDownload = (g: GalleryImage) => !!actions.downloadOne && g.download !== false && (preview || downloads !== "none" || g.download === true);
   const ratios = shown.map(ratioOf);
   const videos = p.gallery.filter((g) => isVideo(g.fileName || g.url)).length;
 
@@ -760,9 +761,6 @@ function Lightbox({ list, start, total, numberOf, favs, favNames, counts, countA
               {basket.has(img) ? <Check /> : <ShoppingBag />}<span>{basket.has(img) ? t.saleChosen : t.saleAdd(basket.price)}</span>
             </button>
           )}
-          {onDownload && canDownload(img) && (
-            <button type="button" className="g-btn primary g-lb-dl" onClick={() => onDownload(img)} aria-label={t.download}><Download /><span className="g-btn-label">{t.download}</span></button>
-          )}
           <button ref={closeButton} type="button" className="g-btn icon" onClick={onClose} aria-label={t.close}><X /></button>
         </div>
       </div>
@@ -777,11 +775,14 @@ function Lightbox({ list, start, total, numberOf, favs, favNames, counts, countA
           </>
         )}
       </div>
-      <p className="g-lb-foot">
+      <div className="g-lb-foot">
+        {onDownload && canDownload(img) && (
+          <button type="button" className="g-btn primary g-lb-dl" onClick={() => onDownload(img)} aria-label={t.download}><Download /><span className="g-btn-label">{t.download}</span></button>
+        )}
         {img.restriction === "no_social" && <span className="g-lb-group"><MegaphoneOff aria-hidden="true" />{t.noSocialHint}</span>}
         {countAs === "badge" && hearts > 0 && <span className="g-lb-group"><Users aria-hidden="true" />{t.groupLikes(hearts)}</span>}
         <span>{onToggle ? t.lightboxHint : `${index + 1} / ${list.length}`}</span>
-      </p>
+      </div>
     </div>
   );
 }

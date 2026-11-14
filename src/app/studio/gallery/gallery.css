@@ -580,7 +580,9 @@
 .g-lb-nav:active { transform: translateY(-50%) scale(0.94); }
 .g-lb-nav.prev { left: clamp(8px, 2vw, 28px); }
 .g-lb-nav.next { right: clamp(8px, 2vw, 28px); }
-.g-lb-foot { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; margin: 0; padding: 10px 16px 14px; text-align: center; font-size: 12px; color: var(--g-faint); }
+.g-lb-foot .g-lb-dl { width: auto; padding: 0 18px; }
+.g-lb-foot .g-lb-dl .g-btn-label { display: inline; }
+.g-lb-foot { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 0; padding: 10px 16px 14px; text-align: center; font-size: 12px; color: var(--g-faint); }
 .g-lb-group { display: inline-flex; align-items: center; gap: 6px; color: var(--g-accent-ink); font-weight: 600; }
 .g-lb-group svg { width: 14px; height: 14px; }
 .g-btn-n { font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; opacity: 0.85; }
@@ -753,9 +755,6 @@
   .g-btn-label { display: none; }
   .g-bar .g-btn, .g-lb-actions .g-btn { width: 36px; padding: 0; }
   .g-lb-actions .g-btn:has(.g-btn-n) { width: auto; padding: 0 11px; }
-  /* Download keeps its word in the large view, unless a child button needs the room. */
-  .g-lb-actions:not(:has(.g-lb-kid)) .g-btn.g-lb-dl { width: auto; padding: 0 13px; }
-  .g-lb-actions:not(:has(.g-lb-kid)) .g-lb-dl .g-btn-label { display: inline; }
   /* Three tabs and the tools share one row: tabs with an icon drop their word, and the row scrolls if it still doesn't fit. */
   .g-tabs { overflow-x: auto; scrollbar-width: none; }
   .g-tabs::-webkit-scrollbar { display: none; }
