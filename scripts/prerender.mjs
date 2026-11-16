@@ -127,7 +127,7 @@ async function loadSiteData() {
  * LanguageContext has switched it, and never longer than 2.5 seconds.
  */
 const LANGUAGE_SCRIPT = `<style>.pdc-lang-pending,.pdc-lang-pending body{background:#080401}.pdc-lang-pending #root{visibility:hidden}</style>
-<script>(function(){try{var q=new URLSearchParams(location.search).get("lang"),s=localStorage,l=q==="en"||q==="nl"?q:s.getItem("pdc-lang")||s.getItem("pdc-portal-lang");if(l!=="en")return;var h=document.documentElement;h.lang="en";h.classList.add("pdc-lang-pending");setTimeout(function(){h.classList.remove("pdc-lang-pending")},2500)}catch(e){}})()</script>
+<script>(function(){try{var q=new URLSearchParams(location.search).get("lang"),s=localStorage,l=q==="en"||q==="nl"?q:s.getItem("pdc-lang");if(l!=="en")return;var h=document.documentElement;h.lang="en";h.classList.add("pdc-lang-pending");setTimeout(function(){h.classList.remove("pdc-lang-pending")},2500)}catch(e){}})()</script>
 `;
 
 /** JSON for inside a <script>: no way to close the tag early. */
