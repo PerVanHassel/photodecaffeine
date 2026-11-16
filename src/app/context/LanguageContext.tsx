@@ -23,9 +23,11 @@ const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 // The prerendered pages read the same key before they paint (LANGUAGE_SCRIPT
 // in scripts/prerender.mjs).
+//
+// Dutch is the default. Only a choice made with the NL/EN button (or ?lang=)
+// switches the site; the old portal key (pdc-portal-lang) is not read any
+// more, or a client who once picked English in the portal got an English site.
 const STORAGE_KEY = "pdc-lang";
-// The client portal used its own key before the choice was stored here.
-const LEGACY_KEYS = ["pdc-portal-lang"];
 /**
  * Set on <html> by that script while a visitor who chose English waits for
  * the page to switch, so the Dutch prerender does not flash by.
@@ -52,10 +54,8 @@ function languageInUrl(): Language | null {
 
 function storedLanguage(): Language | null {
   try {
-    for (const key of [STORAGE_KEY, ...LEGACY_KEYS]) {
-      const saved = localStorage.getItem(key);
-      if (isLanguage(saved)) return saved;
-    }
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (isLanguage(saved)) return saved;
   } catch {
     // Storage blocked: no earlier choice.
   }
