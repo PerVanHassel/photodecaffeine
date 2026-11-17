@@ -672,6 +672,9 @@
 }
 .pdc-pkg-name { margin: 0 0 12px; color: #fffbe0; font-size: 40px; font-weight: 900; line-height: 1; letter-spacing: -0.02em; text-transform: uppercase; }
 .pdc-pkg-pitch { margin: 0 0 32px; color: rgba(255,251,224,0.55); font-size: 13px; font-weight: 300; line-height: 1.7; }
+/* A discounted tier: the old price small and struck through, above the new one. */
+.pdc-pkg-was { margin: 0 0 10px; color: rgba(255,251,224,0.55); font-size: 22px; font-weight: 500; line-height: 1; letter-spacing: -0.01em; }
+.pdc-pkg-was s { text-decoration-line: line-through; text-decoration-color: #c8905a; text-decoration-thickness: 2px; }
 .pdc-pkg-price { margin: 0; color: #fffbe0; font-size: 64px; font-weight: 900; line-height: 1; letter-spacing: -0.04em; }
 .pdc-pkg-price span { display: inline-block; margin-left: 10px; color: rgba(255,251,224,0.5); font-size: 12px; font-weight: 400; line-height: 1.4; letter-spacing: 0.04em; }
 /* A business price with btw, and a plan's minimum term, small under the price. */

@@ -200,6 +200,8 @@ function PackageCard({
   const extras = [count !== null && tp.perPhoto(money(tier.price / count)), perUnit, group.extraPhoto && tp.extraPhoto(money(group.extraPhoto))]
     .filter(Boolean)
     .join(" · ");
+  // A discounted tier also has its old price, shown struck through above the new one.
+  const was = ("was" in tier ? tier.was : null) ?? null;
   const pkg: PickedPackage = { category: category.id, group: group.id, tier: tier.id };
   const isPicked = picked?.category === pkg.category && picked.group === pkg.group && picked.tier === pkg.tier;
   const titleId = `pkg-${category.id}-${group.id}-${tier.id}`;
@@ -216,6 +218,12 @@ function PackageCard({
         </h3>
         <p className="pdc-pkg-pitch">{tier.pitch}</p>
 
+        {was !== null && (
+          <p className="pdc-pkg-was">
+            <span className="pdc-visually-hidden">{tp.was(money(was))}</span>
+            <s aria-hidden="true">{money(was)}</s>
+          </p>
+        )}
         <p className="pdc-pkg-price">
           {money(tier.price)}
           <span>

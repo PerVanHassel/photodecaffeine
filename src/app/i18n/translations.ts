@@ -88,8 +88,9 @@ const nl = {
     // "excl" for businesses, whose prices also show what they are with btw.
     // A tier's photos is a count, shown with its price per photo, or a text
     // where a count would not say it. Its units is how many of the group's
-    // unit its price covers, so 1 is a price per unit. A group's plan is a
-    // monthly subscription, shown under its one-off packages.
+    // unit its price covers, so 1 is a price per unit. A tier with a "was"
+    // is discounted: that old price shows struck through above its price.
+    // A group's plan is a monthly subscription, shown under its one-off packages.
     packages: {
       label: "Pakketten",
       heroCta: "Bekijk de pakketten",
@@ -107,6 +108,8 @@ const nl = {
       perPhoto: (price: string) => `${price} per foto`,
       perUnit: (price: string, unit: string, approx: boolean) => `${approx ? "ca. " : ""}${price} ${unit}`,
       extraPhoto: (price: string) => `extra foto ${price}`,
+      // Read out before a discounted price; on screen the old price is struck through.
+      was: (price: string) => `van ${price} voor`,
       best: "Meeste waarde",
       notIncluded: "Niet inbegrepen:",
       choose: (name: string) => `Kies ${name}`,
@@ -146,6 +149,7 @@ const nl = {
                   name: "Klein",
                   pitch: "Een paar sterke foto's van je auto of motor.",
                   price: 49,
+                  was: 75,
                   photos: 10,
                   units: null,
                   best: false,
@@ -157,6 +161,7 @@ const nl = {
                   name: "Middel",
                   pitch: "Wat meer tijd en meer foto's.",
                   price: 99,
+                  was: 125,
                   photos: 20,
                   units: null,
                   best: false,
@@ -174,7 +179,8 @@ const nl = {
                   id: "groot",
                   name: "Groot",
                   pitch: "De complete shoot, op 3 locaties.",
-                  price: 200,
+                  price: 199,
+                  was: 250,
                   photos: 60,
                   units: null,
                   best: true,
@@ -312,7 +318,7 @@ const nl = {
                   units: null,
                   best: false,
                   items: ["1 sporter", "1 uur bij een wedstrijd, training of eigen shoot", "Bewerking: kleur, licht en uitsnijden", "Binnen 5 werkdagen", "Online galerij in je klantportaal"],
-                  missing: ["Actiefoto's en portretten", "De hele wedstrijd", "Korte video met je beste acties"],
+                  missing: ["Actiefoto's en portretten", "De hele wedstrijd"],
                 },
                 {
                   id: "middel",
@@ -330,12 +336,12 @@ const nl = {
                     "Binnen 5 werkdagen",
                     "Online galerij in je klantportaal",
                   ],
-                  missing: ["De hele wedstrijd", "Korte video met je beste acties"],
+                  missing: ["De hele wedstrijd"],
                 },
                 {
                   id: "groot",
                   name: "Groot",
-                  pitch: "Je hele wedstrijd, met video erbij.",
+                  pitch: "Je hele wedstrijd, van begin tot eind.",
                   price: 149,
                   photos: 60,
                   units: null,
@@ -345,7 +351,6 @@ const nl = {
                     "De hele wedstrijd of tot 3 uur",
                     "Bewerking: kleur, licht en uitsnijden",
                     "Actiefoto's en portretten",
-                    "Korte video van 30 seconden met je beste acties",
                     "Binnen 3 werkdagen",
                     "Online galerij in je klantportaal",
                   ],
@@ -373,7 +378,7 @@ const nl = {
                   units: 15,
                   best: false,
                   items: ["Team tot 15 spelers", "1 uur bij een wedstrijd of training", "Teamfoto", "Binnen 5 werkdagen", "Eén galerij voor het hele team"],
-                  missing: ["Portret van elke speler", "De hele wedstrijd", "Korte video met de hoogtepunten"],
+                  missing: ["Portret van elke speler", "De hele wedstrijd"],
                 },
                 {
                   id: "middel",
@@ -384,12 +389,12 @@ const nl = {
                   units: 15,
                   best: false,
                   items: ["Team tot 15 spelers", "1,5 uur bij een wedstrijd of training", "Teamfoto", "Portret van elke speler", "Binnen 5 werkdagen", "Eén galerij voor het hele team"],
-                  missing: ["De hele wedstrijd", "Korte video met de hoogtepunten"],
+                  missing: ["De hele wedstrijd"],
                 },
                 {
                   id: "groot",
                   name: "Groot",
-                  pitch: "De hele wedstrijd, met video erbij.",
+                  pitch: "De hele wedstrijd, van begin tot eind.",
                   price: 299,
                   photos: 150,
                   units: 15,
@@ -399,7 +404,6 @@ const nl = {
                     "De hele wedstrijd of tot 3 uur",
                     "Teamfoto",
                     "Portret van elke speler",
-                    "Korte video van 60 seconden met de hoogtepunten",
                     "Binnen 3 werkdagen",
                     "Eén galerij voor het hele team",
                   ],
@@ -427,7 +431,7 @@ const nl = {
                   units: 1,
                   best: false,
                   items: ["Vanaf 8 spelers", "1,5 uur bij een wedstrijd of training", "Teamfoto", "Binnen 5 werkdagen", "Eén galerij voor het hele team"],
-                  missing: ["Portret van elke speler", "De hele wedstrijd", "Korte video met de hoogtepunten"],
+                  missing: ["Portret van elke speler", "De hele wedstrijd"],
                 },
                 {
                   id: "middel",
@@ -438,12 +442,12 @@ const nl = {
                   units: 1,
                   best: true,
                   items: ["Vanaf 8 spelers", "2 uur bij een wedstrijd of training", "Teamfoto", "Portret van elke speler", "Binnen 5 werkdagen", "Eén galerij voor het hele team"],
-                  missing: ["De hele wedstrijd", "Korte video met de hoogtepunten"],
+                  missing: ["De hele wedstrijd"],
                 },
                 {
                   id: "groot",
                   name: "Groot",
-                  pitch: "De hele wedstrijd, met video erbij.",
+                  pitch: "De hele wedstrijd, van begin tot eind.",
                   price: 45,
                   photos: 50,
                   units: 1,
@@ -453,7 +457,6 @@ const nl = {
                     "De hele wedstrijd of tot 3 uur",
                     "Teamfoto",
                     "Portret van elke speler",
-                    "Korte video van 60 seconden met de hoogtepunten",
                     "Binnen 5 werkdagen",
                     "Eén galerij voor het hele team",
                   ],
@@ -496,7 +499,7 @@ const nl = {
                   units: null,
                   best: false,
                   items: ["30 minuten op locatie", "1 locatie en 1 outfit", "Bewerking: kleur, licht en een lichte huidretouche", "Binnen 5 werkdagen", "Online galerij in je klantportaal"],
-                  missing: ["Twee locaties", "Korte video voor je socials"],
+                  missing: ["Twee locaties"],
                 },
                 {
                   id: "middel",
@@ -507,12 +510,12 @@ const nl = {
                   units: null,
                   best: true,
                   items: ["1 uur op locatie", "1 locatie en 2 outfits", "Bewerking: kleur, licht en een lichte huidretouche", "Binnen 5 werkdagen", "Online galerij in je klantportaal"],
-                  missing: ["Twee locaties", "Korte video voor je socials"],
+                  missing: ["Twee locaties"],
                 },
                 {
                   id: "groot",
                   name: "Groot",
-                  pitch: "Twee locaties en drie outfits, met video erbij.",
+                  pitch: "Twee locaties en drie outfits.",
                   price: 179,
                   photos: 25,
                   units: null,
@@ -521,7 +524,6 @@ const nl = {
                     "1,5 uur op locatie",
                     "2 locaties en 3 outfits, ook bij zonsondergang",
                     "Bewerking: kleur, licht en een lichte huidretouche",
-                    "Korte video van 30 seconden voor je socials",
                     "Binnen 3 werkdagen",
                     "Online galerij in je klantportaal",
                   ],
