@@ -5,13 +5,12 @@ import { FormPrivacyNote } from "../components/form/FormPrivacyNote";
 import { Faq } from "../components/Faq";
 import { track, visitCampaign, visitId } from "../lib/analytics";
 import type { InquiryForm } from "./ThankYouPage";
-import { ArrowLeft } from "lucide-react";
+import { ServiceHero } from "../components/ServiceHero";
 import { portalFetch } from "../../lib/supabase";
 import { useLanguage } from "../context/LanguageContext";
 import { EMAIL_INPUT, PHONE_INPUT, PublicInput, PublicTextarea } from "../components/form/PublicField";
 import heroSmall from "@/assets/web/majd-800.webp";
 import heroImage from "@/assets/web/majd-1365.webp";
-import { HIGH_PRIORITY } from "../lib/images";
 
 export function SocialMediaPage() {
   const { t, language } = useLanguage();
@@ -102,107 +101,21 @@ export function SocialMediaPage() {
           ]
         })}</script>
       </Helmet>
-      {/* ── Header ── */}
-      <div
-        className="pdc-svc-head"
-        style={{
-          backgroundColor: "#0d0703",
-          borderBottom: "1px solid rgba(255,251,224,0.06)",
+      <ServiceHero
+        back={{ to: "/services/videografie", label: ts.backLabel }}
+        title={ts.titleLine1}
+        titleDim={ts.titleLine2}
+        subtitle={ts.subtitle}
+        image={{
+          src: heroImage,
+          srcSet: `${heroSmall} 800w, ${heroImage} 1365w`,
+          width: 1365,
+          height: 2048,
+          alt: ts.heroAlt,
+          position: "center 50%",
         }}
-      >
-        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-          <Link to="/services/videografie" className="pdc-back-link">
-            <ArrowLeft size={14} aria-hidden="true" />
-            {ts.backLabel}
-          </Link>
-
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-end",
-              justifyContent: "space-between",
-              flexWrap: "wrap",
-              gap: "32px",
-            }}
-          >
-            <div>
-              <span
-                style={{
-                  color: "rgba(255,251,224,0.5)",
-                  fontSize: "10px",
-                  fontWeight: 500,
-                  letterSpacing: "0.3em",
-                  textTransform: "uppercase",
-                  display: "block",
-                  marginBottom: "16px",
-                }}
-              >
-                {ts.sectionLabel}
-              </span>
-              <h1
-                className="pdc-svc-title pdc-svc-title--social"
-                style={{
-                  color: "#fffbe0",
-                  fontWeight: 900,
-                  letterSpacing: "-0.03em",
-                  lineHeight: 0.92,
-                  margin: 0,
-                  textTransform: "uppercase",
-                }}
-              >
-                {ts.titleLine1}
-                <br />
-                <em
-                  style={{
-                    fontStyle: "italic",
-                    fontWeight: 300,
-                    color: "#c8905a",
-                    fontSize: "0.78em",
-                    textTransform: "none",
-                    fontFamily: "'Inter', sans-serif",
-                  }}
-                >
-                  {ts.titleLine2}
-                </em>
-              </h1>
-            </div>
-            <p
-              className="pdc-desktop-only"
-              style={{
-                color: "rgba(255,251,224,0.5)",
-                fontSize: "14px",
-                fontWeight: 300,
-                lineHeight: 1.7,
-                margin: 0,
-                maxWidth: "320px",
-                textAlign: "right",
-              }}
-            >
-              {ts.subtitle}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Hero image ── */}
-      <div className="pdc-svc-hero" style={{ position: "relative", minHeight: "320px", overflow: "hidden" }}>
-        <img
-          src={heroImage}
-          srcSet={`${heroSmall} 800w, ${heroImage} 1365w`}
-          sizes="100vw"
-          width={1365}
-          height={2048}
-          {...HIGH_PRIORITY}
-          alt={ts.heroAlt}
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            objectPosition: "center 30%",
-            filter: "brightness(0.5) contrast(1.08) saturate(0.7)",
-          }}
-        />
-      </div>
+        actions={[{ target: "boeken", label: ts.submitButton }]}
+      />
 
       {/* ── Keyword intro ── */}
       <div

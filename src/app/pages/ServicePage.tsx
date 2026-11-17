@@ -1,16 +1,16 @@
 import { Helmet } from "react-helmet-async";
 import { useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
-import { ArrowLeft } from "lucide-react";
 import { FormPrivacyNote } from "../components/form/FormPrivacyNote";
 import { ChoiceChips } from "../components/form/ChoiceChips";
 import { Faq, type FaqItem } from "../components/Faq";
 import { PhotoReel } from "../components/PhotoReel";
 import { PhotoPackages, packageCategoryName, packageName, packagePrice, packageTierName, type PickedPackage } from "../components/PhotoPackages";
+import { ServiceHero, type HeroImage } from "../components/ServiceHero";
 import { EMAIL_INPUT, PHONE_INPUT, PublicInput, PublicTextarea } from "../components/form/PublicField";
 import { track, visitCampaign, visitId } from "../lib/analytics";
 import { altByUrl, altFromFile } from "../lib/articlePage";
-import { HIGH_PRIORITY, webSrcSet } from "../lib/images";
+import { webSrcSet } from "../lib/images";
 import { focusFirst, focusPhotos } from "../lib/photoFocus";
 import { scrollBehavior } from "../lib/scroll";
 import { AUTOMOTIVE_GALLERY_TITLE, usePortfolio, useSiteSettings } from "../lib/siteData";
@@ -33,7 +33,7 @@ type ServiceId = "fotografie" | "videografie" | "website";
 
 const HERO: Record<ServiceId, { src: string; srcSet?: string; width: number; height: number; position: string }> = {
   fotografie: { src: darkroom, width: 1200, height: 802, position: "center 35%" },
-  videografie: { src: majd, srcSet: `${majdSmall} 800w, ${majd} 1365w`, width: 1365, height: 2048, position: "center 30%" },
+  videografie: { src: majd, srcSet: `${majdSmall} 800w, ${majd} 1365w`, width: 1365, height: 2048, position: "center 50%" },
   website: { src: team, width: 1600, height: 1063, position: "center 55%" },
 };
 
@@ -56,6 +56,7 @@ function ServicePage({
   work = NO_WORK,
   gallery = [],
   faq,
+  heroLoading = false,
 }: {
   id: ServiceId;
   category?: string;
@@ -64,6 +65,8 @@ function ServicePage({
   /** The same niche in the page's language. */
   focusLabel?: string;
   work?: ReturnType<typeof focusPhotos>;
+  /** The photos the hero may lead with are still on their way. */
+  heroLoading?: boolean;
   /** Photos picked in the admin for this page, shown as a strip under the form. */
   gallery?: string[];
   faq?: readonly FaqItem[];
@@ -83,6 +86,17 @@ function ServicePage({
 
   // A niche's photos fill the hero and the work grid, and its option comes first.
   const heroPhoto = work.focused ? work.photos[0] : undefined;
+  const heroImage: HeroImage = heroPhoto
+    ? {
+        src: heroPhoto.url,
+        srcSet: webSrcSet(heroPhoto.url),
+        alt:
+          altFromFile(heroPhoto.url, ts.photoAlts)
+          || (heroPhoto.article.page && Array.isArray(heroPhoto.article.page.blocks) ? altByUrl(heroPhoto.article.page).get(heroPhoto.url) : "")
+          || ts.photoAlt(heroPhoto.article.title),
+        position: "center 45%",
+      }
+    : { src: hero.src, srcSet: hero.srcSet, width: hero.width, height: hero.height, alt: page.heroAlt, position: hero.position };
   const gridPhotos = (heroPhoto ? work.photos.slice(1) : work.photos).slice(0, 8);
   // The options stay Dutch, the way the request reaches the studio; each
   // shows in the page's language.
@@ -196,116 +210,18 @@ function ServicePage({
         })}</script>
       </Helmet>
 
-      {/* ── Header ── */}
-      <div
-        className="pdc-svc-head"
-        style={{
-          backgroundColor: "#0d0703",
-          borderBottom: "1px solid rgba(255,251,224,0.06)",
-        }}
-      >
-        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-          <Link to={sub ? page.path : "/"} className="pdc-back-link">
-            <ArrowLeft size={14} aria-hidden="true" />
-            {sub ? tp?.backLabel : ts.backLabel}
-          </Link>
-
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-end",
-              justifyContent: "space-between",
-              flexWrap: "wrap",
-              gap: "32px",
-            }}
-          >
-            <div>
-              <span style={{ ...label, marginBottom: "16px" }}>{ts.sectionLabel}</span>
-              <h1
-                className="pdc-svc-title pdc-svc-title--social"
-                style={{
-                  color: "#fffbe0",
-                  fontWeight: 900,
-                  letterSpacing: "-0.03em",
-                  lineHeight: 0.92,
-                  margin: 0,
-                  textTransform: "uppercase",
-                }}
-              >
-                {sub ? sub.name : page.name}
-                <br />
-                <em
-                  style={{
-                    fontStyle: "italic",
-                    fontWeight: 300,
-                    color: "#c8905a",
-                    fontSize: "0.6em",
-                    textTransform: "none",
-                    fontFamily: "'Inter', sans-serif",
-                  }}
-                >
-                  {text.titleDim}
-                </em>
-              </h1>
-            </div>
-            <p
-              className="pdc-desktop-only"
-              style={{
-                color: "rgba(255,251,224,0.5)",
-                fontSize: "14px",
-                fontWeight: 300,
-                lineHeight: 1.7,
-                margin: 0,
-                maxWidth: "320px",
-                textAlign: "right",
-              }}
-            >
-              {text.subtitle}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Hero image ── */}
-      <div className="pdc-svc-hero" style={{ position: "relative", minHeight: "320px", overflow: "hidden" }}>
-        {heroPhoto ? (
-          <img
-            src={heroPhoto.url}
-            srcSet={webSrcSet(heroPhoto.url)}
-            sizes="100vw"
-            {...HIGH_PRIORITY}
-            alt={
-              altFromFile(heroPhoto.url, ts.photoAlts)
-              || (heroPhoto.article.page && Array.isArray(heroPhoto.article.page.blocks) ? altByUrl(heroPhoto.article.page).get(heroPhoto.url) : "")
-              || ts.photoAlt(heroPhoto.article.title)
-            }
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              objectPosition: "center 45%",
-              filter: "brightness(0.5) contrast(1.08) saturate(0.7)",
-            }}
-          />
-        ) : (
-          <img
-            src={hero.src}
-            srcSet={hero.srcSet}
-            sizes={hero.srcSet ? "100vw" : undefined}
-            width={hero.width}
-            height={hero.height}
-            {...HIGH_PRIORITY}
-            alt={page.heroAlt}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              objectPosition: hero.position,
-              filter: "brightness(0.5) contrast(1.08) saturate(0.7)",
-            }}
-          />
-        )}
-      </div>
+      <ServiceHero
+        back={sub && tp ? { to: page.path, label: tp.backLabel } : { to: "/", label: ts.backLabel }}
+        title={sub ? sub.name : page.name}
+        titleDim={text.titleDim}
+        subtitle={text.subtitle}
+        image={heroLoading ? null : heroImage}
+        actions={
+          tp
+            ? [{ target: "pakketten", label: tp.heroCta }, { target: "boeken", label: ts.submitButton }]
+            : [{ target: "boeken", label: ts.submitButton }]
+        }
+      />
 
       {/* ── Keyword intro ── */}
       <div className="pdc-svc-intro" style={{ maxWidth: "800px", margin: "0 auto", textAlign: "center" }}>
@@ -605,14 +521,19 @@ function Photography({ category }: { category?: string }) {
   const sub = t.servicePages.packages.categories.find((c) => c.id === category);
   // Portfolio categories are Dutch ("Portret"), so the niche is matched in Dutch.
   const nlSub = translations.nl.servicePages.packages.categories.find((c) => c.id === category);
-  const niche = useSiteSettings().data?.photoFocus;
-  const articles = usePortfolio().data;
+  const settings = useSiteSettings();
+  const portfolio = usePortfolio();
+  const niche = settings.data?.photoFocus;
+  const articles = portfolio.data;
   const focus = nlSub?.name ?? niche;
   const nicheCategory = t.servicePages.packages.categories.find(
     (c, i) => translations.nl.servicePages.packages.categories[i].name.toLowerCase() === niche?.trim().toLowerCase(),
   );
   const focusLabel = sub?.name ?? nicheCategory?.name ?? (niche ? categoryLabel(t, niche) : undefined);
   const work = focusPhotos(articles, focus, 9);
+  // The hero waits for the photo it leads with, rather than flash the stand-in first.
+  const heroLoading =
+    (articles === undefined && !portfolio.error) || (!sub && settings.data === undefined && !settings.error);
   // Automotive keeps the gallery and questions of its former own page.
   const automotive = category === "automotive";
   const gallery = automotive ? (articles?.find((a) => a.title === AUTOMOTIVE_GALLERY_TITLE)?.galleryUrls ?? []) : [];
@@ -625,6 +546,7 @@ function Photography({ category }: { category?: string }) {
       work={work}
       gallery={gallery}
       faq={automotive ? t.faq.automotive : undefined}
+      heroLoading={heroLoading}
     />
   );
 }

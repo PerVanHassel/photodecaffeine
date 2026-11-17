@@ -25,7 +25,7 @@ export const BUSINESS_JSON_LD = {
   email: "contact@photodecaffeine.com",
   address: { "@type": "PostalAddress", addressLocality: "Roosendaal", addressCountry: "NL" },
   areaServed: { "@type": "Country", name: "Nederland" },
-  priceRange: "Vanaf €50",
+  priceRange: "Vanaf €49",
   vatID: "NL823807071B01",
   identifier: { "@type": "PropertyValue", propertyID: "KvK", value: "94948933" },
   knowsAbout: ["Fotografie", "Videografie", "Webdevelopment", "Automotive fotografie", "Social media beheer"],
@@ -51,7 +51,7 @@ export const BUSINESS_JSON_LD = {
       {
         "@type": "Offer",
         url: "https://www.photodecaffeine.com/services/fotografie/automotive",
-        priceSpecification: { "@type": "PriceSpecification", minPrice: 69, priceCurrency: "EUR", valueAddedTaxIncluded: true },
+        priceSpecification: { "@type": "PriceSpecification", minPrice: 49, priceCurrency: "EUR", valueAddedTaxIncluded: true },
         itemOffered: { "@type": "Service", name: "Automotive fotografie", description: "Fotografie van auto's en motoren voor showrooms, dealers en particuliere eigenaren." },
       },
       {

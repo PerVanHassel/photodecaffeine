@@ -106,8 +106,9 @@ async function loadSiteData() {
   const [settings, portfolio, reviews] = await Promise.allSettled([api("/settings"), api("/portfolio"), api("/reviews")]);
   const data = {};
   if (settings.status === "fulfilled") {
-    const { heroImageUrl, heroImageMobileUrl, frameImageUrl, sections } = settings.value?.settings || {};
-    data.settings = { heroImageUrl, heroImageMobileUrl, frameImageUrl, sections };
+    // photoFocus picks the photo that leads the photography page's hero.
+    const { heroImageUrl, heroImageMobileUrl, frameImageUrl, sections, photoFocus } = settings.value?.settings || {};
+    data.settings = { heroImageUrl, heroImageMobileUrl, frameImageUrl, sections, photoFocus };
   }
   if (portfolio.status === "fulfilled") data.articles = (portfolio.value?.articles || []).map(publicArticle);
   if (reviews.status === "fulfilled") {

@@ -6,8 +6,9 @@ import { matchPage, useMatchPage } from "../i18n/matchPage";
 /**
  * A booking button pinned to the bottom of the screen on phones, where the
  * menu's own button sits behind the hamburger. It steps aside while the form
- * it points to is on screen, and on the homepage until the hero, which has its
- * own buttons, has scrolled away. Hidden from tablets up by CSS.
+ * it points to is on screen, and on the homepage and the service pages until
+ * the hero, which has its own buttons, has scrolled away. Hidden from tablets
+ * up by CSS.
  */
 export function StickyCta() {
   const { t } = useLanguage();
@@ -26,10 +27,11 @@ export function StickyCta() {
         : isCategoryPage
         ? { id: "boeken", to: `${pathname}#boeken`, label: t.servicePages.requestLabel }
         : { id: "contact", to: "/#contact", label: t.nav.bookShoot };
-  const isHome = pathname === "/";
+  // Pages whose hero has buttons of its own (ServiceHero on the service pages).
+  const heroFirst = pathname === "/" || isCategoryPage || pathname === "/services/social-media";
 
   const [formInView, setFormInView] = useState(false);
-  const [pastHero, setPastHero] = useState(!isHome);
+  const [pastHero, setPastHero] = useState(!heroFirst);
 
   useEffect(() => {
     setFormInView(false);
@@ -41,7 +43,7 @@ export function StickyCta() {
   }, [target.id, pathname]);
 
   useEffect(() => {
-    if (!isHome) {
+    if (!heroFirst) {
       setPastHero(true);
       return;
     }
@@ -49,7 +51,7 @@ export function StickyCta() {
     update();
     window.addEventListener("scroll", update, { passive: true });
     return () => window.removeEventListener("scroll", update);
-  }, [isHome]);
+  }, [heroFirst]);
 
   const shown = pastHero && !formInView;
 
