@@ -1194,8 +1194,8 @@ export const en: Translations = {
     darkroomQuote: "\"Every frame starts in our heads,\nlong before the shutter clicks.\"",
   },
   cookies: {
-    title: "Help us make this site better",
-    bodyStart: "If you say yes, we can see how you use the site: what you look at, what you click and how long you stay. That stays with us, nothing goes to Google, Meta or anyone else. If you say no, the site works exactly the same. More in our",
+    title: "We use cookies",
+    bodyStart: "Cookies are small files that help us make the site better. They stay with us and are never shared with other companies. More in our",
     bodyLink: "cookie policy",
     bodyEnd: ".",
     necessary: "Necessary",
@@ -1203,9 +1203,9 @@ export const en: Translations = {
     analytics: "Analytics",
     analyticsBody: "Recognises a second visit and shows us how the site is used. Kept by us only, off by default.",
     save: "Save choice",
-    accept: "Yes, that's fine",
-    reject: "No, thanks",
-    manage: "Manage preferences",
+    accept: "Accept",
+    reject: "Decline",
+    manage: "Customise",
   },
   appError: {
     staleTitle: "A new version is ready",

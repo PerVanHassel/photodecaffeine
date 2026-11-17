@@ -1197,8 +1197,8 @@ const nl = {
   },
   // The banner that asks about the optional statistics (components/CookieBanner.tsx).
   cookies: {
-    title: "Help ons de site beter te maken",
-    bodyStart: "Met jouw ja zien we hoe je de site gebruikt: wat je bekijkt, waar je op klikt en hoe lang je blijft. Dat blijft bij ons, er gaat niets naar Google, Meta of anderen. Zeg je nee, dan werkt de site precies hetzelfde. Meer in ons",
+    title: "Wij gebruiken cookies",
+    bodyStart: "Cookies zijn kleine bestandjes die ons helpen de site beter te maken. Ze blijven bij ons en gaan niet naar andere bedrijven. Meer in ons",
     bodyLink: "cookiebeleid",
     bodyEnd: ".",
     necessary: "Noodzakelijk",
@@ -1206,9 +1206,9 @@ const nl = {
     analytics: "Analyse",
     analyticsBody: "Herkent een tweede bezoek en laat ons zien hoe de site wordt gebruikt. Alleen bij ons, staat standaard uit.",
     save: "Keuze opslaan",
-    accept: "Ja, dat is goed",
-    reject: "Nee, liever niet",
-    manage: "Voorkeuren beheren",
+    accept: "Accepteren",
+    reject: "Weigeren",
+    manage: "Zelf instellen",
   },
   // The screen when a page crashes or a new version is out (components/AppError.tsx).
   appError: {
