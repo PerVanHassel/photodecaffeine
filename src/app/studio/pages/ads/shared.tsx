@@ -10,7 +10,10 @@ export type Totals = {
   visitors: number;
   pageviews: number;
   bounces: number;
-  seconds: number;
+  /** Average over the visits that were measured; null when none were. */
+  seconds: number | null;
+  /** Visits with a yes in the cookie banner: only those have a time. */
+  measured?: number;
   conversions: number;
   returning?: number;
   paid?: number;
@@ -22,10 +25,10 @@ export type Summary = {
   previous: Totals;
   daily: { day: string; sessions: number; paid: number; conversions: number }[];
   funnel: { sessions: number; engaged: number; clicked: number; form: number; converted: number };
-  sources: { source: string; medium: string; sessions: number; visitors: number; bounces: number; seconds: number; pages: number; conversions: number }[];
+  sources: { source: string; medium: string; sessions: number; visitors: number; bounces: number; seconds: number | null; pages: number; conversions: number }[];
   campaigns: CampaignStats[];
-  variants: { campaign: string; content: string; sessions: number; bounces: number; seconds: number; scroll: number | null; conversions: number }[];
-  landing: { path: string; sessions: number; bounces: number; seconds: number; scroll: number | null; conversions: number }[];
+  variants: { campaign: string; content: string; sessions: number; bounces: number; seconds: number | null; scroll: number | null; conversions: number }[];
+  landing: { path: string; sessions: number; bounces: number; seconds: number | null; scroll: number | null; conversions: number }[];
   pages: { path: string; views: number; sessions: number; scroll: number | null; seconds: number | null; exits: number }[];
   devices: { device: string; sessions: number; bounces: number; conversions: number }[];
   /** [ISO weekday 1-7, hour 0-23, visits] */
@@ -39,8 +42,9 @@ export type CampaignStats = {
   page: string;
   sessions: number;
   visitors: number;
+  measured?: number;
   bounces: number;
-  seconds: number;
+  seconds: number | null;
   scroll: number | null;
   clicked: number;
   forms: number;
@@ -84,6 +88,8 @@ export type Visit = {
   returning_visitor: boolean;
   pageviews: number;
   active_seconds: number;
+  /** False without a yes in the cookie banner: then there is no time, scroll or clicks. */
+  measured?: boolean;
   converted_at: string | null;
   clicks?: number;
   scroll?: number | null;
@@ -193,8 +199,9 @@ export function DeviceIcon({ device, size = 14 }: { device: string; size?: numbe
 
 export const deviceName = (d: string) => (d === "mobile" ? "Telefoon" : d === "tablet" ? "Tablet" : d === "desktop" ? "Computer" : d || "Onbekend");
 
-/** 45 → "45 sec", 75 → "1 min 15 sec", 3700 → "1 uur 1 min". Never breaks over two lines. */
+/** 45 → "45 sec", 75 → "1 min 15 sec", 3700 → "1 uur 1 min", null → "–" (not measured). Never breaks over two lines. */
 export function duration(seconds: number | null | undefined): string {
+  if (seconds == null) return "–";
   const s = Math.max(0, Math.round(seconds || 0));
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
@@ -213,7 +220,8 @@ export function BigDuration({ seconds }: { seconds: number | null | undefined })
 export const share = (part: number, whole: number) => (whole ? percent(part / whole) : "–");
 
 /** The change against the period before, as a small up/down mark. Lower is better for bounces. */
-export function Delta({ now, before, lowerIsBetter }: { now: number; before: number; lowerIsBetter?: boolean }) {
+export function Delta({ now, before, lowerIsBetter }: { now: number | null; before: number | null; lowerIsBetter?: boolean }) {
+  if (now == null || before == null) return null;
   if (!before && !now) return null;
   if (!before) return <span className="a-delta up">nieuw</span>;
   const change = (now - before) / before;

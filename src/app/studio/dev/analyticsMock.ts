@@ -91,7 +91,15 @@ for (let i = 0; i < 900; i++) {
     os: device === "desktop" ? pick(["Windows", "macOS"]) : pick(["iOS", "Android"]), screen: device === "mobile" ? "390x844" : "1920x1080",
     language: "nl-NL", timezone: "Europe/Amsterdam", returning_visitor: rand() < 0.18, pageviews: pages, active_seconds: Math.round(total / 1000),
     converted_at: converted, inquiry: converted ? pick(["Daan de Vries", "Sven Jansen", "Lotte Bakker", "Mo Ait"]) : null, events,
+    measured: true,
   });
+}
+// Most ad visitors in the Instagram app never answer the cookie banner: one page, no time.
+for (const x of sessions) {
+  if (x.paid && !x.converted_at && rand() < 0.6) {
+    Object.assign(x, { measured: false, screen: "", language: "", timezone: "", pageviews: 1, active_seconds: 0, returning_visitor: false });
+    x.events = x.events.slice(0, 1).map((e: Json) => ({ ...e, scroll: null, duration_ms: null }));
+  }
 }
 
 function since(days: number) {
@@ -116,6 +124,8 @@ function filtered(s: URLSearchParams, from: number, to = Date.now()) {
 }
 
 const isBounce = (x: Session) => x.pageviews <= 1 && x.active_seconds < 10 && !x.converted_at;
+/** Average time of the visits that were measured, as analytics_measured.sql does. */
+const timed = (xs: Session[]) => (xs.some((x) => x.measured) ? avg(xs.filter((x) => x.measured).map((x) => x.active_seconds)) : null);
 const avg = (xs: number[]) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : 0);
 function groupBy<T>(xs: T[], key: (x: T) => string) {
   const m = new Map<string, T[]>();
@@ -129,7 +139,7 @@ const formed = (x: Session) => x.events.some((e: Json) => e.type === "form" && e
 function totals(xs: Session[]) {
   return {
     sessions: xs.length, visitors: new Set(xs.map((x) => x.visitor_id)).size, pageviews: xs.reduce((s, x) => s + x.pageviews, 0),
-    bounces: xs.filter(isBounce).length, seconds: avg(xs.map((x) => x.active_seconds)), conversions: xs.filter((x) => x.converted_at).length,
+    bounces: xs.filter(isBounce).length, measured: xs.filter((x) => x.measured).length, seconds: timed(xs), conversions: xs.filter((x) => x.converted_at).length,
     returning: xs.filter((x) => x.returning_visitor).length, paid: xs.filter((x) => x.paid).length,
   };
 }
@@ -147,8 +157,8 @@ function summary(s: URLSearchParams) {
     daily.push({ day, sessions: on.length, paid: on.filter((x) => x.paid).length, conversions: on.filter((x) => x.converted_at).length });
   }
   const camp = [...groupBy(xs.filter((x) => x.campaign), (x) => x.campaign)].map(([campaign, g]) => ({
-    campaign, page: g[0].landing_page, sessions: g.length, visitors: new Set(g.map((x) => x.visitor_id)).size, bounces: g.filter(isBounce).length,
-    seconds: avg(g.map((x) => x.active_seconds)), scroll: avg(g.map(landingScroll)), clicked: g.filter(clicked).length, forms: g.filter(formed).length,
+    campaign, page: g[0].landing_page, sessions: g.length, measured: g.filter((x) => x.measured).length, visitors: new Set(g.map((x) => x.visitor_id)).size, bounces: g.filter(isBounce).length,
+    seconds: timed(g), scroll: avg(g.map(landingScroll)), clicked: g.filter(clicked).length, forms: g.filter(formed).length,
     conversions: g.filter((x) => x.converted_at).length, first: g[g.length - 1].started_at, last: g[0].started_at,
   }));
   const hours = [...groupBy(xs, (x) => { const d = new Date(x.started_at); return `${((d.getDay() + 6) % 7) + 1}-${d.getHours()}`; })].map(([k, g]) => [...k.split("-").map(Number), g.length]);
@@ -167,15 +177,15 @@ function summary(s: URLSearchParams) {
     },
     sources: [...groupBy(xs, (x) => `${x.source}|${x.medium}`)].map(([k, g]) => ({
       source: k.split("|")[0], medium: k.split("|")[1], sessions: g.length, visitors: new Set(g.map((x) => x.visitor_id)).size, bounces: g.filter(isBounce).length,
-      seconds: avg(g.map((x) => x.active_seconds)), pages: Math.round((g.reduce((s, x) => s + x.pageviews, 0) / g.length) * 10) / 10, conversions: g.filter((x) => x.converted_at).length,
+      seconds: timed(g), pages: Math.round((g.reduce((s, x) => s + x.pageviews, 0) / g.length) * 10) / 10, conversions: g.filter((x) => x.converted_at).length,
     })).sort((a, b) => b.sessions - a.sessions),
     campaigns: camp.sort((a, b) => b.sessions - a.sessions),
     variants: [...groupBy(xs.filter((x) => x.campaign && x.content), (x) => `${x.campaign}|${x.content}`)].map(([k, g]) => ({
-      campaign: k.split("|")[0], content: k.split("|")[1], sessions: g.length, bounces: g.filter(isBounce).length, seconds: avg(g.map((x) => x.active_seconds)),
+      campaign: k.split("|")[0], content: k.split("|")[1], sessions: g.length, bounces: g.filter(isBounce).length, seconds: timed(g),
       scroll: avg(g.map(landingScroll)), conversions: g.filter((x) => x.converted_at).length,
     })),
     landing: [...groupBy(xs, (x) => x.landing_page)].map(([path, g]) => ({
-      path, sessions: g.length, bounces: g.filter(isBounce).length, seconds: avg(g.map((x) => x.active_seconds)), scroll: avg(g.map(landingScroll)), conversions: g.filter((x) => x.converted_at).length,
+      path, sessions: g.length, bounces: g.filter(isBounce).length, seconds: timed(g), scroll: avg(g.map(landingScroll)), conversions: g.filter((x) => x.converted_at).length,
     })).sort((a, b) => b.sessions - a.sessions),
     pages: [...groupBy(views, (v: Json) => v.path)].map(([path, g]) => ({
       path, views: g.length, sessions: g.length, scroll: avg(g.map((v: Json) => v.scroll)), seconds: avg(g.map((v: Json) => v.duration_ms / 1000)), exits: g.filter((v: Json) => v.last).length,

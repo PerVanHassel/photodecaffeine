@@ -68,7 +68,7 @@ export function CampaignsTab({ summary, meta, loading, onOpen, onLink }: {
                   <th>Campagne</th>
                   <th className="right">Bezoeken</th>
                   <th className="right" title="Eén pagina, korter dan 10 seconden">Weggeklikt</th>
-                  <th className="right" title="Gemiddelde tijd per bezoek">Gem. tijd</th>
+                  <th className="right" title="Gemiddelde tijd per bezoek, alleen van bezoekers die ja zeiden op cookies">Gem. tijd</th>
                   <th className="right" title="Hoe ver ze gemiddeld scrolden op de eerste pagina">Gescrold</th>
                   <th className="right" title="Klikten op een knop, link of invulveld">Klikten</th>
                   <th className="right" title="Begonnen aan een formulier">Formulier</th>

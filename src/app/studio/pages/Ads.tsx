@@ -135,7 +135,8 @@ function Overview({ data, loading, onLink }: { data?: Summary; loading: boolean;
         <div className="s-stats a-kpis">
           <Kpi label="Bezoekers" value={n(t.visitors)} hint={t.returning ? `${n(t.returning)} kwam eerder al eens` : undefined}><Delta now={t.visitors} before={p.visitors} /></Kpi>
           <Kpi label="Bezoeken" value={n(t.sessions)} hint={`${n(t.pageviews)} pagina's bekeken`}><Delta now={t.sessions} before={p.sessions} /></Kpi>
-          <Kpi label="Gem. tijd op de site" value={<BigDuration seconds={t.seconds} />}><Delta now={t.seconds} before={p.seconds} /></Kpi>
+          <Kpi label="Gem. tijd op de site" value={<BigDuration seconds={t.seconds} />}
+            hint={t.measured != null && t.measured < t.sessions ? `gemeten bij ${n(t.measured)} van ${n(t.sessions)} (cookies ja)` : undefined}><Delta now={t.seconds} before={p.seconds} /></Kpi>
           <Kpi label="Direct weggeklikt" value={share(t.bounces, t.sessions)} hint="1 pagina, korter dan 10 sec"><Delta now={bounce} before={bouncePrev} lowerIsBetter /></Kpi>
           <Kpi label="Aanvragen" value={n(t.conversions)}><Delta now={t.conversions} before={p.conversions} /></Kpi>
           <Kpi label="Conversie" value={share(t.conversions, t.sessions)} hint="Bezoeken met een aanvraag"><Delta now={conv} before={convPrev} /></Kpi>

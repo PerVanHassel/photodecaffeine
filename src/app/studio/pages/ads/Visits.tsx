@@ -52,9 +52,11 @@ export function VisitsTab({ query }: { query: string }) {
                       <td><span className="s-row nowrap"><DeviceIcon device={v.device} /><span className="s-small">{v.browser}</span></span></td>
                       <td className="s-truncate" style={{ maxWidth: 180 }}>{pageName(v.landing_page)}</td>
                       <td className="right s-mono">{v.pageviews}</td>
-                      <td className="right s-mono">{duration(v.active_seconds)}</td>
-                      <td className="right s-mono">{v.clicks ?? 0}</td>
-                      <td className="right s-mono">{v.scroll == null ? "–" : `${v.scroll}%`}</td>
+                      <td className="right s-mono">{v.measured === false
+                        ? <span className="s-faint" title="Geen ja op de cookiebanner: tijd, scrollen en kliks worden dan niet gemeten">niet gemeten</span>
+                        : duration(v.active_seconds)}</td>
+                      <td className="right s-mono">{v.measured === false ? "–" : v.clicks ?? 0}</td>
+                      <td className="right s-mono">{v.measured === false || v.scroll == null ? "–" : `${v.scroll}%`}</td>
                       <td>{v.converted_at ? <Pill tone="ok">{v.inquiry || "Ja"}</Pill> : <span className="s-faint">–</span>}</td>
                     </tr>
                   ))}
@@ -133,7 +135,7 @@ function VisitBody({ d, onOpen }: { d: VisitDetail; onOpen: (id: string) => void
         <div className="s-kv"><span>Apparaat</span><span className="s-row nowrap" style={{ justifyContent: "flex-end" }}><DeviceIcon device={v.device} />{deviceName(v.device)} · {v.os} · {v.browser}</span></div>
         {v.screen && <div className="s-kv"><span>Scherm</span><span className="s-mono">{v.screen}</span></div>}
         {(v.language || v.timezone) && <div className="s-kv"><span>Taal en tijdzone</span><span>{[v.language, v.timezone].filter(Boolean).join(" · ")}</span></div>}
-        <div className="s-kv"><span>Op de site</span><span>{v.pageviews} pagina{v.pageviews === 1 ? "" : "'s"} · {duration(v.active_seconds)}</span></div>
+        <div className="s-kv"><span>Op de site</span><span>{v.pageviews} pagina{v.pageviews === 1 ? "" : "'s"} · {v.measured === false ? "tijd niet gemeten (geen ja op cookies)" : duration(v.active_seconds)}</span></div>
         <div className="s-kv"><span>Eerder geweest</span><span>{d.others.length ? `${d.others.length} keer` : v.returning_visitor ? "Ja" : "Nee, eerste keer"}</span></div>
       </div>
 
