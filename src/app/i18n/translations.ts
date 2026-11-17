@@ -1197,17 +1197,17 @@ const nl = {
   },
   // The banner that asks about the optional statistics (components/CookieBanner.tsx).
   cookies: {
-    title: "Jouw privacy, jouw keuze.",
-    bodyStart: "We gebruiken noodzakelijke technieken om deze website te laten werken. Met jouw toestemming gebruiken we ook bezoekersstatistieken uit ons",
+    title: "Help ons de site beter te maken",
+    bodyStart: "Met jouw ja zien we hoe je de site gebruikt: wat je bekijkt, waar je op klikt en hoe lang je blijft. Dat blijft bij ons, er gaat niets naar Google, Meta of anderen. Zeg je nee, dan werkt de site precies hetzelfde. Meer in ons",
     bodyLink: "cookiebeleid",
-    bodyEnd: ". Kies wat bij je past.",
+    bodyEnd: ".",
     necessary: "Noodzakelijk",
     necessaryBody: "Altijd actief. Onthoudt onder meer deze keuze, je taal en je inlog.",
     analytics: "Analyse",
     analyticsBody: "Herkent een tweede bezoek en laat ons zien hoe de site wordt gebruikt. Alleen bij ons, staat standaard uit.",
     save: "Keuze opslaan",
-    accept: "Optionele cookies accepteren",
-    reject: "Optionele cookies weigeren",
+    accept: "Ja, dat is goed",
+    reject: "Nee, liever niet",
     manage: "Voorkeuren beheren",
   },
   // The screen when a page crashes or a new version is out (components/AppError.tsx).
