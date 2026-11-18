@@ -134,7 +134,7 @@ function Overview({ data, loading, onLink }: { data?: Summary; loading: boolean;
       <Card bodyClass="none">
         <div className="s-stats a-kpis">
           <Kpi label="Bezoekers" value={n(t.visitors)} hint={t.returning ? `${n(t.returning)} kwam eerder al eens` : undefined}><Delta now={t.visitors} before={p.visitors} /></Kpi>
-          <Kpi label="Bezoeken" value={n(t.sessions)} hint={`${n(t.pageviews)} pagina's bekeken`}><Delta now={t.sessions} before={p.sessions} /></Kpi>
+          <Kpi label="Bezoeken" value={n(t.sessions)} hint={`${n(t.pageviews)} pagina's bekeken${t.meta_checks ? `, zonder ${n(t.meta_checks)} controles van Meta` : ""}`}><Delta now={t.sessions} before={p.sessions} /></Kpi>
           <Kpi label="Gem. tijd op de site" value={<BigDuration seconds={t.seconds} />}
             hint={t.measured != null && t.measured < t.sessions ? `gemeten bij ${n(t.measured)} van ${n(t.sessions)} (cookies ja)` : undefined}><Delta now={t.seconds} before={p.seconds} /></Kpi>
           <Kpi label="Direct weggeklikt" value={share(t.bounces, t.sessions)} hint="1 pagina, korter dan 10 sec"><Delta now={bounce} before={bouncePrev} lowerIsBetter /></Kpi>

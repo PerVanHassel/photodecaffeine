@@ -203,7 +203,17 @@
   .wf-head-frame img { aspect-ratio: 4 / 5; }
   .wf-title { font-size: clamp(80px, 8.4vw, 128px); }
 }
+/* Phone and tablet: the photo first, so someone coming from a photo on
+   Instagram sees one straight away instead of a screen of text. */
+@media (max-width: 1023px) {
+  .wf-head-grid--photo { row-gap: 32px; }
+  .wf-head-grid--photo .wf-head-photo { order: -1; }
+}
 @media (max-width: 767px) {
+  .pdc-svc-head.wf-head { padding-top: 28px; }
+  .wf-head-grid--photo .wf-head-photo { margin-top: 8px; }
+  .wf-head-frame { padding: 16px 6px; }
+  .wf-head-frame img { aspect-ratio: 16 / 10; }
   .wf-head-btn { width: 100%; padding: 17px 16px; letter-spacing: 0.12em; }
   .wf-head-more { width: 100%; justify-content: center; }
   .wf-head-actions { gap: 4px; }

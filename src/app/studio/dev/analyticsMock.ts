@@ -140,7 +140,7 @@ function totals(xs: Session[]) {
   return {
     sessions: xs.length, visitors: new Set(xs.map((x) => x.visitor_id)).size, pageviews: xs.reduce((s, x) => s + x.pageviews, 0),
     bounces: xs.filter(isBounce).length, measured: xs.filter((x) => x.measured).length, seconds: timed(xs), conversions: xs.filter((x) => x.converted_at).length,
-    returning: xs.filter((x) => x.returning_visitor).length, paid: xs.filter((x) => x.paid).length,
+    returning: xs.filter((x) => x.returning_visitor).length, paid: xs.filter((x) => x.paid).length, meta_checks: 7,
   };
 }
 

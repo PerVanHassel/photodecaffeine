@@ -47,8 +47,8 @@ const nl = {
   title: "Gratis",
   title2: "boeken",
   titleEm: "voor je team of club",
-  subtitle:
-    "Boek met je team of club, zonder vaste kosten vooraf. Of boek alleen voor jezelf, met een bijdrage van €20. Elke foto kost daarna €5.",
+  // One price only: the €20 for a single player is in the card below.
+  subtitle: "Wij fotograferen de wedstrijd van je team gratis. Je betaalt alleen voor de foto's die je wilt: €5 per stuk.",
   bookCta: "Boek je wedstrijdfotograaf",
   heroCta: "Boek voor je team",
   heroMore: "Zo werkt het",
@@ -375,8 +375,7 @@ const en: MatchTexts = {
   title: "Free",
   title2: "booking",
   titleEm: "for your team or club",
-  subtitle:
-    "Book with your team or club, with no fixed costs up front. Or book just for yourself, with a €20 contribution. After that, every photo costs €5.",
+  subtitle: "We photograph your team's match for free. You only pay for the photos you want: €5 each.",
   bookCta: "Book your match photographer",
   heroCta: "Book for your team",
   heroMore: "How it works",

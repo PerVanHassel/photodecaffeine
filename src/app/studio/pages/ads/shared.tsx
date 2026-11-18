@@ -14,6 +14,8 @@ export type Totals = {
   seconds: number | null;
   /** Visits with a yes in the cookie banner: only those have a time. */
   measured?: number;
+  /** Meta checking an ad link (several visits within a second): left out of every number. */
+  meta_checks?: number;
   conversions: number;
   returning?: number;
   paid?: number;
